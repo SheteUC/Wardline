@@ -117,6 +117,20 @@ export enum WorkflowNodeType {
     END = 'end',
 }
 
+/**
+ * Voice call states for the orchestrator state machine
+ */
+export enum VoiceState {
+    INITIALIZING = 'INITIALIZING',
+    GREETING = 'GREETING',
+    EMERGENCY_SCREENING = 'EMERGENCY_SCREENING',
+    TRIAGE = 'TRIAGE',
+    BOOKING = 'BOOKING',
+    ESCALATING = 'ESCALATING',
+    ENDING = 'ENDING',
+    COMPLETED = 'COMPLETED',
+}
+
 // Schema exports
 export const userRoleSchema = z.nativeEnum(UserRole);
 export const callDirectionSchema = z.nativeEnum(CallDirection);
@@ -130,3 +144,4 @@ export const workflowVersionStatusSchema = z.nativeEnum(WorkflowVersionStatus);
 export const speakerSchema = z.nativeEnum(Speaker);
 export const sentimentLabelSchema = z.nativeEnum(SentimentLabel);
 export const workflowNodeTypeSchema = z.nativeEnum(WorkflowNodeType);
+export const voiceStateSchema = z.nativeEnum(VoiceState);
