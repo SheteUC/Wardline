@@ -1,0 +1,25 @@
+{
+    "name": "@wardline/db",
+    "version": "1.0.0",
+    "private": true,
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "generate": "prisma generate",
+        "migrate:dev": "prisma migrate dev",
+        "migrate:deploy": "prisma migrate deploy",
+        "studio": "prisma studio",
+        "seed": "tsx prisma/seed.ts",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.8.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.6",
+        "prisma": "^5.8.0",
+        "tsx": "^4.7.0",
+        "typescript": "^5.3.3"
+    }
+}

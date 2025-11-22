@@ -1,0 +1,36 @@
+{
+  "name": "wardline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HIPAA-compliant hospital call triage platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:generate": "pnpm --filter @wardline/db generate",
+    "db:migrate": "pnpm --filter @wardline/db migrate:dev",
+    "db:studio": "pnpm --filter @wardline/db studio"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "prettier": "^3.1.1",
+    "turbo": "^1.11.3",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3"
+  }
+}

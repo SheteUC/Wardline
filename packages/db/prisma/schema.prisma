@@ -1,0 +1,412 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Tenant & Organization Models
+// ============================================================================
+
+model Hospital {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  timeZone  String   @default("America/New_York") @map("time_zone")
+  status    HospitalStatus @default(ACTIVE)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  settings          HospitalSettings?
+  users             HospitalUser[]
+  phoneNumbers      PhoneNumber[]
+  intents           Intent[]
+  patients          Patient[]
+  callSessions      CallSession[]
+  workflows         Workflow[]
+  auditLogs         AuditLog[]
+  subscriptions     StripeSubscription[]
+  usageRecords      UsageRecord[]
+
+  @@index([slug])
+  @@map("hospitals")
+}
+
+enum HospitalStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model HospitalSettings {
+  id                      String   @id @default(uuid())
+  hospitalId              String   @unique @map("hospital_id")
+  recordingDefault        RecordingDefault @default(ON) @map("recording_default")
+  transcriptRetentionDays Int      @default(30) @map("transcript_retention_days")
+  e911Enabled             Boolean  @default(false) @map("e911_enabled")
+  timetapBaseUrl          String?  @map("timetap_base_url")
+  timetapApiKey           String?  @map("timetap_api_key") // Encrypted in app layer
+  nexhealthBaseUrl        String?  @map("nexhealth_base_url")
+  nexhealthApiKey         String?  @map("nexhealth_api_key") // Encrypted in app layer
+  stripeCustomerId        String?  @map("stripe_customer_id")
+  posthogProjectApiKey    String?  @map("posthog_project_api_key")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@map("hospital_settings")
+}
+
+enum RecordingDefault {
+  ON
+  OFF
+  ASK
+}
+
+// ============================================================================
+// User & RBAC Models
+// ============================================================================
+
+model User {
+  id          String   @id @default(uuid())
+  clerkUserId String   @unique @map("clerk_user_id")
+  email       String
+  fullName    String?  @map("full_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  hospitals HospitalUser[]
+  createdWorkflowVersions WorkflowVersion[] @relation("CreatedVersions")
+  approvedWorkflowVersions WorkflowVersion[] @relation("ApprovedVersions")
+
+  @@index([clerkUserId])
+  @@map("users")
+}
+
+model HospitalUser {
+  id         String   @id @default(uuid())
+  hospitalId String   @map("hospital_id")
+  userId     String   @map("user_id")
+  role       UserRole
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, userId])
+  @@index([hospitalId])
+  @@index([userId])
+  @@map("hospital_users")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  SUPERVISOR
+  AGENT
+  READONLY
+}
+
+// ============================================================================
+// Phone Numbers & Configuration
+// ============================================================================
+
+model PhoneNumber {
+  id                 String   @id @default(uuid())
+  hospitalId         String   @map("hospital_id")
+  twilioPhoneNumber  String   @unique @map("twilio_phone_number")
+  twilioSid          String   @unique @map("twilio_sid")
+  workflowId         String?  @map("workflow_id")
+  label              String
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  workflow     Workflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  callSessions CallSession[]
+
+  @@index([hospitalId])
+  @@index([twilioSid])
+  @@map("phone_numbers")
+}
+
+// ============================================================================
+// Intents & Workflows
+// ============================================================================
+
+model Intent {
+  id            String   @id @default(uuid())
+  hospitalId    String   @map("hospital_id")
+  key           String
+  displayName   String   @map("display_name")
+  description   String
+  enabled       Boolean  @default(true)
+  requiredFields Json    @map("required_fields") // IntentField[]
+  routingRules  Json    @map("routing_rules")   // RoutingRule[]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  callSessions CallSession[]
+
+  @@unique([hospitalId, key])
+  @@index([hospitalId])
+  @@map("intents")
+}
+
+model Workflow {
+  id          String         @id @default(uuid())
+  hospitalId  String         @map("hospital_id")
+  name        String
+  description String
+  status      WorkflowStatus @default(DRAFT)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  hospital     Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  versions     WorkflowVersion[]
+  phoneNumbers PhoneNumber[]
+
+  @@index([hospitalId])
+  @@map("workflows")
+}
+
+enum WorkflowStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model WorkflowVersion {
+  id               String                @id @default(uuid())
+  workflowId       String                @map("workflow_id")
+  versionNumber    Int                   @map("version_number")
+  graphJson        Json                  @map("graph_json") // WorkflowGraph
+  createdByUserId  String                @map("created_by_user_id")
+  approvedByUserId String?               @map("approved_by_user_id")
+  status           WorkflowVersionStatus @default(DRAFT)
+  publishedAt      DateTime?             @map("published_at")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("CreatedVersions", fields: [createdByUserId], references: [id])
+  approvedBy  User?    @relation("ApprovedVersions", fields: [approvedByUserId], references: [id])
+
+  @@unique([workflowId, versionNumber])
+  @@index([workflowId])
+  @@map("workflow_versions")
+}
+
+enum WorkflowVersionStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+}
+
+// ============================================================================
+// Patients
+// ============================================================================
+
+model Patient {
+  id           String   @id @default(uuid())
+  hospitalId   String   @map("hospital_id")
+  externalId   String   @map("external_id") // MRN or EHR ID
+  name         String?
+  dob          DateTime? @db.Date
+  primaryPhone String?  @map("primary_phone")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  callSessions CallSession[]
+
+  @@unique([hospitalId, externalId])
+  @@index([hospitalId])
+  @@map("patients")
+}
+
+// ============================================================================
+// Call Sessions & Transcripts
+// ============================================================================
+
+model CallSession {
+  id                    String            @id @default(uuid())
+  hospitalId            String            @map("hospital_id")
+  phoneNumberId         String            @map("phone_number_id")
+  twilioCallSid         String            @unique @map("twilio_call_sid")
+  direction             CallDirection
+  status                CallStatus        @default(INITIATED)
+  recordingConsent      RecordingConsent? @map("recording_consent")
+  intentId              String?           @map("intent_id")
+  tag                   CallTag?
+  patientId             String?           @map("patient_id")
+  isEmergency           Boolean           @default(false) @map("is_emergency")
+  startedAt             DateTime          @default(now()) @map("started_at")
+  endedAt               DateTime?         @map("ended_at")
+  sentimentOverallScore Decimal?          @map("sentiment_overall_score") @db.Decimal(3, 2)
+  aiConfidence          Decimal?          @map("ai_confidence") @db.Decimal(3, 2)
+  handoffTarget         String?           @map("handoff_target")
+  handoffReason         String?           @map("handoff_reason")
+  recordingUrl          String?           @map("recording_url")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  hospital           Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  phoneNumber        PhoneNumber          @relation(fields: [phoneNumberId], references: [id])
+  intent             Intent?              @relation(fields: [intentId], references: [id], onDelete: SetNull)
+  patient            Patient?             @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  transcriptSegments TranscriptSegment[]
+  sentimentSnapshots SentimentSnapshot[]
+  handoffs           Handoff[]
+
+  @@index([hospitalId, startedAt])
+  @@index([tag])
+  @@index([patientId])
+  @@index([twilioCallSid])
+  @@map("call_sessions")
+}
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallStatus {
+  INITIATED
+  ONGOING
+  COMPLETED
+  ABANDONED
+  FAILED
+}
+
+enum RecordingConsent {
+  IMPLICIT
+  EXPLICIT
+  DECLINED
+}
+
+enum CallTag {
+  SCHEDULING
+  BILLING_INSURANCE
+  RECORDS_FORMS
+  REFILL_PRIOR_AUTH
+  CLINICAL_ESCALATION
+}
+
+model TranscriptSegment {
+  id          String   @id @default(uuid())
+  callId      String   @map("call_id")
+  speaker     Speaker
+  text        String   @db.Text
+  startTimeMs Int      @map("start_time_ms")
+  endTimeMs   Int      @map("end_time_ms")
+  confidence  Decimal  @db.Decimal(3, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  call CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+  @@map("transcript_segments")
+}
+
+enum Speaker {
+  CALLER
+  AGENT
+  SYSTEM
+}
+
+model SentimentSnapshot {
+  id       String         @id @default(uuid())
+  callId   String         @map("call_id")
+  offsetMs Int            @map("offset_ms")
+  score    Decimal        @db.Decimal(3, 2)
+  label    SentimentLabel
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  call CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+  @@map("sentiment_snapshots")
+}
+
+enum SentimentLabel {
+  NEGATIVE
+  NEUTRAL
+  POSITIVE
+}
+
+model Handoff {
+  id        String   @id @default(uuid())
+  callId    String   @map("call_id")
+  payload   Json     // HandoffPayload
+  createdAt DateTime @default(now()) @map("created_at")
+
+  call CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+  @@map("handoffs")
+}
+
+// ============================================================================
+// Audit & Compliance
+// ============================================================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  hospitalId String   @map("hospital_id")
+  userId     String?  @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// Billing & Usage
+// ============================================================================
+
+model StripeSubscription {
+  id                   String   @id @default(uuid())
+  hospitalId           String   @map("hospital_id")
+  stripeSubscriptionId String   @unique @map("stripe_subscription_id")
+  planKey              String   @map("plan_key")
+  status               String
+  currentPeriodStart   DateTime @map("current_period_start")
+  currentPeriodEnd     DateTime @map("current_period_end")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@map("stripe_subscriptions")
+}
+
+model UsageRecord {
+  id                   String   @id @default(uuid())
+  hospitalId           String   @map("hospital_id")
+  metric               String
+  quantity             Int
+  timestamp            DateTime
+  stripeUsageRecordId  String?  @map("stripe_usage_record_id")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, metric, timestamp])
+  @@map("usage_records")
+}
