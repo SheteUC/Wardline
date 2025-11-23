@@ -31,17 +31,17 @@ export default function CallsPage() {
     });
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6">
             <Card className="min-h-[600px]">
                 {/* Filters & Toolbar */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg w-fit">
+                    <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit">
                         {['all', 'emergency', 'completed', 'escalated'].map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`px-3 py-1.5 text-xs font-medium rounded-md capitalize transition-all
-                    ${filter === f ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
+                    ${filter === f ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}
                   `}
                             >
                                 {f}
@@ -50,11 +50,11 @@ export default function CallsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="relative">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Search logs..."
-                                className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 w-full md:w-64"
+                                className="pl-9 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring w-full md:w-64"
                             />
                         </div>
                         <Button variant="secondary" icon={Filter} className="hidden md:flex">Filters</Button>
@@ -65,7 +65,7 @@ export default function CallsPage() {
                 {/* Table */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-100">
+                        <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
                             <tr>
                                 <th className="px-6 py-4 font-medium">Time / Date</th>
                                 <th className="px-6 py-4 font-medium">Caller</th>
@@ -76,21 +76,21 @@ export default function CallsPage() {
                                 <th className="px-6 py-4 font-medium"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <tbody className="divide-y divide-border/50">
                             {filteredCalls.map((call) => (
-                                <tr key={call.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
-                                        <div className="font-medium text-slate-900">{call.time}</div>
+                                <tr key={call.id} className="hover:bg-muted/50 transition-colors group">
+                                    <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
+                                        <div className="font-medium text-foreground">{call.time}</div>
                                         <div className="text-xs">Oct 24, 2023</div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">
+                                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-bold text-xs">
                                                 {call.name.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="font-medium text-slate-900">{call.name}</div>
-                                                <div className="text-xs text-slate-500">{call.caller}</div>
+                                                <div className="font-medium text-foreground">{call.name}</div>
+                                                <div className="text-xs text-muted-foreground">{call.caller}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -101,25 +101,25 @@ export default function CallsPage() {
                                         {call.sentiment !== 'N/A' ? (
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-2 h-2 rounded-full ${call.sentiment === 'High' ? 'bg-emerald-500' :
-                                                        call.sentiment === 'Low' ? 'bg-rose-500' : 'bg-slate-400'
+                                                    call.sentiment === 'Low' ? 'bg-red-500' : 'bg-muted-foreground'
                                                     }`}></div>
-                                                <span className="text-slate-700">{call.sentiment}</span>
+                                                <span className="text-foreground">{call.sentiment}</span>
                                             </div>
                                         ) : (
-                                            <span className="text-slate-400">-</span>
+                                            <span className="text-muted-foreground">-</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                         ${call.status === 'Escalated' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
-                                                call.status === 'Abandoned' ? 'bg-slate-100 text-slate-600 border border-slate-200' :
+                         ${call.status === 'Escalated' ? 'bg-red-50 text-red-700 border border-red-100' :
+                                                call.status === 'Abandoned' ? 'bg-muted text-muted-foreground border border-border' :
                                                     'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                             }
                        `}>
                                             {call.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-right font-mono text-slate-600">
+                                    <td className="px-6 py-4 text-right font-mono text-muted-foreground">
                                         {call.duration}
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -136,8 +136,8 @@ export default function CallsPage() {
                 </div>
 
                 {/* Pagination Mock */}
-                <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-4">
-                    <div className="text-sm text-slate-500">Showing <span className="font-medium">1-{filteredCalls.length}</span> of <span className="font-medium">1,240</span> results</div>
+                <div className="flex items-center justify-between pt-6 border-t border-border mt-4">
+                    <div className="text-sm text-muted-foreground">Showing <span className="font-medium">1-{filteredCalls.length}</span> of <span className="font-medium">1,240</span> results</div>
                     <div className="flex gap-2">
                         <Button variant="secondary" className="h-8 px-3 text-xs" disabled>Previous</Button>
                         <Button variant="secondary" className="h-8 px-3 text-xs">Next</Button>

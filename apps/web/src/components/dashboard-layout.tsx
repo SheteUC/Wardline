@@ -46,30 +46,30 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1
           ${isActive
-                        ? 'bg-teal-50 text-teal-700 shadow-sm ring-1 ring-teal-200'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                        : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                     }`}
             >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-teal-600' : 'text-slate-400'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
                 {label}
             </Link>
         );
     };
 
     return (
-        <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden selection:bg-teal-100">
+        <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden">
 
             {/* Sidebar */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
+                className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
             >
-                <div className="h-16 flex items-center px-6 border-b border-slate-100">
-                    <div className="h-8 w-8 bg-teal-600 rounded-lg flex items-center justify-center mr-3 shadow-sm">
-                        <Activity className="text-white w-5 h-5" />
+                <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
+                    <div className="h-8 w-8 bg-foreground rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                        <Activity className="text-background w-5 h-5" />
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-slate-800">Wardline</span>
+                    <span className="text-xl font-bold tracking-tight text-sidebar-foreground">Wardline</span>
                     {isMobile && (
                         <button onClick={() => setSidebarOpen(false)} className="ml-auto text-slate-400">
                             <X className="w-5 h-5" />
@@ -79,16 +79,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
                 <div className="p-4 flex flex-col h-[calc(100%-4rem)] justify-between overflow-y-auto">
                     <nav className="space-y-1">
-                        <div className="text-xs font-semibold text-slate-400 uppercase px-4 mb-2 mt-2">Operations</div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-2">Operations</div>
                         <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
                         <NavItem href="/dashboard/calls" icon={Phone} label="Calls & Triage" />
                         <NavItem href="/dashboard/analytics" icon={GitGraph} label="Analytics" />
 
-                        <div className="text-xs font-semibold text-slate-400 uppercase px-4 mb-2 mt-6">Configuration</div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Configuration</div>
                         <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="Workflow Builder" />
                         <NavItem href="/dashboard/team" icon={Users} label="Team Management" />
 
-                        <div className="text-xs font-semibold text-slate-400 uppercase px-4 mb-2 mt-6">Settings</div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Settings</div>
                         <NavItem href="/dashboard/settings" icon={Globe} label="General" />
                         <NavItem href="/dashboard/settings/notifications" icon={BellRing} label="Notifications" />
                         <NavItem href="/dashboard/settings/integrations" icon={Link2} label="Integrations" />
@@ -96,12 +96,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <NavItem href="/dashboard/settings/billing" icon={CreditCard} label="Billing" />
                     </nav>
 
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-4">
+                    <div className="bg-sidebar-accent p-4 rounded-xl border border-sidebar-border mt-4">
                         <div className="flex items-center gap-3 mb-3">
                             <UserButton afterSignOutUrl="/" />
                             <div>
-                                <div className="text-sm font-medium text-slate-900">Jane Doe</div>
-                                <div className="text-xs text-slate-500">Ops Director</div>
+                                <div className="text-sm font-medium text-sidebar-foreground">Jane Doe</div>
+                                <div className="text-xs text-muted-foreground">Ops Director</div>
                             </div>
                         </div>
                     </div>
@@ -111,7 +111,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             {/* Overlay for mobile */}
             {isMobile && sidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40"
+                    className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
                     onClick={() => setSidebarOpen(false)}
                 />
             )}
@@ -119,15 +119,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             {/* Main Content */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Top Header */}
-                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 z-30">
+                <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-8 z-30">
                     <div className="flex items-center">
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="lg:hidden mr-4 text-slate-500 hover:text-slate-700"
+                            className="lg:hidden mr-4 text-muted-foreground hover:text-foreground"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
-                        <h1 className="text-lg font-semibold text-slate-800">
+                        <h1 className="text-lg font-semibold text-foreground">
                             {pathname === '/dashboard' && 'Operations Overview'}
                             {pathname === '/dashboard/calls' && 'Live Calls'}
                             {pathname === '/dashboard/workflows' && 'Workflow Configuration'}
@@ -138,23 +138,23 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center bg-slate-100 rounded-lg px-3 py-1.5">
-                            <Search className="w-4 h-4 text-slate-400 mr-2" />
+                        <div className="hidden md:flex items-center bg-muted rounded-lg px-3 py-1.5">
+                            <Search className="w-4 h-4 text-muted-foreground mr-2" />
                             <input
                                 type="text"
                                 placeholder="Search patients, calls..."
-                                className="bg-transparent border-none text-sm focus:outline-none text-slate-700 w-48"
+                                className="bg-transparent border-none text-sm focus:outline-none text-foreground w-48"
                             />
                         </div>
-                        <button className="relative p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+                        <button className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
                             <Bell className="w-5 h-5" />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-card"></span>
                         </button>
                     </div>
                 </header>
 
                 {/* Scrollable Content Area */}
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-4 lg:p-8">
+                <div className="flex-1 overflow-y-auto bg-background p-4 lg:p-8">
                     <div className="max-w-7xl mx-auto">
                         {children}
                     </div>

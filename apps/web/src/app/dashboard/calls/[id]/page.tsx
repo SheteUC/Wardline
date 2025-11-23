@@ -17,7 +17,7 @@ const TRANSCRIPT_MOCK = [
 
 export default function CallDetailPage({ params }: { params: { id: string } }) {
     return (
-        <div className="h-[calc(100vh-100px)] animate-fade-in flex flex-col lg:flex-row gap-6">
+        <div className="h-[calc(100vh-100px)] flex flex-col lg:flex-row gap-6">
             {/* Left Sidebar: Metadata */}
             <div className="w-full lg:w-80 flex-shrink-0 space-y-6">
                 <Link href="/dashboard/calls">
@@ -64,11 +64,11 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
 
                 <Card title="Action Items">
                     <div className="space-y-3">
-                        <div className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-100 rounded-lg">
-                            <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5" />
+                        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
                             <div>
-                                <div className="text-sm font-medium text-rose-800">Clinical Escalation</div>
-                                <div className="text-xs text-rose-600">Forwarded to Dr. Chen (On Call)</div>
+                                <div className="text-sm font-medium text-red-800">Clinical Escalation</div>
+                                <div className="text-xs text-red-600">Forwarded to Dr. Chen (On Call)</div>
                             </div>
                         </div>
                         <Button variant="secondary" className="w-full" icon={Download}>Export Summary PDF</Button>
@@ -80,7 +80,7 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
             <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-teal-600" /> Live Transcript
+                        <Activity className="w-4 h-4 text-foreground" /> Live Transcript
                     </h3>
                     <div className="flex gap-2">
                         <Badge type="neutral" text="ID: #8823-A" />
@@ -92,7 +92,7 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                     {TRANSCRIPT_MOCK.map((line, idx) => (
                         <div key={idx} className={`flex gap-4 ${line.type === 'system' ? '' : 'flex-row-reverse'}`}>
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 
-                ${line.type === 'system' ? 'bg-teal-100 text-teal-700' : 'bg-slate-200 text-slate-600'}`}>
+                ${line.type === 'system' ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
                                 {line.type === 'system' ? <BrainCircuit className="w-4 h-4" /> : <User className="w-4 h-4" />}
                             </div>
                             <div className={`flex flex-col max-w-[70%] ${line.type === 'caller' ? 'items-end' : 'items-start'}`}>
@@ -109,11 +109,11 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                 </div>
 
                 <div className="p-4 border-t border-slate-100 bg-white flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-teal-600 flex items-center justify-center text-white">
+                    <div className="h-8 w-8 rounded-full bg-foreground flex items-center justify-center text-background">
                         <Play className="w-4 h-4 ml-0.5" />
                     </div>
                     <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full w-1/3 bg-teal-500"></div>
+                        <div className="h-full w-1/3 bg-accent"></div>
                     </div>
                     <span className="text-xs font-mono text-slate-500">0:14 / 0:45</span>
                 </div>

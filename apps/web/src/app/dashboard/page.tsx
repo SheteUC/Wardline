@@ -12,12 +12,12 @@ import { Card, StatCard, Badge, Button } from "@/components/dashboard/shared";
 import Link from 'next/link';
 
 const COLORS = {
-    primary: '#0d9488', // teal-600
-    secondary: '#64748b', // slate-500
-    danger: '#e11d48', // rose-600
-    warning: '#d97706', // amber-600
+    primary: 'oklch(0.25 0.02 35)', // dark charcoal
+    secondary: 'oklch(0.45 0.02 35)', // muted charcoal
+    danger: 'oklch(0.65 0.18 25)', // destructive
+    warning: 'oklch(0.55 0.15 45)', // burnt orange
     success: '#10b981', // emerald-500
-    bg: '#f8fafc' // slate-50
+    bg: 'oklch(0.96 0.01 90)' // warm beige
 };
 
 const MOCK_CALLS_DATA = [
@@ -31,10 +31,10 @@ const MOCK_CALLS_DATA = [
 ];
 
 const INTENT_DATA = [
-    { name: 'Scheduling', value: 400, color: '#0d9488' },
-    { name: 'Billing', value: 300, color: '#64748b' },
-    { name: 'Clinical Triage', value: 150, color: '#e11d48' },
-    { name: 'Refill', value: 100, color: '#d97706' },
+    { name: 'Scheduling', value: 400, color: 'oklch(0.25 0.02 35)' },
+    { name: 'Billing', value: 300, color: 'oklch(0.45 0.02 35)' },
+    { name: 'Clinical Triage', value: 150, color: 'oklch(0.65 0.18 25)' },
+    { name: 'Refill', value: 100, color: 'oklch(0.55 0.15 45)' },
 ];
 
 const RECENT_CALLS = [
@@ -46,7 +46,7 @@ const RECENT_CALLS = [
 
 export default function DashboardPage() {
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6">
             {/* Top Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard label="Calls Today" value="842" trendValue="+12%" trend="up" icon={Phone} />
@@ -66,9 +66,9 @@ export default function DashboardPage() {
                                     <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.88 0.01 90)" />
+                            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.45 0.02 35)', fontSize: 12 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.45 0.02 35)', fontSize: 12 }} />
                             <RechartsTooltip
                                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             />
@@ -100,9 +100,9 @@ export default function DashboardPage() {
                                 <div key={idx} className="flex justify-between items-center text-sm">
                                     <div className="flex items-center">
                                         <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                                        <span className="text-slate-600">{item.name}</span>
+                                        <span className="text-muted-foreground">{item.name}</span>
                                     </div>
-                                    <span className="font-medium text-slate-900">{item.value}</span>
+                                    <span className="font-medium text-foreground">{item.value}</span>
                                 </div>
                             ))}
                         </div>
@@ -114,21 +114,21 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card title="Live Status" className="lg:col-span-1">
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                            <span className="text-sm font-medium text-slate-600">Agents Online</span>
-                            <span className="text-lg font-bold text-teal-600">12</span>
+                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                            <span className="text-sm font-medium text-muted-foreground">Agents Online</span>
+                            <span className="text-lg font-bold text-foreground">12</span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                            <span className="text-sm font-medium text-slate-600">Queue Length</span>
-                            <span className="text-lg font-bold text-amber-500">4</span>
+                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                            <span className="text-sm font-medium text-muted-foreground">Queue Length</span>
+                            <span className="text-lg font-bold text-orange-600">4</span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                            <span className="text-sm font-medium text-slate-600">Est. Wait</span>
-                            <span className="text-lg font-bold text-slate-700">~2m</span>
+                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                            <span className="text-sm font-medium text-muted-foreground">Est. Wait</span>
+                            <span className="text-lg font-bold text-foreground">~2m</span>
                         </div>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-slate-100">
-                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">System Health</h4>
+                    <div className="mt-6 pt-4 border-t border-border">
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">System Health</h4>
                         <div className="flex items-center text-sm text-emerald-600">
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Telephony Gateway Operational
@@ -140,7 +140,7 @@ export default function DashboardPage() {
                     action={<Link href="/dashboard/calls"><Button variant="ghost" className="text-xs">View All</Button></Link>}>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
+                            <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
                                 <tr>
                                     <th className="px-4 py-3 font-medium">Caller</th>
                                     <th className="px-4 py-3 font-medium">Intent</th>
@@ -150,21 +150,21 @@ export default function DashboardPage() {
                             </thead>
                             <tbody>
                                 {RECENT_CALLS.map((call) => (
-                                    <tr key={call.id} className="border-b border-slate-50 hover:bg-slate-50/50 cursor-pointer transition-colors">
+                                    <tr key={call.id} className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors">
                                         <td className="px-4 py-3">
-                                            <div className="font-medium text-slate-900">{call.name}</div>
-                                            <div className="text-xs text-slate-500">{call.caller}</div>
+                                            <div className="font-medium text-foreground">{call.name}</div>
+                                            <div className="text-xs text-muted-foreground">{call.caller}</div>
                                         </td>
                                         <td className="px-4 py-3">
                                             <Badge type={call.emergency ? 'danger' : 'primary'} text={call.intent} />
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className={`flex items-center ${call.status === 'Escalated' ? 'text-rose-600' : 'text-slate-600'}`}>
+                                            <span className={`flex items-center ${call.status === 'Escalated' ? 'text-red-600' : 'text-muted-foreground'}`}>
                                                 {call.status === 'Escalated' && <AlertTriangle className="w-3 h-3 mr-1" />}
                                                 {call.status}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-right text-slate-500 font-mono">
+                                        <td className="px-4 py-3 text-right text-muted-foreground font-mono">
                                             {call.duration}
                                         </td>
                                     </tr>

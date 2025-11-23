@@ -50,15 +50,15 @@ const WorkflowNode = ({ node, isSelected, onClick }: any) => {
     return (
         <div
             className={`absolute w-60 rounded-xl shadow-sm border-2 transition-all cursor-pointer z-10 flex flex-col group
-        ${isSelected ? 'ring-2 ring-offset-2 ring-teal-500 shadow-md scale-105' : 'hover:shadow-md hover:border-slate-300'}
-        ${typeStyles[node.type] || "bg-white border-slate-200"}
+        ${isSelected ? 'ring-2 ring-offset-2 ring-accent shadow-md scale-105' : 'hover:shadow-md hover:border-border'}
+        ${typeStyles[node.type] || "bg-card border-border"}
       `}
             style={{ left: node.x, top: node.y }}
             onClick={() => onClick(node.id)}
         >
             {/* Input Handle */}
             {node.type !== 'trigger' && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-slate-300 rounded-full z-20"></div>
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-card border-2 border-border rounded-full z-20"></div>
             )}
 
             <div className="p-3 flex items-start gap-3">
@@ -73,7 +73,7 @@ const WorkflowNode = ({ node, isSelected, onClick }: any) => {
 
             {/* Output Handle */}
             {node.type !== 'end' && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-slate-300 rounded-full z-20 group-hover:bg-teal-500 group-hover:border-teal-600 transition-colors"></div>
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-card border-2 border-border rounded-full z-20 group-hover:bg-accent group-hover:border-accent transition-colors"></div>
             )}
         </div>
     );
@@ -83,23 +83,23 @@ export default function WorkflowBuilderPage() {
     const [selectedNode, setSelectedNode] = useState('n2'); // Default select "Intent" for demo
 
     return (
-        <div className="h-[calc(100vh-120px)] animate-fade-in flex flex-col bg-white border rounded-xl shadow-sm overflow-hidden">
+        <div className="h-[calc(100vh-120px)] flex flex-col bg-background border rounded-xl shadow-sm overflow-hidden">
             {/* Toolbar */}
-            <div className="h-14 border-b border-slate-200 flex items-center justify-between px-4 bg-slate-50">
+            <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-muted/30">
                 <div className="flex items-center gap-4">
-                    <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                        <BrainCircuit className="w-4 h-4 text-teal-600" />
+                    <h2 className="font-semibold text-foreground flex items-center gap-2">
+                        <BrainCircuit className="w-4 h-4 text-foreground" />
                         Triage Flow V2.4
                     </h2>
-                    <div className="h-6 w-[1px] bg-slate-200"></div>
-                    <div className="flex bg-white rounded-md border border-slate-200 p-0.5">
-                        <button className="p-1.5 hover:bg-slate-100 rounded text-slate-500"><RotateCcw className="w-4 h-4" /></button>
-                        <button className="p-1.5 hover:bg-slate-100 rounded text-slate-500"><CornerUpLeft className="w-4 h-4" /></button>
-                        <button className="p-1.5 hover:bg-slate-100 rounded text-slate-500"><CornerUpRight className="w-4 h-4" /></button>
+                    <div className="h-6 w-[1px] bg-border"></div>
+                    <div className="flex bg-card rounded-md border border-border p-0.5">
+                        <button className="p-1.5 hover:bg-muted rounded text-muted-foreground"><RotateCcw className="w-4 h-4" /></button>
+                        <button className="p-1.5 hover:bg-muted rounded text-muted-foreground"><CornerUpLeft className="w-4 h-4" /></button>
+                        <button className="p-1.5 hover:bg-muted rounded text-muted-foreground"><CornerUpRight className="w-4 h-4" /></button>
                     </div>
-                    <div className="flex bg-white rounded-md border border-slate-200 p-0.5">
-                        <button className="p-1.5 hover:bg-slate-100 rounded text-slate-500"><ZoomIn className="w-4 h-4" /></button>
-                        <button className="p-1.5 hover:bg-slate-100 rounded text-slate-500"><ZoomOut className="w-4 h-4" /></button>
+                    <div className="flex bg-card rounded-md border border-border p-0.5">
+                        <button className="p-1.5 hover:bg-muted rounded text-muted-foreground"><ZoomIn className="w-4 h-4" /></button>
+                        <button className="p-1.5 hover:bg-muted rounded text-muted-foreground"><ZoomOut className="w-4 h-4" /></button>
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -110,11 +110,11 @@ export default function WorkflowBuilderPage() {
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Left Palette */}
-                <div className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
-                    <div className="p-4 border-b border-slate-200">
+                <div className="w-64 bg-muted/30 border-r border-border flex flex-col">
+                    <div className="p-4 border-b border-border">
                         <div className="relative">
-                            <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" placeholder="Search nodes..." className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-md" />
+                            <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <input type="text" placeholder="Search nodes..." className="w-full pl-8 pr-3 py-1.5 text-xs border border-border rounded-md" />
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -124,13 +124,13 @@ export default function WorkflowBuilderPage() {
                             { title: "Actions", items: [{ l: "Voice Prompt", i: Mic }, { l: "Send SMS", i: FileText }, { l: "API Request", i: RefreshCw }] },
                         ].map((group, idx) => (
                             <div key={idx}>
-                                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2.5 tracking-wider">{group.title}</h3>
+                                <h3 className="text-xs font-bold text-muted-foreground uppercase mb-2.5 tracking-wider">{group.title}</h3>
                                 <div className="grid grid-cols-1 gap-2">
                                     {group.items.map((item, i) => (
-                                        <div key={i} className="flex items-center gap-3 p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm cursor-grab hover:border-teal-400 hover:shadow-md transition-all group">
-                                            <item.i className="w-4 h-4 text-slate-500 group-hover:text-teal-600" />
-                                            <span className="text-sm text-slate-700 font-medium">{item.l}</span>
-                                            <GripHorizontal className="w-3 h-3 text-slate-300 ml-auto" />
+                                        <div key={i} className="flex items-center gap-3 p-2.5 bg-card border border-border rounded-lg shadow-sm cursor-grab hover:border-accent hover:shadow-md transition-all group">
+                                            <item.i className="w-4 h-4 text-muted-foreground group-hover:text-accent" />
+                                            <span className="text-sm text-foreground font-medium">{item.l}</span>
+                                            <GripHorizontal className="w-3 h-3 text-muted-foreground ml-auto" />
                                         </div>
                                     ))}
                                 </div>
@@ -140,18 +140,18 @@ export default function WorkflowBuilderPage() {
                 </div>
 
                 {/* Canvas Area */}
-                <div className="flex-1 bg-slate-50/50 relative overflow-auto"
+                <div className="flex-1 bg-muted/20 relative overflow-auto"
                     style={{
-                        backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+                        backgroundImage: 'radial-gradient(oklch(0.7 0.01 90) 1px, transparent 1px)',
                         backgroundSize: '24px 24px',
-                        backgroundColor: '#f8fafc'
+                        backgroundColor: 'oklch(0.96 0.01 90)'
                     }}>
 
                     {/* Render Connections SVG Layer */}
                     <svg className="absolute top-0 left-0 w-[1000px] h-[800px] pointer-events-none z-0">
                         <defs>
                             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+                                <polygon points="0 0, 10 3.5, 0 7" fill="oklch(0.5 0.01 90)" />
                             </marker>
                         </defs>
                         {WORKFLOW_EDGES.map((edge, idx) => {
@@ -162,12 +162,12 @@ export default function WorkflowBuilderPage() {
                             const pathD = getPath(startNode, endNode);
                             return (
                                 <g key={idx}>
-                                    <path d={pathD} fill="none" stroke="#cbd5e1" strokeWidth="2" markerEnd="url(#arrowhead)" />
+                                    <path d={pathD} fill="none" stroke="oklch(0.82 0.01 90)" strokeWidth="2" markerEnd="url(#arrowhead)" />
                                     {edge.label && (
-                                        <rect x={(startNode.x + endNode.x) / 2 + 110} y={(startNode.y + endNode.y) / 2 + 30} width="60" height="20" rx="4" fill="white" stroke="#e2e8f0" />
+                                        <rect x={(startNode.x + endNode.x) / 2 + 110} y={(startNode.y + endNode.y) / 2 + 30} width="60" height="20" rx="4" fill="oklch(0.98 0.005 95)" stroke="oklch(0.88 0.01 90)" />
                                     )}
                                     {edge.label && (
-                                        <text x={(startNode.x + endNode.x) / 2 + 140} y={(startNode.y + endNode.y) / 2 + 44} textAnchor="middle" fontSize="10" fill="#64748b" fontWeight="500">
+                                        <text x={(startNode.x + endNode.x) / 2 + 140} y={(startNode.y + endNode.y) / 2 + 44} textAnchor="middle" fontSize="10" fill="oklch(0.45 0.02 35)" fontWeight="500">
                                             {edge.label}
                                         </text>
                                     )}
@@ -190,21 +190,21 @@ export default function WorkflowBuilderPage() {
                 </div>
 
                 {/* Right Inspector */}
-                <div className="w-80 bg-white border-l border-slate-200 flex flex-col">
-                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                        <h3 className="text-sm font-semibold text-slate-800">Properties</h3>
+                <div className="w-80 bg-card border-l border-border flex flex-col">
+                    <div className="px-4 py-3 border-b border-border bg-muted/30">
+                        <h3 className="text-sm font-semibold text-foreground">Properties</h3>
                     </div>
 
                     {selectedNode === 'n2' ? (
                         <div className="p-4 space-y-6 overflow-y-auto">
                             <div>
                                 <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Node Label</label>
-                                <input type="text" defaultValue="Intent Detection" className="w-full p-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+                                <input type="text" defaultValue="Intent Detection" className="w-full p-2 text-sm border border-border rounded-md focus:ring-2 focus:ring-ring focus:outline-none" />
                             </div>
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">AI Model</label>
-                                <select className="w-full p-2 text-sm border border-slate-300 rounded-md bg-white">
+                                <select className="w-full p-2 text-sm border border-border rounded-md bg-card">
                                     <option>Wardline Health NLP v2 (Latest)</option>
                                     <option>GPT-4 (General)</option>
                                     <option>Legacy Keyword Match</option>
@@ -220,9 +220,9 @@ export default function WorkflowBuilderPage() {
                                     { name: "Refill Prescription", color: "bg-blue-100 text-blue-700" },
                                     { name: "Billing Question", color: "bg-slate-100 text-slate-700" }
                                 ].map((intent, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 border border-slate-200 rounded-md">
+                                    <div key={i} className="flex items-center justify-between p-2 border border-border rounded-md">
                                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${intent.color}`}>{intent.name}</span>
-                                        <Settings className="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-600" />
+                                        <Settings className="w-3 h-3 text-muted-foreground cursor-pointer hover:text-foreground" />
                                     </div>
                                 ))}
                                 <Button variant="secondary" className="w-full text-xs" icon={Plus}>Add Intent</Button>
@@ -232,7 +232,7 @@ export default function WorkflowBuilderPage() {
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm text-slate-700 font-medium">Fallback Action</span>
                                 </div>
-                                <select className="w-full p-2 text-sm border border-slate-300 rounded-md bg-white">
+                                <select className="w-full p-2 text-sm border border-border rounded-md bg-card">
                                     <option>Transfer to Operator</option>
                                     <option>Repeat Menu</option>
                                     <option>End Call</option>

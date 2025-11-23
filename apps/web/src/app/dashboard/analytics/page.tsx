@@ -12,12 +12,12 @@ import {
 import { Card, StatCard, Button } from "@/components/dashboard/shared";
 
 const COLORS = {
-    primary: '#0d9488', // teal-600
-    secondary: '#64748b', // slate-500
-    danger: '#e11d48', // rose-600
-    warning: '#d97706', // amber-600
+    primary: 'oklch(0.25 0.02 35)', // dark charcoal
+    secondary: 'oklch(0.45 0.02 35)', // muted charcoal
+    danger: 'oklch(0.65 0.18 25)', // destructive
+    warning: 'oklch(0.55 0.15 45)', // burnt orange
     success: '#10b981', // emerald-500
-    bg: '#f8fafc' // slate-50
+    bg: 'oklch(0.96 0.01 90)' // warm beige
 };
 
 const ANALYTICS_OPS_DATA = [
@@ -70,10 +70,10 @@ export default function AnalyticsPage() {
     const TabButton = ({ id, label, icon: Icon }: any) => (
         <button
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors font-medium text-sm
+            className={`flex items-center gap-2 pb3 px-1 border-b-2 transition-colors font-medium text-sm
         ${activeTab === id
-                    ? 'border-teal-600 text-teal-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    ? 'border-foreground text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                 }`}
         >
             <Icon className="w-4 h-4" />
@@ -82,9 +82,9 @@ export default function AnalyticsPage() {
     );
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6">
             {/* Header & Tabs */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-200 pb-1">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-border pb-1">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     <TabButton id="ops" label="Operations" icon={Activity} />
                     <TabButton id="safety" label="Safety & Risk" icon={AlertTriangle} />
@@ -94,8 +94,7 @@ export default function AnalyticsPage() {
                     <select
                         value={dateRange}
                         onChange={(e) => setDateRange(e.target.value)}
-                        className="text-sm border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                    >
+                        className="text-sm border border-border rounded-lg p-2 bg-card focus:ring-2 focus:ring-ring focus:outline-none">
                         <option value="today">Today</option>
                         <option value="7d">Last 7 Days</option>
                         <option value="30d">Last 30 Days</option>
