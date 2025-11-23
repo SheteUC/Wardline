@@ -1,217 +1,123 @@
-import { currentUser } from "@clerk/nextjs/server";
-import { redirect, notFound } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Phone, Clock, Download, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
-import { formatDuration, formatPhoneNumber } from "@/lib/utils";
-import Link from "next/link";
+"use client";
 
-export const dynamic = "force-dynamic";
+import React from 'react';
+import {
+    ChevronRight, User, AlertTriangle, Download, Activity, BrainCircuit, Play
+} from 'lucide-react';
+import { Card, Badge, Button } from "@/components/dashboard/shared";
+import Link from 'next/link';
 
-// Mock data - in production, this would come from the API
-const mockCallDetails: Record<string, any> = {
-    "1": {
-        id: "1",
-        callerName: "John Smith",
-        callerPhone: "5551234567",
-        datetime: new Date(2025, 10, 22, 9, 30),
-        duration: 245,
-        status: "completed",
-        isEmergency: false,
-        intent: "Appointment Booking",
-        sentiment: "positive",
-        transcript: [
-            { timestamp: "00:00", speaker: "AI", text: "Hello, thank you for calling Memorial Hospital. How can I help you today?" },
-            { timestamp: "00:05", speaker: "Caller", text: "Hi, I'd like to schedule an appointment with Dr. Johnson." },
-            { timestamp: "00:12", speaker: "AI", text: "I can certainly help you with that. What type of appointment are you looking to schedule?" },
-            { timestamp: "00:18", speaker: "Caller", text: "It's for a follow-up regarding my blood work results." },
-            { timestamp: "00:25", speaker: "AI", text: "I understand. Let me check Dr. Johnson's availability. What days work best for you?" },
-            { timestamp: "00:32", speaker: "Caller", text: "I'm flexible this week, preferably in the afternoon." },
-            { timestamp: "00:38", speaker: "AI", text: "Perfect. I have availability on Thursday at 2:30 PM or Friday at 3:00 PM. Which would you prefer?" },
-            { timestamp: "00:48", speaker: "Caller", text: "Thursday at 2:30 works great." },
-            { timestamp: "00:52", speaker: "AI", text: "Excellent. I've scheduled your appointment with Dr. Johnson for Thursday, November 28th at 2:30 PM. You'll receive a confirmation text shortly. Is there anything else I can help you with?" },
-            { timestamp: "01:05", speaker: "Caller", text: "No, that's all. Thank you!" },
-            { timestamp: "01:08", speaker: "AI", text: "You're welcome! Have a great day." },
-        ],
-        aiSummary: "Caller requested an appointment scheduling with Dr. Johnson for blood work follow-up. Successfully scheduled for Thursday, November 28th at 2:30 PM. Positive interaction with no issues detected.",
-        detectedKeywords: ["appointment", "Dr. Johnson", "blood work", "follow-up", "Thursday"],
-    },
-};
+const TRANSCRIPT_MOCK = [
+    { speaker: 'AI', text: "Hello, you've reached St. Mary's General. I am an automated assistant. How can I help you today?", time: '0:00', type: 'system' },
+    { speaker: 'Caller', text: "I... I'm having these sharp pains in my chest and I can't breathe well.", time: '0:05', type: 'caller', sentiment: 'panic' },
+    { speaker: 'AI', text: "I understand. Are you experiencing chest pain right now?", time: '0:09', type: 'system' },
+    { speaker: 'Caller', text: "Yes, it hurts a lot.", time: '0:12', type: 'caller', sentiment: 'panic' },
+    { speaker: 'AI', text: "I am connecting you to a triage nurse immediately. Please stay on the line.", time: '0:14', type: 'system', alert: true },
+];
 
-export default async function CallDetailPage({
-    params,
-}: {
-    params: Promise<{ id: string }>;
-}) {
-    const user = await currentUser();
-    const { id } = await params;
-
-    if (!user) {
-        redirect("/sign-in");
-    }
-
-    const call = mockCallDetails[id];
-
-    if (!call) {
-        notFound();
-    }
-
+export default function CallDetailPage({ params }: { params: { id: string } }) {
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <Link
-                        href="/dashboard/calls"
-                        className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block"
-                    >
-                        ← Back to Calls
-                    </Link>
-                    <h1 className="text-3xl font-bold tracking-tight">Call Details</h1>
-                    <p className="text-muted-foreground">
-                        Detailed information and transcript
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Export PDF
+        <div className="h-[calc(100vh-100px)] animate-fade-in flex flex-col lg:flex-row gap-6">
+            {/* Left Sidebar: Metadata */}
+            <div className="w-full lg:w-80 flex-shrink-0 space-y-6">
+                <Link href="/dashboard/calls">
+                    <Button variant="secondary" icon={ChevronRight} className="rotate-180 mb-2">
+                        Back to List
                     </Button>
+                </Link>
+
+                <Card className="bg-white">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                            <User className="w-6 h-6" />
+                        </div>
+                        <div className="text-right">
+                            <div className="text-xl font-bold text-slate-900">04:12</div>
+                            <div className="text-sm text-slate-500">Duration</div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Caller</label>
+                            <div className="font-medium text-slate-900">Sarah J.</div>
+                            <div className="text-sm text-slate-600">(555) 123-4567</div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Intent Detected</label>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                                <Badge type="danger" text="Chest Pain" />
+                                <Badge type="warning" text="Triage" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">AI Confidence</label>
+                            <div className="w-full bg-slate-100 rounded-full h-2 mt-1">
+                                <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+                            </div>
+                            <div className="text-xs text-right mt-1 text-slate-500">92% Match</div>
+                        </div>
+                    </div>
+                </Card>
+
+                <Card title="Action Items">
+                    <div className="space-y-3">
+                        <div className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-100 rounded-lg">
+                            <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5" />
+                            <div>
+                                <div className="text-sm font-medium text-rose-800">Clinical Escalation</div>
+                                <div className="text-xs text-rose-600">Forwarded to Dr. Chen (On Call)</div>
+                            </div>
+                        </div>
+                        <Button variant="secondary" className="w-full" icon={Download}>Export Summary PDF</Button>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Center: Transcript */}
+            <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-teal-600" /> Live Transcript
+                    </h3>
+                    <div className="flex gap-2">
+                        <Badge type="neutral" text="ID: #8823-A" />
+                        <Badge type="danger" text="High Emotion" />
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
+                    {TRANSCRIPT_MOCK.map((line, idx) => (
+                        <div key={idx} className={`flex gap-4 ${line.type === 'system' ? '' : 'flex-row-reverse'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 
+                ${line.type === 'system' ? 'bg-teal-100 text-teal-700' : 'bg-slate-200 text-slate-600'}`}>
+                                {line.type === 'system' ? <BrainCircuit className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                            </div>
+                            <div className={`flex flex-col max-w-[70%] ${line.type === 'caller' ? 'items-end' : 'items-start'}`}>
+                                <div className={`px-4 py-3 rounded-2xl text-sm shadow-sm border 
+                    ${line.type === 'system' ? 'bg-white border-slate-100 text-slate-700 rounded-tl-none' : 'bg-white border-slate-100 text-slate-800 rounded-tr-none'}
+                    ${line.alert ? 'border-l-4 border-l-rose-500' : ''}
+                 `}>
+                                    {line.text}
+                                </div>
+                                <span className="text-xs text-slate-400 mt-1 px-1">{line.time}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="p-4 border-t border-slate-100 bg-white flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-teal-600 flex items-center justify-center text-white">
+                        <Play className="w-4 h-4 ml-0.5" />
+                    </div>
+                    <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full w-1/3 bg-teal-500"></div>
+                    </div>
+                    <span className="text-xs font-mono text-slate-500">0:14 / 0:45</span>
                 </div>
             </div>
-
-            {/* Call Metadata */}
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Call Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-sm font-medium">Caller</p>
-                                <p className="text-2xl font-bold">{call.callerName}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    {formatPhoneNumber(call.callerPhone)}
-                                </p>
-                            </div>
-                            {call.isEmergency && (
-                                <Badge variant="destructive" className="flex items-center gap-1">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    Emergency
-                                </Badge>
-                            )}
-                        </div>
-
-                        <Separator />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Date</p>
-                                <p className="text-sm">{format(call.datetime, "MMMM d, yyyy")}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Time</p>
-                                <p className="text-sm">{format(call.datetime, "h:mm a")}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Duration</p>
-                                <p className="text-sm flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {formatDuration(call.duration)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Status</p>
-                                <Badge variant={call.status === "completed" ? "success" : "secondary"}>
-                                    {call.status}
-                                </Badge>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>AI Analysis</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Intent</p>
-                            <Badge variant="outline" className="text-sm">{call.intent}</Badge>
-                        </div>
-
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Sentiment</p>
-                            <Badge
-                                variant={
-                                    call.sentiment === "positive"
-                                        ? "success"
-                                        : call.sentiment === "negative"
-                                            ? "destructive"
-                                            : "secondary"
-                                }
-                            >
-                                {call.sentiment}
-                            </Badge>
-                        </div>
-
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-2">Detected Keywords</p>
-                            <div className="flex flex-wrap gap-2">
-                                {call.detectedKeywords.map((keyword: string) => (
-                                    <Badge key={keyword} variant="secondary" className="text-xs">
-                                        {keyword}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-2">AI Summary</p>
-                            <p className="text-sm">{call.aiSummary}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Transcript */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Call Transcript</CardTitle>
-                    <CardDescription>
-                        Full conversation transcript with timestamps
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {call.transcript.map((entry: any, index: number) => (
-                            <div key={index} className="flex gap-4">
-                                <div className="w-16 flex-shrink-0">
-                                    <p className="text-xs text-muted-foreground font-mono">
-                                        {entry.timestamp}
-                                    </p>
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium mb-1">
-                                        {entry.speaker === "AI" ? (
-                                            <span className="text-primary-600">AI Assistant</span>
-                                        ) : (
-                                            <span>{call.callerName}</span>
-                                        )}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">{entry.text}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }
