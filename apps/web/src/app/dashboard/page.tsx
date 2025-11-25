@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
-    Phone, Clock, LogOut, AlertTriangle, CheckCircle, ArrowUpRight, ArrowDownRight
+    Phone, Clock, LogOut, AlertTriangle, CheckCircle
 } from 'lucide-react';
 import {
     AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -10,6 +10,10 @@ import {
 } from 'recharts';
 import { Card, StatCard, Badge, Button } from "@/components/dashboard/shared";
 import Link from 'next/link';
+import { useCalls, useCallAnalytics } from '@/lib/hooks/query-hooks';
+import { useHospital } from '@/lib/hospital-context';
+import { CallStatus } from '@wardline/types';
+import { formatDistanceToNow } from 'date-fns';
 
 const COLORS = {
     primary: 'oklch(0.25 0.02 35)', // dark charcoal
@@ -20,93 +24,193 @@ const COLORS = {
     bg: 'oklch(0.96 0.01 90)' // warm beige
 };
 
-const MOCK_CALLS_DATA = [
-    { time: '09:00', calls: 24, sentiment: 85 },
-    { time: '10:00', calls: 45, sentiment: 78 },
-    { time: '11:00', calls: 67, sentiment: 72 },
-    { time: '12:00', calls: 55, sentiment: 80 },
-    { time: '13:00', calls: 30, sentiment: 88 },
-    { time: '14:00', calls: 42, sentiment: 82 },
-    { time: '15:00', calls: 60, sentiment: 75 },
+const INTENT_COLORS = [
+    'oklch(0.25 0.02 35)',
+    'oklch(0.45 0.02 35)',
+    'oklch(0.65 0.18 25)',
+    'oklch(0.55 0.15 45)',
 ];
 
-const INTENT_DATA = [
-    { name: 'Scheduling', value: 400, color: 'oklch(0.25 0.02 35)' },
-    { name: 'Billing', value: 300, color: 'oklch(0.45 0.02 35)' },
-    { name: 'Clinical Triage', value: 150, color: 'oklch(0.65 0.18 25)' },
-    { name: 'Refill', value: 100, color: 'oklch(0.55 0.15 45)' },
-];
-
-const RECENT_CALLS = [
-    { id: 101, caller: '(555) 123-4567', name: 'Sarah J.', time: '2 min ago', duration: '4:12', intent: 'Scheduling', status: 'Completed', sentiment: 'High', emergency: false },
-    { id: 102, caller: '(555) 987-6543', name: 'Unknown', time: '5 min ago', duration: '1:30', intent: 'Triage', status: 'Escalated', sentiment: 'Low', emergency: true },
-    { id: 103, caller: '(555) 456-7890', name: 'Mike R.', time: '12 min ago', duration: '2:45', intent: 'Billing', status: 'Completed', sentiment: 'Neutral', emergency: false },
-    { id: 104, caller: '(555) 222-3333', name: 'Elena D.', time: '18 min ago', duration: '0:00', intent: 'Unknown', status: 'Abandoned', sentiment: 'N/A', emergency: false },
-];
+function formatDuration(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
 
 export default function DashboardPage() {
+    const { hospitalId, isLoading: hospitalLoading } = useHospital();
+
+    // Get today's date range
+    const today = useMemo(() => {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+    }, []);
+
+    // Fetch recent calls (last 10)
+    const { data: callsData, isLoading: callsLoading } = useCalls({
+        pageSize: 10,
+        page: 1,
+    });
+
+    // Fetch analytics for today
+    const { data: analytics, isLoading: analyticsLoading } = useCallAnalytics(
+        today.start,
+        today.end
+    );
+
+    const isLoading = hospitalLoading || callsLoading || analyticsLoading;
+
+    // Process analytics data for charts
+    const callVolumeData = useMemo(() => {
+        if (!analytics?.callVolumeByHour) return [];
+        return analytics.callVolumeByHour.map(item => ({
+            time: item.hour,
+            calls: item.calls,
+            sentiment: item.sentiment || 0,
+        }));
+    }, [analytics]);
+
+    const intentData = useMemo(() => {
+        if (!analytics?.intentBreakdown) return [];
+        return analytics.intentBreakdown.map((item, index) => ({
+            name: item.intent,
+            value: item.count,
+            color: INTENT_COLORS[index % INTENT_COLORS.length],
+        }));
+    }, [analytics]);
+
+    const recentCalls = useMemo(() => {
+        if (!callsData?.data) return [];
+        return callsData.data.map(call => ({
+            id: call.id,
+            caller: call.callerPhone,
+            name: call.callerName || 'Unknown',
+            time: formatDistanceToNow(new Date(call.createdAt), { addSuffix: true }),
+            duration: formatDuration(call.duration),
+            intent: call.detectedIntent || 'Unknown',
+            status: call.status,
+            sentiment: call.sentiment || 'N/A',
+            emergency: call.wasEmergency,
+        }));
+    }, [callsData]);
+
+    // Loading state
+    if (isLoading || !hospitalId) {
+        return (
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-32 bg-muted animate-pulse rounded-lg"></div>
+                    ))}
+                </div>
+                <div className="text-center py-12 text-muted-foreground">
+                    Loading dashboard data...
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Top Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Calls Today" value="842" trendValue="+12%" trend="up" icon={Phone} />
-                <StatCard label="Avg Hold Time" value="45s" trendValue="-5%" trend="down" icon={Clock} alert />
-                <StatCard label="Abandon Rate" value="2.1%" trendValue="+0.4%" trend="up" icon={LogOut} />
-                <StatCard label="Emergency Flags" value="14" trendValue="3 Active" icon={AlertTriangle} alert />
+                <StatCard
+                    label="Calls Today"
+                    value={analytics?.totalCalls?.toString() || '0'}
+                    trendValue={`${analytics?.completedCalls || 0} completed`}
+                    trend="up"
+                    icon={Phone}
+                />
+                <StatCard
+                    label="Avg Duration"
+                    value={formatDuration(analytics?.averageDuration || 0)}
+                    trendValue={`${analytics?.abandonedCalls || 0} abandoned`}
+                    trend="down"
+                    icon={Clock}
+                />
+                <StatCard
+                    label="Abandon Rate"
+                    value={`${(analytics?.abandonRate || 0).toFixed(1)}%`}
+                    trendValue={analytics?.abandonRate && analytics.abandonRate > 5 ? 'Above target' : 'Within target'}
+                    trend={analytics?.abandonRate && analytics.abandonRate > 5 ? 'up' : 'down'}
+                    icon={LogOut}
+                />
+                <StatCard
+                    label="Emergency Flags"
+                    value={analytics?.emergencyFlags?.toString() || '0'}
+                    trendValue={`${analytics?.activeEmergencies || 0} Active`}
+                    icon={AlertTriangle}
+                    alert={!!analytics?.activeEmergencies && analytics.activeEmergencies > 0}
+                />
             </div>
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card title="Call Volume & Sentiment" className="lg:col-span-2 min-h-[350px]">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <AreaChart data={MOCK_CALLS_DATA}>
-                            <defs>
-                                <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.1} />
-                                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.88 0.01 90)" />
-                            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.45 0.02 35)', fontSize: 12 }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.45 0.02 35)', fontSize: 12 }} />
-                            <RechartsTooltip
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Area type="monotone" dataKey="calls" stroke={COLORS.primary} strokeWidth={2} fillOpacity={1} fill="url(#colorCalls)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    {callVolumeData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={callVolumeData}>
+                                <defs>
+                                    <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.1} />
+                                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.88 0.01 90)" />
+                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.45 0.02 35)', fontSize: 12 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'oklch(0.45 0.02 35)', fontSize: 12 }} />
+                                <RechartsTooltip
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                />
+                                <Area type="monotone" dataKey="calls" stroke={COLORS.primary} strokeWidth={2} fillOpacity={1} fill="url(#colorCalls)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                            No call data available for today
+                        </div>
+                    )}
                 </Card>
 
                 <Card title="Intent Breakdown" className="min-h-[350px]">
-                    <div className="flex flex-col items-center justify-center h-full">
-                        <ResponsiveContainer width="100%" height={200}>
-                            <PieChart>
-                                <Pie
-                                    data={INTENT_DATA}
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {INTENT_DATA.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <RechartsTooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="w-full mt-4 space-y-3">
-                            {INTENT_DATA.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center text-sm">
-                                    <div className="flex items-center">
-                                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                                        <span className="text-muted-foreground">{item.name}</span>
+                    {intentData.length > 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full">
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie
+                                        data={intentData}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {intentData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="w-full mt-4 space-y-3">
+                                {intentData.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                        <div className="flex items-center">
+                                            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
+                                            <span className="text-muted-foreground">{item.name}</span>
+                                        </div>
+                                        <span className="font-medium text-foreground">{item.value}</span>
                                     </div>
-                                    <span className="font-medium text-foreground">{item.value}</span>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                            No intent data available
+                        </div>
+                    )}
                 </Card>
             </div>
 
@@ -116,15 +220,15 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                             <span className="text-sm font-medium text-muted-foreground">Agents Online</span>
-                            <span className="text-lg font-bold text-foreground">12</span>
+                            <span className="text-lg font-bold text-foreground">-</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                             <span className="text-sm font-medium text-muted-foreground">Queue Length</span>
-                            <span className="text-lg font-bold text-orange-600">4</span>
+                            <span className="text-lg font-bold text-foreground">-</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                             <span className="text-sm font-medium text-muted-foreground">Est. Wait</span>
-                            <span className="text-lg font-bold text-foreground">~2m</span>
+                            <span className="text-lg font-bold text-foreground">-</span>
                         </div>
                     </div>
                     <div className="mt-6 pt-4 border-t border-border">
@@ -138,40 +242,49 @@ export default function DashboardPage() {
 
                 <Card title="Recent Calls" className="lg:col-span-2"
                     action={<Link href="/dashboard/calls"><Button variant="ghost" className="text-xs">View All</Button></Link>}>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
-                                <tr>
-                                    <th className="px-4 py-3 font-medium">Caller</th>
-                                    <th className="px-4 py-3 font-medium">Intent</th>
-                                    <th className="px-4 py-3 font-medium">Status</th>
-                                    <th className="px-4 py-3 font-medium text-right">Duration</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {RECENT_CALLS.map((call) => (
-                                    <tr key={call.id} className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors">
-                                        <td className="px-4 py-3">
-                                            <div className="font-medium text-foreground">{call.name}</div>
-                                            <div className="text-xs text-muted-foreground">{call.caller}</div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge type={call.emergency ? 'danger' : 'primary'} text={call.intent} />
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`flex items-center ${call.status === 'Escalated' ? 'text-red-600' : 'text-muted-foreground'}`}>
-                                                {call.status === 'Escalated' && <AlertTriangle className="w-3 h-3 mr-1" />}
-                                                {call.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right text-muted-foreground font-mono">
-                                            {call.duration}
-                                        </td>
+                    {recentCalls.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                                    <tr>
+                                        <th className="px-4 py-3 font-medium">Caller</th>
+                                        <th className="px-4 py-3 font-medium">Intent</th>
+                                        <th className="px-4 py-3 font-medium">Status</th>
+                                        <th className="px-4 py-3 font-medium text-right">Duration</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {recentCalls.map((call) => (
+                                        <tr key={call.id} className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors">
+                                            <td className="px-4 py-3">
+                                                <div className="font-medium text-foreground">{call.name}</div>
+                                                <div className="text-xs text-muted-foreground">{call.caller}</div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <Badge type={call.emergency ? 'danger' : 'primary'} text={call.intent} />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`flex items-center ${call.status === CallStatus.COMPLETED ? 'text-emerald-600' :
+                                                        call.status === CallStatus.ABANDONED ? 'text-red-600' :
+                                                            'text-muted-foreground'
+                                                    }`}>
+                                                    {call.status === CallStatus.ABANDONED && <AlertTriangle className="w-3 h-3 mr-1" />}
+                                                    {call.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-muted-foreground font-mono">
+                                                {call.duration}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="py-12 text-center text-muted-foreground">
+                            No recent calls
+                        </div>
+                    )}
                 </Card>
             </div>
         </div>

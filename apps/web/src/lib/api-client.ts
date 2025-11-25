@@ -3,91 +3,13 @@
 import { useAuth } from "@clerk/nextjs";
 
 /**
- * API client wrapper with Clerk token injection
+ * API client for making authenticated requests to the backend
+ * Use the useApiClient hook in components to get an authenticated client
  */
 
-type FetchOptions = RequestInit & {
-    includeAuth?: boolean;
-};
-
-class ApiClient {
-    private baseUrl: string;
-
-    constructor() {
-        this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-    }
-
-    private async request<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-        const { includeAuth = true, ...fetchOptions } = options;
-
-        const headers: Record<string, string> = {
-            "Content-Type": "application/json",
-            ...(fetchOptions.headers as Record<string, string>),
-        };
-
-        // If auth is needed, get token from Clerk
-        if (includeAuth && typeof window !== "undefined") {
-            try {
-                // This will be called from client components
-                const { getToken } = useAuth();
-                const token = await getToken();
-                if (token) {
-                    headers["Authorization"] = `Bearer ${token}`;
-                }
-            } catch (error) {
-                console.warn("Could not get Clerk token:", error);
-            }
-        }
-
-        const response = await fetch(`${this.baseUrl}${endpoint}`, {
-            ...fetchOptions,
-            headers,
-        });
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({
-                message: response.statusText,
-            }));
-            throw new Error(error.message || `API error: ${response.status}`);
-        }
-
-        return response.json();
-    }
-
-    async get<T>(endpoint: string, includeAuth = true): Promise<T> {
-        return this.request<T>(endpoint, { method: "GET", includeAuth });
-    }
-
-    async post<T>(endpoint: string, data: unknown, includeAuth = true): Promise<T> {
-        return this.request<T>(endpoint, {
-            method: "POST",
-            body: JSON.stringify(data),
-            includeAuth,
-        });
-    }
-
-    async put<T>(endpoint: string, data: unknown, includeAuth = true): Promise<T> {
-        return this.request<T>(endpoint, {
-            method: "PUT",
-            body: JSON.stringify(data),
-            includeAuth,
-        });
-    }
-
-    async patch<T>(endpoint: string, data: unknown, includeAuth = true): Promise<T> {
-        return this.request<T>(endpoint, {
-            method: "PATCH",
-            body: JSON.stringify(data),
-            includeAuth,
-        });
-    }
-
-    async delete<T>(endpoint: string, includeAuth = true): Promise<T> {
-        return this.request<T>(endpoint, { method: "DELETE", includeAuth });
-    }
+interface RequestOptions extends RequestInit {
+    token?: string | null;
 }
-
-export const apiClient = new ApiClient();
 
 /**
  * Hook to get API client with automatic token injection

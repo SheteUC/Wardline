@@ -1,76 +1,62 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-    Activity, AlertTriangle, Calendar, Download, BrainCircuit, RefreshCw, X
+    Activity, AlertTriangle, Calendar, Download
 } from 'lucide-react';
 import {
     ComposedChart, LineChart, Line, BarChart, Bar, AreaChart, Area,
     XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend,
-    ResponsiveContainer, Cell
+    ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts';
 import { Card, StatCard, Button } from "@/components/dashboard/shared";
+import { useCallAnalytics } from '@/lib/hooks/query-hooks';
+import { useHospital } from '@/lib/hospital-context';
+import { subDays, format } from 'date-fns';
 
 const COLORS = {
-    primary: 'oklch(0.25 0.02 35)', // dark charcoal
-    secondary: 'oklch(0.45 0.02 35)', // muted charcoal
-    danger: 'oklch(0.65 0.18 25)', // destructive
-    warning: 'oklch(0.55 0.15 45)', // burnt orange
-    success: '#10b981', // emerald-500
-    bg: 'oklch(0.96 0.01 90)' // warm beige
+    primary: 'oklch(0.25 0.02 35)',
+    secondary: 'oklch(0.45 0.02 35)',
+    danger: 'oklch(0.65 0.18 25)',
+    warning: 'oklch(0.55 0.15 45)',
+    success: '#10b981',
+    bg: 'oklch(0.96 0.01 90)'
 };
 
-const ANALYTICS_OPS_DATA = [
-    { date: 'Mon', volume: 850, aht: 320, sentiment: 72 },
-    { date: 'Tue', volume: 920, aht: 340, sentiment: 68 },
-    { date: 'Wed', volume: 890, aht: 310, sentiment: 75 },
-    { date: 'Thu', volume: 950, aht: 330, sentiment: 70 },
-    { date: 'Fri', volume: 1020, aht: 360, sentiment: 65 },
-    { date: 'Sat', volume: 600, aht: 290, sentiment: 82 },
-    { date: 'Sun', volume: 550, aht: 280, sentiment: 85 },
-];
-
-const SAFETY_RISK_DATA = [
-    { time: '08:00', emergency: 2, escalation: 5 },
-    { time: '10:00', emergency: 5, escalation: 8 },
-    { time: '12:00', emergency: 3, escalation: 12 },
-    { time: '14:00', emergency: 6, escalation: 10 },
-    { time: '16:00', emergency: 4, escalation: 7 },
-    { time: '18:00', emergency: 8, escalation: 4 },
-];
-
-const AI_CONFIDENCE_DATA = [
-    { range: '90-100%', count: 450 },
-    { range: '80-89%', count: 320 },
-    { range: '70-79%', count: 150 },
-    { range: '60-69%', count: 80 },
-    { range: '<60%', count: 40 },
-];
-
-const SCHEDULING_DATA = [
-    { name: 'General Practice', booked: 120, noshow: 12 },
-    { name: 'Pediatrics', booked: 85, noshow: 5 },
-    { name: 'Cardiology', booked: 45, noshow: 2 },
-    { name: 'Dermatology', booked: 60, noshow: 8 },
-    { name: 'Radiology', booked: 90, noshow: 4 },
-];
-
-const TOP_INTENTS_TABLE = [
-    { intent: 'Schedule Appt', volume: 412, aht: '3m 12s', automation: '92%' },
-    { intent: 'Billing Inquiry', volume: 285, aht: '5m 45s', automation: '45%' },
-    { intent: 'Refill Request', volume: 190, aht: '1m 30s', automation: '98%' },
-    { intent: 'Symptom Triage', volume: 145, aht: '8m 20s', automation: '12%' },
-    { intent: 'Lab Results', volume: 98, aht: '2m 10s', automation: '85%' },
-];
+function formatDuration(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
+}
 
 export default function AnalyticsPage() {
+    const { hospitalId, isLoading: hospitalLoading } = useHospital();
     const [activeTab, setActiveTab] = useState('ops');
     const [dateRange, setDateRange] = useState('7d');
+
+    // Calculate date range
+    const { startDate, endDate } = useMemo(() => {
+        const end = new Date();
+        let start = new Date();
+
+        if (dateRange === 'today') {
+            start.setHours(0, 0, 0, 0);
+        } else if (dateRange === '7d') {
+            start = subDays(end, 7);
+        } else if (dateRange === '30d') {
+            start = subDays(end, 30);
+        }
+
+        return { startDate: start, endDate: end };
+    }, [dateRange]);
+
+    // Fetch analytics data
+    const { data: analytics, isLoading, error } = useCallAnalytics(startDate, endDate);
 
     const TabButton = ({ id, label, icon: Icon }: any) => (
         <button
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 pb3 px-1 border-b-2 transition-colors font-medium text-sm
+            className={`flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors font-medium text-sm
         ${activeTab === id
                     ? 'border-foreground text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
@@ -81,14 +67,24 @@ export default function AnalyticsPage() {
         </button>
     );
 
+    if (hospitalLoading || !hospitalId) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center text-muted-foreground">Loading analytics...</div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Header & Tabs */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-border pb-1">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     <TabButton id="ops" label="Operations" icon={Activity} />
-                    <TabButton id="safety" label="Safety & Risk" icon={AlertTriangle} />
-                    <TabButton id="scheduling" label="Scheduling Outcomes" icon={Calendar} />
+                    <TabButton id="performance" label="Performance" icon={AlertTriangle} />
+                    <TabButton id="intents" label="Intent Analysis" icon={Calendar} />
                 </nav>
                 <div className="flex items-center gap-2 mb-2 lg:mb-0">
                     <select
@@ -103,229 +99,212 @@ export default function AnalyticsPage() {
                 </div>
             </div>
 
-            {/* OPERATIONS TAB */}
-            {activeTab === 'ops' && (
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <Card title="Call Volume & Handle Time" className="lg:col-span-2 min-h-[400px]">
-                            <ResponsiveContainer width="100%" height={350}>
-                                <ComposedChart data={ANALYTICS_OPS_DATA}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                                    <YAxis yAxisId="left" orientation="left" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} unit="s" />
-                                    <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Legend />
-                                    <Bar yAxisId="left" dataKey="volume" name="Call Volume" fill={COLORS.primary} radius={[4, 4, 0, 0]} barSize={30} />
-                                    <Line yAxisId="right" type="monotone" dataKey="aht" name="Avg Handle Time (s)" stroke={COLORS.warning} strokeWidth={2} dot={{ r: 4 }} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </Card>
-
+            {isLoading ? (
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center text-muted-foreground">Loading analytics data...</div>
+                </div>
+            ) : error ? (
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center text-red-600">Error loading analytics. Please try again.</div>
+                </div>
+            ) : !analytics ? (
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center text-muted-foreground">No analytics data available</div>
+                </div>
+            ) : (
+                <>
+                    {/* OPERATIONS TAB */}
+                    {activeTab === 'ops' && (
                         <div className="space-y-6">
-                            <Card title="Sentiment Trends">
-                                <div className="h-[180px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={ANALYTICS_OPS_DATA}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                            <XAxis dataKey="date" hide />
-                                            <YAxis domain={[0, 100]} hide />
-                                            <RechartsTooltip />
-                                            <Line type="monotone" dataKey="sentiment" stroke={COLORS.primary} strokeWidth={3} dot={false} />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <div className="text-sm text-slate-500">Avg Sentiment Score</div>
-                                    <div className="text-xl font-bold text-teal-700">74/100</div>
-                                </div>
-                            </Card>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <StatCard
+                                    label="Total Calls"
+                                    value={analytics.totalCalls.toString()}
+                                    icon={Activity}
+                                    trendValue={`${analytics.completedCalls} completed`}
+                                    trend="up"
+                                />
+                                <StatCard
+                                    label="Avg Duration"
+                                    value={formatDuration(analytics.averageDuration)}
+                                    icon={Calendar}
+                                />
+                                <StatCard
+                                    label="Abandon Rate"
+                                    value={`${(analytics.abandonRate || 0).toFixed(1)}%`}
+                                    icon={AlertTriangle}
+                                    alert={(analytics.abandonRate || 0) > 5}
+                                    trend={(analytics.abandonRate || 0) > 5 ? 'up' : 'down'}
+                                />
+                                <StatCard
+                                    label="Emergencies"
+                                    value={(analytics.emergencyFlags || 0).toString()}
+                                    icon={AlertTriangle}
+                                    alert={(analytics.activeEmergencies || 0) > 0}
+                                    trendValue={`${analytics.activeEmergencies || 0} active`}
+                                />
+                            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                                    <div className="text-xs text-slate-500 uppercase font-bold">SLA Met</div>
-                                    <div className="text-2xl font-bold text-emerald-600 mt-1">94.2%</div>
-                                </div>
-                                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                                    <div className="text-xs text-slate-500 uppercase font-bold">Abandons</div>
-                                    <div className="text-2xl font-bold text-slate-700 mt-1">2.1%</div>
-                                </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <Card title="Call Volume by Hour" className="min-h-[400px]">
+                                    {analytics.callVolumeByHour && analytics.callVolumeByHour.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height={350}>
+                                            <AreaChart data={analytics.callVolumeByHour}>
+                                                <defs>
+                                                    <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.1} />
+                                                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                                                <RechartsTooltip
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="calls"
+                                                    stroke={COLORS.primary}
+                                                    strokeWidth={2}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorCalls)"
+                                                />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+                                            No call volume data available
+                                        </div>
+                                    )}
+                                </Card>
+
+                                <Card title="Sentiment Analysis" className="min-h-[400px]">
+                                    {analytics.sentimentTrend && analytics.sentimentTrend.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height={350}>
+                                            <LineChart data={analytics.sentimentTrend}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                                                <RechartsTooltip />
+                                                <Legend />
+                                                <Line type="monotone" dataKey="positive" stroke={COLORS.success} strokeWidth={2} />
+                                                <Line type="monotone" dataKey="neutral" stroke={COLORS.secondary} strokeWidth={2} />
+                                                <Line type="monotone" dataKey="negative" stroke={COLORS.danger} strokeWidth={2} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+                                            No sentiment data available
+                                        </div>
+                                    )}
+                                </Card>
                             </div>
                         </div>
+                    )}
 
-                        <Card title="Top Intents Breakdown" className="lg:col-span-3">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
-                                        <tr>
-                                            <th className="px-4 py-3">Intent Name</th>
-                                            <th className="px-4 py-3">Volume</th>
-                                            <th className="px-4 py-3">Avg Duration</th>
-                                            <th className="px-4 py-3">Automation Rate</th>
-                                            <th className="px-4 py-3">Trend</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {TOP_INTENTS_TABLE.map((row, i) => (
-                                            <tr key={i} className="hover:bg-slate-50/50">
-                                                <td className="px-4 py-3 font-medium text-slate-800">{row.intent}</td>
-                                                <td className="px-4 py-3 text-slate-600">{row.volume}</td>
-                                                <td className="px-4 py-3 text-slate-600">{row.aht}</td>
-                                                <td className="px-4 py-3">
+                    {/* PERFORMANCE TAB */}
+                    {activeTab === 'performance' && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <StatCard
+                                    label="Completed Calls"
+                                    value={analytics.completedCalls.toString()}
+                                    trend="up"
+                                    trendValue={`${((analytics.completedCalls / analytics.totalCalls) * 100).toFixed(1)}%`}
+                                    icon={Activity}
+                                />
+                                <StatCard
+                                    label="Abandoned Calls"
+                                    value={analytics.abandonedCalls.toString()}
+                                    trend="down"
+                                    trendValue={`${(analytics.abandonRate || 0).toFixed(1)}%`}
+                                    icon={AlertTriangle}
+                                    alert
+                                />
+                                <StatCard
+                                    label="Avg Hold Time"
+                                    value={formatDuration(analytics.averageHoldTime || 0)}
+                                    icon={Calendar}
+                                />
+                            </div>
+
+                            <Card title="Performance Metrics" className="min-h-[400px]">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
+                                    <div className="bg-muted p-4 rounded-lg">
+                                        <div className="text-xs text-muted-foreground uppercase font-bold">Total Calls</div>
+                                        <div className="text-2xl font-bold text-foreground mt-1">{analytics.totalCalls}</div>
+                                    </div>
+                                    <div className="bg-muted p-4 rounded-lg">
+                                        <div className="text-xs text-muted-foreground uppercase font-bold">Completed</div>
+                                        <div className="text-2xl font-bold text-emerald-600 mt-1">{analytics.completedCalls}</div>
+                                    </div>
+                                    <div className="bg-muted p-4 rounded-lg">
+                                        <div className="text-xs text-muted-foreground uppercase font-bold">Abandoned</div>
+                                        <div className="text-2xl font-bold text-red-600 mt-1">{analytics.abandonedCalls}</div>
+                                    </div>
+                                    <div className="bg-muted p-4 rounded-lg">
+                                        <div className="text-xs text-muted-foreground uppercase font-bold">Emergencies</div>
+                                        <div className="text-2xl font-bold text-warning mt-1">{analytics.emergencyFlags}</div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+
+                    {/* INTENT ANALYSIS TAB */}
+                    {activeTab === 'intents' && (
+                        <div className="space-y-6">
+                            <Card title="Intent Breakdown" className="min-h-[400px]">
+                                {analytics.intentBreakdown && analytics.intentBreakdown.length > 0 ? (
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div className="flex items-center justify-center">
+                                            <ResponsiveContainer width="100%" height={300}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={analytics.intentBreakdown}
+                                                        dataKey="count"
+                                                        nameKey="intent"
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        outerRadius={100}
+                                                        label
+                                                    >
+                                                        {analytics.intentBreakdown.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={[COLORS.primary, COLORS.secondary, COLORS.warning, COLORS.success][index % 4]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {analytics.intentBreakdown.map((intent, index) => (
+                                                <div key={index} className="flex justify-between items-center pb-2 border-b border-border">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-16 bg-slate-100 rounded-full h-1.5">
-                                                            <div className="bg-teal-500 h-1.5 rounded-full" style={{ width: row.automation }}></div>
-                                                        </div>
-                                                        <span className="text-xs text-slate-500">{row.automation}</span>
+                                                        <div
+                                                            className="w-3 h-3 rounded-full"
+                                                            style={{ backgroundColor: [COLORS.primary, COLORS.secondary, COLORS.warning, COLORS.success][index % 4] }}
+                                                        ></div>
+                                                        <span className="font-medium">{intent.intent}</span>
                                                     </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded">+2.4%</span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            )}
-
-            {/* SAFETY TAB */}
-            {activeTab === 'safety' && (
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <StatCard
-                            label="Emergency Triggers"
-                            value="142"
-                            subtext="Last 7 days"
-                            icon={AlertTriangle}
-                            alert
-                            trend="up" trendValue="+12%"
-                        />
-                        <StatCard
-                            label="Clinical Escalations"
-                            value="38"
-                            subtext="Handoffs to MD/RN"
-                            icon={Activity}
-                            trend="down" trendValue="-5%"
-                        />
-                        <StatCard
-                            label="Low Confidence AI"
-                            value="2.1%"
-                            subtext="Requires Review"
-                            icon={BrainCircuit}
-                            trend="flat" trendValue="0%"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card title="Risk Events by Time of Day" className="min-h-[400px]">
-                            <ResponsiveContainer width="100%" height={350}>
-                                <AreaChart data={SAFETY_RISK_DATA}>
-                                    <defs>
-                                        <linearGradient id="colorEmerg" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor={COLORS.danger} stopOpacity={0.1} />
-                                            <stop offset="95%" stopColor={COLORS.danger} stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                                    <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none' }} />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="emergency" name="Emergency Flags" stroke={COLORS.danger} fillOpacity={1} fill="url(#colorEmerg)" />
-                                    <Line type="monotone" dataKey="escalation" name="Clinical Handoffs" stroke={COLORS.secondary} strokeDasharray="5 5" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </Card>
-
-                        <Card title="AI Confidence Distribution">
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={AI_CONFIDENCE_DATA} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="range" type="category" width={80} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                                    <RechartsTooltip cursor={{ fill: '#f8fafc' }} />
-                                    <Bar dataKey="count" fill={COLORS.primary} radius={[0, 4, 4, 0]} barSize={20}>
-                                        <Cell fill="#10b981" />
-                                        <Cell fill="#10b981" />
-                                        <Cell fill="#f59e0b" />
-                                        <Cell fill="#f59e0b" />
-                                        <Cell fill="#ef4444" />
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                            <div className="mt-4 text-sm text-slate-500 text-center">
-                                Most calls fall within high confidence ranges, ensuring patient safety.
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            )}
-
-            {/* SCHEDULING TAB */}
-            {activeTab === 'scheduling' && (
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <StatCard label="Appointments Booked" value="980" trend="up" trendValue="+8%" icon={Calendar} />
-                        <StatCard label="Rescheduled" value="145" trend="down" trendValue="-2%" icon={RefreshCw} />
-                        <StatCard label="Cancellations" value="42" trend="down" trendValue="-12%" icon={X} />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card title="Booking Performance by Clinic" className="min-h-[400px]">
-                            <ResponsiveContainer width="100%" height={350}>
-                                <BarChart layout="vertical" data={SCHEDULING_DATA} margin={{ left: 40 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                                    <XAxis type="number" axisLine={false} tickLine={false} />
-                                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={100} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <RechartsTooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none' }} />
-                                    <Legend />
-                                    <Bar dataKey="booked" name="Appointments Booked" stackId="a" fill={COLORS.primary} radius={[0, 4, 4, 0]} barSize={20} />
-                                    <Bar dataKey="noshow" name="Predicted No-Shows" stackId="a" fill={COLORS.secondary} radius={[0, 4, 4, 0]} barSize={20} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </Card>
-
-                        <Card title="Scheduling Funnel">
-                            <div className="flex flex-col h-full justify-center space-y-8 px-8">
-                                <div className="relative">
-                                    <div className="flex justify-between mb-1">
-                                        <span className="font-medium text-slate-700">Intent: "Schedule Appointment"</span>
-                                        <span className="font-bold text-slate-900">1,240</span>
+                                                    <div className="text-right">
+                                                        <div className="font-bold">{intent.count}</div>
+                                                        <div className="text-xs text-muted-foreground">{intent.percentage.toFixed(1)}%</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                                        <div className="bg-teal-600 h-full w-full"></div>
+                                ) : (
+                                    <div className="flex items-center justify-center h-96 text-muted-foreground">
+                                        No intent data available
                                     </div>
-                                </div>
-
-                                <div className="relative pl-4 border-l-2 border-slate-200">
-                                    <div className="flex justify-between mb-1">
-                                        <span className="font-medium text-slate-700">Slots Offered</span>
-                                        <span className="font-bold text-slate-900">1,100</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                                        <div className="bg-teal-500 h-full w-[88%]"></div>
-                                    </div>
-                                    <div className="text-xs text-slate-500 mt-1">88% success rate</div>
-                                </div>
-
-                                <div className="relative pl-8 border-l-2 border-slate-200">
-                                    <div className="flex justify-between mb-1">
-                                        <span className="font-medium text-slate-700">Confirmed Bookings</span>
-                                        <span className="font-bold text-slate-900">980</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                                        <div className="bg-teal-400 h-full w-[79%]"></div>
-                                    </div>
-                                    <div className="text-xs text-slate-500 mt-1">79% conversion</div>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
+                                )}
+                            </Card>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
