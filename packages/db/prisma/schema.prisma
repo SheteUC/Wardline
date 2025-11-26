@@ -15,24 +15,26 @@ datasource db {
 // ============================================================================
 
 model Hospital {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  slug      String   @unique
-  timeZone  String   @default("America/New_York") @map("time_zone")
+  id        String         @id @default(uuid())
+  name      String         @unique
+  slug      String         @unique
+  timeZone  String         @default("America/New_York") @map("time_zone")
   status    HospitalStatus @default(ACTIVE)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
 
-  settings          HospitalSettings?
-  users             HospitalUser[]
-  phoneNumbers      PhoneNumber[]
-  intents           Intent[]
-  patients          Patient[]
-  callSessions      CallSession[]
-  workflows         Workflow[]
-  auditLogs         AuditLog[]
-  subscriptions     StripeSubscription[]
-  usageRecords      UsageRecord[]
+  settings               HospitalSettings?
+  users                  HospitalUser[]
+  phoneNumbers           PhoneNumber[]
+  intents                Intent[]
+  patients               Patient[]
+  callSessions           CallSession[]
+  workflows              Workflow[]
+  auditLogs              AuditLog[]
+  subscriptions          StripeSubscription[]
+  usageRecords           UsageRecord[]
+  schedulingIntegrations SchedulingIntegration[]
+  appointments           Appointment[]
 
   @@index([slug])
   @@map("hospitals")
@@ -44,19 +46,19 @@ enum HospitalStatus {
 }
 
 model HospitalSettings {
-  id                      String   @id @default(uuid())
-  hospitalId              String   @unique @map("hospital_id")
+  id                      String           @id @default(uuid())
+  hospitalId              String           @unique @map("hospital_id")
   recordingDefault        RecordingDefault @default(ON) @map("recording_default")
-  transcriptRetentionDays Int      @default(30) @map("transcript_retention_days")
-  e911Enabled             Boolean  @default(false) @map("e911_enabled")
-  timetapBaseUrl          String?  @map("timetap_base_url")
-  timetapApiKey           String?  @map("timetap_api_key") // Encrypted in app layer
-  nexhealthBaseUrl        String?  @map("nexhealth_base_url")
-  nexhealthApiKey         String?  @map("nexhealth_api_key") // Encrypted in app layer
-  stripeCustomerId        String?  @map("stripe_customer_id")
-  posthogProjectApiKey    String?  @map("posthog_project_api_key")
-  createdAt               DateTime @default(now()) @map("created_at")
-  updatedAt               DateTime @updatedAt @map("updated_at")
+  transcriptRetentionDays Int              @default(30) @map("transcript_retention_days")
+  e911Enabled             Boolean          @default(false) @map("e911_enabled")
+  timetapBaseUrl          String?          @map("timetap_base_url")
+  timetapApiKey           String?          @map("timetap_api_key") // Encrypted in app layer
+  nexhealthBaseUrl        String?          @map("nexhealth_base_url")
+  nexhealthApiKey         String?          @map("nexhealth_api_key") // Encrypted in app layer
+  stripeCustomerId        String?          @map("stripe_customer_id")
+  posthogProjectApiKey    String?          @map("posthog_project_api_key")
+  createdAt               DateTime         @default(now()) @map("created_at")
+  updatedAt               DateTime         @updatedAt @map("updated_at")
 
   hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 
@@ -81,8 +83,8 @@ model User {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  hospitals HospitalUser[]
-  createdWorkflowVersions WorkflowVersion[] @relation("CreatedVersions")
+  hospitals                HospitalUser[]
+  createdWorkflowVersions  WorkflowVersion[] @relation("CreatedVersions")
   approvedWorkflowVersions WorkflowVersion[] @relation("ApprovedVersions")
 
   @@index([clerkUserId])
@@ -118,14 +120,14 @@ enum UserRole {
 // ============================================================================
 
 model PhoneNumber {
-  id                 String   @id @default(uuid())
-  hospitalId         String   @map("hospital_id")
-  twilioPhoneNumber  String   @unique @map("twilio_phone_number")
-  twilioSid          String   @unique @map("twilio_sid")
-  workflowId         String?  @map("workflow_id")
-  label              String
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid())
+  hospitalId        String   @map("hospital_id")
+  twilioPhoneNumber String   @unique @map("twilio_phone_number")
+  twilioSid         String   @unique @map("twilio_sid")
+  workflowId        String?  @map("workflow_id")
+  label             String
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   workflow     Workflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
@@ -141,16 +143,16 @@ model PhoneNumber {
 // ============================================================================
 
 model Intent {
-  id            String   @id @default(uuid())
-  hospitalId    String   @map("hospital_id")
-  key           String
-  displayName   String   @map("display_name")
-  description   String
-  enabled       Boolean  @default(true)
-  requiredFields Json    @map("required_fields") // IntentField[]
-  routingRules  Json    @map("routing_rules")   // RoutingRule[]
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  hospitalId     String   @map("hospital_id")
+  key            String
+  displayName    String   @map("display_name")
+  description    String
+  enabled        Boolean  @default(true)
+  requiredFields Json     @map("required_fields") // IntentField[]
+  routingRules   Json     @map("routing_rules") // RoutingRule[]
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   callSessions CallSession[]
@@ -169,7 +171,7 @@ model Workflow {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  hospital     Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  hospital     Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   versions     WorkflowVersion[]
   phoneNumbers PhoneNumber[]
 
@@ -195,9 +197,9 @@ model WorkflowVersion {
   createdAt        DateTime              @default(now()) @map("created_at")
   updatedAt        DateTime              @updatedAt @map("updated_at")
 
-  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  createdBy   User     @relation("CreatedVersions", fields: [createdByUserId], references: [id])
-  approvedBy  User?    @relation("ApprovedVersions", fields: [approvedByUserId], references: [id])
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  createdBy  User     @relation("CreatedVersions", fields: [createdByUserId], references: [id])
+  approvedBy User?    @relation("ApprovedVersions", fields: [approvedByUserId], references: [id])
 
   @@unique([workflowId, versionNumber])
   @@index([workflowId])
@@ -216,14 +218,14 @@ enum WorkflowVersionStatus {
 // ============================================================================
 
 model Patient {
-  id           String   @id @default(uuid())
-  hospitalId   String   @map("hospital_id")
-  externalId   String   @map("external_id") // MRN or EHR ID
+  id           String    @id @default(uuid())
+  hospitalId   String    @map("hospital_id")
+  externalId   String    @map("external_id") // MRN or EHR ID
   name         String?
   dob          DateTime? @db.Date
-  primaryPhone String?  @map("primary_phone")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  primaryPhone String?   @map("primary_phone")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   callSessions CallSession[]
@@ -231,6 +233,70 @@ model Patient {
   @@unique([hospitalId, externalId])
   @@index([hospitalId])
   @@map("patients")
+}
+
+// ============================================================================
+// Scheduling Integrations
+// ============================================================================
+
+model SchedulingIntegration {
+  id         String   @id @default(uuid())
+  hospitalId String   @map("hospital_id")
+  provider   String // 'timetap' | 'nexhealth'
+  apiKey     String   @map("api_key") // Encrypted in app layer
+  locationId String?  @map("location_id")
+  isActive   Boolean  @default(true) @map("is_active")
+  config     Json? // Provider-specific configuration
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([provider])
+  @@map("scheduling_integrations")
+}
+
+model Appointment {
+  id         String  @id @default(uuid())
+  callId     String? @map("call_id")
+  hospitalId String  @map("hospital_id")
+  externalId String? @map("external_id") // ID in external system (TimeTap/NexHealth)
+  provider   String // 'timetap' | 'nexhealth' | 'manual'
+
+  patientName  String  @map("patient_name")
+  patientPhone String  @map("patient_phone")
+  patientEmail String? @map("patient_email")
+
+  providerName String? @map("provider_name") // Doctor/provider name
+  serviceType  String? @map("service_type") // e.g., "Consultation", "Follow-up"
+
+  scheduledAt DateTime          @map("scheduled_at")
+  duration    Int // minutes
+  status      AppointmentStatus @default(SCHEDULED)
+
+  notes        String? @db.Text
+  cancelReason String? @map("cancel_reason") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  hospital Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  call     CallSession? @relation(fields: [callId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([callId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("appointments")
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
 }
 
 // ============================================================================
@@ -259,13 +325,14 @@ model CallSession {
   createdAt             DateTime          @default(now()) @map("created_at")
   updatedAt             DateTime          @updatedAt @map("updated_at")
 
-  hospital           Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  phoneNumber        PhoneNumber          @relation(fields: [phoneNumberId], references: [id])
-  intent             Intent?              @relation(fields: [intentId], references: [id], onDelete: SetNull)
-  patient            Patient?             @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  hospital           Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  phoneNumber        PhoneNumber         @relation(fields: [phoneNumberId], references: [id])
+  intent             Intent?             @relation(fields: [intentId], references: [id], onDelete: SetNull)
+  patient            Patient?            @relation(fields: [patientId], references: [id], onDelete: SetNull)
   transcriptSegments TranscriptSegment[]
   sentimentSnapshots SentimentSnapshot[]
   handoffs           Handoff[]
+  appointments       Appointment[]
 
   @@index([hospitalId, startedAt])
   @@index([tag])
@@ -324,12 +391,12 @@ enum Speaker {
 }
 
 model SentimentSnapshot {
-  id       String         @id @default(uuid())
-  callId   String         @map("call_id")
-  offsetMs Int            @map("offset_ms")
-  score    Decimal        @db.Decimal(3, 2)
-  label    SentimentLabel
-  createdAt DateTime      @default(now()) @map("created_at")
+  id        String         @id @default(uuid())
+  callId    String         @map("call_id")
+  offsetMs  Int            @map("offset_ms")
+  score     Decimal        @db.Decimal(3, 2)
+  label     SentimentLabel
+  createdAt DateTime       @default(now()) @map("created_at")
 
   call CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
 
@@ -346,7 +413,7 @@ enum SentimentLabel {
 model Handoff {
   id        String   @id @default(uuid())
   callId    String   @map("call_id")
-  payload   Json     // HandoffPayload
+  payload   Json // HandoffPayload
   createdAt DateTime @default(now()) @map("created_at")
 
   call CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
@@ -398,12 +465,12 @@ model StripeSubscription {
 }
 
 model UsageRecord {
-  id                   String   @id @default(uuid())
-  hospitalId           String   @map("hospital_id")
-  metric               String
-  quantity             Int
-  timestamp            DateTime
-  stripeUsageRecordId  String?  @map("stripe_usage_record_id")
+  id                  String   @id @default(uuid())
+  hospitalId          String   @map("hospital_id")
+  metric              String
+  quantity            Int
+  timestamp           DateTime
+  stripeUsageRecordId String?  @map("stripe_usage_record_id")
 
   hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 

@@ -12,6 +12,7 @@ import { UsersModule } from './modules/users/users.module';
 import { IntentsModule } from './modules/intents/intents.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CallsModule } from './modules/calls/calls.module';
+import { SchedulingModule } from './scheduling/scheduling.module';
 
 @Module({
     imports: [
@@ -27,6 +28,7 @@ import { CallsModule } from './modules/calls/calls.module';
         IntentsModule,
         WorkflowsModule,
         CallsModule,
+        SchedulingModule,
     ],
     providers: [
         // Global authentication guard - validates JWT tokens
