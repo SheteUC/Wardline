@@ -13,6 +13,11 @@ import { IntentsModule } from './modules/intents/intents.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CallsModule } from './modules/calls/calls.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
+// Call Center Feature Modules
+import { DepartmentsModule } from './modules/departments/departments.module';
+import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
+import { InsuranceModule } from './modules/insurance/insurance.module';
+import { MarketingEventsModule } from './modules/marketing-events/marketing-events.module';
 
 @Module({
     imports: [
@@ -29,6 +34,11 @@ import { SchedulingModule } from './scheduling/scheduling.module';
         WorkflowsModule,
         CallsModule,
         SchedulingModule,
+        // Call Center Feature Modules
+        DepartmentsModule,
+        PrescriptionsModule,
+        InsuranceModule,
+        MarketingEventsModule,
     ],
     providers: [
         // Global authentication guard - validates JWT tokens

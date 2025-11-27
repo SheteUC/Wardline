@@ -12,7 +12,8 @@ import {
     FileText, ArrowUpRight, ArrowDownRight, RefreshCw,
     ZoomIn, ZoomOut, RotateCcw, CornerUpLeft, CornerUpRight,
     MousePointer, GripHorizontal,
-    Shield, Globe, BellRing, CreditCard, Lock, Link2
+    Shield, Globe, BellRing, CreditCard, Lock, Link2,
+    Building2, Pill, Megaphone
 } from 'lucide-react';
 import { Button } from "@/components/dashboard/shared";
 
@@ -84,8 +85,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <NavItem href="/dashboard/calls" icon={Phone} label="Calls & Triage" />
                         <NavItem href="/dashboard/analytics" icon={GitGraph} label="Analytics" />
 
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Patient Access</div>
+                        <NavItem href="/dashboard/departments" icon={Building2} label="Department Directory" />
+                        <NavItem href="/dashboard/prescriptions" icon={Pill} label="Prescription Refills" />
+                        <NavItem href="/dashboard/insurance" icon={Shield} label="Insurance Verification" />
+                        <NavItem href="/dashboard/events" icon={Megaphone} label="Marketing Events" />
+
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Configuration</div>
-                        <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="Workflow Builder" />
+                        <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="AI Call Workflow" />
                         <NavItem href="/dashboard/team" icon={Users} label="Team Management" />
 
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Settings</div>
@@ -130,9 +137,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <h1 className="text-lg font-semibold text-foreground">
                             {pathname === '/dashboard' && 'Operations Overview'}
                             {pathname === '/dashboard/calls' && 'Live Calls'}
-                            {pathname === '/dashboard/workflows' && 'Workflow Configuration'}
+                            {pathname === '/dashboard/workflows' && 'AI Call Workflow'}
                             {pathname === '/dashboard/analytics' && 'System Configuration'}
                             {pathname === '/dashboard/team' && 'Team Management'}
+                            {pathname === '/dashboard/departments' && 'Department Directory'}
+                            {pathname === '/dashboard/prescriptions' && 'Prescription Refills'}
+                            {pathname === '/dashboard/insurance' && 'Insurance Verification'}
+                            {pathname === '/dashboard/events' && 'Marketing Events'}
                             {pathname.startsWith('/dashboard/settings') && 'Settings & Preferences'}
                         </h1>
                     </div>

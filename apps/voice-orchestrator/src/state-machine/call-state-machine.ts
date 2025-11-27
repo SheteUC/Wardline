@@ -137,10 +137,35 @@ export class CallStateMachine {
      * Handle intent detected
      */
     private async handleIntentDetected(): Promise<void> {
-        if (this.context.detectedIntent === 'schedule_appointment') {
-            this.context.state = VoiceState.BOOKING;
-        } else {
-            this.context.state = VoiceState.TRIAGE;
+        const intent = this.context.detectedIntent;
+
+        // Map intents to appropriate states
+        switch (intent) {
+            case 'schedule_appointment':
+                this.context.state = VoiceState.BOOKING;
+                break;
+            case 'department_routing':
+                // Handle department routing - collect info and route
+                this.context.state = VoiceState.TRIAGE;
+                console.log(`📍 Department routing requested - will route to appropriate department`);
+                break;
+            case 'prescription_refill':
+                // Handle prescription refill - verify patient and collect medication info
+                this.context.state = VoiceState.TRIAGE;
+                console.log(`💊 Prescription refill requested - collecting patient information`);
+                break;
+            case 'insurance_verification':
+                // Handle insurance verification - check plan acceptance
+                this.context.state = VoiceState.TRIAGE;
+                console.log(`🛡️ Insurance verification requested - checking plan acceptance`);
+                break;
+            case 'marketing_event':
+                // Handle marketing event registration
+                this.context.state = VoiceState.TRIAGE;
+                console.log(`📅 Marketing event inquiry - providing event information`);
+                break;
+            default:
+                this.context.state = VoiceState.TRIAGE;
         }
     }
 

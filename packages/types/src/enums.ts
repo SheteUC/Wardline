@@ -131,6 +131,94 @@ export enum VoiceState {
     COMPLETED = 'COMPLETED',
 }
 
+// ============================================================================
+// Call Center Feature Enums
+// ============================================================================
+
+/**
+ * Prescription refill status
+ */
+export enum RefillStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+    COMPLETED = 'completed',
+}
+
+/**
+ * Patient verification status
+ */
+export enum VerificationStatus {
+    UNVERIFIED = 'unverified',
+    VERIFIED = 'verified',
+    FAILED = 'failed',
+}
+
+/**
+ * Insurance eligibility status
+ */
+export enum EligibilityStatus {
+    ELIGIBLE = 'eligible',
+    NOT_ELIGIBLE = 'not_eligible',
+    PENDING = 'pending',
+    EXPIRED = 'expired',
+}
+
+/**
+ * Insurance inquiry type
+ */
+export enum InsuranceInquiryType {
+    ACCEPTANCE = 'acceptance',
+    COVERAGE = 'coverage',
+    ELIGIBILITY = 'eligibility',
+}
+
+/**
+ * Marketing event type
+ */
+export enum EventType {
+    SEMINAR = 'seminar',
+    LECTURE = 'lecture',
+    CLASS = 'class',
+    WORKSHOP = 'workshop',
+    HEALTH_FAIR = 'health_fair',
+    SCREENING = 'screening',
+}
+
+/**
+ * Marketing event status
+ */
+export enum EventStatus {
+    UPCOMING = 'upcoming',
+    IN_PROGRESS = 'in_progress',
+    COMPLETED = 'completed',
+    CANCELLED = 'cancelled',
+}
+
+/**
+ * Event registration status
+ */
+export enum RegistrationStatus {
+    REGISTERED = 'registered',
+    WAITLISTED = 'waitlisted',
+    CANCELLED = 'cancelled',
+    NO_SHOW = 'no_show',
+}
+
+/**
+ * Insurance plan type
+ */
+export enum InsurancePlanType {
+    HMO = 'HMO',
+    PPO = 'PPO',
+    EPO = 'EPO',
+    POS = 'POS',
+    HDHP = 'HDHP',
+    MEDICARE = 'Medicare',
+    MEDICAID = 'Medicaid',
+    OTHER = 'Other',
+}
+
 // Schema exports
 export const userRoleSchema = z.nativeEnum(UserRole);
 export const callDirectionSchema = z.nativeEnum(CallDirection);
@@ -145,3 +233,12 @@ export const speakerSchema = z.nativeEnum(Speaker);
 export const sentimentLabelSchema = z.nativeEnum(SentimentLabel);
 export const workflowNodeTypeSchema = z.nativeEnum(WorkflowNodeType);
 export const voiceStateSchema = z.nativeEnum(VoiceState);
+// Call Center Feature Schemas
+export const refillStatusSchema = z.nativeEnum(RefillStatus);
+export const verificationStatusSchema = z.nativeEnum(VerificationStatus);
+export const eligibilityStatusSchema = z.nativeEnum(EligibilityStatus);
+export const insuranceInquiryTypeSchema = z.nativeEnum(InsuranceInquiryType);
+export const eventTypeSchema = z.nativeEnum(EventType);
+export const eventStatusSchema = z.nativeEnum(EventStatus);
+export const registrationStatusSchema = z.nativeEnum(RegistrationStatus);
+export const insurancePlanTypeSchema = z.nativeEnum(InsurancePlanType);

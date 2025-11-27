@@ -35,6 +35,14 @@ model Hospital {
   usageRecords           UsageRecord[]
   schedulingIntegrations SchedulingIntegration[]
   appointments           Appointment[]
+  // Call Center Features
+  departments            Department[]
+  directoryInquiries     DirectoryInquiry[]
+  prescriptionRefills    PrescriptionRefill[]
+  insurancePlans         InsurancePlan[]
+  insuranceInquiries     InsuranceInquiry[]
+  insuranceVerifications InsuranceVerification[]
+  marketingEvents        MarketingEvent[]
 
   @@index([slug])
   @@map("hospitals")
@@ -227,8 +235,11 @@ model Patient {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  callSessions CallSession[]
+  hospital               Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  callSessions           CallSession[]
+  prescriptionRefills    PrescriptionRefill[]
+  insuranceVerifications InsuranceVerification[]
+  eventRegistrations     EventRegistration[]
 
   @@unique([hospitalId, externalId])
   @@index([hospitalId])
@@ -325,14 +336,19 @@ model CallSession {
   createdAt             DateTime          @default(now()) @map("created_at")
   updatedAt             DateTime          @updatedAt @map("updated_at")
 
-  hospital           Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  phoneNumber        PhoneNumber         @relation(fields: [phoneNumberId], references: [id])
-  intent             Intent?             @relation(fields: [intentId], references: [id], onDelete: SetNull)
-  patient            Patient?            @relation(fields: [patientId], references: [id], onDelete: SetNull)
-  transcriptSegments TranscriptSegment[]
-  sentimentSnapshots SentimentSnapshot[]
-  handoffs           Handoff[]
-  appointments       Appointment[]
+  hospital             Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  phoneNumber          PhoneNumber          @relation(fields: [phoneNumberId], references: [id])
+  intent               Intent?              @relation(fields: [intentId], references: [id], onDelete: SetNull)
+  patient              Patient?             @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  transcriptSegments   TranscriptSegment[]
+  sentimentSnapshots   SentimentSnapshot[]
+  handoffs             Handoff[]
+  appointments         Appointment[]
+  // Call Center Features
+  directoryInquiries   DirectoryInquiry[]
+  prescriptionRefills  PrescriptionRefill[]
+  insuranceInquiries   InsuranceInquiry[]
+  eventRegistrations   EventRegistration[]
 
   @@index([hospitalId, startedAt])
   @@index([tag])
@@ -476,4 +492,269 @@ model UsageRecord {
 
   @@index([hospitalId, metric, timestamp])
   @@map("usage_records")
+}
+
+// ============================================================================
+// Department Directory & Routing (Appointments & Directions)
+// ============================================================================
+
+model Department {
+  id               String   @id @default(uuid())
+  hospitalId       String   @map("hospital_id")
+  name             String
+  description      String?  @db.Text
+  serviceTypes     String[] @map("service_types") // e.g., ["X-Ray", "MRI", "CT Scan"]
+  phoneNumber      String   @map("phone_number")
+  extension        String?
+  emailAddress     String?  @map("email_address")
+  location         String?  // Building/floor information
+  hoursOfOperation Json?    @map("hours_of_operation")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  hospital           Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  directoryInquiries DirectoryInquiry[]
+
+  @@index([hospitalId])
+  @@map("departments")
+}
+
+model DirectoryInquiry {
+  id           String   @id @default(uuid())
+  hospitalId   String   @map("hospital_id")
+  callId       String?  @map("call_id")
+  departmentId String?  @map("department_id")
+  serviceType  String   @map("service_type")
+  patientName  String?  @map("patient_name")
+  patientPhone String?  @map("patient_phone")
+  resolved     Boolean  @default(false)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  hospital   Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  call       CallSession? @relation(fields: [callId], references: [id], onDelete: SetNull)
+  department Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([callId])
+  @@map("directory_inquiries")
+}
+
+// ============================================================================
+// Prescription Refills
+// ============================================================================
+
+model PrescriptionRefill {
+  id                 String             @id @default(uuid())
+  hospitalId         String             @map("hospital_id")
+  callId             String?            @map("call_id")
+  patientId          String?            @map("patient_id")
+  patientName        String             @map("patient_name")
+  patientPhone       String             @map("patient_phone")
+  patientDOB         DateTime?          @map("patient_dob") @db.Date
+  medicationName     String             @map("medication_name")
+  prescriberId       String?            @map("prescriber_id")
+  prescriberName     String?            @map("prescriber_name")
+  pharmacyName       String?            @map("pharmacy_name")
+  pharmacyPhone      String?            @map("pharmacy_phone")
+  status             RefillStatus       @default(PENDING)
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  isNewPatient       Boolean            @default(false) @map("is_new_patient")
+  assignedProviderId String?            @map("assigned_provider_id")
+  notes              String?            @db.Text
+  rejectionReason    String?            @map("rejection_reason") @db.Text
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  hospital Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  call     CallSession? @relation(fields: [callId], references: [id], onDelete: SetNull)
+  patient  Patient?     @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([callId])
+  @@index([status])
+  @@map("prescription_refills")
+}
+
+enum RefillStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  FAILED
+}
+
+// ============================================================================
+// Insurance Verification
+// ============================================================================
+
+model InsurancePlan {
+  id              String    @id @default(uuid())
+  hospitalId      String    @map("hospital_id")
+  planName        String    @map("plan_name")
+  carrierId       String    @map("carrier_id")
+  carrierName     String    @map("carrier_name")
+  planType        String?   @map("plan_type") // HMO, PPO, EPO, etc.
+  isAccepted      Boolean   @default(true) @map("is_accepted")
+  effectiveDate   DateTime? @map("effective_date") @db.Date
+  terminationDate DateTime? @map("termination_date") @db.Date
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  hospital      Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  inquiries     InsuranceInquiry[]
+  verifications InsuranceVerification[]
+
+  @@index([hospitalId])
+  @@index([carrierId])
+  @@map("insurance_plans")
+}
+
+model InsuranceInquiry {
+  id              String   @id @default(uuid())
+  hospitalId      String   @map("hospital_id")
+  callId          String?  @map("call_id")
+  insurancePlanId String?  @map("insurance_plan_id")
+  patientName     String?  @map("patient_name")
+  patientPhone    String?  @map("patient_phone")
+  carrierName     String?  @map("carrier_name")
+  planName        String?  @map("plan_name")
+  inquiryType     String   @map("inquiry_type") // "acceptance", "coverage", "eligibility"
+  resolved        Boolean  @default(false)
+  outcome         String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  hospital      Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  call          CallSession?   @relation(fields: [callId], references: [id], onDelete: SetNull)
+  insurancePlan InsurancePlan? @relation(fields: [insurancePlanId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([callId])
+  @@map("insurance_inquiries")
+}
+
+model InsuranceVerification {
+  id                    String            @id @default(uuid())
+  hospitalId            String            @map("hospital_id")
+  insurancePlanId       String            @map("insurance_plan_id")
+  patientId             String?           @map("patient_id")
+  patientName           String            @map("patient_name")
+  memberNumber          String            @map("member_number")
+  groupNumber           String?           @map("group_number")
+  verificationDate      DateTime          @default(now()) @map("verification_date")
+  eligibilityStatus     EligibilityStatus @map("eligibility_status")
+  authorizationRequired Boolean           @default(false) @map("authorization_required")
+  authorizationNumber   String?           @map("authorization_number")
+  coverageDetails       Json?             @map("coverage_details")
+  copay                 Decimal?          @db.Decimal(10, 2)
+  deductible            Decimal?          @db.Decimal(10, 2)
+  deductibleMet         Decimal?          @map("deductible_met") @db.Decimal(10, 2)
+  notes                 String?           @db.Text
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  hospital      Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  insurancePlan InsurancePlan @relation(fields: [insurancePlanId], references: [id], onDelete: Cascade)
+  patient       Patient?      @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([insurancePlanId])
+  @@index([verificationDate])
+  @@map("insurance_verifications")
+}
+
+enum EligibilityStatus {
+  ELIGIBLE
+  NOT_ELIGIBLE
+  PENDING
+  EXPIRED
+}
+
+// ============================================================================
+// Marketing Events
+// ============================================================================
+
+model MarketingEvent {
+  id                   String      @id @default(uuid())
+  hospitalId           String      @map("hospital_id")
+  title                String
+  description          String      @db.Text
+  eventType            EventType   @map("event_type")
+  specialty            String?     // e.g., "Cardiology", "Orthopedics"
+  presenter            String?
+  location             String?
+  isVirtual            Boolean     @default(false) @map("is_virtual")
+  virtualLink          String?     @map("virtual_link")
+  scheduledAt          DateTime    @map("scheduled_at")
+  duration             Int         // minutes
+  capacity             Int?
+  registrationDeadline DateTime?   @map("registration_deadline")
+  status               EventStatus @default(UPCOMING)
+  marketingChannel     String?     @map("marketing_channel") // Newsletter, social media, etc.
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
+
+  hospital      Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  registrations EventRegistration[]
+
+  @@index([hospitalId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("marketing_events")
+}
+
+enum EventType {
+  SEMINAR
+  LECTURE
+  CLASS
+  WORKSHOP
+  HEALTH_FAIR
+  SCREENING
+}
+
+enum EventStatus {
+  UPCOMING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model EventRegistration {
+  id                   String             @id @default(uuid())
+  eventId              String             @map("event_id")
+  callId               String?            @map("call_id")
+  patientId            String?            @map("patient_id")
+  attendeeName         String             @map("attendee_name")
+  attendeePhone        String             @map("attendee_phone")
+  attendeeEmail        String?            @map("attendee_email")
+  status               RegistrationStatus @default(REGISTERED)
+  attended             Boolean?
+  becamePatient        Boolean            @default(false) @map("became_patient") // Conversion tracking
+  firstAppointmentDate DateTime?          @map("first_appointment_date")
+  notes                String?            @db.Text
+  registeredAt         DateTime           @default(now()) @map("registered_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  event   MarketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  call    CallSession?   @relation(fields: [callId], references: [id], onDelete: SetNull)
+  patient Patient?       @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([callId])
+  @@index([status])
+  @@map("event_registrations")
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  WAITLISTED
+  CANCELLED
+  NO_SHOW
 }

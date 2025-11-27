@@ -85,13 +85,16 @@ export class IntentRecognitionService {
 Analyze the user's input and determine their intent.
 
 Available intents:
-- schedule_appointment: User wants to book or schedule an appointment
-- billing_inquiry: Questions about bills, insurance, or payments
-- prescription_refill: Request for prescription refills or prior authorization
+- schedule_appointment: User wants to book, cancel, or change an appointment
+- department_routing: User needs to reach a specific department (X-ray, MRI, Lab, etc.)
+- prescription_refill: Request for prescription refills or medication questions
+- insurance_verification: Questions about insurance acceptance, eligibility, or coverage
+- marketing_event: Questions about seminars, classes, health fairs, or event registration
+- billing_inquiry: Questions about bills or payments
 - medical_records: Request for medical records or forms
 - general_inquiry: General questions or other topics
 
-Extract relevant fields like dates, times, names, or specific requests.
+Extract relevant fields like dates, times, names, department names, medication names, insurance carriers, or specific requests.
 Return your analysis as a function call.`;
     }
 
@@ -110,8 +113,11 @@ Return your analysis as a function call.`;
                             type: 'string',
                             enum: [
                                 'schedule_appointment',
-                                'billing_inquiry',
+                                'department_routing',
                                 'prescription_refill',
+                                'insurance_verification',
+                                'marketing_event',
+                                'billing_inquiry',
                                 'medical_records',
                                 'general_inquiry',
                             ],
@@ -127,7 +133,20 @@ Return your analysis as a function call.`;
                         },
                         fields: {
                             type: 'object',
-                            description: 'Extracted fields like dates, names, or specific requests',
+                            properties: {
+                                patientName: { type: 'string', description: 'Patient name if mentioned' },
+                                phoneNumber: { type: 'string', description: 'Phone number if mentioned' },
+                                dateOfBirth: { type: 'string', description: 'Date of birth if mentioned' },
+                                departmentName: { type: 'string', description: 'Department name for routing' },
+                                serviceType: { type: 'string', description: 'Service type (X-ray, MRI, etc.)' },
+                                medicationName: { type: 'string', description: 'Medication name for refills' },
+                                prescriberName: { type: 'string', description: 'Prescribing doctor name' },
+                                insuranceCarrier: { type: 'string', description: 'Insurance carrier name' },
+                                insurancePlan: { type: 'string', description: 'Insurance plan name' },
+                                eventType: { type: 'string', description: 'Type of marketing event' },
+                                preferredDate: { type: 'string', description: 'Preferred date/time' },
+                            },
+                            description: 'Extracted fields from the conversation',
                         },
                     },
                     required: ['intent', 'confidence'],
