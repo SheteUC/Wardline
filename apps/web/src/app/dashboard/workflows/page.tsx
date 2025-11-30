@@ -249,7 +249,18 @@ const defaultEdges: Edge[] = [
 ];
 
 // Intent configuration for the properties panel
-const INTENT_CONFIGS = {
+interface IntentConfig {
+    name: string;
+    icon: React.FC<{ className?: string }>;
+    description: string;
+    requiredFields: string[];
+    handoffTo: string;
+    newPatientAction?: string;
+    claimDenialPrevention?: string;
+    conversionTracking?: string;
+}
+
+const INTENT_CONFIGS: Record<string, IntentConfig> = {
     schedule_appointment: {
         name: 'Appointment Scheduling',
         icon: Calendar,
@@ -334,12 +345,12 @@ export default function WorkflowsPage() {
     }, [setNodes]);
 
     const selectedIntentConfig = selectedNode?.data?.action 
-        ? INTENT_CONFIGS[selectedNode.data.action as keyof typeof INTENT_CONFIGS]
+        ? INTENT_CONFIGS[selectedNode.data.action]
         : null;
 
     if (hospitalLoading) {
         return (
-            <div className="flex items-center justify-center h-96">
+                <div className="flex items-center justify-center h-96">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
@@ -378,7 +389,7 @@ export default function WorkflowsPage() {
                     <div className="flex items-start gap-4">
                         <div className="p-2 rounded-lg bg-blue-100">
                             <Phone className="h-5 w-5 text-blue-600" />
-                        </div>
+                </div>
                         <div className="flex-1">
                             <h3 className="font-semibold">Voice AI Call Flow</h3>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -393,7 +404,7 @@ export default function WorkflowsPage() {
                                 <Badge variant="outline">Prescription Refills</Badge>
                                 <Badge variant="outline">Insurance Verification</Badge>
                                 <Badge variant="outline">Event Registration</Badge>
-                            </div>
+                </div>
                         </div>
                     </div>
                 </CardContent>
@@ -478,7 +489,7 @@ export default function WorkflowsPage() {
                                 {selectedIntentConfig && (
                                     <div className="pt-4 border-t space-y-4">
                                         <div className="flex items-center gap-2">
-                                            {React.createElement(selectedIntentConfig.icon, { className: 'h-5 w-5 text-primary' })}
+                                            <selectedIntentConfig.icon className="h-5 w-5 text-primary" />
                                             <span className="font-semibold">{selectedIntentConfig.name}</span>
                                         </div>
                                         <p className="text-sm text-muted-foreground">
@@ -499,7 +510,7 @@ export default function WorkflowsPage() {
                                         <div>
                                             <Label className="text-xs text-muted-foreground">Handoff To</Label>
                                             <p className="text-sm font-medium">{selectedIntentConfig.handoffTo}</p>
-                                        </div>
+                                    </div>
 
                                         {selectedIntentConfig.claimDenialPrevention && (
                                             <div className="bg-emerald-50 p-3 rounded-lg">
@@ -522,7 +533,7 @@ export default function WorkflowsPage() {
                                                 <p className="text-xs text-purple-700 font-medium">
                                                     📊 {selectedIntentConfig.conversionTracking}
                                                 </p>
-                                            </div>
+                                        </div>
                                         )}
                                     </div>
                                 )}
@@ -543,8 +554,8 @@ export default function WorkflowsPage() {
                                 <p className="text-sm text-muted-foreground">
                                     Click on a node in the workflow to view and edit its configuration
                                 </p>
-                            </div>
-                        )}
+                </div>
+            )}
                     </CardContent>
                 </Card>
             </div>

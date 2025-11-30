@@ -19,7 +19,7 @@ export class InsuranceService {
     constructor(private prisma: PrismaService) { }
 
     // Insurance Plan operations
-    async createPlan(createDto: CreateInsurancePlanDto) {
+    async createPlan(createDto: CreateInsurancePlanDto): Promise<any> {
         this.logger.info('Creating insurance plan', { planName: createDto.planName });
 
         const plan = await this.prisma.insurancePlan.create({
@@ -42,7 +42,7 @@ export class InsuranceService {
             isAccepted?: boolean;
             search?: string;
         }
-    ) {
+    ): Promise<any[]> {
         const { carrierId, planType, isAccepted, search } = options || {};
 
         return this.prisma.insurancePlan.findMany({
@@ -69,7 +69,7 @@ export class InsuranceService {
         });
     }
 
-    async findPlanById(id: string) {
+    async findPlanById(id: string): Promise<any> {
         const plan = await this.prisma.insurancePlan.findUnique({
             where: { id },
             include: {
@@ -86,7 +86,7 @@ export class InsuranceService {
         return plan;
     }
 
-    async checkPlanAcceptance(hospitalId: string, carrierName: string, planName?: string) {
+    async checkPlanAcceptance(hospitalId: string, carrierName: string, planName?: string): Promise<any> {
         const plans = await this.prisma.insurancePlan.findMany({
             where: {
                 hospitalId,
@@ -106,7 +106,7 @@ export class InsuranceService {
         };
     }
 
-    async updatePlan(id: string, updateDto: UpdateInsurancePlanDto) {
+    async updatePlan(id: string, updateDto: UpdateInsurancePlanDto): Promise<any> {
         this.logger.info('Updating insurance plan', { id });
 
         await this.findPlanById(id);
@@ -124,7 +124,7 @@ export class InsuranceService {
         return plan;
     }
 
-    async deletePlan(id: string) {
+    async deletePlan(id: string): Promise<any> {
         this.logger.warn('Deleting insurance plan', { id });
 
         await this.findPlanById(id);
@@ -138,7 +138,7 @@ export class InsuranceService {
     }
 
     // Insurance Inquiry operations
-    async createInquiry(createDto: CreateInsuranceInquiryDto) {
+    async createInquiry(createDto: CreateInsuranceInquiryDto): Promise<any> {
         this.logger.info('Creating insurance inquiry', { inquiryType: createDto.inquiryType });
 
         // Auto-find matching plan
@@ -176,7 +176,7 @@ export class InsuranceService {
             limit?: number;
             offset?: number;
         }
-    ) {
+    ): Promise<any> {
         const { inquiryType, resolved, limit = 50, offset = 0 } = options || {};
 
         const [data, total] = await Promise.all([
@@ -208,7 +208,7 @@ export class InsuranceService {
         return { data, total, limit, offset };
     }
 
-    async updateInquiry(id: string, updateDto: UpdateInsuranceInquiryDto) {
+    async updateInquiry(id: string, updateDto: UpdateInsuranceInquiryDto): Promise<any> {
         this.logger.info('Updating insurance inquiry', { id });
 
         const inquiry = await this.prisma.insuranceInquiry.update({
@@ -224,7 +224,7 @@ export class InsuranceService {
     }
 
     // Insurance Verification operations
-    async createVerification(createDto: CreateInsuranceVerificationDto) {
+    async createVerification(createDto: CreateInsuranceVerificationDto): Promise<any> {
         this.logger.info('Creating insurance verification', {
             patientName: createDto.patientName,
             memberNumber: createDto.memberNumber,
@@ -251,7 +251,7 @@ export class InsuranceService {
             limit?: number;
             offset?: number;
         }
-    ) {
+    ): Promise<any> {
         const { insurancePlanId, eligibilityStatus, authorizationRequired, limit = 50, offset = 0 } = options || {};
 
         const [data, total] = await Promise.all([
@@ -283,7 +283,7 @@ export class InsuranceService {
         return { data, total, limit, offset };
     }
 
-    async findVerificationById(id: string) {
+    async findVerificationById(id: string): Promise<any> {
         const verification = await this.prisma.insuranceVerification.findUnique({
             where: { id },
             include: {
@@ -299,7 +299,7 @@ export class InsuranceService {
         return verification;
     }
 
-    async updateVerification(id: string, updateDto: UpdateInsuranceVerificationDto) {
+    async updateVerification(id: string, updateDto: UpdateInsuranceVerificationDto): Promise<any> {
         this.logger.info('Updating insurance verification', { id });
 
         await this.findVerificationById(id);
@@ -318,7 +318,7 @@ export class InsuranceService {
     }
 
     // Analytics - Claim denial prevention metrics
-    async getInsuranceStats(hospitalId: string, startDate?: Date, endDate?: Date) {
+    async getInsuranceStats(hospitalId: string, startDate?: Date, endDate?: Date): Promise<any> {
         const dateFilter = {
             ...(startDate && endDate
                 ? { createdAt: { gte: startDate, lte: endDate } }
@@ -356,10 +356,8 @@ export class InsuranceService {
                 where: { hospitalId, ...verificationDateFilter },
                 _count: { eligibilityStatus: true },
             }),
-            this.prisma.insuranceVerification.aggregate({
-                where: { hospitalId, ...verificationDateFilter },
-                _count: { authorizationRequired: true },
-                _sum: { authorizationRequired: true },
+            this.prisma.insuranceVerification.count({
+                where: { hospitalId, authorizationRequired: true, ...verificationDateFilter },
             }),
         ]);
 
@@ -392,10 +390,9 @@ export class InsuranceService {
             notEligibleCount,
             pendingCount: eligibilityMap['PENDING'] || 0,
             expiredCount: eligibilityMap['EXPIRED'] || 0,
-            authorizationRequiredCount: (authorizationStats as any)?._sum?.authorizationRequired || 0,
+            authorizationRequiredCount: authorizationStats || 0,
             claimDenialPreventionRate: Math.round(claimDenialPreventionRate * 100) / 100,
             estimatedDenialsPreventedDescription: `Up to ${Math.round(claimDenialPreventionRate)}% of claim denials prevented through upfront eligibility verification`,
         };
     }
 }
-

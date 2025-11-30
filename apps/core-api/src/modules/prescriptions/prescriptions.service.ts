@@ -143,7 +143,7 @@ export class PrescriptionsService {
     async verifyPatient(id: string, verifyDto: VerifyPatientDto) {
         this.logger.info('Verifying patient for refill', { id, patientId: verifyDto.patientId });
 
-        const refill = await this.findRefillById(id);
+        await this.findRefillById(id);
 
         // If verifying, update the patient link
         const updateData: any = {
@@ -196,7 +196,7 @@ export class PrescriptionsService {
         const refill = await this.findRefillById(id);
 
         // Validate status transitions
-        const validTransitions: Record<RefillStatus, RefillStatus[]> = {
+        const validTransitions: Record<string, string[]> = {
             PENDING: ['APPROVED', 'REJECTED'],
             APPROVED: ['COMPLETED', 'REJECTED'],
             REJECTED: [],

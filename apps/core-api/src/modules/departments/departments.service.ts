@@ -15,7 +15,7 @@ export class DepartmentsService {
     constructor(private prisma: PrismaService) { }
 
     // Department CRUD operations
-    async createDepartment(createDepartmentDto: CreateDepartmentDto) {
+    async createDepartment(createDepartmentDto: CreateDepartmentDto): Promise<any> {
         this.logger.info('Creating department', { name: createDepartmentDto.name });
 
         const department = await this.prisma.department.create({
@@ -26,7 +26,7 @@ export class DepartmentsService {
         return department;
     }
 
-    async findAllDepartments(hospitalId: string, includeInactive = false) {
+    async findAllDepartments(hospitalId: string, includeInactive = false): Promise<any[]> {
         return this.prisma.department.findMany({
             where: {
                 hospitalId,
@@ -36,7 +36,7 @@ export class DepartmentsService {
         });
     }
 
-    async findDepartmentById(id: string) {
+    async findDepartmentById(id: string): Promise<any> {
         const department = await this.prisma.department.findUnique({
             where: { id },
             include: {
@@ -53,7 +53,7 @@ export class DepartmentsService {
         return department;
     }
 
-    async findDepartmentsByServiceType(hospitalId: string, serviceType: string) {
+    async findDepartmentsByServiceType(hospitalId: string, serviceType: string): Promise<any[]> {
         return this.prisma.department.findMany({
             where: {
                 hospitalId,
@@ -64,7 +64,7 @@ export class DepartmentsService {
         });
     }
 
-    async searchDepartments(hospitalId: string, query: string) {
+    async searchDepartments(hospitalId: string, query: string): Promise<any[]> {
         return this.prisma.department.findMany({
             where: {
                 hospitalId,
@@ -79,7 +79,7 @@ export class DepartmentsService {
         });
     }
 
-    async updateDepartment(id: string, updateDepartmentDto: UpdateDepartmentDto) {
+    async updateDepartment(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<any> {
         this.logger.info('Updating department', { id });
 
         await this.findDepartmentById(id);
@@ -93,7 +93,7 @@ export class DepartmentsService {
         return department;
     }
 
-    async deleteDepartment(id: string) {
+    async deleteDepartment(id: string): Promise<any> {
         this.logger.warn('Soft deleting department', { id });
 
         await this.findDepartmentById(id);
@@ -108,7 +108,7 @@ export class DepartmentsService {
     }
 
     // Directory Inquiry operations
-    async createDirectoryInquiry(createDirectoryInquiryDto: CreateDirectoryInquiryDto) {
+    async createDirectoryInquiry(createDirectoryInquiryDto: CreateDirectoryInquiryDto): Promise<any> {
         this.logger.info('Creating directory inquiry', { serviceType: createDirectoryInquiryDto.serviceType });
 
         // Auto-route to department if service type matches
@@ -145,7 +145,7 @@ export class DepartmentsService {
             limit?: number;
             offset?: number;
         }
-    ) {
+    ): Promise<any> {
         const { resolved, departmentId, limit = 50, offset = 0 } = options || {};
 
         const [data, total] = await Promise.all([
@@ -177,7 +177,7 @@ export class DepartmentsService {
         return { data, total, limit, offset };
     }
 
-    async updateDirectoryInquiry(id: string, updateDirectoryInquiryDto: UpdateDirectoryInquiryDto) {
+    async updateDirectoryInquiry(id: string, updateDirectoryInquiryDto: UpdateDirectoryInquiryDto): Promise<any> {
         this.logger.info('Updating directory inquiry', { id });
 
         const inquiry = await this.prisma.directoryInquiry.update({
@@ -193,7 +193,7 @@ export class DepartmentsService {
     }
 
     // Analytics
-    async getDirectoryStats(hospitalId: string, startDate?: Date, endDate?: Date) {
+    async getDirectoryStats(hospitalId: string, startDate?: Date, endDate?: Date): Promise<any> {
         const dateFilter = {
             ...(startDate && endDate
                 ? { createdAt: { gte: startDate, lte: endDate } }
@@ -233,4 +233,3 @@ export class DepartmentsService {
         };
     }
 }
-

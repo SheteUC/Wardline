@@ -39,7 +39,7 @@ export class InsuranceController {
     @ApiResponse({ status: 201, description: 'Insurance plan created', type: InsurancePlanResponseDto })
     @Permissions(UserRole.ADMIN)
     @Auditable('insurance_plan', 'CREATE')
-    createPlan(@Body() createDto: CreateInsurancePlanDto) {
+    createPlan(@Body() createDto: CreateInsurancePlanDto): Promise<any> {
         return this.insuranceService.createPlan(createDto);
     }
 
@@ -58,7 +58,7 @@ export class InsuranceController {
         @Query('planType') planType?: string,
         @Query('isAccepted', new ParseBoolPipe({ optional: true })) isAccepted?: boolean,
         @Query('search') search?: string,
-    ) {
+    ): Promise<any[]> {
         return this.insuranceService.findAllPlans(hospitalId, { carrierId, planType, isAccepted, search });
     }
 
@@ -73,7 +73,7 @@ export class InsuranceController {
         @Query('hospitalId') hospitalId: string,
         @Query('carrierName') carrierName: string,
         @Query('planName') planName?: string,
-    ) {
+    ): Promise<any> {
         return this.insuranceService.checkPlanAcceptance(hospitalId, carrierName, planName);
     }
 
@@ -82,7 +82,7 @@ export class InsuranceController {
     @ApiResponse({ status: 200, description: 'Insurance plan found', type: InsurancePlanResponseDto })
     @ApiResponse({ status: 404, description: 'Insurance plan not found' })
     @Permissions(UserRole.READONLY)
-    findPlan(@Param('id') id: string) {
+    findPlan(@Param('id') id: string): Promise<any> {
         return this.insuranceService.findPlanById(id);
     }
 
@@ -92,7 +92,7 @@ export class InsuranceController {
     @ApiResponse({ status: 404, description: 'Insurance plan not found' })
     @Permissions(UserRole.ADMIN)
     @Auditable('insurance_plan', 'UPDATE')
-    updatePlan(@Param('id') id: string, @Body() updateDto: UpdateInsurancePlanDto) {
+    updatePlan(@Param('id') id: string, @Body() updateDto: UpdateInsurancePlanDto): Promise<any> {
         return this.insuranceService.updatePlan(id, updateDto);
     }
 
@@ -102,7 +102,7 @@ export class InsuranceController {
     @ApiResponse({ status: 404, description: 'Insurance plan not found' })
     @Permissions(UserRole.ADMIN)
     @Auditable('insurance_plan', 'DELETE')
-    deletePlan(@Param('id') id: string) {
+    deletePlan(@Param('id') id: string): Promise<any> {
         return this.insuranceService.deletePlan(id);
     }
 
@@ -112,7 +112,7 @@ export class InsuranceController {
     @ApiResponse({ status: 201, description: 'Insurance inquiry created' })
     @Permissions(UserRole.AGENT)
     @Auditable('insurance_inquiry', 'CREATE')
-    createInquiry(@Body() createDto: CreateInsuranceInquiryDto) {
+    createInquiry(@Body() createDto: CreateInsuranceInquiryDto): Promise<any> {
         return this.insuranceService.createInquiry(createDto);
     }
 
@@ -131,7 +131,7 @@ export class InsuranceController {
         @Query('resolved', new ParseBoolPipe({ optional: true })) resolved?: boolean,
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
-    ) {
+    ): Promise<any> {
         return this.insuranceService.findAllInquiries(hospitalId, {
             inquiryType,
             resolved,
@@ -145,7 +145,7 @@ export class InsuranceController {
     @ApiResponse({ status: 200, description: 'Insurance inquiry updated' })
     @Permissions(UserRole.AGENT)
     @Auditable('insurance_inquiry', 'UPDATE')
-    updateInquiry(@Param('id') id: string, @Body() updateDto: UpdateInsuranceInquiryDto) {
+    updateInquiry(@Param('id') id: string, @Body() updateDto: UpdateInsuranceInquiryDto): Promise<any> {
         return this.insuranceService.updateInquiry(id, updateDto);
     }
 
@@ -155,7 +155,7 @@ export class InsuranceController {
     @ApiResponse({ status: 201, description: 'Insurance verification created', type: InsuranceVerificationResponseDto })
     @Permissions(UserRole.AGENT)
     @Auditable('insurance_verification', 'CREATE')
-    createVerification(@Body() createDto: CreateInsuranceVerificationDto) {
+    createVerification(@Body() createDto: CreateInsuranceVerificationDto): Promise<any> {
         return this.insuranceService.createVerification(createDto);
     }
 
@@ -176,7 +176,7 @@ export class InsuranceController {
         @Query('authorizationRequired', new ParseBoolPipe({ optional: true })) authorizationRequired?: boolean,
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
-    ) {
+    ): Promise<any> {
         return this.insuranceService.findAllVerifications(hospitalId, {
             insurancePlanId,
             eligibilityStatus,
@@ -191,7 +191,7 @@ export class InsuranceController {
     @ApiResponse({ status: 200, description: 'Insurance verification found', type: InsuranceVerificationResponseDto })
     @ApiResponse({ status: 404, description: 'Insurance verification not found' })
     @Permissions(UserRole.READONLY)
-    findVerification(@Param('id') id: string) {
+    findVerification(@Param('id') id: string): Promise<any> {
         return this.insuranceService.findVerificationById(id);
     }
 
@@ -201,7 +201,7 @@ export class InsuranceController {
     @ApiResponse({ status: 404, description: 'Insurance verification not found' })
     @Permissions(UserRole.AGENT)
     @Auditable('insurance_verification', 'UPDATE')
-    updateVerification(@Param('id') id: string, @Body() updateDto: UpdateInsuranceVerificationDto) {
+    updateVerification(@Param('id') id: string, @Body() updateDto: UpdateInsuranceVerificationDto): Promise<any> {
         return this.insuranceService.updateVerification(id, updateDto);
     }
 
@@ -217,7 +217,7 @@ export class InsuranceController {
         @Query('hospitalId') hospitalId: string,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
-    ) {
+    ): Promise<any> {
         return this.insuranceService.getInsuranceStats(
             hospitalId,
             startDate ? new Date(startDate) : undefined,
@@ -225,4 +225,3 @@ export class InsuranceController {
         );
     }
 }
-

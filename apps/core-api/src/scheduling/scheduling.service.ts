@@ -1,6 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Appointment, AppointmentStatus } from '@prisma/client';
+
+// Define AppointmentStatus locally to avoid import issues
+export enum AppointmentStatus {
+    SCHEDULED = 'SCHEDULED',
+    CONFIRMED = 'CONFIRMED',
+    COMPLETED = 'COMPLETED',
+    CANCELLED = 'CANCELLED',
+    NO_SHOW = 'NO_SHOW',
+    RESCHEDULED = 'RESCHEDULED',
+}
 
 export interface CreateAppointmentDto {
     hospitalId: string;
@@ -40,7 +49,7 @@ export class SchedulingService {
     /**
      * Get scheduling integration for hospital
      */
-    async getIntegration(hospitalId: string, provider: string) {
+    async getIntegration(hospitalId: string, provider: string): Promise<any> {
         return this.prisma.schedulingIntegration.findFirst({
             where: {
                 hospitalId,
@@ -53,7 +62,7 @@ export class SchedulingService {
     /**
      * Create a new appointment
      */
-    async createAppointment(dto: CreateAppointmentDto): Promise<Appointment> {
+    async createAppointment(dto: CreateAppointmentDto): Promise<any> {
         this.logger.log(
             `Creating appointment for ${dto.patientName} at ${dto.scheduledAt}`,
         );
@@ -82,7 +91,7 @@ export class SchedulingService {
     async rescheduleAppointment(
         appointmentId: string,
         dto: RescheduleAppointmentDto,
-    ): Promise<Appointment> {
+    ): Promise<any> {
         this.logger.log(`Rescheduling appointment ${appointmentId}`);
 
         return this.prisma.appointment.update({
@@ -104,7 +113,7 @@ export class SchedulingService {
     async cancelAppointment(
         appointmentId: string,
         dto: CancelAppointmentDto,
-    ): Promise<Appointment> {
+    ): Promise<any> {
         this.logger.log(`Cancelling appointment ${appointmentId}`);
 
         return this.prisma.appointment.update({
@@ -120,7 +129,7 @@ export class SchedulingService {
     /**
      * Get appointment by ID
      */
-    async getAppointment(appointmentId: string): Promise<Appointment | null> {
+    async getAppointment(appointmentId: string): Promise<any> {
         return this.prisma.appointment.findUnique({
             where: { id: appointmentId },
             include: {
@@ -140,7 +149,7 @@ export class SchedulingService {
             startDate?: Date;
             endDate?: Date;
         },
-    ): Promise<Appointment[]> {
+    ): Promise<any[]> {
         const where: any = { hospitalId };
 
         if (filters?.status) {
@@ -170,7 +179,7 @@ export class SchedulingService {
     /**
      * Mark appointment as completed
      */
-    async completeAppointment(appointmentId: string): Promise<Appointment> {
+    async completeAppointment(appointmentId: string): Promise<any> {
         return this.prisma.appointment.update({
             where: { id: appointmentId },
             data: {
@@ -183,7 +192,7 @@ export class SchedulingService {
     /**
      * Mark appointment as no-show
      */
-    async markNoShow(appointmentId: string): Promise<Appointment> {
+    async markNoShow(appointmentId: string): Promise<any> {
         return this.prisma.appointment.update({
             where: { id: appointmentId },
             data: {

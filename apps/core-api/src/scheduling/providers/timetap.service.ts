@@ -122,7 +122,7 @@ export class TimeTapService {
     async updateAppointment(
         appointmentId: string,
         updates: Partial<TimeTapAppointment>,
-    ): Promise<Tim eTapAppointment> {
+    ): Promise<TimeTapAppointment> {
         try {
             this.logger.log(`Updating TimeTap appointment ${appointmentId}`);
 
@@ -141,41 +141,41 @@ export class TimeTapService {
         }
     }
 
-  /**
-   * Cancel an appointment
-   */
-  async cancelAppointment(appointmentId: string): Promise < void> {
-    try {
-        this.logger.log(`Cancelling TimeTap appointment ${appointmentId}`);
+    /**
+     * Cancel an appointment
+     */
+    async cancelAppointment(appointmentId: string): Promise<void> {
+        try {
+            this.logger.log(`Cancelling TimeTap appointment ${appointmentId}`);
 
-        await this.client.delete(`/appointments/${appointmentId}`);
+            await this.client.delete(`/appointments/${appointmentId}`);
 
-        this.logger.log(`Appointment ${appointmentId} cancelled`);
-    } catch(error: any) {
-        this.logger.error(`Failed to cancel appointment: ${error?.message || 'Unknown error'}`);
-        throw new HttpException(
-            'Failed to cancel appointment',
-            HttpStatus.BAD_GATEWAY,
-        );
+            this.logger.log(`Appointment ${appointmentId} cancelled`);
+        } catch (error: any) {
+            this.logger.error(`Failed to cancel appointment: ${error?.message || 'Unknown error'}`);
+            throw new HttpException(
+                'Failed to cancel appointment',
+                HttpStatus.BAD_GATEWAY,
+            );
+        }
     }
-}
 
-  /**
-   * Get appointment details
-   */
-  async getAppointment(appointmentId: string): Promise < TimeTapAppointment > {
-    try {
-        const response = await this.client.get<TimeTapAppointment>(
-            `/appointments/${appointmentId}`,
-        );
+    /**
+     * Get appointment details
+     */
+    async getAppointment(appointmentId: string): Promise<TimeTapAppointment> {
+        try {
+            const response = await this.client.get<TimeTapAppointment>(
+                `/appointments/${appointmentId}`,
+            );
 
-        return response.data;
-    } catch(error: any) {
-        this.logger.error(`Failed to get appointment: ${error?.message || 'Unknown error'}`);
-        throw new HttpException(
-            'Failed to get appointment',
-            HttpStatus.BAD_GATEWAY,
-        );
+            return response.data;
+        } catch (error: any) {
+            this.logger.error(`Failed to get appointment: ${error?.message || 'Unknown error'}`);
+            throw new HttpException(
+                'Failed to get appointment',
+                HttpStatus.BAD_GATEWAY,
+            );
+        }
     }
-}
 }

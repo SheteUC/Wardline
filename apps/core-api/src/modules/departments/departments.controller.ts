@@ -34,7 +34,7 @@ export class DepartmentsController {
     @ApiResponse({ status: 201, description: 'Department created', type: DepartmentResponseDto })
     @Permissions(UserRole.ADMIN)
     @Auditable('department', 'CREATE')
-    createDepartment(@Body() createDepartmentDto: CreateDepartmentDto) {
+    createDepartment(@Body() createDepartmentDto: CreateDepartmentDto): Promise<any> {
         return this.departmentsService.createDepartment(createDepartmentDto);
     }
 
@@ -47,7 +47,7 @@ export class DepartmentsController {
     findAllDepartments(
         @Query('hospitalId') hospitalId: string,
         @Query('includeInactive', new ParseBoolPipe({ optional: true })) includeInactive?: boolean,
-    ) {
+    ): Promise<any[]> {
         return this.departmentsService.findAllDepartments(hospitalId, includeInactive);
     }
 
@@ -60,7 +60,7 @@ export class DepartmentsController {
     searchDepartments(
         @Query('hospitalId') hospitalId: string,
         @Query('q') query: string,
-    ) {
+    ): Promise<any[]> {
         return this.departmentsService.searchDepartments(hospitalId, query);
     }
 
@@ -73,7 +73,7 @@ export class DepartmentsController {
     findByServiceType(
         @Query('hospitalId') hospitalId: string,
         @Query('serviceType') serviceType: string,
-    ) {
+    ): Promise<any[]> {
         return this.departmentsService.findDepartmentsByServiceType(hospitalId, serviceType);
     }
 
@@ -82,7 +82,7 @@ export class DepartmentsController {
     @ApiResponse({ status: 200, description: 'Department found', type: DepartmentResponseDto })
     @ApiResponse({ status: 404, description: 'Department not found' })
     @Permissions(UserRole.READONLY)
-    findOne(@Param('id') id: string) {
+    findOne(@Param('id') id: string): Promise<any> {
         return this.departmentsService.findDepartmentById(id);
     }
 
@@ -92,7 +92,7 @@ export class DepartmentsController {
     @ApiResponse({ status: 404, description: 'Department not found' })
     @Permissions(UserRole.ADMIN)
     @Auditable('department', 'UPDATE')
-    updateDepartment(@Param('id') id: string, @Body() updateDepartmentDto: UpdateDepartmentDto) {
+    updateDepartment(@Param('id') id: string, @Body() updateDepartmentDto: UpdateDepartmentDto): Promise<any> {
         return this.departmentsService.updateDepartment(id, updateDepartmentDto);
     }
 
@@ -102,7 +102,7 @@ export class DepartmentsController {
     @ApiResponse({ status: 404, description: 'Department not found' })
     @Permissions(UserRole.ADMIN)
     @Auditable('department', 'DELETE')
-    deleteDepartment(@Param('id') id: string) {
+    deleteDepartment(@Param('id') id: string): Promise<any> {
         return this.departmentsService.deleteDepartment(id);
     }
 
@@ -112,7 +112,7 @@ export class DepartmentsController {
     @ApiResponse({ status: 201, description: 'Directory inquiry created' })
     @Permissions(UserRole.AGENT)
     @Auditable('directory_inquiry', 'CREATE')
-    createInquiry(@Body() createDirectoryInquiryDto: CreateDirectoryInquiryDto) {
+    createInquiry(@Body() createDirectoryInquiryDto: CreateDirectoryInquiryDto): Promise<any> {
         return this.departmentsService.createDirectoryInquiry(createDirectoryInquiryDto);
     }
 
@@ -131,7 +131,7 @@ export class DepartmentsController {
         @Query('departmentId') departmentId?: string,
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
-    ) {
+    ): Promise<any> {
         return this.departmentsService.findAllDirectoryInquiries(hospitalId, {
             resolved,
             departmentId,
@@ -148,7 +148,7 @@ export class DepartmentsController {
     updateInquiry(
         @Param('id') id: string,
         @Body() updateDirectoryInquiryDto: UpdateDirectoryInquiryDto,
-    ) {
+    ): Promise<any> {
         return this.departmentsService.updateDirectoryInquiry(id, updateDirectoryInquiryDto);
     }
 
@@ -163,7 +163,7 @@ export class DepartmentsController {
         @Query('hospitalId') hospitalId: string,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
-    ) {
+    ): Promise<any> {
         return this.departmentsService.getDirectoryStats(
             hospitalId,
             startDate ? new Date(startDate) : undefined,
@@ -171,4 +171,3 @@ export class DepartmentsController {
         );
     }
 }
-

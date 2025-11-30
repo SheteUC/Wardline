@@ -155,12 +155,12 @@ export class MarketingEventsService {
         const event = await this.findEventById(createDto.eventId);
 
         // Check capacity
-        let registrationStatus: RegistrationStatus = 'REGISTERED';
+        let registrationStatus: 'REGISTERED' | 'WAITLISTED' = 'REGISTERED';
         if (event.capacity) {
             const currentRegistrations = await this.prisma.eventRegistration.count({
                 where: {
                     eventId: createDto.eventId,
-                    status: { in: ['REGISTERED'] },
+                    status: 'REGISTERED',
                 },
             });
 

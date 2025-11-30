@@ -11,13 +11,11 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
-import { SchedulingService, CreateAppointmentDto, RescheduleAppointmentDto, CancelAppointmentDto } from './scheduling.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { HospitalContext } from '../auth/decorators/hospital-context.decorator';
-import { AppointmentStatus } from '@prisma/client';
+import { SchedulingService, CreateAppointmentDto, RescheduleAppointmentDto, CancelAppointmentDto, AppointmentStatus } from './scheduling.service';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('scheduling')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard)
 export class SchedulingController {
     constructor(private readonly schedulingService: SchedulingService) { }
 
@@ -26,11 +24,11 @@ export class SchedulingController {
      */
     @Get('appointments')
     async getAppointments(
-        @HospitalContext('id') hospitalId: string,
+        @Query('hospitalId') hospitalId: string,
         @Query('status') status?: AppointmentStatus,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
-    ) {
+    ): Promise<any> {
         const filters: any = {};
 
         if (status) {
@@ -52,7 +50,7 @@ export class SchedulingController {
      * Get appointment by ID
      */
     @Get('appointments/:id')
-    async getAppointment(@Param('id') id: string) {
+    async getAppointment(@Param('id') id: string): Promise<any> {
         return this.schedulingService.getAppointment(id);
     }
 
@@ -62,9 +60,9 @@ export class SchedulingController {
     @Post('appointments')
     @HttpCode(HttpStatus.CREATED)
     async createAppointment(
-        @HospitalContext('id') hospitalId: string,
+        @Query('hospitalId') hospitalId: string,
         @Body() dto: Omit<CreateAppointmentDto, 'hospitalId'>,
-    ) {
+    ): Promise<any> {
         return this.schedulingService.createAppointment({
             ...dto,
             hospitalId,
@@ -79,7 +77,7 @@ export class SchedulingController {
     async rescheduleAppointment(
         @Param('id') id: string,
         @Body() dto: RescheduleAppointmentDto,
-    ) {
+    ): Promise<any> {
         return this.schedulingService.rescheduleAppointment(id, {
             ...dto,
             scheduledAt: new Date(dto.scheduledAt),
@@ -93,7 +91,7 @@ export class SchedulingController {
     async cancelAppointment(
         @Param('id') id: string,
         @Body() dto: CancelAppointmentDto,
-    ) {
+    ): Promise<any> {
         return this.schedulingService.cancelAppointment(id, dto);
     }
 
@@ -101,7 +99,7 @@ export class SchedulingController {
      * Mark appointment as completed
      */
     @Patch('appointments/:id/complete')
-    async completeAppointment(@Param('id') id: string) {
+    async completeAppointment(@Param('id') id: string): Promise<any> {
         return this.schedulingService.completeAppointment(id);
     }
 
@@ -109,7 +107,7 @@ export class SchedulingController {
      * Mark appointment as no-show
      */
     @Patch('appointments/:id/no-show')
-    async markNoShow(@Param('id') id: string) {
+    async markNoShow(@Param('id') id: string): Promise<any> {
         return this.schedulingService.markNoShow(id);
     }
 
@@ -118,9 +116,9 @@ export class SchedulingController {
      */
     @Get('integrations/:provider')
     async getIntegration(
-        @HospitalContext('id') hospitalId: string,
+        @Query('hospitalId') hospitalId: string,
         @Param('provider') provider: string,
-    ) {
+    ): Promise<any> {
         return this.schedulingService.getIntegration(hospitalId, provider);
     }
 }
