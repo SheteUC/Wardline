@@ -52,7 +52,35 @@ export default function CallsPage() {
         return filtered;
     }, [callsData, filter]);
 
-    if (hospitalLoading || !hospitalId) {
+    if (hospitalLoading) {
+        return (
+            <div className="space-y-6">
+                <Card className="min-h-[600px]">
+                    <div className="flex items-center justify-center h-96">
+                        <div className="text-center text-muted-foreground">Loading...</div>
+                    </div>
+                </Card>
+            </div>
+        );
+    }
+
+    if (!hospitalId) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <div className="text-center space-y-4">
+                    <h2 className="text-2xl font-bold text-foreground">No Hospital Selected</h2>
+                    <p className="text-muted-foreground max-w-md">
+                        Please set up your hospital to view call data.
+                    </p>
+                </div>
+                <Link href="/dashboard/settings">
+                    <Button>Set Up Hospital</Button>
+                </Link>
+            </div>
+        );
+    }
+
+    if (isLoading) {
         return (
             <div className="space-y-6">
                 <Card className="min-h-[600px]">

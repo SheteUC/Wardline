@@ -67,7 +67,33 @@ export default function AnalyticsPage() {
         </button>
     );
 
-    if (hospitalLoading || !hospitalId) {
+    if (hospitalLoading) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center text-muted-foreground">Loading...</div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!hospitalId) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <div className="text-center space-y-4">
+                    <h2 className="text-2xl font-bold text-foreground">No Hospital Selected</h2>
+                    <p className="text-muted-foreground max-w-md">
+                        Please set up your hospital to view analytics.
+                    </p>
+                </div>
+                <a href="/dashboard/settings">
+                    <Button>Set Up Hospital</Button>
+                </a>
+            </div>
+        );
+    }
+
+    if (isLoading) {
         return (
             <div className="space-y-6">
                 <div className="flex items-center justify-center h-96">

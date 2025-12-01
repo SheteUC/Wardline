@@ -98,7 +98,40 @@ export default function DashboardPage() {
     }, [callsData]);
 
     // Loading state
-    if (isLoading || !hospitalId) {
+    if (hospitalLoading) {
+        return (
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-32 bg-muted animate-pulse rounded-lg"></div>
+                    ))}
+                </div>
+                <div className="text-center py-12 text-muted-foreground">
+                    Loading...
+                </div>
+            </div>
+        );
+    }
+
+    // No hospital selected
+    if (!hospitalId) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <div className="text-center space-y-4">
+                    <h2 className="text-2xl font-bold text-foreground">Welcome to Wardline</h2>
+                    <p className="text-muted-foreground max-w-md">
+                        To get started, you need to set up your hospital. This will allow you to manage calls, appointments, and more.
+                    </p>
+                </div>
+                <Link href="/dashboard/settings">
+                    <Button>Set Up Hospital</Button>
+                </Link>
+            </div>
+        );
+    }
+
+    // Still loading data
+    if (callsLoading || analyticsLoading) {
         return (
             <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

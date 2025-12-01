@@ -26,7 +26,7 @@ export class HospitalsController {
     @ApiOperation({ summary: 'Create a new hospital' })
     @ApiResponse({ status: 201, description: 'Hospital created', type: HospitalResponseDto })
     @ApiResponse({ status: 409, description: 'Hospital already exists' })
-    @Permissions(UserRole.OWNER)
+    // No @Permissions - any authenticated user can create a hospital (they become OWNER)
     @Auditable('hospital', 'CREATE')
     create(@Body() createHospitalDto: CreateHospitalDto) {
         return this.hospitalsService.create(createHospitalDto);
@@ -36,7 +36,7 @@ export class HospitalsController {
     @ApiOperation({ summary: 'Get all hospitals' })
     @ApiQuery({ name: 'includeSettings', required: false, type: Boolean })
     @ApiResponse({ status: 200, description: 'List of hospitals', type: [HospitalResponseDto] })
-    @Permissions(UserRole.READONLY)
+    // No @Permissions - any authenticated user can list hospitals
     findAll(@Query('includeSettings', new ParseBoolPipe({ optional: true })) includeSettings?: boolean) {
         return this.hospitalsService.findAll(includeSettings);
     }
