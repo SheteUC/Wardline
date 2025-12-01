@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
     LayoutDashboard, Phone, Activity, GitGraph, Users, Settings,
     Bell, Search, LogOut, Menu, X, Plus, Filter, Download,
@@ -13,14 +13,20 @@ import {
     ZoomIn, ZoomOut, RotateCcw, CornerUpLeft, CornerUpRight,
     MousePointer, GripHorizontal,
     Shield, Globe, BellRing, CreditCard, Lock, Link2,
-    Building2, Pill, Megaphone
+    Building2, Pill, Megaphone, Headphones, Server
 } from 'lucide-react';
 import { Button } from "@/components/dashboard/shared";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const { user } = useUser();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+
+    // Get user role from metadata
+    const userRole = (user?.publicMetadata?.role as string) || 'readonly';
+    const isAdmin = ['admin', 'supervisor', 'owner', 'system_admin'].includes(userRole);
+    const isSystemAdmin = userRole === 'system_admin';
 
     useEffect(() => {
         const handleResize = () => {
@@ -37,22 +43,29 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const NavItem = ({ href, icon: Icon, label }: { href: string, icon: any, label: string }) => {
-        const isActive = pathname === href;
+    const NavItem = ({ href, icon: Icon, label, badge }: { href: string, icon: any, label: string, badge?: number }) => {
+        const isActive = pathname === href || pathname.startsWith(href + '/');
         return (
             <Link
                 href={href}
                 onClick={() => {
                     if (isMobile) setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1
+                className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1
           ${isActive
                         ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
                         : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                     }`}
             >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
-                {label}
+                <div className="flex items-center gap-3">
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
+                    {label}
+                </div>
+                {badge !== undefined && badge > 0 && (
+                    <span className="px-2 py-0.5 text-xs font-bold bg-rose-500 text-white rounded-full">
+                        {badge}
+                    </span>
+                )}
             </Link>
         );
     };
@@ -95,6 +108,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="AI Call Workflow" />
                         <NavItem href="/dashboard/team" icon={Users} label="Team Management" />
 
+                        {/* Role-Based Admin Links */}
+                        {isAdmin && (
+                            <>
+                                <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Admin</div>
+                                <NavItem href="/admin/call-center" icon={Headphones} label="Call Center" badge={2} />
+                                {isSystemAdmin && (
+                                    <NavItem href="/admin/system" icon={Server} label="System Admin" />
+                                )}
+                            </>
+                        )}
+
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Settings</div>
                         <NavItem href="/dashboard/settings" icon={Globe} label="General" />
                         <NavItem href="/dashboard/settings/notifications" icon={BellRing} label="Notifications" />
@@ -107,8 +131,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <div className="flex items-center gap-3 mb-3">
                             <UserButton afterSignOutUrl="/" />
                             <div>
-                                <div className="text-sm font-medium text-sidebar-foreground">Jane Doe</div>
-                                <div className="text-xs text-muted-foreground">Ops Director</div>
+                                <div className="text-sm font-medium text-sidebar-foreground">
+                                    {user?.firstName || 'User'}
+                                </div>
+                                <div className="text-xs text-muted-foreground capitalize">
+                                    {userRole.replace('_', ' ')}
+                                </div>
                             </div>
                         </div>
                     </div>
