@@ -18,6 +18,11 @@ export class SpeechService {
 
         // Configure TTS voice
         this.speechConfig.speechSynthesisVoiceName = 'en-US-JennyNeural';
+        
+        // Configure TTS output format for Twilio (8kHz, 16-bit PCM)
+        // We'll convert to mulaw after
+        this.speechConfig.speechSynthesisOutputFormat = 
+            sdk.SpeechSynthesisOutputFormat.Raw8Khz16BitMonoPcm;
     }
 
     /**

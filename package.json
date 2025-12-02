@@ -16,7 +16,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "pnpm --filter @wardline/db generate",
     "db:migrate": "pnpm --filter @wardline/db migrate:dev",
-    "db:studio": "pnpm --filter @wardline/db studio"
+    "db:studio": "pnpm --filter @wardline/db studio",
+    "db:seed": "pnpm --filter @wardline/db seed",
+    "db:seed:test": "pnpm --filter @wardline/db seed:test"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",

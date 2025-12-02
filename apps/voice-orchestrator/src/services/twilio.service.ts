@@ -9,21 +9,65 @@ export class TwilioService {
     }
 
     /**
-     * Generate TwiML for greeting with WebSocket connection
+     * Generate TwiML for greeting with speech gather
      */
-    public generateGreetingWithWebSocket(callSid: string): twilio.twiml.VoiceResponse {
+    public generateGreetingWithWebSocket(_callSid: string): twilio.twiml.VoiceResponse {
         const twiml = new VoiceResponse();
 
-        // Initial greeting
+        // Gather speech input from caller - greeting is inside gather
+        const gather = twiml.gather({
+            input: ['speech'],
+            action: '/voice/process',
+            method: 'POST',
+            speechTimeout: 'auto',
+            speechModel: 'phone_call',
+            enhanced: true,
+            language: 'en-US',
+        });
+        
+        // Initial greeting - only this is spoken
+        gather.say({
+            voice: 'Polly.Joanna',
+        }, 'Hello, welcome to Wardline Medical Center. How can I help you today?');
+
+        // If gather times out with no input
         twiml.say({
             voice: 'Polly.Joanna',
-        }, 'Hello, you have reached the hospital automated system. Please hold while we connect you.');
+        }, 'I didn\'t catch that. How can I help you?');
+        
+        twiml.redirect('/voice/incoming');
 
-        // Connect to WebSocket for real-time streaming
-        const connect = twiml.connect();
-        connect.stream({
-            url: `wss://${this.getWebSocketUrl()}/media/${callSid}`,
+        return twiml;
+    }
+    
+    /**
+     * Generate TwiML response with AI message and continue gathering
+     */
+    public generateAIResponse(aiMessage: string): twilio.twiml.VoiceResponse {
+        const twiml = new VoiceResponse();
+
+        // Say the AI response inside gather so it starts listening immediately after
+        const gather = twiml.gather({
+            input: ['speech'],
+            action: '/voice/process',
+            method: 'POST',
+            speechTimeout: 'auto',
+            speechModel: 'phone_call',
+            enhanced: true,
+            language: 'en-US',
         });
+        
+        // AI response is the only thing spoken - no extra prompts
+        gather.say({
+            voice: 'Polly.Joanna',
+        }, aiMessage);
+
+        // If no input after AI speaks, prompt once
+        twiml.say({
+            voice: 'Polly.Joanna',
+        }, 'Are you still there?');
+        
+        twiml.redirect('/voice/incoming');
 
         return twiml;
     }

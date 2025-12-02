@@ -141,7 +141,10 @@ export class MediaStreamServer {
                             .pop();
 
                         if (lastResponse) {
-                            await this.sendAudioToCaller(ws, lastResponse.content);
+                            const streamInfo = this.activeStreams.get(streamSid);
+                            if (streamInfo) {
+                                await this.sendAudioToCaller(ws, lastResponse.content, streamSid);
+                            }
                         }
                     }
                 }
@@ -205,27 +208,52 @@ export class MediaStreamServer {
     /**
      * Send audio response to caller via WebSocket
      */
-    private async sendAudioToCaller(ws: WebSocket, text: string): Promise<void> {
+    private async sendAudioToCaller(ws: WebSocket, text: string, streamSid: string): Promise<void> {
         try {
-            // Synthesize speech
+            console.log(`🎙️ Synthesizing speech for: "${text.substring(0, 50)}..."`);
+            
+            // Synthesize speech (now returns 8kHz 16-bit PCM)
             const audioBuffer = await this.speechService.synthesizeSpeech(text);
+            console.log(`[TTS] Got ${audioBuffer.length} bytes of PCM audio`);
 
             // Convert PCM to mulaw for Twilio
             const mulawBuffer = this.pcmToMulaw(audioBuffer);
+            console.log(`[TTS] Converted to ${mulawBuffer.length} bytes of mulaw audio`);
 
-            // Send as base64 encoded media events to Twilio
-            const chunk = mulawBuffer.toString('base64');
+            // Twilio expects audio in small chunks (320 bytes = 20ms at 8kHz mulaw)
+            const CHUNK_SIZE = 320;
+            let offset = 0;
+            let chunkCount = 0;
 
-            const mediaEvent = {
-                event: 'media',
-                streamSid: 'outbound', // Twilio will handle this
-                media: {
-                    payload: chunk,
-                },
-            };
+            while (offset < mulawBuffer.length) {
+                const chunk = mulawBuffer.slice(offset, offset + CHUNK_SIZE);
+                const payload = chunk.toString('base64');
 
-            ws.send(JSON.stringify(mediaEvent));
-            console.log(`🔊 Sent audio response to caller`);
+                const mediaEvent = {
+                    event: 'media',
+                    streamSid: streamSid,
+                    media: {
+                        payload: payload,
+                    },
+                };
+
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify(mediaEvent));
+                    chunkCount++;
+                } else {
+                    console.warn('WebSocket not open, cannot send audio');
+                    break;
+                }
+
+                offset += CHUNK_SIZE;
+                
+                // Small delay between chunks to prevent overwhelming Twilio
+                if (chunkCount % 50 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+            }
+
+            console.log(`🔊 Sent ${chunkCount} audio chunks to caller`);
         } catch (error) {
             console.error('Error sending audio to caller:', error);
         }

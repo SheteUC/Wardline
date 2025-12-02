@@ -11,7 +11,8 @@ export class ConversationManagerService {
     constructor() {
         this.client = new OpenAIClient(
             config.azureOpenAI.endpoint,
-            new AzureKeyCredential(config.azureOpenAI.key)
+            new AzureKeyCredential(config.azureOpenAI.key),
+            { apiVersion: '2024-12-01-preview' }
         );
     }
 
@@ -80,9 +81,8 @@ Ask for the next missing piece of information. Be conversational and helpful.`;
                 config.azureOpenAI.deployment,
                 messages,
                 {
-                    temperature: 0.7,
-                    maxTokens: 150,
-                }
+                    maxCompletionTokens: 150,
+                } as any
             );
 
             const content = response.choices[0]?.message?.content || 'I apologize, could you please repeat that?';
@@ -113,9 +113,8 @@ Ask for the next missing piece of information. Be conversational and helpful.`;
                 config.azureOpenAI.deployment,
                 messages,
                 {
-                    temperature: 0.7,
-                    maxTokens: 150,
-                }
+                    maxCompletionTokens: 150,
+                } as any
             );
 
             for await (const chunk of stream) {

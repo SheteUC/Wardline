@@ -11,10 +11,13 @@
         "migrate:deploy": "prisma migrate deploy",
         "studio": "prisma studio",
         "seed": "tsx src/seed.ts",
+        "seed:test": "tsx src/seed-test-data.ts",
+        "add-user": "tsx src/add-user.ts",
         "clean": "rm -rf dist"
     },
     "dependencies": {
-        "@prisma/client": "^5.8.0"
+        "@prisma/client": "^5.8.0",
+        "date-fns": "^3.0.0"
     },
     "devDependencies": {
         "@types/node": "^20.10.6",
