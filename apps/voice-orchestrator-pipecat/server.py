@@ -98,6 +98,17 @@ async def handle_incoming_call(request: Request):
             
             context.intents = await api_client.get_intents(context.hospital_id)
             context.departments = await api_client.get_departments(context.hospital_id)
+            
+            # Create call session in core-api
+            call_data = await api_client.create_call_session({
+                "twilioCallSid": call_sid,
+                "direction": "inbound",
+                "fromNumber": from_number,
+                "toNumber": to_number,
+            })
+            if call_data:
+                context.call_id = call_data.get("id")
+                logger.info(f"Created call session: {context.call_id}")
         else:
             logger.warning(f"No hospital found for phone {to_number}, using defaults")
             context.hospital_name = "Wardline Medical Center"
@@ -255,8 +266,14 @@ async def call_status(request: Request):
             context.state = CallState.COMPLETED
             context.ended_at = datetime.now()
             
-            # Log call to core API (in production)
-            # await api_client.create_call_session({...})
+            # Update call session in core-api
+            if context.call_id:
+                await api_client.update_call_session(context.call_id, {
+                    "status": call_status,
+                    "duration": int(call_duration),
+                    "detectedIntent": context.detected_intent.value if context.detected_intent else None,
+                })
+                logger.info(f"Updated call session {context.call_id}: {call_status}")
             
             # Clean up context
             context_manager.remove_context(call_sid)

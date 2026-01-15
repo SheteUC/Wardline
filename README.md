@@ -10,7 +10,7 @@ Wardline is a cloud-only SaaS platform that answers hospital phone calls 24/7, p
 
 - **apps/web**: Next.js App Router UI (Vercel)
 - **apps/core-api**: NestJS REST API (Azure)
-- **apps/voice-orchestrator**: Node/TS service for Twilio + Azure AI (Azure)
+- **apps/voice-orchestrator-pipecat**: Python/FastAPI service for Twilio + Azure AI (Azure)
 - **packages/db**: Prisma schema and database client
 - **packages/types**: Shared TypeScript types and Zod schemas
 - **packages/config**: Environment configuration with validation
@@ -72,7 +72,7 @@ pnpm --filter @wardline/web dev
 pnpm --filter @wardline/core-api dev
 
 # Voice Orchestrator (port 3002)
-pnpm --filter @wardline/voice-orchestrator dev
+cd apps/voice-orchestrator-pipecat && python server.py
 ```
 
 ## HIPAA Compliance
@@ -91,55 +91,41 @@ This platform is designed for HIPAA compliance with the following requirements:
 ```
 wardline/
 ├── apps/
-│   ├── web/                 # Next.js frontend
-│   ├── core-api/           # NestJS backend
-│   └── voice-orchestrator/ # Twilio/Azure voice service
-├── packages/
-│   ├── db/                 # Prisma database
-│   ├── types/              # Shared types
-│   ├── config/             # Environment config
-│   ├── utils/              # Shared utilities
-│   └── ui/                 # UI components
-├── infra/
-│   ├── azure/              # Azure infrastructure (Bicep)
-│   ├── twilio/             # Twilio provisioning
-│   └── vercel/             # Vercel configuration
-└── tests/
-    ├── unit/
-    ├── integration/
-    └── e2e/
+│   ├── web/                      # Next.js frontend
+│   ├── core-api/                 # NestJS backend
+│   └── voice-orchestrator-pipecat/  # Python/FastAPI voice service
+└── packages/
+    ├── db/                       # Prisma database
+    ├── types/                    # Shared types
+    ├── config/                   # Environment config
+    ├── utils/                    # Shared utilities
+    └── ui/                       # UI components
 ```
 
 ## Testing
 
-```bash
-# Run all tests
-pnpm test
+Tests are located within each application:
 
-# Run specific test suite
+```bash
+# Run core-api tests
 pnpm --filter @wardline/core-api test
 
-# E2E tests
-pnpm --filter @wardline/web test:e2e
+# Run web tests
+pnpm --filter @wardline/web test
 ```
 
 ## Deployment
 
-### Azure Deployment
-
-```bash
-cd infra/azure
-az deployment group create \
-  --resource-group wardline-prod \
-  --template-file main.bicep
-```
-
-### Vercel Deployment
+### Vercel Deployment (Web)
 
 ```bash
 cd apps/web
 vercel deploy --prod
 ```
+
+### Azure Deployment (API & Voice)
+
+See Azure Container Apps documentation for deploying NestJS and FastAPI services.
 
 ## License
 

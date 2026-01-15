@@ -190,4 +190,179 @@ export class CallsService {
             sentimentTrend: sentimentTrend.sort((a, b) => a.date.localeCompare(b.date)),
         };
     }
+
+    /**
+     * Create a new call session
+     */
+    async create(data: {
+        hospitalId: string;
+        direction: string;
+        fromNumber: string;
+        toNumber: string;
+        twilioCallSid: string;
+    }): Promise<any> {
+        // Look up phone number by Twilio number
+        const phoneNumber = await this.prisma.phoneNumber.findUnique({
+            where: { twilioPhoneNumber: data.toNumber },
+        });
+
+        if (!phoneNumber) {
+            throw new Error(`Phone number not found: ${data.toNumber}`);
+        }
+
+        return this.prisma.callSession.create({
+            data: {
+                hospitalId: data.hospitalId,
+                phoneNumberId: phoneNumber.id,
+                twilioCallSid: data.twilioCallSid,
+                direction: data.direction as any,
+                status: 'INITIATED',
+                startedAt: new Date(),
+            },
+        });
+    }
+
+    /**
+     * Update an existing call session
+     */
+    async update(id: string, data: {
+        status?: string;
+        duration?: number;
+        recordingConsent?: string;
+        detectedIntent?: string;
+        isEmergency?: boolean;
+        tag?: string;
+    }): Promise<any> {
+        const updateData: any = {};
+
+        if (data.status) {
+            updateData.status = data.status;
+            // If completed or abandoned, set endedAt
+            if (data.status === 'COMPLETED' || data.status === 'ABANDONED' || data.status === 'FAILED') {
+                updateData.endedAt = new Date();
+            }
+        }
+
+        if (data.recordingConsent) {
+            updateData.recordingConsent = data.recordingConsent;
+        }
+
+        if (data.isEmergency !== undefined) {
+            updateData.isEmergency = data.isEmergency;
+        }
+
+        if (data.tag) {
+            updateData.tag = data.tag;
+        }
+
+        // Look up intent by key if provided
+        if (data.detectedIntent) {
+            const call = await this.prisma.callSession.findUnique({
+                where: { id },
+                select: { hospitalId: true },
+            });
+
+            if (call) {
+                const intent = await this.prisma.intent.findFirst({
+                    where: {
+                        hospitalId: call.hospitalId,
+                        key: data.detectedIntent,
+                    },
+                });
+
+                if (intent) {
+                    updateData.intentId = intent.id;
+                }
+            }
+        }
+
+        return this.prisma.callSession.update({
+            where: { id },
+            data: updateData,
+        });
+    }
+
+    /**
+     * Save transcript segments for a call
+     */
+    async saveTranscript(callId: string, segments: Array<{
+        speaker: string;
+        text: string;
+        timestamp: Date;
+        confidence?: number;
+    }>): Promise<any> {
+        // Get call start time to calculate offsets
+        const call = await this.prisma.callSession.findUnique({
+            where: { id: callId },
+            select: { startedAt: true },
+        });
+
+        if (!call) {
+            throw new Error(`Call not found: ${callId}`);
+        }
+
+        const callStart = call.startedAt.getTime();
+
+        // Create transcript segments
+        const transcriptData = segments.map((segment) => {
+            const segmentTime = new Date(segment.timestamp).getTime();
+            const startTimeMs = Math.max(0, segmentTime - callStart);
+            // Estimate end time as start + 5 seconds or next segment
+            const endTimeMs = startTimeMs + 5000;
+
+            return {
+                callId,
+                speaker: segment.speaker as any,
+                text: segment.text,
+                startTimeMs,
+                endTimeMs,
+                confidence: segment.confidence ?? 0.95,
+            };
+        });
+
+        return this.prisma.transcriptSegment.createMany({
+            data: transcriptData,
+        });
+    }
+
+    /**
+     * Create a handoff record for escalation
+     */
+    async createHandoff(data: {
+        callId: string;
+        hospitalId: string;
+        intentKey: string;
+        tag: string;
+        summary: string;
+        fields: any;
+    }): Promise<any> {
+        // Create handoff payload
+        const payload = {
+            intentKey: data.intentKey,
+            tag: data.tag,
+            summary: data.summary,
+            fields: data.fields,
+            createdAt: new Date().toISOString(),
+        };
+
+        // Create handoff record
+        const handoff = await this.prisma.handoff.create({
+            data: {
+                callId: data.callId,
+                payload,
+            },
+        });
+
+        // Update call with handoff info
+        await this.prisma.callSession.update({
+            where: { id: data.callId },
+            data: {
+                tag: data.tag as any,
+                handoffTarget: data.intentKey,
+                handoffReason: data.summary,
+            },
+        });
+
+        return handoff;
+    }
 }

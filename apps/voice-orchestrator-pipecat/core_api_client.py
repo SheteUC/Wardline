@@ -110,11 +110,12 @@ class CoreAPIClient:
         """Create a new call session"""
         try:
             response = await self.client.post(
-                f"{self.base_url}/hospitals/{data['hospitalId']}/calls",
+                f"{self.base_url}/api/calls",
                 json=data
             )
             if response.status_code in [200, 201]:
                 return response.json()
+            logger.warning(f"Failed to create call session: {response.status_code}")
             return None
         except Exception as e:
             logger.error(f"Error creating call session: {e}")
@@ -122,18 +123,18 @@ class CoreAPIClient:
     
     async def update_call_session(
         self, 
-        hospital_id: str, 
         call_id: str, 
         data: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Update a call session"""
         try:
             response = await self.client.patch(
-                f"{self.base_url}/hospitals/{hospital_id}/calls/{call_id}",
+                f"{self.base_url}/api/calls/{call_id}",
                 json=data
             )
             if response.status_code == 200:
                 return response.json()
+            logger.warning(f"Failed to update call session: {response.status_code}")
             return None
         except Exception as e:
             logger.error(f"Error updating call session: {e}")

@@ -70,6 +70,7 @@ class CallContext:
     # Call identification
     call_sid: str
     stream_sid: Optional[str] = None
+    call_id: Optional[str] = None  # Core API call record ID
     
     # Caller info
     caller_phone: str = ""
