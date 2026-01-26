@@ -29,7 +29,8 @@ export default clerkMiddleware(async (auth, request) => {
     if (!userId) return;
 
     // Extract role from session claims (set via Clerk metadata)
-    const userRole = sessionClaims?.metadata?.role as string | undefined;
+    const metadata = sessionClaims?.metadata as { role?: string } | undefined;
+    const userRole = metadata?.role;
     const url = request.nextUrl.clone();
 
     // Role-based access control

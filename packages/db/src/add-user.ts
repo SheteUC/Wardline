@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
     const clerkUserId = 'user_35qV9zkWZ5SzYVHwayboKYrI59c';
-    const hospitalId = '86b63766-a748-44e5-ad4c-da493218724b';
+    const hospitalId = '36137e31-e984-4a63-b85e-c4d04346c492';
 
     console.log('🔧 Adding your Clerk user to the database...');
 

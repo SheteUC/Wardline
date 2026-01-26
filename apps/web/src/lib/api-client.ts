@@ -21,7 +21,7 @@ export function useApiClient() {
     return {
         async get<T>(endpoint: string): Promise<T> {
             const token = await getToken();
-            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}${endpoint}`, {
+            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}${endpoint}`, {
                 headers: {
                     "Content-Type": "application/json",
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -34,7 +34,7 @@ export function useApiClient() {
 
         async post<T>(endpoint: string, data: unknown): Promise<T> {
             const token = await getToken();
-            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}${endpoint}`, {
+            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}${endpoint}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -49,7 +49,7 @@ export function useApiClient() {
 
         async put<T>(endpoint: string, data: unknown): Promise<T> {
             const token = await getToken();
-            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}${endpoint}`, {
+            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}${endpoint}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -64,7 +64,7 @@ export function useApiClient() {
 
         async patch<T>(endpoint: string, data: unknown): Promise<T> {
             const token = await getToken();
-            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}${endpoint}`, {
+            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}${endpoint}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export function useApiClient() {
 
         async delete<T>(endpoint: string): Promise<T> {
             const token = await getToken();
-            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"}${endpoint}`, {
+            return fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}${endpoint}`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",

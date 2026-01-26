@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { CallsService } from './calls.service';
 import { CallsController } from './calls.controller';
+import { VoiceOrchestratorClient } from './clients/voice-orchestrator.client';
 
 @Module({
     controllers: [CallsController],
-    providers: [CallsService],
-    exports: [CallsService],
+    providers: [CallsService, VoiceOrchestratorClient],
+    exports: [CallsService, VoiceOrchestratorClient],
 })
 export class CallsModule { }

@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Search, Filter, Download, ChevronRight
 } from 'lucide-react';
 import { Card, Badge, Button } from "@/components/dashboard/shared";
+import { CallsTableSkeleton } from "@/components/dashboard/skeletons";
 import Link from 'next/link';
-import { useCalls } from '@/lib/hooks/query-hooks';
+import { useCalls, usePrefetchCall, usePrefetchCallsPage } from '@/lib/hooks/query-hooks';
 import { useHospital } from '@/lib/hospital-context';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import { formatDistanceToNow } from 'date-fns';
 import { CallStatus } from '@wardline/types';
 
@@ -31,14 +33,40 @@ export default function CallsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(1);
 
-    // Fetch calls with filters
-    const { data: callsData, isLoading, error } = useCalls({
+    // Debounce search query to reduce API calls while typing
+    const debouncedSearch = useDebounce(searchQuery, 300);
+    const isSearching = searchQuery !== debouncedSearch;
+
+    // Prefetch hooks for instant navigation
+    const prefetchCall = usePrefetchCall();
+    const prefetchNextPage = usePrefetchCallsPage();
+
+    // Fetch calls with filters - uses debounced search
+    const { data: callsData, isLoading, isFetching, error } = useCalls({
         status: filter === 'completed' ? CallStatus.COMPLETED :
             filter === 'abandoned' ? CallStatus.ABANDONED : undefined,
-        search: searchQuery || undefined,
+        search: debouncedSearch || undefined,
         page,
         pageSize: 20,
     });
+
+    // Prefetch next page when current page loads
+    useEffect(() => {
+        if (callsData && page * 20 < callsData.total) {
+            prefetchNextPage({
+                status: filter === 'completed' ? CallStatus.COMPLETED :
+                    filter === 'abandoned' ? CallStatus.ABANDONED : undefined,
+                search: debouncedSearch || undefined,
+                page: page + 1,
+                pageSize: 20,
+            });
+        }
+    }, [callsData, page, filter, debouncedSearch, prefetchNextPage]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setPage(1);
+    }, [filter, debouncedSearch]);
 
     const filteredCalls = React.useMemo(() => {
         if (!callsData?.data) return [];
@@ -52,13 +80,18 @@ export default function CallsPage() {
         return filtered;
     }, [callsData, filter]);
 
+    // Show skeleton while hospital is loading
     if (hospitalLoading) {
         return (
             <div className="space-y-6">
                 <Card className="min-h-[600px]">
-                    <div className="flex items-center justify-center h-96">
-                        <div className="text-center text-muted-foreground">Loading...</div>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div className="h-10 w-64 bg-muted animate-pulse rounded-lg"></div>
+                        <div className="flex items-center gap-2">
+                            <div className="h-10 w-64 bg-muted animate-pulse rounded-lg"></div>
+                        </div>
                     </div>
+                    <CallsTableSkeleton />
                 </Card>
             </div>
         );
@@ -80,17 +113,8 @@ export default function CallsPage() {
         );
     }
 
-    if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <Card className="min-h-[600px]">
-                    <div className="flex items-center justify-center h-96">
-                        <div className="text-center text-muted-foreground">Loading calls...</div>
-                    </div>
-                </Card>
-            </div>
-        );
-    }
+    // Show skeleton on initial load only
+    const showSkeleton = isLoading && !callsData;
 
     return (
         <div className="space-y-6">
@@ -120,24 +144,37 @@ export default function CallsPage() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-9 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring w-full md:w-64"
                             />
+                            {/* Show typing indicator */}
+                            {isSearching && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                            )}
                         </div>
                         <Button variant="secondary" icon={Filter} className="hidden md:flex">Filters</Button>
                         <Button variant="secondary" icon={Download} className="hidden md:flex">Export</Button>
                     </div>
                 </div>
 
-                {/* Table */}
-                {isLoading ? (
-                    <div className="flex items-center justify-center h-96">
-                        <div className="text-center text-muted-foreground">Loading calls...</div>
+                {/* Loading indicator for background fetches */}
+                {isFetching && !isLoading && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 overflow-hidden">
+                        <div className="h-full bg-primary animate-pulse" style={{ width: '100%' }}></div>
                     </div>
+                )}
+
+                {/* Table */}
+                {showSkeleton ? (
+                    <CallsTableSkeleton />
                 ) : error ? (
                     <div className="flex items-center justify-center h-96">
                         <div className="text-center text-red-600">Error loading calls. Please try again.</div>
                     </div>
                 ) : filteredCalls.length === 0 ? (
                     <div className="flex items-center justify-center h-96">
-                        <div className="text-center text-muted-foreground">No calls found</div>
+                        <div className="text-center text-muted-foreground">
+                            {searchQuery ? `No calls found for "${searchQuery}"` : 'No calls found'}
+                        </div>
                     </div>
                 ) : (
                     <>
@@ -160,7 +197,11 @@ export default function CallsPage() {
                                         const sentiment = getSentimentDisplay(call.sentiment, call.sentimentScore);
 
                                         return (
-                                            <tr key={call.id} className="hover:bg-muted/50 transition-colors group">
+                                            <tr
+                                                key={call.id}
+                                                className="hover:bg-muted/50 transition-colors group"
+                                                onMouseEnter={() => prefetchCall(call.id)}
+                                            >
                                                 <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
                                                     <div className="font-medium text-foreground">
                                                         {formatDistanceToNow(callDate, { addSuffix: true })}

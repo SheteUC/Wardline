@@ -13,7 +13,8 @@ import {
     ZoomIn, ZoomOut, RotateCcw, CornerUpLeft, CornerUpRight,
     MousePointer, GripHorizontal,
     Shield, Globe, BellRing, CreditCard, Lock, Link2,
-    Building2, Pill, Megaphone, Headphones, Server
+    Building2, Pill, Megaphone, Headphones, Server,
+    Bot, ListTodo, UserCog
 } from 'lucide-react';
 import { Button } from "@/components/dashboard/shared";
 
@@ -104,8 +105,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <NavItem href="/dashboard/insurance" icon={Shield} label="Insurance Verification" />
                         <NavItem href="/dashboard/events" icon={Megaphone} label="Marketing Events" />
 
-                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Configuration</div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Multi-Agent Platform</div>
+                        <NavItem href="/dashboard/agents" icon={Bot} label="Agents" />
+                        <NavItem href="/dashboard/queues" icon={ListTodo} label="Call Queues" />
                         <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="AI Call Workflow" />
+
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Configuration</div>
                         <NavItem href="/dashboard/team" icon={Users} label="Team Management" />
 
                         {/* Role-Based Admin Links */}
@@ -113,6 +118,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             <>
                                 <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Admin</div>
                                 <NavItem href="/admin/call-center" icon={Headphones} label="Call Center" badge={2} />
+                                <NavItem href="/agent/dashboard" icon={UserCog} label="Agent Dashboard" />
                                 {isSystemAdmin && (
                                     <NavItem href="/admin/system" icon={Server} label="System Admin" />
                                 )}
@@ -172,6 +178,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             {pathname === '/dashboard/prescriptions' && 'Prescription Refills'}
                             {pathname === '/dashboard/insurance' && 'Insurance Verification'}
                             {pathname === '/dashboard/events' && 'Marketing Events'}
+                            {pathname === '/dashboard/agents' && 'Agent Management'}
+                            {pathname === '/dashboard/queues' && 'Call Queues'}
+                            {pathname === '/agent/dashboard' && 'Agent Dashboard'}
                             {pathname.startsWith('/dashboard/settings') && 'Settings & Preferences'}
                         </h1>
                     </div>

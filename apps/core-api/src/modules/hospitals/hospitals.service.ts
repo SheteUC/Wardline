@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CacheService, CacheKeys, CacheTTL } from '../../cache/cache.service';
 import { CreateHospitalDto, UpdateHospitalDto } from './dto/hospital.dto';
 import { Logger } from '@wardline/utils';
 
@@ -7,7 +8,10 @@ import { Logger } from '@wardline/utils';
 export class HospitalsService {
     private readonly logger = new Logger(HospitalsService.name);
 
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private cache: CacheService,
+    ) {}
 
     async create(createHospitalDto: CreateHospitalDto): Promise<any> {
         this.logger.info('Creating hospital', { name: createHospitalDto.name });
@@ -43,58 +47,85 @@ export class HospitalsService {
             },
         });
 
+        // Invalidate hospitals list cache
+        this.cache.delete(CacheKeys.hospitals());
+
         this.logger.info('Hospital created', { id: hospital.id });
         return hospital;
     }
 
     async findAll(includeSettings = false): Promise<any[]> {
-        return this.prisma.hospital.findMany({
-            include: {
-                settings: includeSettings,
-                _count: {
-                    select: {
-                        users: true,
-                        phoneNumbers: true,
-                        callSessions: true,
-                    },
-                },
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
-    }
+        const cacheKey = CacheKeys.hospitals();
 
-    async findOne(id: string, includeRelations = false): Promise<any> {
-        const hospital = await this.prisma.hospital.findUnique({
-            where: { id },
-            include: {
-                settings: true,
-                ...(includeRelations && {
-                    phoneNumbers: true,
-                    users: {
-                        include: {
-                            user: {
-                                select: {
-                                    id: true,
-                                    email: true,
-                                    fullName: true,
-                                },
+        return this.cache.getOrSet(
+            cacheKey,
+            async () => {
+                return this.prisma.hospital.findMany({
+                    include: {
+                        settings: includeSettings,
+                        _count: {
+                            select: {
+                                users: true,
+                                phoneNumbers: true,
+                                callSessions: true,
                             },
                         },
                     },
-                }),
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                });
             },
-        });
+            {
+                ttl: CacheTTL.LONG, // 10 minutes - hospital list rarely changes
+                tags: ['hospitals'],
+            }
+        );
+    }
 
-        if (!hospital) {
-            throw new NotFoundException(`Hospital with ID "${id}" not found`);
-        }
+    async findOne(id: string, includeRelations = false): Promise<any> {
+        const cacheKey = CacheKeys.hospital(id);
 
-        return hospital;
+        return this.cache.getOrSet(
+            cacheKey,
+            async () => {
+                const hospital = await this.prisma.hospital.findUnique({
+                    where: { id },
+                    include: {
+                        settings: true,
+                        ...(includeRelations && {
+                            phoneNumbers: true,
+                            users: {
+                                include: {
+                                    user: {
+                                        select: {
+                                            id: true,
+                                            email: true,
+                                            fullName: true,
+                                        },
+                                    },
+                                },
+                            },
+                        }),
+                    },
+                });
+
+                if (!hospital) {
+                    throw new NotFoundException(`Hospital with ID "${id}" not found`);
+                }
+
+                return hospital;
+            },
+            {
+                ttl: CacheTTL.LONG, // 10 minutes
+                tags: ['hospitals', `hospital:${id}`],
+            }
+        );
     }
 
     async findBySlug(slug: string): Promise<any> {
+        // Try to find in cache first by scanning hospital entries
+        // For slug lookups, we'll do a direct DB query but cache the result
         const hospital = await this.prisma.hospital.findUnique({
             where: { slug },
             include: {
@@ -105,6 +136,12 @@ export class HospitalsService {
         if (!hospital) {
             throw new NotFoundException(`Hospital with slug "${slug}" not found`);
         }
+
+        // Cache by ID for future lookups
+        this.cache.set(CacheKeys.hospital(hospital.id), hospital, {
+            ttl: CacheTTL.LONG,
+            tags: ['hospitals', `hospital:${hospital.id}`],
+        });
 
         return hospital;
     }
@@ -137,6 +174,10 @@ export class HospitalsService {
             },
         });
 
+        // Invalidate caches
+        this.cache.delete(CacheKeys.hospital(id));
+        this.cache.delete(CacheKeys.hospitals());
+
         this.logger.info('Hospital updated', { id });
         return hospital;
     }
@@ -153,6 +194,10 @@ export class HospitalsService {
             data: { status: 'SUSPENDED' },
         });
 
+        // Invalidate all caches for this hospital
+        this.cache.invalidateByTag(`hospital:${id}`);
+        this.cache.delete(CacheKeys.hospitals());
+
         this.logger.warn('Hospital suspended (soft delete)', { id });
         return hospital;
     }
@@ -162,9 +207,14 @@ export class HospitalsService {
 
         await this.findOne(id);
 
-        return this.prisma.hospitalSettings.update({
+        const result = await this.prisma.hospitalSettings.update({
             where: { hospitalId: id },
             data: settings,
         });
+
+        // Invalidate hospital cache
+        this.cache.delete(CacheKeys.hospital(id));
+
+        return result;
     }
 }

@@ -43,6 +43,9 @@ model Hospital {
   insuranceInquiries     InsuranceInquiry[]
   insuranceVerifications InsuranceVerification[]
   marketingEvents        MarketingEvent[]
+  // Multi-Agent Platform
+  agents                 Agent[]
+  callQueues             CallQueue[]
 
   @@index([slug])
   @@map("hospitals")
@@ -349,6 +352,8 @@ model CallSession {
   prescriptionRefills  PrescriptionRefill[]
   insuranceInquiries   InsuranceInquiry[]
   eventRegistrations   EventRegistration[]
+  // Multi-Agent Platform
+  assignments          CallAssignment[]
 
   @@index([hospitalId, startedAt])
   @@index([tag])
@@ -757,4 +762,116 @@ enum RegistrationStatus {
   WAITLISTED
   CANCELLED
   NO_SHOW
+}
+
+// ============================================================================
+// Multi-Agent Platform Models
+// ============================================================================
+
+model Agent {
+  id            String      @id @default(uuid())
+  hospitalId    String      @map("hospital_id")
+  type          AgentType
+  name          String
+  description   String?     @db.Text
+  status        AgentStatus @default(ACTIVE)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // For AI Agents
+  aiConfig Json? @map("ai_config") // AIAgentConfig interface
+
+  // For Human Agents  
+  humanProfile Json? @map("human_profile") // HumanAgentProfile interface
+
+  // Relationships
+  hospital        Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  callAssignments CallAssignment[]
+  agentSessions   AgentSession[]
+
+  @@index([hospitalId, type, status])
+  @@map("agents")
+}
+
+enum AgentType {
+  AI
+  HUMAN
+}
+
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+  PAUSED
+}
+
+model CallQueue {
+  id             String   @id @default(uuid())
+  hospitalId     String   @map("hospital_id")
+  name           String
+  specialization String
+  priority       Int      @default(0)
+  maxWaitTime    Int?     @map("max_wait_time") // seconds
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  hospital    Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  queuedCalls CallAssignment[]
+
+  @@index([hospitalId, specialization])
+  @@map("call_queues")
+}
+
+model CallAssignment {
+  id          String               @id @default(uuid())
+  callId      String               @map("call_id")
+  queueId     String?              @map("queue_id")
+  agentId     String?              @map("agent_id")
+  status      CallAssignmentStatus
+  assignedAt  DateTime?            @map("assigned_at")
+  acceptedAt  DateTime?            @map("accepted_at")
+  completedAt DateTime?            @map("completed_at")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  call  CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
+  queue CallQueue?  @relation(fields: [queueId], references: [id], onDelete: SetNull)
+  agent Agent?      @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([callId])
+  @@index([agentId, status])
+  @@index([queueId, status])
+  @@map("call_assignments")
+}
+
+enum CallAssignmentStatus {
+  QUEUED
+  ASSIGNED
+  ACCEPTED
+  COMPLETED
+  ABANDONED
+  FAILED
+}
+
+model AgentSession {
+  id                String              @id @default(uuid())
+  agentId           String              @map("agent_id")
+  status            AgentSessionStatus
+  startedAt         DateTime            @default(now()) @map("started_at")
+  endedAt           DateTime?           @map("ended_at")
+  totalCallsHandled Int                 @default(0) @map("total_calls_handled")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, status])
+  @@map("agent_sessions")
+}
+
+enum AgentSessionStatus {
+  ONLINE
+  OFFLINE
+  BUSY
+  BREAK
+  AWAY
 }

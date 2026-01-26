@@ -77,33 +77,23 @@ export class DepartmentsController {
         return this.departmentsService.findDepartmentsByServiceType(hospitalId, serviceType);
     }
 
-    @Get(':id')
-    @ApiOperation({ summary: 'Get department by ID' })
-    @ApiResponse({ status: 200, description: 'Department found', type: DepartmentResponseDto })
-    @ApiResponse({ status: 404, description: 'Department not found' })
-    @Permissions(UserRole.READONLY)
-    findOne(@Param('id') id: string): Promise<any> {
-        return this.departmentsService.findDepartmentById(id);
-    }
-
-    @Patch(':id')
-    @ApiOperation({ summary: 'Update department' })
-    @ApiResponse({ status: 200, description: 'Department updated', type: DepartmentResponseDto })
-    @ApiResponse({ status: 404, description: 'Department not found' })
-    @Permissions(UserRole.ADMIN)
-    @Auditable('department', 'UPDATE')
-    updateDepartment(@Param('id') id: string, @Body() updateDepartmentDto: UpdateDepartmentDto): Promise<any> {
-        return this.departmentsService.updateDepartment(id, updateDepartmentDto);
-    }
-
-    @Delete(':id')
-    @ApiOperation({ summary: 'Deactivate department (soft delete)' })
-    @ApiResponse({ status: 200, description: 'Department deactivated' })
-    @ApiResponse({ status: 404, description: 'Department not found' })
-    @Permissions(UserRole.ADMIN)
-    @Auditable('department', 'DELETE')
-    deleteDepartment(@Param('id') id: string): Promise<any> {
-        return this.departmentsService.deleteDepartment(id);
+    @Get('stats')
+    @ApiOperation({ summary: 'Get directory inquiry statistics' })
+    @ApiQuery({ name: 'hospitalId', required: true })
+    @ApiQuery({ name: 'startDate', required: false })
+    @ApiQuery({ name: 'endDate', required: false })
+    @ApiResponse({ status: 200, description: 'Directory statistics' })
+    @Permissions(UserRole.SUPERVISOR)
+    getStats(
+        @Query('hospitalId') hospitalId: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+    ): Promise<any> {
+        return this.departmentsService.getDirectoryStats(
+            hospitalId,
+            startDate ? new Date(startDate) : undefined,
+            endDate ? new Date(endDate) : undefined,
+        );
     }
 
     // Directory Inquiry endpoints
@@ -152,22 +142,32 @@ export class DepartmentsController {
         return this.departmentsService.updateDirectoryInquiry(id, updateDirectoryInquiryDto);
     }
 
-    @Get('stats')
-    @ApiOperation({ summary: 'Get directory inquiry statistics' })
-    @ApiQuery({ name: 'hospitalId', required: true })
-    @ApiQuery({ name: 'startDate', required: false })
-    @ApiQuery({ name: 'endDate', required: false })
-    @ApiResponse({ status: 200, description: 'Directory statistics' })
-    @Permissions(UserRole.SUPERVISOR)
-    getStats(
-        @Query('hospitalId') hospitalId: string,
-        @Query('startDate') startDate?: string,
-        @Query('endDate') endDate?: string,
-    ): Promise<any> {
-        return this.departmentsService.getDirectoryStats(
-            hospitalId,
-            startDate ? new Date(startDate) : undefined,
-            endDate ? new Date(endDate) : undefined,
-        );
+    @Get(':id')
+    @ApiOperation({ summary: 'Get department by ID' })
+    @ApiResponse({ status: 200, description: 'Department found', type: DepartmentResponseDto })
+    @ApiResponse({ status: 404, description: 'Department not found' })
+    @Permissions(UserRole.READONLY)
+    findOne(@Param('id') id: string): Promise<any> {
+        return this.departmentsService.findDepartmentById(id);
+    }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Update department' })
+    @ApiResponse({ status: 200, description: 'Department updated', type: DepartmentResponseDto })
+    @ApiResponse({ status: 404, description: 'Department not found' })
+    @Permissions(UserRole.ADMIN)
+    @Auditable('department', 'UPDATE')
+    updateDepartment(@Param('id') id: string, @Body() updateDepartmentDto: UpdateDepartmentDto): Promise<any> {
+        return this.departmentsService.updateDepartment(id, updateDepartmentDto);
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Deactivate department (soft delete)' })
+    @ApiResponse({ status: 200, description: 'Department deactivated' })
+    @ApiResponse({ status: 404, description: 'Department not found' })
+    @Permissions(UserRole.ADMIN)
+    @Auditable('department', 'DELETE')
+    deleteDepartment(@Param('id') id: string): Promise<any> {
+        return this.departmentsService.deleteDepartment(id);
     }
 }

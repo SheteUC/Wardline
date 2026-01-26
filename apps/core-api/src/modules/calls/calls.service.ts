@@ -1,198 +1,300 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CacheService, CacheKeys, CacheTTL } from '../../cache/cache.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class CallsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private cache: CacheService,
+    ) {}
 
+    /**
+     * Get paginated list of calls for a hospital with optional filters.
+     * Uses caching for repeat queries.
+     */
     async findAllByHospital(hospitalId: string, filters?: any): Promise<any> {
         const page = parseInt(filters?.page) || 1;
         const pageSize = parseInt(filters?.pageSize) || 20;
         const skip = (page - 1) * pageSize;
 
-        // Build where clause
-        const where: any = { hospitalId };
+        // Create cache key based on all filters
+        const filterHash = crypto
+            .createHash('md5')
+            .update(JSON.stringify({ ...filters, page, pageSize }))
+            .digest('hex')
+            .substring(0, 8);
 
-        if (filters?.status) {
-            // Convert to uppercase to match CallStatus enum
-            where.status = filters.status.toUpperCase();
-        }
+        const cacheKey = CacheKeys.callsList(hospitalId, filterHash);
 
-        if (filters?.search) {
-            // Search in phone number or patient name
-            where.OR = [
-                { phoneNumber: { twilioPhoneNumber: { contains: filters.search } } },
-                { patient: { name: { contains: filters.search, mode: 'insensitive' } } },
-            ];
-        }
+        // Try cache first
+        return this.cache.getOrSet(
+            cacheKey,
+            async () => {
+                // Build where clause
+                const where: any = { hospitalId };
 
-        const [calls, total] = await Promise.all([
-            this.prisma.callSession.findMany({
-                where,
-                include: {
-                    phoneNumber: true,
-                    intent: true,
-                    patient: {
-                        select: { id: true, externalId: true, name: true },
-                    },
-                },
-                orderBy: { startedAt: 'desc' },
-                skip,
-                take: pageSize,
-            }),
-            this.prisma.callSession.count({ where }),
-        ]);
+                if (filters?.status) {
+                    // Convert to uppercase to match CallStatus enum
+                    where.status = filters.status.toUpperCase();
+                }
 
-        // Transform to match frontend expectations
-        const transformedCalls = calls.map((call) => ({
-            id: call.id,
-            hospitalId: call.hospitalId,
-            twilioCallSid: call.twilioCallSid,
-            direction: call.direction,
-            status: call.status,
-            callerPhone: call.phoneNumber.twilioPhoneNumber,
-            callerName: call.patient?.name,
-            duration: call.endedAt
-                ? Math.floor((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000)
-                : 0,
-            recordingConsent: call.recordingConsent,
-            wasEmergency: call.isEmergency,
-            detectedIntent: call.intent?.displayName,
-            sentiment: call.sentimentOverallScore
-                ? (Number(call.sentimentOverallScore) >= 0.6 ? 'positive' : Number(call.sentimentOverallScore) >= 0.4 ? 'neutral' : 'negative')
-                : undefined,
-            sentimentScore: call.sentimentOverallScore ? Number(call.sentimentOverallScore) : undefined,
-            createdAt: call.createdAt.toISOString(),
-            updatedAt: call.updatedAt.toISOString(),
-        }));
+                if (filters?.search) {
+                    // Search in phone number or patient name
+                    where.OR = [
+                        { phoneNumber: { twilioPhoneNumber: { contains: filters.search } } },
+                        { patient: { name: { contains: filters.search, mode: 'insensitive' } } },
+                    ];
+                }
 
-        return {
-            data: transformedCalls,
-            total,
-            page,
-            pageSize,
-        };
-    }
+                // Use Promise.all for parallel queries
+                const [calls, total] = await Promise.all([
+                    this.prisma.callSession.findMany({
+                        where,
+                        include: {
+                            phoneNumber: {
+                                select: { twilioPhoneNumber: true },
+                            },
+                            intent: {
+                                select: { displayName: true },
+                            },
+                            patient: {
+                                select: { id: true, externalId: true, name: true },
+                            },
+                        },
+                        orderBy: { startedAt: 'desc' },
+                        skip,
+                        take: pageSize,
+                    }),
+                    this.prisma.callSession.count({ where }),
+                ]);
 
-    async findOne(id: string): Promise<any> {
-        return this.prisma.callSession.findUnique({
-            where: { id },
-            include: {
-                phoneNumber: true,
-                intent: true,
-                patient: true,
-                transcriptSegments: {
-                    orderBy: { startTimeMs: 'asc' },
-                },
-                sentimentSnapshots: {
-                    orderBy: { offsetMs: 'asc' },
-                },
-                handoffs: true,
+                // Transform to match frontend expectations
+                const transformedCalls = calls.map((call) => ({
+                    id: call.id,
+                    hospitalId: call.hospitalId,
+                    twilioCallSid: call.twilioCallSid,
+                    direction: call.direction,
+                    status: call.status,
+                    callerPhone: call.phoneNumber.twilioPhoneNumber,
+                    callerName: call.patient?.name,
+                    duration: call.endedAt
+                        ? Math.floor((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000)
+                        : 0,
+                    recordingConsent: call.recordingConsent,
+                    wasEmergency: call.isEmergency,
+                    detectedIntent: call.intent?.displayName,
+                    sentiment: call.sentimentOverallScore
+                        ? (Number(call.sentimentOverallScore) >= 0.6 ? 'positive' : Number(call.sentimentOverallScore) >= 0.4 ? 'neutral' : 'negative')
+                        : undefined,
+                    sentimentScore: call.sentimentOverallScore ? Number(call.sentimentOverallScore) : undefined,
+                    createdAt: call.createdAt.toISOString(),
+                    updatedAt: call.updatedAt.toISOString(),
+                }));
+
+                return {
+                    data: transformedCalls,
+                    total,
+                    page,
+                    pageSize,
+                };
             },
-        });
-    }
-
-    async getAnalytics(hospitalId: string, startDate: Date, endDate: Date): Promise<any> {
-        const calls = await this.prisma.callSession.findMany({
-            where: {
-                hospitalId,
-                startedAt: {
-                    gte: startDate,
-                    lte: endDate,
-                },
-            },
-            select: {
-                id: true,
-                status: true,
-                tag: true,
-                isEmergency: true,
-                startedAt: true,
-                endedAt: true,
-                sentimentOverallScore: true,
-                intent: {
-                    select: {
-                        displayName: true,
-                    },
-                },
-            },
-        });
-
-        const completedCalls = calls.filter((c) => c.status === 'COMPLETED');
-        const abandonedCalls = calls.filter((c) => c.status === 'ABANDONED');
-        const emergencyCalls = calls.filter((c) => c.isEmergency);
-        const activeEmergencies = calls.filter((c) => c.isEmergency && c.status === 'ONGOING').length;
-
-        // Calculate average duration
-        const totalDuration = completedCalls.reduce((sum, call) => {
-            if (!call.endedAt) return sum;
-            return sum + (new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime());
-        }, 0);
-        const avgDurationMs = completedCalls.length > 0 ? totalDuration / completedCalls.length : 0;
-        const avgDurationSeconds = Math.floor(avgDurationMs / 1000);
-
-        // Intent breakdown
-        const intentCounts: Record<string, number> = {};
-        calls.forEach((call) => {
-            if (call.intent?.displayName) {
-                intentCounts[call.intent.displayName] = (intentCounts[call.intent.displayName] || 0) + 1;
+            {
+                ttl: CacheTTL.SHORT, // 30 seconds for call lists
+                tags: [`hospital:${hospitalId}`, 'calls'],
             }
-        });
-
-        const intentBreakdown = Object.entries(intentCounts).map(([intent, count]) => ({
-            intent,
-            count,
-            percentage: (count / calls.length) * 100,
-        }));
-
-        // Call volume by hour (just grouping by hour for simplicity)
-        const hourCounts: Record<string, number> = {};
-        calls.forEach((call) => {
-            const hour = new Date(call.startedAt).getHours().toString().padStart(2, '0') + ':00';
-            hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-        });
-
-        const callVolumeByHour = Object.entries(hourCounts).map(([hour, calls]) => ({
-            hour,
-            calls,
-        }));
-
-        // Sentiment trend (simplified - by day)
-        const sentimentByDay: Record<string, { positive: number; neutral: number; negative: number }> = {};
-        calls.forEach((call) => {
-            if (call.sentimentOverallScore === null) return;
-            const date = new Date(call.startedAt).toISOString().split('T')[0];
-            if (!sentimentByDay[date]) {
-                sentimentByDay[date] = { positive: 0, neutral: 0, negative: 0 };
-            }
-
-            const score = Number(call.sentimentOverallScore);
-            if (score >= 0.6) sentimentByDay[date].positive++;
-            else if (score >= 0.4) sentimentByDay[date].neutral++;
-            else sentimentByDay[date].negative++;
-        });
-
-        const sentimentTrend = Object.entries(sentimentByDay).map(([date, counts]) => ({
-            date,
-            ...counts,
-        }));
-
-        return {
-            totalCalls: calls.length,
-            completedCalls: completedCalls.length,
-            abandonedCalls: abandonedCalls.length,
-            averageDuration: avgDurationSeconds,
-            averageHoldTime: 0, // TODO: Implement if we track hold time
-            abandonRate: calls.length > 0 ? (abandonedCalls.length / calls.length) * 100 : 0,
-            emergencyFlags: emergencyCalls.length,
-            activeEmergencies,
-            callVolumeByHour: callVolumeByHour.sort((a, b) => a.hour.localeCompare(b.hour)),
-            intentBreakdown,
-            sentimentTrend: sentimentTrend.sort((a, b) => a.date.localeCompare(b.date)),
-        };
+        );
     }
 
     /**
-     * Create a new call session
+     * Get a single call with full details including transcript.
+     * Uses caching for repeat views.
+     */
+    async findOne(id: string): Promise<any> {
+        const cacheKey = CacheKeys.callDetail(id);
+
+        return this.cache.getOrSet(
+            cacheKey,
+            async () => {
+                return this.prisma.callSession.findUnique({
+                    where: { id },
+                    include: {
+                        phoneNumber: true,
+                        intent: true,
+                        patient: true,
+                        transcriptSegments: {
+                            orderBy: { startTimeMs: 'asc' },
+                        },
+                        sentimentSnapshots: {
+                            orderBy: { offsetMs: 'asc' },
+                        },
+                        handoffs: true,
+                    },
+                });
+            },
+            {
+                ttl: CacheTTL.MEDIUM, // 2 minutes for call details
+                tags: ['calls', `call:${id}`],
+            }
+        );
+    }
+
+    /**
+     * Get analytics for a hospital using optimized database aggregations.
+     * Much faster than fetching all calls and processing in memory.
+     */
+    async getAnalytics(hospitalId: string, startDate: Date, endDate: Date): Promise<any> {
+        const cacheKey = CacheKeys.callAnalytics(
+            hospitalId,
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+        );
+
+        return this.cache.getOrSet(
+            cacheKey,
+            async () => {
+                const baseWhere = {
+                    hospitalId,
+                    startedAt: {
+                        gte: startDate,
+                        lte: endDate,
+                    },
+                };
+
+                // Run all aggregations in parallel
+                const [
+                    totalCount,
+                    statusCounts,
+                    emergencyCount,
+                    activeEmergencyCount,
+                    avgDuration,
+                    intentCounts,
+                    hourlyVolume,
+                    sentimentCounts,
+                ] = await Promise.all([
+                    // Total calls
+                    this.prisma.callSession.count({ where: baseWhere }),
+
+                    // Calls by status
+                    this.prisma.callSession.groupBy({
+                        by: ['status'],
+                        where: baseWhere,
+                        _count: { id: true },
+                    }),
+
+                    // Emergency calls total
+                    this.prisma.callSession.count({
+                        where: { ...baseWhere, isEmergency: true },
+                    }),
+
+                    // Active emergencies
+                    this.prisma.callSession.count({
+                        where: { ...baseWhere, isEmergency: true, status: 'ONGOING' },
+                    }),
+
+                    // Average duration (using raw SQL for efficiency)
+                    this.prisma.$queryRaw<[{ avg_duration: number | null }]>`
+                        SELECT AVG(EXTRACT(EPOCH FROM (ended_at - started_at))) as avg_duration
+                        FROM call_sessions
+                        WHERE hospital_id = ${hospitalId}
+                          AND started_at >= ${startDate}
+                          AND started_at <= ${endDate}
+                          AND ended_at IS NOT NULL
+                          AND status = 'COMPLETED'
+                    `,
+
+                    // Intent breakdown
+                    this.prisma.$queryRaw<Array<{ display_name: string; count: bigint }>>`
+                        SELECT i.display_name, COUNT(cs.id)::bigint as count
+                        FROM call_sessions cs
+                        LEFT JOIN intents i ON cs.intent_id = i.id
+                        WHERE cs.hospital_id = ${hospitalId}
+                          AND cs.started_at >= ${startDate}
+                          AND cs.started_at <= ${endDate}
+                          AND i.display_name IS NOT NULL
+                        GROUP BY i.display_name
+                        ORDER BY count DESC
+                        LIMIT 10
+                    `,
+
+                    // Hourly volume
+                    this.prisma.$queryRaw<Array<{ hour: number; count: bigint }>>`
+                        SELECT EXTRACT(HOUR FROM started_at)::int as hour, COUNT(*)::bigint as count
+                        FROM call_sessions
+                        WHERE hospital_id = ${hospitalId}
+                          AND started_at >= ${startDate}
+                          AND started_at <= ${endDate}
+                        GROUP BY hour
+                        ORDER BY hour
+                    `,
+
+                    // Sentiment breakdown by day
+                    this.prisma.$queryRaw<Array<{ date: Date; positive: bigint; neutral: bigint; negative: bigint }>>`
+                        SELECT 
+                            DATE(started_at) as date,
+                            COUNT(*) FILTER (WHERE sentiment_overall_score >= 0.6)::bigint as positive,
+                            COUNT(*) FILTER (WHERE sentiment_overall_score >= 0.4 AND sentiment_overall_score < 0.6)::bigint as neutral,
+                            COUNT(*) FILTER (WHERE sentiment_overall_score < 0.4 AND sentiment_overall_score IS NOT NULL)::bigint as negative
+                        FROM call_sessions
+                        WHERE hospital_id = ${hospitalId}
+                          AND started_at >= ${startDate}
+                          AND started_at <= ${endDate}
+                        GROUP BY DATE(started_at)
+                        ORDER BY date
+                    `,
+                ]);
+
+                // Process status counts
+                const statusMap = new Map(statusCounts.map(s => [s.status, s._count.id]));
+                const completedCalls = statusMap.get('COMPLETED') || 0;
+                const abandonedCalls = statusMap.get('ABANDONED') || 0;
+
+                // Format intent breakdown
+                const intentBreakdown = intentCounts.map((item) => ({
+                    intent: item.display_name,
+                    count: Number(item.count),
+                    percentage: totalCount > 0 ? (Number(item.count) / totalCount) * 100 : 0,
+                }));
+
+                // Format call volume by hour
+                const callVolumeByHour = hourlyVolume.map((item) => ({
+                    hour: `${String(item.hour).padStart(2, '0')}:00`,
+                    calls: Number(item.count),
+                }));
+
+                // Format sentiment trend
+                const sentimentTrend = sentimentCounts.map((item) => ({
+                    date: item.date instanceof Date ? item.date.toISOString().split('T')[0] : String(item.date).split('T')[0],
+                    positive: Number(item.positive),
+                    neutral: Number(item.neutral),
+                    negative: Number(item.negative),
+                }));
+
+                return {
+                    totalCalls: totalCount,
+                    completedCalls,
+                    abandonedCalls,
+                    averageDuration: Math.floor(avgDuration[0]?.avg_duration || 0),
+                    averageHoldTime: 0, // TODO: Implement if we track hold time
+                    abandonRate: totalCount > 0 ? (abandonedCalls / totalCount) * 100 : 0,
+                    emergencyFlags: emergencyCount,
+                    activeEmergencies: activeEmergencyCount,
+                    callVolumeByHour,
+                    intentBreakdown,
+                    sentimentTrend,
+                };
+            },
+            {
+                ttl: CacheTTL.ANALYTICS, // 1 minute for analytics
+                tags: [`hospital:${hospitalId}`, 'analytics'],
+            }
+        );
+    }
+
+    /**
+     * Create a new call session.
+     * Invalidates related caches.
      */
     async create(data: {
         hospitalId: string;
@@ -210,7 +312,7 @@ export class CallsService {
             throw new Error(`Phone number not found: ${data.toNumber}`);
         }
 
-        return this.prisma.callSession.create({
+        const call = await this.prisma.callSession.create({
             data: {
                 hospitalId: data.hospitalId,
                 phoneNumberId: phoneNumber.id,
@@ -220,10 +322,16 @@ export class CallsService {
                 startedAt: new Date(),
             },
         });
+
+        // Invalidate call list caches for this hospital
+        this.cache.invalidateByTag(`hospital:${data.hospitalId}`);
+
+        return call;
     }
 
     /**
-     * Update an existing call session
+     * Update an existing call session.
+     * Invalidates related caches.
      */
     async update(id: string, data: {
         status?: string;
@@ -273,13 +381,21 @@ export class CallsService {
                 if (intent) {
                     updateData.intentId = intent.id;
                 }
+
+                // Invalidate caches
+                this.cache.invalidateByTag(`hospital:${call.hospitalId}`);
             }
         }
 
-        return this.prisma.callSession.update({
+        const result = await this.prisma.callSession.update({
             where: { id },
             data: updateData,
         });
+
+        // Invalidate call detail cache
+        this.cache.delete(CacheKeys.callDetail(id));
+
+        return result;
     }
 
     /**
@@ -320,9 +436,14 @@ export class CallsService {
             };
         });
 
-        return this.prisma.transcriptSegment.createMany({
+        const result = await this.prisma.transcriptSegment.createMany({
             data: transcriptData,
         });
+
+        // Invalidate call detail cache since transcript changed
+        this.cache.delete(CacheKeys.callDetail(callId));
+
+        return result;
     }
 
     /**
@@ -362,6 +483,10 @@ export class CallsService {
                 handoffReason: data.summary,
             },
         });
+
+        // Invalidate caches
+        this.cache.delete(CacheKeys.callDetail(data.callId));
+        this.cache.invalidateByTag(`hospital:${data.hospitalId}`);
 
         return handoff;
     }

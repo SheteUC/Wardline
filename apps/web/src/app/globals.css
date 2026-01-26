@@ -151,3 +151,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Skeleton loading shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    oklch(0.95 0.01 90) 50%,
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+}

@@ -43,7 +43,7 @@ const mockAppointments = [
 
 export default function PatientAppointmentsPage() {
     const upcomingAppointments = mockAppointments.filter(
-        apt => new Date(apt.scheduledAt) > new Date() && apt.status !== 'cancelled'
+        apt => new Date(apt.scheduledAt) > new Date() && apt.status !== 'completed'
     );
     const pastAppointments = mockAppointments.filter(
         apt => new Date(apt.scheduledAt) <= new Date() || apt.status === 'completed'

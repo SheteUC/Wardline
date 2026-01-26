@@ -12,6 +12,7 @@
         "studio": "prisma studio",
         "seed": "tsx src/seed.ts",
         "seed:test": "tsx src/seed-test-data.ts",
+        "seed:agents": "tsx src/seed-agents.ts",
         "add-user": "tsx src/add-user.ts",
         "clean": "rm -rf dist"
     },

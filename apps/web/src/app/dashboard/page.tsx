@@ -9,8 +9,9 @@ import {
     ResponsiveContainer
 } from 'recharts';
 import { Card, StatCard, Badge, Button } from "@/components/dashboard/shared";
+import { DashboardSkeleton, RecentCallsSkeleton, PieChartSkeleton, LiveStatusSkeleton } from "@/components/dashboard/skeletons";
 import Link from 'next/link';
-import { useCalls, useCallAnalytics } from '@/lib/hooks/query-hooks';
+import { useCalls, useCallAnalytics, usePrefetchCall } from '@/lib/hooks/query-hooks';
 import { useHospital } from '@/lib/hospital-context';
 import { CallStatus } from '@wardline/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -39,6 +40,7 @@ function formatDuration(seconds: number): string {
 
 export default function DashboardPage() {
     const { hospitalId, isLoading: hospitalLoading } = useHospital();
+    const prefetchCall = usePrefetchCall();
 
     // Get today's date range
     const today = useMemo(() => {
@@ -49,19 +51,17 @@ export default function DashboardPage() {
         return { start, end };
     }, []);
 
-    // Fetch recent calls (last 10)
+    // Fetch recent calls (last 10) - runs in parallel with analytics
     const { data: callsData, isLoading: callsLoading } = useCalls({
         pageSize: 10,
         page: 1,
     });
 
-    // Fetch analytics for today
+    // Fetch analytics for today - runs in parallel with calls
     const { data: analytics, isLoading: analyticsLoading } = useCallAnalytics(
         today.start,
         today.end
     );
-
-    const isLoading = hospitalLoading || callsLoading || analyticsLoading;
 
     // Process analytics data for charts
     const callVolumeData = useMemo(() => {
@@ -97,20 +97,9 @@ export default function DashboardPage() {
         }));
     }, [callsData]);
 
-    // Loading state
+    // Full skeleton while hospital is loading
     if (hospitalLoading) {
-        return (
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-32 bg-muted animate-pulse rounded-lg"></div>
-                    ))}
-                </div>
-                <div className="text-center py-12 text-muted-foreground">
-                    Loading...
-                </div>
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     // No hospital selected
@@ -130,60 +119,64 @@ export default function DashboardPage() {
         );
     }
 
-    // Still loading data
-    if (callsLoading || analyticsLoading) {
-        return (
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-32 bg-muted animate-pulse rounded-lg"></div>
-                    ))}
-                </div>
-                <div className="text-center py-12 text-muted-foreground">
-                    Loading dashboard data...
-                </div>
-            </div>
-        );
-    }
+    // Determine what to show - progressive loading for better perceived performance
+    const showAnalyticsSkeleton = analyticsLoading && !analytics;
+    const showCallsSkeleton = callsLoading && !callsData;
 
     return (
         <div className="space-y-6">
-            {/* Top Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    label="Calls Today"
-                    value={analytics?.totalCalls?.toString() || '0'}
-                    trendValue={`${analytics?.completedCalls || 0} completed`}
-                    trend="up"
-                    icon={Phone}
-                />
-                <StatCard
-                    label="Avg Duration"
-                    value={formatDuration(analytics?.averageDuration || 0)}
-                    trendValue={`${analytics?.abandonedCalls || 0} abandoned`}
-                    trend="down"
-                    icon={Clock}
-                />
-                <StatCard
-                    label="Abandon Rate"
-                    value={`${(analytics?.abandonRate || 0).toFixed(1)}%`}
-                    trendValue={analytics?.abandonRate && analytics.abandonRate > 5 ? 'Above target' : 'Within target'}
-                    trend={analytics?.abandonRate && analytics.abandonRate > 5 ? 'up' : 'down'}
-                    icon={LogOut}
-                />
-                <StatCard
-                    label="Emergency Flags"
-                    value={analytics?.emergencyFlags?.toString() || '0'}
-                    trendValue={`${analytics?.activeEmergencies || 0} Active`}
-                    icon={AlertTriangle}
-                    alert={!!analytics?.activeEmergencies && analytics.activeEmergencies > 0}
-                />
-            </div>
+            {/* Top Metrics - Show skeleton or real data */}
+            {showAnalyticsSkeleton ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="bg-card border border-border rounded-xl p-6 shadow-sm animate-pulse">
+                            <div className="space-y-3">
+                                <div className="h-4 w-24 bg-muted rounded"></div>
+                                <div className="h-8 w-20 bg-muted rounded"></div>
+                                <div className="h-3 w-32 bg-muted rounded"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard
+                        label="Calls Today"
+                        value={analytics?.totalCalls?.toString() || '0'}
+                        trendValue={`${analytics?.completedCalls || 0} completed`}
+                        trend="up"
+                        icon={Phone}
+                    />
+                    <StatCard
+                        label="Avg Duration"
+                        value={formatDuration(analytics?.averageDuration || 0)}
+                        trendValue={`${analytics?.abandonedCalls || 0} abandoned`}
+                        trend="down"
+                        icon={Clock}
+                    />
+                    <StatCard
+                        label="Abandon Rate"
+                        value={`${(analytics?.abandonRate || 0).toFixed(1)}%`}
+                        trendValue={analytics?.abandonRate && analytics.abandonRate > 5 ? 'Above target' : 'Within target'}
+                        trend={analytics?.abandonRate && analytics.abandonRate > 5 ? 'up' : 'down'}
+                        icon={LogOut}
+                    />
+                    <StatCard
+                        label="Emergency Flags"
+                        value={analytics?.emergencyFlags?.toString() || '0'}
+                        trendValue={`${analytics?.activeEmergencies || 0} Active`}
+                        icon={AlertTriangle}
+                        alert={!!analytics?.activeEmergencies && analytics.activeEmergencies > 0}
+                    />
+                </div>
+            )}
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card title="Call Volume & Sentiment" className="lg:col-span-2 min-h-[350px]">
-                    {callVolumeData.length > 0 ? (
+                    {showAnalyticsSkeleton ? (
+                        <div className="h-[300px] bg-muted/50 rounded animate-pulse"></div>
+                    ) : callVolumeData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={300}>
                             <AreaChart data={callVolumeData}>
                                 <defs>
@@ -209,7 +202,9 @@ export default function DashboardPage() {
                 </Card>
 
                 <Card title="Intent Breakdown" className="min-h-[350px]">
-                    {intentData.length > 0 ? (
+                    {showAnalyticsSkeleton ? (
+                        <PieChartSkeleton />
+                    ) : intentData.length > 0 ? (
                         <div className="flex flex-col items-center justify-center h-full">
                             <ResponsiveContainer width="100%" height={200}>
                                 <PieChart>
@@ -250,32 +245,40 @@ export default function DashboardPage() {
             {/* Live Status & Recent Calls */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card title="Live Status" className="lg:col-span-1">
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                            <span className="text-sm font-medium text-muted-foreground">Agents Online</span>
-                            <span className="text-lg font-bold text-foreground">-</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                            <span className="text-sm font-medium text-muted-foreground">Queue Length</span>
-                            <span className="text-lg font-bold text-foreground">-</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                            <span className="text-sm font-medium text-muted-foreground">Est. Wait</span>
-                            <span className="text-lg font-bold text-foreground">-</span>
-                        </div>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-border">
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">System Health</h4>
-                        <div className="flex items-center text-sm text-emerald-600">
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Telephony Gateway Operational
-                        </div>
-                    </div>
+                    {showAnalyticsSkeleton ? (
+                        <LiveStatusSkeleton />
+                    ) : (
+                        <>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                                    <span className="text-sm font-medium text-muted-foreground">Agents Online</span>
+                                    <span className="text-lg font-bold text-foreground">-</span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                                    <span className="text-sm font-medium text-muted-foreground">Queue Length</span>
+                                    <span className="text-lg font-bold text-foreground">-</span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                                    <span className="text-sm font-medium text-muted-foreground">Est. Wait</span>
+                                    <span className="text-lg font-bold text-foreground">-</span>
+                                </div>
+                            </div>
+                            <div className="mt-6 pt-4 border-t border-border">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">System Health</h4>
+                                <div className="flex items-center text-sm text-emerald-600">
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Telephony Gateway Operational
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </Card>
 
                 <Card title="Recent Calls" className="lg:col-span-2"
                     action={<Link href="/dashboard/calls"><Button variant="ghost" className="text-xs">View All</Button></Link>}>
-                    {recentCalls.length > 0 ? (
+                    {showCallsSkeleton ? (
+                        <RecentCallsSkeleton />
+                    ) : recentCalls.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
                                 <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
@@ -288,7 +291,11 @@ export default function DashboardPage() {
                                 </thead>
                                 <tbody>
                                     {recentCalls.map((call) => (
-                                        <tr key={call.id} className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors">
+                                        <tr
+                                            key={call.id}
+                                            className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors"
+                                            onMouseEnter={() => prefetchCall(call.id)}
+                                        >
                                             <td className="px-4 py-3">
                                                 <div className="font-medium text-foreground">{call.name}</div>
                                                 <div className="text-xs text-muted-foreground">{call.caller}</div>

@@ -115,6 +115,14 @@ export enum WorkflowNodeType {
     ROUTE = 'route',
     WEBHOOK = 'webhook',
     END = 'end',
+    // Multi-Agent Platform node types
+    AI_AGENT = 'ai-agent',
+    HUMAN_AGENT_QUEUE = 'human-agent-queue',
+    HUMAN_AGENT_DIRECT = 'human-agent-direct',
+    CONDITIONAL = 'conditional',
+    SAFETY_CHECK = 'safety-check',
+    COLLECT_INFO = 'collect-info',
+    INTEGRATION = 'integration',
 }
 
 /**
@@ -242,3 +250,53 @@ export const eventTypeSchema = z.nativeEnum(EventType);
 export const eventStatusSchema = z.nativeEnum(EventStatus);
 export const registrationStatusSchema = z.nativeEnum(RegistrationStatus);
 export const insurancePlanTypeSchema = z.nativeEnum(InsurancePlanType);
+
+// ============================================================================
+// Multi-Agent Platform Enums
+// ============================================================================
+
+/**
+ * Agent type (AI or Human)
+ */
+export enum AgentType {
+    AI = 'AI',
+    HUMAN = 'HUMAN',
+}
+
+/**
+ * Agent status
+ */
+export enum AgentStatus {
+    ACTIVE = 'ACTIVE',
+    INACTIVE = 'INACTIVE',
+    PAUSED = 'PAUSED',
+}
+
+/**
+ * Call assignment status
+ */
+export enum CallAssignmentStatus {
+    QUEUED = 'QUEUED',
+    ASSIGNED = 'ASSIGNED',
+    ACCEPTED = 'ACCEPTED',
+    COMPLETED = 'COMPLETED',
+    ABANDONED = 'ABANDONED',
+    FAILED = 'FAILED',
+}
+
+/**
+ * Agent session status
+ */
+export enum AgentSessionStatus {
+    ONLINE = 'ONLINE',
+    OFFLINE = 'OFFLINE',
+    BUSY = 'BUSY',
+    BREAK = 'BREAK',
+    AWAY = 'AWAY',
+}
+
+// Multi-Agent Platform Schemas
+export const agentTypeSchema = z.nativeEnum(AgentType);
+export const agentStatusSchema = z.nativeEnum(AgentStatus);
+export const callAssignmentStatusSchema = z.nativeEnum(CallAssignmentStatus);
+export const agentSessionStatusSchema = z.nativeEnum(AgentSessionStatus);
