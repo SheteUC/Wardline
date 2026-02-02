@@ -21,6 +21,7 @@ import {
     VerificationStatus,
 } from './dto/prescription.dto';
 import { Permissions } from '../../auth/permissions.decorator';
+import { Public } from '../../auth/public.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
 
@@ -31,9 +32,9 @@ export class PrescriptionsController {
     constructor(private readonly prescriptionsService: PrescriptionsService) { }
 
     @Post()
+    @Public() // Allow Voice Orchestrator to create refill requests
     @ApiOperation({ summary: 'Create a prescription refill request' })
     @ApiResponse({ status: 201, description: 'Refill request created', type: PrescriptionRefillResponseDto })
-    @Permissions(UserRole.AGENT)
     @Auditable('prescription_refill', 'CREATE')
     create(@Body() createDto: CreatePrescriptionRefillDto) {
         return this.prescriptionsService.createRefillRequest(createDto);

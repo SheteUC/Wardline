@@ -141,6 +141,28 @@ export class CallsService {
     }
 
     /**
+     * Find call sessions by Twilio Call SID.
+     * Used by voice orchestrator to check for existing sessions.
+     */
+    async findByTwilioSid(twilioCallSid: string): Promise<any[]> {
+        const calls = await this.prisma.callSession.findMany({
+            where: { twilioCallSid },
+            include: {
+                phoneNumber: {
+                    select: { twilioPhoneNumber: true },
+                },
+                intent: {
+                    select: { displayName: true },
+                },
+            },
+            orderBy: { startedAt: 'desc' },
+            take: 1, // Usually only need the most recent
+        });
+
+        return calls;
+    }
+
+    /**
      * Get analytics for a hospital using optimized database aggregations.
      * Much faster than fetching all calls and processing in memory.
      */

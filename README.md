@@ -122,7 +122,8 @@ cd apps/voice-orchestrator-pipecat && python server.py
 ## Key Features
 
 ### Multi-Agent Orchestration
-- **AI Agents**: Pipecat-powered voice AI with configurable personas
+- **AI Agents**: LangChain-powered agents with tools and conversation memory
+- **5 Pre-built Tools**: Insurance check, appointment scheduling, prescription refills, department lookup, human transfer
 - **Human Agents**: Clinical staff dashboard with real-time assignments
 - **Smart Routing**: 4 assignment strategies (skill-based, round-robin, least-busy, priority)
 - **Queue Management**: Real-time metrics, SLA tracking, wait time monitoring
@@ -273,10 +274,20 @@ Ensure all services have access to:
 
 ## Documentation
 
+### Implementation Guides
 - [Implementation Summary](IMPLEMENTATION_SUMMARY_FINAL.md) - Complete feature overview
 - [Multi-Agent Platform](MULTI_AGENT_IMPLEMENTATION_SUMMARY.md) - Detailed architecture
 - [Manual Testing Guide](MANUAL_TESTING_GUIDE.md) - Testing procedures
 - [Next Steps](NEXT_STEPS.md) - Roadmap and future enhancements
+
+### LangChain Integration (NEW ✨)
+- [LangChain Quick Start](LANGCHAIN_QUICK_START.md) - Get started in 5 minutes
+- [Hybrid Architecture Guide](LANGCHAIN_HYBRID_ARCHITECTURE.md) - Complete architecture documentation
+  - Why hybrid approach?
+  - System architecture diagrams
+  - Call flows with LangChain
+  - Tool development guide
+  - Best practices and troubleshooting
 
 ## License
 

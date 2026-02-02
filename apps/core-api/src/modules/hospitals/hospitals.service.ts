@@ -54,8 +54,8 @@ export class HospitalsService {
         return hospital;
     }
 
-    async findAll(includeSettings = false): Promise<any[]> {
-        const cacheKey = CacheKeys.hospitals();
+    async findAll(includeSettings = false, includePhoneNumbers = false): Promise<any[]> {
+        const cacheKey = `${CacheKeys.hospitals()}:${includeSettings}:${includePhoneNumbers}`;
 
         return this.cache.getOrSet(
             cacheKey,
@@ -63,6 +63,7 @@ export class HospitalsService {
                 return this.prisma.hospital.findMany({
                     include: {
                         settings: includeSettings,
+                        phoneNumbers: includePhoneNumbers,
                         _count: {
                             select: {
                                 users: true,

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Query, Body, HttpCode, HttpStatus, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Public } from '../../auth/public.decorator';
 import { CallsService } from './calls.service';
 import { CreateCallDto, UpdateCallDto, SaveTranscriptDto, CreateHandoffDto } from './dto/calls.dto';
 
@@ -42,7 +43,19 @@ export class CallsController {
     // New endpoints (voice-orchestrator API)
     // ========================================
 
+    @Get('calls')
+    @Public() // Allow Voice Orchestrator to query calls
+    @ApiOperation({ summary: 'Get calls (optionally by Twilio Call SID)' })
+    @ApiResponse({ status: 200, description: 'Calls found' })
+    async getCalls(@Query('twilioCallSid') twilioCallSid?: string) {
+        if (twilioCallSid) {
+            return await this.callsService.findByTwilioSid(twilioCallSid);
+        }
+        return { data: [], message: 'Please provide twilioCallSid query parameter' };
+    }
+
     @Post('calls')
+    @Public() // Allow Voice Orchestrator to create calls
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({ summary: 'Create a new call session' })
     @ApiResponse({ status: 201, description: 'Call session created' })
@@ -60,6 +73,7 @@ export class CallsController {
     }
 
     @Patch('calls/:id')
+    @Public() // Allow Voice Orchestrator to update calls
     @ApiOperation({ summary: 'Update a call session' })
     @ApiResponse({ status: 200, description: 'Call session updated' })
     @ApiResponse({ status: 404, description: 'Call not found' })
@@ -76,6 +90,7 @@ export class CallsController {
     }
 
     @Post('calls/:id/transcript')
+    @Public() // Allow Voice Orchestrator to save transcripts
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({ summary: 'Save transcript segments for a call' })
     @ApiResponse({ status: 201, description: 'Transcript saved' })
@@ -99,6 +114,7 @@ export class CallsController {
     }
 
     @Post('handoffs')
+    @Public() // Allow Voice Orchestrator to create handoffs
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({ summary: 'Create a handoff record for call escalation' })
     @ApiResponse({ status: 201, description: 'Handoff created' })

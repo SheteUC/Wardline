@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Public } from '../../auth/public.decorator';
 import { IntentsService } from './intents.service';
 
 @ApiTags('intents')
@@ -13,6 +14,7 @@ export class IntentsController {
     }
 
     @Get()
+    @Public() // Allow Voice Orchestrator to fetch intents
     findAll(@Param('hospitalId') hospitalId: string) {
         return this.intentsService.findAllByHospital(hospitalId);
     }

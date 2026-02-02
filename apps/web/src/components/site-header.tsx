@@ -23,12 +23,12 @@ export function SiteHeader() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/contact">
+            <Link href="/sign-in">
               <button className="text-sm text-foreground hover:text-muted-foreground">
                 Log In
               </button>
             </Link>
-            <Link href="/contact">
+            <Link href="/sign-up">
               <button className="bg-foreground text-background px-6 py-2 rounded-full text-sm font-medium hover:bg-foreground/90">
                 Get Started
               </button>

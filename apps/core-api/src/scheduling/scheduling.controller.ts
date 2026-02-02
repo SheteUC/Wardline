@@ -11,6 +11,7 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
+import { Public } from '../auth/public.decorator';
 import { SchedulingService, CreateAppointmentDto, RescheduleAppointmentDto, CancelAppointmentDto, AppointmentStatus } from './scheduling.service';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -58,6 +59,7 @@ export class SchedulingController {
      * Create new appointment
      */
     @Post('appointments')
+    @Public() // Allow Voice Orchestrator to create appointments
     @HttpCode(HttpStatus.CREATED)
     async createAppointment(
         @Query('hospitalId') hospitalId: string,

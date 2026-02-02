@@ -19,11 +19,14 @@ from core_api_client import api_client
 from prompts import get_greeting_prompt, get_system_prompt
 
 # Configure logging
+# Use enqueue=True to avoid file locking issues on Windows
 logger.add(
     "logs/voice_orchestrator.log",
     rotation="1 day",
     retention="7 days",
-    level="DEBUG"
+    level="DEBUG",
+    enqueue=True,  # Use background thread to avoid file locking
+    catch=True,    # Catch errors in logging itself
 )
 
 
@@ -99,16 +102,27 @@ async def handle_incoming_call(request: Request):
             context.intents = await api_client.get_intents(context.hospital_id)
             context.departments = await api_client.get_departments(context.hospital_id)
             
-            # Create call session in core-api
+            # Create call session in core-api (or get existing if duplicate webhook)
             call_data = await api_client.create_call_session({
+                "hospitalId": context.hospital_id,  # Required field
                 "twilioCallSid": call_sid,
-                "direction": "inbound",
+                "direction": "INBOUND",  # Must be uppercase enum value
                 "fromNumber": from_number,
                 "toNumber": to_number,
             })
+            
+            # If creation failed (possibly due to duplicate), try to get existing
+            if not call_data:
+                logger.warning(f"Call creation failed, checking for existing session with SID {call_sid}")
+                call_data = await api_client.get_call_by_twilio_sid(call_sid)
+                if call_data:
+                    logger.info(f"Found existing call session: {call_data.get('id')}")
+            
             if call_data:
                 context.call_id = call_data.get("id")
-                logger.info(f"Created call session: {context.call_id}")
+                logger.info(f"Using call session: {context.call_id}")
+            else:
+                logger.warning(f"Could not create or retrieve call session for {call_sid}")
         else:
             logger.warning(f"No hospital found for phone {to_number}, using defaults")
             context.hospital_name = "Wardline Medical Center"
@@ -122,14 +136,28 @@ async def handle_incoming_call(request: Request):
     # Greeting inside gather so it starts listening immediately
     greeting = get_greeting_prompt(context.hospital_name)
     
+    # Speech hints help Twilio recognize medical/appointment terms better
+    speech_hints = (
+        "appointment, schedule, scheduling, reschedule, cancel, "
+        "prescription, refill, medication, pharmacy, "
+        "insurance, billing, bill, payment, "
+        "radiology, cardiology, primary care, pharmacy, medical records, "
+        "doctor, nurse, physician, "
+        "yes, no, correct, that's right, "
+        "January, February, March, April, May, June, "
+        "July, August, September, October, November, December"
+    )
+    
     gather = Gather(
         input="speech",
         action="/voice/process",
         method="POST",
-        speech_timeout="auto",
+        speech_timeout="3",  # Wait 3 seconds of silence before processing
+        timeout=10,  # Max 10 seconds to wait for speech to start
         speech_model="phone_call",
         enhanced=True,
         language="en-US",
+        hints=speech_hints,  # Help recognize common medical terms
     )
     gather.say(greeting, voice="Polly.Joanna")
     response.append(gather)
@@ -225,24 +253,38 @@ async def process_speech(request: Request):
     # Normal response - continue conversation
     response = VoiceResponse()
     
+    # Speech hints help Twilio recognize medical/appointment terms better
+    speech_hints = (
+        "appointment, schedule, scheduling, reschedule, cancel, "
+        "prescription, refill, medication, pharmacy, "
+        "insurance, billing, bill, payment, "
+        "radiology, cardiology, primary care, pharmacy, medical records, "
+        "doctor, nurse, physician, "
+        "yes, no, correct, that's right, "
+        "January, February, March, April, May, June, "
+        "July, August, September, October, November, December"
+    )
+    
     # Continue gathering speech immediately after AI speaks
     # The AI response IS the prompt - no need to add another one
     gather = Gather(
         input="speech",
         action="/voice/process",
         method="POST",
-        speech_timeout="auto",
+        speech_timeout="3",  # Wait 3 seconds of silence before processing
+        timeout=15,  # Max 15 seconds to wait for speech to start
         speech_model="phone_call",
         enhanced=True,
         language="en-US",
+        hints=speech_hints,  # Help recognize common medical terms
     )
     # Say AI response inside gather so it listens immediately after
     gather.say(ai_response, voice="Polly.Joanna")
     response.append(gather)
     
-    # If no input after 10 seconds of silence, ask if they're still there
+    # If no input after timeout, ask if they're still there
     response.say(
-        "Are you still there?",
+        "Are you still there? How else can I help you?",
         voice="Polly.Joanna"
     )
     response.redirect("/voice/incoming")
@@ -266,73 +308,86 @@ async def call_status(request: Request):
             context.state = CallState.COMPLETED
             context.ended_at = datetime.now()
             
+            # Map Twilio status to Core API enum
+            status_map = {
+                "completed": "COMPLETED",
+                "failed": "FAILED",
+                "busy": "FAILED",
+                "no-answer": "ABANDONED",
+            }
+            api_status = status_map.get(call_status, "COMPLETED")
+            
             # Update call session in core-api
             if context.call_id:
                 await api_client.update_call_session(context.call_id, {
-                    "status": call_status,
+                    "status": api_status,
                     "duration": int(call_duration),
                     "detectedIntent": context.detected_intent.value if context.detected_intent else None,
                 })
-                logger.info(f"Updated call session {context.call_id}: {call_status}")
+                logger.info(f"Updated call session {context.call_id}: {api_status}")
+            
+            # Clean up agents (all types)
+            agent_type = _get_agent_type()
+            if agent_type == "azure_ai_foundry":
+                from azure_ai_foundry_agent import azure_ai_foundry_agent_manager
+                azure_ai_foundry_agent_manager.remove_agent(call_sid)
+            elif agent_type == "langchain_tools":
+                from langchain_agent import agent_manager
+                agent_manager.remove_agent(call_sid)
+            else:
+                from conversation_agent import conversation_agent_manager
+                conversation_agent_manager.remove_agent(call_sid)
             
             # Clean up context
             context_manager.remove_context(call_sid)
-            logger.info(f"🗑️ Cleaned up context for {call_sid}")
+            logger.info(f"🗑️ Cleaned up context and agent for {call_sid}")
     
     return PlainTextResponse("OK")
 
 
 # =============================================================================
-# AI Response Generation
+# AI Response Generation (Conversational Agent - Robust for Voice)
 # =============================================================================
+
+def _get_agent_type() -> str:
+    """Get configured agent type"""
+    return settings.agent_type.lower()
 
 async def generate_ai_response(context: CallContext, user_message: str) -> str:
     """
-    Generate AI response using Azure OpenAI
+    Generate AI response using configured agent.
+    - azure_ai_foundry: Azure AI Foundry managed agent (RECOMMENDED)
+    - conversational: Direct LLM with state tracking (reliable)
+    - langchain_tools: LangChain tools agent (legacy, less reliable)
     """
     try:
-        from openai import AsyncAzureOpenAI
+        agent_type = _get_agent_type()
         
-        client = AsyncAzureOpenAI(
-            api_key=settings.azure_openai_key,
-            api_version=settings.azure_openai_api_version,
-            azure_endpoint=settings.azure_openai_endpoint,
-        )
-        
-        # Build system prompt
-        system_prompt = get_system_prompt(
-            hospital_name=context.hospital_name,
-            intents=context.intents,
-            departments=context.departments,
-        )
-        
-        # Build messages
-        messages = [
-            {"role": "system", "content": system_prompt},
-        ]
-        
-        # Add conversation history
-        for turn in context.conversation_history[-8:]:
-            messages.append({
-                "role": turn.role,
-                "content": turn.content
-            })
-        
-        # Generate response - keep it concise for phone conversations
-        response = await client.chat.completions.create(
-            model=settings.azure_openai_deployment,
-            messages=messages,
-            max_completion_tokens=100,  # Keep responses brief for phone
-        )
-        
-        ai_response = response.choices[0].message.content
-        logger.info(f"🤖 AI Response: {ai_response}")
+        if agent_type == "azure_ai_foundry":
+            # Azure AI Foundry: Managed agent with built-in capabilities
+            from azure_ai_foundry_agent import azure_ai_foundry_agent_manager
+            agent = azure_ai_foundry_agent_manager.get_or_create_agent(context)
+            ai_response = await agent.generate_response(user_message)
+            
+        elif agent_type == "langchain_tools":
+            # Legacy: LangChain tools agent (less reliable for short inputs)
+            from langchain_agent import agent_manager
+            agent = agent_manager.get_or_create_agent(context)
+            ai_response = await agent.generate_response(user_message)
+            agent.update_context()
+            
+        else:  # conversational (default)
+            # Robust conversational agent (recommended if not using AI Foundry)
+            from conversation_agent import conversation_agent_manager
+            agent = conversation_agent_manager.get_or_create_agent(context)
+            ai_response = await agent.generate_response(user_message)
         
         return ai_response
         
     except Exception as e:
         logger.error(f"Error generating AI response: {e}")
-        return "I'm sorry, I'm having trouble understanding. Could you please repeat that?"
+        # Fallback to basic response
+        return "I'm sorry, I'm having trouble right now. Could you repeat that?"
 
 
 # =============================================================================
@@ -375,6 +430,17 @@ async def websocket_media_stream(websocket: WebSocket, call_sid: str):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
+        # Clean up agents
+        agent_type = _get_agent_type()
+        if agent_type == "azure_ai_foundry":
+            from azure_ai_foundry_agent import azure_ai_foundry_agent_manager
+            azure_ai_foundry_agent_manager.remove_agent(call_sid)
+        elif agent_type == "langchain_tools":
+            from langchain_agent import agent_manager
+            agent_manager.remove_agent(call_sid)
+        else:
+            from conversation_agent import conversation_agent_manager
+            conversation_agent_manager.remove_agent(call_sid)
         context_manager.remove_context(call_sid)
 
 

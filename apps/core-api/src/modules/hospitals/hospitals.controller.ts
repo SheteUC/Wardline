@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@ne
 import { HospitalsService } from './hospitals.service';
 import { CreateHospitalDto, UpdateHospitalDto, HospitalResponseDto } from './dto/hospital.dto';
 import { Permissions } from '../../auth/permissions.decorator';
+import { Public } from '../../auth/public.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
 
@@ -33,12 +34,16 @@ export class HospitalsController {
     }
 
     @Get()
+    @Public() // Allow Voice Orchestrator to fetch hospitals without auth
     @ApiOperation({ summary: 'Get all hospitals' })
     @ApiQuery({ name: 'includeSettings', required: false, type: Boolean })
+    @ApiQuery({ name: 'includePhoneNumbers', required: false, type: Boolean })
     @ApiResponse({ status: 200, description: 'List of hospitals', type: [HospitalResponseDto] })
-    // No @Permissions - any authenticated user can list hospitals
-    findAll(@Query('includeSettings', new ParseBoolPipe({ optional: true })) includeSettings?: boolean) {
-        return this.hospitalsService.findAll(includeSettings);
+    findAll(
+        @Query('includeSettings', new ParseBoolPipe({ optional: true })) includeSettings?: boolean,
+        @Query('includePhoneNumbers', new ParseBoolPipe({ optional: true })) includePhoneNumbers?: boolean,
+    ) {
+        return this.hospitalsService.findAll(includeSettings, includePhoneNumbers);
     }
 
     @Get(':id')

@@ -19,6 +19,7 @@ import {
     DepartmentResponseDto,
 } from './dto/department.dto';
 import { Permissions } from '../../auth/permissions.decorator';
+import { Public } from '../../auth/public.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
 
@@ -39,11 +40,11 @@ export class DepartmentsController {
     }
 
     @Get()
+    @Public() // Allow Voice Orchestrator to fetch departments
     @ApiOperation({ summary: 'Get all departments for a hospital' })
     @ApiQuery({ name: 'hospitalId', required: true })
     @ApiQuery({ name: 'includeInactive', required: false, type: Boolean })
     @ApiResponse({ status: 200, description: 'List of departments', type: [DepartmentResponseDto] })
-    @Permissions(UserRole.READONLY)
     findAllDepartments(
         @Query('hospitalId') hospitalId: string,
         @Query('includeInactive', new ParseBoolPipe({ optional: true })) includeInactive?: boolean,

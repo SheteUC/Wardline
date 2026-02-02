@@ -24,6 +24,7 @@ import {
     InsuranceInquiryType,
 } from './dto/insurance.dto';
 import { Permissions } from '../../auth/permissions.decorator';
+import { Public } from '../../auth/public.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
 
@@ -44,6 +45,7 @@ export class InsuranceController {
     }
 
     @Get('plans')
+    @Public() // Allow Voice Orchestrator to fetch insurance plans
     @ApiOperation({ summary: 'Get all insurance plans' })
     @ApiQuery({ name: 'hospitalId', required: true })
     @ApiQuery({ name: 'carrierId', required: false })
@@ -51,7 +53,6 @@ export class InsuranceController {
     @ApiQuery({ name: 'isAccepted', required: false, type: Boolean })
     @ApiQuery({ name: 'search', required: false })
     @ApiResponse({ status: 200, description: 'List of insurance plans', type: [InsurancePlanResponseDto] })
-    @Permissions(UserRole.READONLY)
     findAllPlans(
         @Query('hospitalId') hospitalId: string,
         @Query('carrierId') carrierId?: string,
@@ -63,12 +64,12 @@ export class InsuranceController {
     }
 
     @Get('plans/check')
+    @Public() // Allow Voice Orchestrator to check insurance
     @ApiOperation({ summary: 'Check if an insurance plan is accepted' })
     @ApiQuery({ name: 'hospitalId', required: true })
     @ApiQuery({ name: 'carrierName', required: true })
     @ApiQuery({ name: 'planName', required: false })
     @ApiResponse({ status: 200, description: 'Plan acceptance status' })
-    @Permissions(UserRole.READONLY)
     checkPlanAcceptance(
         @Query('hospitalId') hospitalId: string,
         @Query('carrierName') carrierName: string,

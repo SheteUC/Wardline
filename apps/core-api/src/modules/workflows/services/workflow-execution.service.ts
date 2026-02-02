@@ -9,6 +9,7 @@ import {
 } from '@wardline/types';
 import { QueueAssignmentService } from '../../queues/queue-assignment.service';
 import { QueuesService } from '../../queues/queues.service';
+import { CallContextService } from '../../calls/call-context.service';
 
 @Injectable()
 export class WorkflowExecutionService {
@@ -18,10 +19,11 @@ export class WorkflowExecutionService {
         private readonly prisma: PrismaService,
         private readonly queuesService: QueuesService,
         private readonly assignmentService: QueueAssignmentService,
+        private readonly callContextService: CallContextService,
     ) { }
 
     /**
-     * Execute a workflow node
+     * Execute a workflow node with stateful context management
      */
     async executeNode(
         node: WorkflowNode,
@@ -29,6 +31,20 @@ export class WorkflowExecutionService {
         workflow: WorkflowGraph
     ): Promise<ExecutionResult> {
         this.logger.log(`Executing node ${node.id} of type ${node.type}`);
+
+        // Get or create stateful context
+        const context = this.callContextService.getOrCreate(callContext.callId, callContext);
+
+        // Update context with any new data from callContext parameter
+        if (callContext.transcript && callContext.transcript.length > 0) {
+            this.callContextService.update(context.callId, {
+                transcript: callContext.transcript,
+                extractedFields: callContext.extractedFields,
+                sentiment: callContext.sentiment,
+                detectedIntent: callContext.detectedIntent,
+                isEmergency: callContext.isEmergency,
+            });
+        }
 
         try {
             switch (node.type) {
