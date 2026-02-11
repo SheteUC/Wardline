@@ -5,16 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import {
-    LayoutDashboard, Phone, Activity, GitGraph, Users, Settings,
-    Bell, Search, LogOut, Menu, X, Plus, Filter, Download,
-    AlertTriangle, Clock, CheckCircle, User, ChevronRight,
-    MoreHorizontal, Play, Save, Mic, BrainCircuit, Calendar,
-    FileText, ArrowUpRight, ArrowDownRight, RefreshCw,
-    ZoomIn, ZoomOut, RotateCcw, CornerUpLeft, CornerUpRight,
-    MousePointer, GripHorizontal,
-    Shield, Globe, BellRing, CreditCard, Lock, Link2,
-    Building2, Pill, Megaphone, Headphones, Server,
-    Bot, ListTodo, UserCog
+    LayoutDashboard, Phone, Activity, Bell, Search, Menu, X,
+    BrainCircuit, Globe, Bot, ListTodo
 } from 'lucide-react';
 import { Button } from "@/components/dashboard/shared";
 
@@ -44,8 +36,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const NavItem = ({ href, icon: Icon, label, badge }: { href: string, icon: any, label: string, badge?: number }) => {
-        const isActive = pathname === href || pathname.startsWith(href + '/');
+    const NavItem = ({ href, icon: Icon, label, badge, exact }: { href: string, icon: any, label: string, badge?: number, exact?: boolean }) => {
+        const normalizedPath = pathname.replace(/\/$/, '') || '/';
+        const normalizedHref = href.replace(/\/$/, '') || '/';
+        const isActive = exact
+            ? normalizedPath === normalizedHref
+            : normalizedPath === normalizedHref || (normalizedHref !== '/' && normalizedPath.startsWith(normalizedHref + '/'));
         return (
             <Link
                 href={href}
@@ -95,42 +91,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <div className="p-4 flex flex-col h-[calc(100%-4rem)] justify-between overflow-y-auto">
                     <nav className="space-y-1">
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-2">Operations</div>
-                        <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+                        <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" exact />
                         <NavItem href="/dashboard/calls" icon={Phone} label="Calls & Triage" />
-                        <NavItem href="/dashboard/analytics" icon={GitGraph} label="Analytics" />
 
-                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Patient Access</div>
-                        <NavItem href="/dashboard/departments" icon={Building2} label="Department Directory" />
-                        <NavItem href="/dashboard/prescriptions" icon={Pill} label="Prescription Refills" />
-                        <NavItem href="/dashboard/insurance" icon={Shield} label="Insurance Verification" />
-                        <NavItem href="/dashboard/events" icon={Megaphone} label="Marketing Events" />
-
-                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Multi-Agent Platform</div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Workflow System</div>
+                        <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="Workflows" />
                         <NavItem href="/dashboard/agents" icon={Bot} label="Agents" />
-                        <NavItem href="/dashboard/queues" icon={ListTodo} label="Call Queues" />
-                        <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="AI Call Workflow" />
-
-                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Configuration</div>
-                        <NavItem href="/dashboard/team" icon={Users} label="Team Management" />
-
-                        {/* Role-Based Admin Links */}
-                        {isAdmin && (
-                            <>
-                                <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Admin</div>
-                                <NavItem href="/admin/call-center" icon={Headphones} label="Call Center" badge={2} />
-                                <NavItem href="/agent/dashboard" icon={UserCog} label="Agent Dashboard" />
-                                {isSystemAdmin && (
-                                    <NavItem href="/admin/system" icon={Server} label="System Admin" />
-                                )}
-                            </>
-                        )}
+                        <NavItem href="/dashboard/queues" icon={ListTodo} label="Queues" />
 
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Settings</div>
                         <NavItem href="/dashboard/settings" icon={Globe} label="General" />
-                        <NavItem href="/dashboard/settings/notifications" icon={BellRing} label="Notifications" />
-                        <NavItem href="/dashboard/settings/integrations" icon={Link2} label="Integrations" />
-                        <NavItem href="/dashboard/settings/security" icon={Shield} label="Security" />
-                        <NavItem href="/dashboard/settings/billing" icon={CreditCard} label="Billing" />
                     </nav>
 
                     <div className="bg-sidebar-accent p-4 rounded-xl border border-sidebar-border mt-4">
@@ -170,18 +140,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         </button>
                         <h1 className="text-lg font-semibold text-foreground">
                             {pathname === '/dashboard' && 'Operations Overview'}
-                            {pathname === '/dashboard/calls' && 'Live Calls'}
-                            {pathname === '/dashboard/workflows' && 'AI Call Workflow'}
-                            {pathname === '/dashboard/analytics' && 'System Configuration'}
-                            {pathname === '/dashboard/team' && 'Team Management'}
-                            {pathname === '/dashboard/departments' && 'Department Directory'}
-                            {pathname === '/dashboard/prescriptions' && 'Prescription Refills'}
-                            {pathname === '/dashboard/insurance' && 'Insurance Verification'}
-                            {pathname === '/dashboard/events' && 'Marketing Events'}
-                            {pathname === '/dashboard/agents' && 'Agent Management'}
-                            {pathname === '/dashboard/queues' && 'Call Queues'}
-                            {pathname === '/agent/dashboard' && 'Agent Dashboard'}
-                            {pathname.startsWith('/dashboard/settings') && 'Settings & Preferences'}
+                            {(pathname === '/dashboard/calls' || pathname.startsWith('/dashboard/calls/')) && 'Live Calls'}
+                            {(pathname === '/dashboard/workflows' || pathname.startsWith('/dashboard/workflows/')) && 'AI Call Workflow'}
+                            {(pathname === '/dashboard/agents' || pathname.startsWith('/dashboard/agents/')) && 'Agent Configuration'}
+                            {(pathname === '/dashboard/queues' || pathname.startsWith('/dashboard/queues/')) && 'Call Queues'}
+                            {pathname.startsWith('/dashboard/settings') && 'Settings'}
                         </h1>
                     </div>
 

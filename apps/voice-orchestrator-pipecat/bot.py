@@ -29,6 +29,8 @@ from config import settings
 from call_context import CallContext, CallState, IntentType, context_manager
 from core_api_client import api_client
 from prompts import get_system_prompt, get_greeting_prompt
+from flow_manager import WardlineFlowManager
+from safety_guard_processor import MedicalSafetyGuard
 
 
 class ConversationProcessor(FrameProcessor):
@@ -150,9 +152,10 @@ class SentimentAnalyzer(FrameProcessor):
 async def create_bot_pipeline(
     context: CallContext,
     transport,
+    flow_manager: WardlineFlowManager,
 ) -> Pipeline:
     """
-    Create the Pipecat pipeline for voice conversation
+    Create the Pipecat pipeline for voice conversation with workflow integration
     """
     
     # Load hospital data
@@ -164,12 +167,34 @@ async def create_bot_pipeline(
         context.intents = await api_client.get_intents(context.hospital_id)
         context.departments = await api_client.get_departments(context.hospital_id)
     
-    # Generate system prompt
+    # Load workflow configuration
+    logger.info("Loading workflow for call...")
+    workflow_loaded = await flow_manager.load_workflow(context.hospital_id)
+    
+    if not workflow_loaded:
+        logger.error("Failed to load workflow, using fallback")
+    
+    # Start workflow execution
+    await flow_manager.start_execution()
+    
+    # Get AI agent configuration from current workflow node if available
     system_prompt = get_system_prompt(
         hospital_name=context.hospital_name,
         intents=context.intents,
         departments=context.departments
     )
+    
+    # Check if current node has custom prompt
+    if flow_manager.execution_state:
+        current_node_id = flow_manager.execution_state.current_node_id
+        agent_config_field = f"_agent_config_{current_node_id}"
+        
+        if agent_config_field in context.collected_fields:
+            agent_config = context.collected_fields[agent_config_field].value
+            custom_prompt = agent_config.get("system_prompt")
+            if custom_prompt:
+                system_prompt = custom_prompt
+                logger.info("Using custom system prompt from workflow node")
     
     # Initial greeting
     greeting = get_greeting_prompt(context.hospital_name)
@@ -195,6 +220,7 @@ async def create_bot_pipeline(
     # Create processors
     conversation_processor = ConversationProcessor(context)
     sentiment_analyzer = SentimentAnalyzer(context, llm)
+    safety_guard = MedicalSafetyGuard(context, llm)  # NEW: Safety monitoring
     sentence_aggregator = SentenceAggregator()
     llm_response_aggregator = LLMResponseAggregator()
     
@@ -204,10 +230,11 @@ async def create_bot_pipeline(
         {"role": "assistant", "content": greeting},
     ]
     
-    # Build pipeline
+    # Build pipeline with safety guard
     pipeline = Pipeline([
         transport.input(),           # Audio from caller
         conversation_processor,       # Track conversation
+        safety_guard,                 # NEW: Monitor for medical keywords
         sentiment_analyzer,           # Analyze sentiment
         llm,                          # Generate response
         sentence_aggregator,          # Aggregate sentences
@@ -226,7 +253,7 @@ async def run_bot(
     websocket=None,
 ):
     """
-    Run the voice bot for a call
+    Run the voice bot for a call with dynamic workflow execution
     """
     logger.info(f"🤖 Starting bot for call {call_sid}")
     
@@ -237,7 +264,10 @@ async def run_bot(
         to_phone=to_phone,
         hospital_id=hospital_id,
     )
-    context.state = CallState.GREETING
+    context.state = CallState.INITIALIZING
+    
+    # Create workflow flow manager
+    flow_manager = WardlineFlowManager(context)
     
     try:
         # For now, we'll use a simple WebSocket transport
@@ -247,7 +277,8 @@ async def run_bot(
             port=settings.port + 1,  # Separate port for WebSocket
         )
         
-        pipeline, initial_messages = await create_bot_pipeline(context, transport)
+        # Create pipeline with workflow integration
+        pipeline, initial_messages = await create_bot_pipeline(context, transport, flow_manager)
         
         # Create and run pipeline task
         task = PipelineTask(
@@ -266,14 +297,42 @@ async def run_bot(
         ])
         
         # Run the pipeline
+        # Note: The flow manager will handle workflow transitions
+        # based on user input and node execution results
         await runner.run(task)
         
     except Exception as e:
-        logger.error(f"Bot error: {e}")
+        logger.error(f"Bot error: {e}", exc_info=True)
         raise
     finally:
         context.state = CallState.COMPLETED
+        
+        from datetime import datetime
         context.ended_at = datetime.now()
+        
+        # Report final workflow execution summary
+        if flow_manager.execution_state:
+            execution_summary = flow_manager.get_execution_summary()
+            logger.info(f"Workflow execution summary: {execution_summary}")
+            
+            # Send execution log to Core API
+            try:
+                await api_client.create_workflow_execution_log({
+                    "call_id": context.call_id,
+                    "workflow_id": execution_summary.get("workflow_id"),
+                    "hospital_id": context.hospital_id,
+                    "execution_path": execution_summary.get("execution_path"),
+                    "node_data": execution_summary.get("node_data"),
+                    "turn_count": execution_summary.get("turn_count"),
+                    "escalated": execution_summary.get("escalated"),
+                    "escalation_reason": execution_summary.get("escalation_reason"),
+                    "started_at": execution_summary.get("started_at"),
+                    "ended_at": datetime.now().isoformat(),
+                    "outcome": "completed" if context.state == CallState.COMPLETED else "escalated"
+                })
+            except Exception as e:
+                logger.error(f"Error logging workflow execution: {e}")
+        
         logger.info(f"🏁 Call {call_sid} completed")
 
 

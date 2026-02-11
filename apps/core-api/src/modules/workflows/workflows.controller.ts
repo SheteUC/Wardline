@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { WorkflowsService } from './workflows.service';
 import { Permissions } from '../../auth/permissions.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
@@ -53,5 +53,42 @@ export class WorkflowsController {
         @Body('approverUserId') approverUserId: string,
     ) {
         return this.workflowsService.publishVersion(versionId, approverUserId);
+    }
+
+    @Post(':id/validate')
+    @Permissions(UserRole.SUPERVISOR)
+    @ApiOperation({ summary: 'Validate workflow configuration' })
+    @ApiResponse({ status: 200, description: 'Validation result with errors and warnings' })
+    validateWorkflow(@Param('id') workflowId: string) {
+        return this.workflowsService.validateWorkflow(workflowId);
+    }
+
+    @Post(':id/simulate')
+    @Permissions(UserRole.SUPERVISOR)
+    @ApiOperation({ summary: 'Simulate workflow execution with test inputs' })
+    @ApiResponse({ status: 200, description: 'Simulation results with execution path' })
+    @Auditable('workflow', 'SIMULATE')
+    simulateWorkflow(
+        @Param('id') workflowId: string,
+        @Body() testInputs: any,
+    ) {
+        return this.workflowsService.simulateWorkflow(workflowId, testInputs);
+    }
+}
+
+// New controller for workflow-related endpoints used by voice orchestrator
+@ApiTags('workflows-api')
+@Controller('workflows')
+export class WorkflowsApiController {
+    constructor(private readonly workflowsService: WorkflowsService) { }
+
+    @Get('active')
+    @ApiOperation({ summary: 'Get active workflow for hospital (used by voice orchestrator)' })
+    @ApiResponse({ status: 200, description: 'Active workflow configuration with graph JSON' })
+    getActiveWorkflow(
+        @Query('hospitalId') hospitalId: string,
+        @Query('phoneNumberId') phoneNumberId?: string,
+    ) {
+        return this.workflowsService.getActiveWorkflow(hospitalId, phoneNumberId);
     }
 }

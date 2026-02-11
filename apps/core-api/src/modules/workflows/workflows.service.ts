@@ -106,4 +106,152 @@ export class WorkflowsService {
         this.logger.info('Workflow version published', { versionId });
         return published;
     }
+
+    /**
+     * Get the active workflow for a hospital (used by voice orchestrator)
+     */
+    async getActiveWorkflow(hospitalId: string, phoneNumberId?: string): Promise<any> {
+        // If phone number provided, check if it has a specific workflow
+        if (phoneNumberId) {
+            const phoneNumber = await this.prisma.phoneNumber.findUnique({
+                where: { id: phoneNumberId },
+                include: {
+                    workflow: {
+                        include: {
+                            versions: {
+                                where: { status: 'PUBLISHED' },
+                                take: 1,
+                                orderBy: { publishedAt: 'desc' },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (phoneNumber?.workflow && phoneNumber.workflow.versions.length > 0) {
+                return {
+                    id: phoneNumber.workflow.id,
+                    name: phoneNumber.workflow.name,
+                    description: phoneNumber.workflow.description,
+                    version: phoneNumber.workflow.versions[0].versionNumber,
+                    graphJson: phoneNumber.workflow.versions[0].graphJson,
+                };
+            }
+        }
+
+        // Otherwise, find the most recently published workflow for hospital
+        const workflow = await this.prisma.workflow.findFirst({
+            where: { 
+                hospitalId,
+                status: 'PUBLISHED',
+            },
+            include: {
+                versions: {
+                    where: { status: 'PUBLISHED' },
+                    take: 1,
+                    orderBy: { publishedAt: 'desc' },
+                },
+            },
+            orderBy: { updatedAt: 'desc' },
+        });
+
+        if (!workflow || workflow.versions.length === 0) {
+            return null;
+        }
+
+        return {
+            id: workflow.id,
+            name: workflow.name,
+            description: workflow.description,
+            version: workflow.versions[0].versionNumber,
+            graphJson: workflow.versions[0].graphJson,
+        };
+    }
+
+    /**
+     * Validate a workflow configuration
+     */
+    async validateWorkflow(workflowId: string): Promise<any> {
+        const workflow = await this.findOne(workflowId);
+        const latestVersion = workflow.versions[0];
+
+        // Import validator
+        const { WorkflowValidatorService } = await import('./services/workflow-validator.service');
+        const validator = new WorkflowValidatorService();
+
+        const validationResult = validator.validate(latestVersion.graphJson);
+
+        return {
+            workflowId,
+            versionNumber: latestVersion.versionNumber,
+            ...validationResult,
+        };
+    }
+
+    /**
+     * Simulate workflow execution with test inputs
+     */
+    async simulateWorkflow(workflowId: string, testInputs: any): Promise<any> {
+        const workflow = await this.findOne(workflowId);
+        const latestVersion = workflow.versions[0];
+        const graph = latestVersion.graphJson;
+
+        this.logger.log(`Simulating workflow ${workflowId} with inputs:`, testInputs);
+
+        // Simple simulation: trace through nodes
+        const executionPath: string[] = [];
+        const nodeResults: Record<string, any> = {};
+        
+        let currentNodeId = graph.nodes.find((n: any) => n.type === 'start')?.id;
+        let iterations = 0;
+        const maxIterations = 50; // Prevent infinite loops
+
+        while (currentNodeId && iterations < maxIterations) {
+            executionPath.push(currentNodeId);
+            const currentNode = graph.nodes.find((n: any) => n.id === currentNodeId);
+
+            if (!currentNode) break;
+
+            // Simulate node execution
+            nodeResults[currentNodeId] = {
+                type: currentNode.type,
+                executed: true,
+                timestamp: new Date().toISOString(),
+            };
+
+            // Find next node
+            if (currentNode.type === 'end') {
+                break;
+            }
+
+            // For conditional nodes, use test input to determine path
+            if (currentNode.type === 'conditional') {
+                const edges = graph.edges.filter((e: any) => e.fromNodeId === currentNodeId);
+                
+                // Simple condition evaluation based on test inputs
+                const matchedEdge = edges.find((e: any) => {
+                    if (!e.condition) return true;
+                    // Simplified: just take the first edge for simulation
+                    return true;
+                });
+
+                currentNodeId = matchedEdge?.toNodeId;
+            } else {
+                // Follow the first outgoing edge
+                const nextEdge = graph.edges.find((e: any) => e.fromNodeId === currentNodeId);
+                currentNodeId = nextEdge?.toNodeId;
+            }
+
+            iterations++;
+        }
+
+        return {
+            workflowId,
+            executionPath,
+            nodeResults,
+            completed: currentNodeId === undefined || 
+                      graph.nodes.find((n: any) => n.id === currentNodeId)?.type === 'end',
+            iterations,
+        };
+    }
 }

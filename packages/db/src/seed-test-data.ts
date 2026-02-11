@@ -1,5 +1,4 @@
 import { 
-    PrismaClient, 
     UserRole, 
     CallStatus, 
     CallDirection, 
@@ -15,11 +14,10 @@ import {
     EventType,
     EventStatus,
     RegistrationStatus,
-    AppointmentStatus
-} from '@prisma/client';
+    AppointmentStatus,
+    prisma
+} from './index';
 import { addDays, addHours, subDays, subHours, subMinutes } from 'date-fns';
-
-const prisma = new PrismaClient();
 
 /**
  * TEST CREDENTIALS SETUP

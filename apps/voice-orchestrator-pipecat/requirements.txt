@@ -28,6 +28,9 @@ langchain-community>=0.0.13
 langchain-azure-ai>=0.1.0
 langgraph>=0.0.20
 
+# LangSmith for tracing and observability
+langsmith>=0.0.87
+
 # Utilities
 python-multipart>=0.0.6
 pydantic>=2.5.0

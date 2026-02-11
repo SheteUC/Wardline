@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './index';
 
 async function seedAgentsAndQueues() {
     console.log('🤖 Seeding Multi-Agent Platform data...');

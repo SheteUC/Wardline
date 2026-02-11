@@ -23,6 +23,7 @@
         "@nestjs/platform-socket.io": "^11.1.12",
         "@nestjs/swagger": "^7.1.17",
         "@nestjs/websockets": "^11.1.12",
+        "@prisma/adapter-pg": "^7.4.0",
         "@wardline/config": "workspace:*",
         "@wardline/db": "workspace:*",
         "@wardline/types": "workspace:*",

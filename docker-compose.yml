@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: wardline-postgres
+    environment:
+      POSTGRES_USER: wardline
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wardline_dev}
+      POSTGRES_DB: wardline
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wardline"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wardline-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: wardline-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - wardline-network
+
+  # Core API (NestJS)
+  core-api:
+    build:
+      context: .
+      dockerfile: apps/core-api/Dockerfile
+    container_name: wardline-core-api
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      DATABASE_URL: postgresql://wardline:${POSTGRES_PASSWORD:-wardline_dev}@postgres:5432/wardline
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wardline-network
+    restart: unless-stopped
+
+  # Voice Orchestrator (Python/Pipecat)
+  voice-orchestrator:
+    build:
+      context: .
+      dockerfile: apps/voice-orchestrator-pipecat/Dockerfile
+    container_name: wardline-voice-orchestrator
+    environment:
+      PYTHON_ENV: ${PYTHON_ENV:-development}
+      PORT: 3002
+      CORE_API_URL: http://core-api:3001
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY}
+      AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY}
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+    ports:
+      - "3002:3002"
+    depends_on:
+      - core-api
+    networks:
+      - wardline-network
+    restart: unless-stopped
+
+  # Web Dashboard (Next.js) - Development only
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: wardline-web
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - core-api
+    networks:
+      - wardline-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  wardline-network:
+    driver: bridge

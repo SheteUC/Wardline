@@ -17,23 +17,23 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-serif font-normal tracking-tight text-foreground mb-6 leading-tight">
-            Medical-Grade<br />AI Voice Agents
+            Build Intelligent<br />Call Workflows Visually
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed">
-            Eliminate hold times and burnout. Wardline combines ultra-low latency AI with human clinical oversight to deliver safe, scalable, 24/7 patient access.
+            Design custom AI-powered call flows with drag-and-drop simplicity. Wardline's dynamic workflow engine seamlessly blends AI automation with human expertise for 24/7 patient care.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link href="/contact">
+            <Link href="/sign-up">
               <button className="bg-foreground text-background px-8 py-4 rounded-full font-medium inline-flex items-center gap-2 hover:bg-foreground/90 text-lg">
-                Schedule Demo
+                Start Building
                 <ArrowRight className="w-5 h-5" />
               </button>
             </Link>
             <Link href="/features">
               <button className="border border-border px-8 py-4 rounded-full font-medium hover:bg-accent text-lg">
-                View Platform
+                Explore Features
               </button>
             </Link>
           </div>
@@ -53,8 +53,72 @@ export default function Home() {
               <div className="text-sm text-muted-foreground">Patient Access</div>
             </div>
             <div>
-              <div className="text-4xl font-semibold text-foreground mb-2">Zero</div>
-              <div className="text-sm text-muted-foreground">Medical Errors</div>
+              <div className="text-4xl font-semibold text-foreground mb-2">7</div>
+              <div className="text-sm text-muted-foreground">Node Types</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Workflow Showcase */}
+      <section className="container mx-auto px-6 py-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-tight text-foreground mb-4">
+              No-Code Workflow Builder
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Drag, drop, and configure intelligent call flows in minutes
+            </p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-3xl p-12 border border-border">
+            <div className="grid md:grid-cols-7 gap-4 max-w-4xl mx-auto">
+              {/* AI Agent */}
+              <div className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-lg border border-blue-200 dark:border-blue-800 col-span-2">
+                <div className="w-8 h-8 bg-blue-500 rounded-lg mb-2 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                </div>
+                <div className="text-xs font-semibold">AI Agent</div>
+                <div className="text-[10px] text-muted-foreground">Greet & Screen</div>
+              </div>
+              
+              {/* Arrow */}
+              <div className="flex items-center justify-center">
+                <ArrowRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+              
+              {/* Conditional */}
+              <div className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-lg border border-amber-200 dark:border-amber-800 col-span-2">
+                <div className="w-8 h-8 bg-amber-500 rounded-lg mb-2 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div className="text-xs font-semibold">Conditional</div>
+                <div className="text-[10px] text-muted-foreground">Emergency?</div>
+              </div>
+              
+              {/* Arrow */}
+              <div className="flex items-center justify-center">
+                <ArrowRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+              
+              {/* Human Queue */}
+              <div className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-lg border border-green-200 dark:border-green-800">
+                <div className="w-8 h-8 bg-green-500 rounded-lg mb-2 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                </div>
+                <div className="text-xs font-semibold">Nurse</div>
+                <div className="text-[10px] text-muted-foreground">Queue</div>
+              </div>
+            </div>
+            
+            <div className="mt-8 text-center">
+              <Link href="/sign-up">
+                <button className="bg-foreground text-background px-6 py-3 rounded-full font-medium hover:bg-foreground/90 inline-flex items-center gap-2">
+                  Try Workflow Builder
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </Link>
             </div>
           </div>
         </div>

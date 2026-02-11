@@ -220,6 +220,245 @@ class CoreAPIClient:
         except Exception as e:
             logger.error(f"Error checking insurance: {e}")
             return None
+    
+    # ========================================================================
+    # Workflow Management APIs (Phase 1)
+    # ========================================================================
+    
+    async def get_active_workflow(
+        self, 
+        hospital_id: str, 
+        phone_number_id: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get the active workflow configuration for a hospital
+        
+        Args:
+            hospital_id: Hospital identifier
+            phone_number_id: Optional phone number to get specific workflow
+            
+        Returns:
+            Workflow configuration with graph JSON
+        """
+        try:
+            # Try to get workflow by phone number first
+            if phone_number_id:
+                response = await self.client.get(
+                    f"{self.base_url}/workflows/active",
+                    params={"hospitalId": hospital_id, "phoneNumberId": phone_number_id}
+                )
+                
+                if response.status_code == 200:
+                    return response.json()
+            
+            # Fallback to hospital's default active workflow
+            response = await self.client.get(
+                f"{self.base_url}/workflows/active",
+                params={"hospitalId": hospital_id}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            
+            logger.warning(f"No active workflow found for hospital {hospital_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error fetching active workflow: {e}")
+            return None
+    
+    async def get_hospital_config(self, hospital_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get hospital-specific configuration
+        
+        Returns configuration including:
+        - Enabled modules (billing, insurance, appointments, etc.)
+        - Custom prompts and greetings
+        - Escalation rules
+        - Integration endpoints
+        """
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/hospitals/{hospital_id}/config"
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error fetching hospital config: {e}")
+            return None
+    
+    # ========================================================================
+    # Escalation & Queue Management APIs
+    # ========================================================================
+    
+    async def create_escalation(self, context_package: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Create an escalation request to human queue
+        
+        Args:
+            context_package: Complete escalation context including:
+                - call_id, hospital_id, queue_id
+                - caller info, transcript, sentiment
+                - collected fields, workflow path
+        
+        Returns:
+            Created escalation record with ID
+        """
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/escalations",
+                json=context_package
+            )
+            
+            if response.status_code in [200, 201]:
+                logger.info("Escalation created successfully")
+                return response.json()
+            else:
+                logger.warning(f"Failed to create escalation: {response.status_code}: {response.text}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error creating escalation: {e}")
+            return None
+    
+    async def get_available_agents(
+        self, 
+        hospital_id: str, 
+        queue_id: str,
+        required_skills: Optional[List[str]] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get available human agents for a queue
+        
+        Args:
+            hospital_id: Hospital identifier
+            queue_id: Queue identifier
+            required_skills: Optional list of required skills
+            
+        Returns:
+            List of available agents
+        """
+        try:
+            params = {
+                "hospitalId": hospital_id,
+                "queueId": queue_id,
+                "status": "available"
+            }
+            
+            if required_skills:
+                params["skills"] = ",".join(required_skills)
+            
+            response = await self.client.get(
+                f"{self.base_url}/agents/available",
+                params=params
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return result if isinstance(result, list) else result.get("data", [])
+            
+            return []
+            
+        except Exception as e:
+            logger.error(f"Error fetching available agents: {e}")
+            return []
+    
+    # ========================================================================
+    # Progress Reporting & Analytics
+    # ========================================================================
+    
+    async def update_call_workflow_progress(
+        self, 
+        call_id: str, 
+        progress_data: Dict[str, Any]
+    ) -> bool:
+        """
+        Update workflow execution progress for a call
+        
+        Args:
+            call_id: Call identifier
+            progress_data: Progress information including:
+                - workflow_execution: execution state
+                - current_state: call state
+                - sentiment: sentiment data
+        
+        Returns:
+            True if update successful
+        """
+        try:
+            response = await self.client.patch(
+                f"{self.base_url}/api/calls/{call_id}/progress",
+                json=progress_data
+            )
+            
+            return response.status_code == 200
+            
+        except Exception as e:
+            logger.error(f"Error updating workflow progress: {e}")
+            return False
+    
+    async def create_safety_event(self, event_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Create a safety event record
+        
+        Args:
+            event_data: Safety event information including:
+                - call_id, hospital_id
+                - keyword, category, severity
+                - context, action_taken
+        
+        Returns:
+            Created safety event record
+        """
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/safety/events",
+                json=event_data
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error creating safety event: {e}")
+            return None
+    
+    async def create_workflow_execution_log(
+        self, 
+        log_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Create a workflow execution log for audit trail
+        
+        Args:
+            log_data: Execution log including:
+                - call_id, workflow_id, hospital_id
+                - execution_path, node_data
+                - started_at, ended_at, outcome
+        
+        Returns:
+            Created log record
+        """
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/workflows/executions",
+                json=log_data
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error creating execution log: {e}")
+            return None
 
 
 # Singleton instance

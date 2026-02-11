@@ -1,6 +1,4 @@
-import { PrismaClient, UserRole, AgentType, AgentStatus, AgentSessionStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { UserRole, AgentType, AgentStatus, AgentSessionStatus, prisma } from './index';
 
 /**
  * Voice AI Test Data Seeder

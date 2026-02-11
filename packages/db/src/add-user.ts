@@ -1,10 +1,8 @@
-import { PrismaClient, UserRole } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { UserRole, prisma } from './index';
 
 async function main() {
     const clerkUserId = 'user_35qV9zkWZ5SzYVHwayboKYrI59c';
-    const hospitalId = '36137e31-e984-4a63-b85e-c4d04346c492';
+    const hospitalId = '5a77e43c-7564-4a69-b69c-dd1b05aa4c14';
 
     console.log('🔧 Adding your Clerk user to the database...');
 

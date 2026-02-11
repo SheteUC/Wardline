@@ -3,9 +3,7 @@
  * Run with: pnpm tsx src/apply-indexes.ts
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './index';
 
 async function applyIndexes() {
     console.log('📊 Applying performance indexes...\n');

@@ -1,6 +1,4 @@
-import { PrismaClient, UserRole, CallStatus, CallDirection, RecordingConsent, SentimentLabel, Speaker, WorkflowStatus, CallTag, WorkflowVersionStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { UserRole, CallStatus, CallDirection, RecordingConsent, SentimentLabel, Speaker, WorkflowStatus, CallTag, WorkflowVersionStatus, prisma } from './index';
 
 async function main() {
     console.log('🌱 Starting database seed...');
