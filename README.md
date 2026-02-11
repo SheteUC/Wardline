@@ -203,9 +203,6 @@ wardline/
 
 ## Testing
 
-### Manual Testing
-
-See [MANUAL_TESTING_GUIDE.md](MANUAL_TESTING_GUIDE.md) for comprehensive testing procedures.
 
 ### Automated Tests
 

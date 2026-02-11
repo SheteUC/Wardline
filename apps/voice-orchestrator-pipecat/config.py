@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     agent_type: str = Field(default="azure_ai_foundry", alias="VOICE_AGENT_TYPE")
     
     # Core API
-    core_api_url: str = Field(default="http://localhost:4000", alias="CORE_API_BASE_URL")
+    core_api_url: str = Field(default="http://localhost:3001", alias="CORE_API_BASE_URL")
     
     # Webhook URL (ngrok for local dev)
     webhook_base_url: str = Field(default="", alias="WEBHOOK_BASE_URL")

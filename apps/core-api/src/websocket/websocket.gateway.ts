@@ -16,7 +16,7 @@ import { AgentsService } from '../modules/agents/agents.service';
         origin: [
             process.env.WEB_URL || 'http://localhost:3000',
             'http://localhost:3000',
-            'http://localhost:4000',
+            'http://localhost:3001',
         ],
         credentials: true,
     },
