@@ -6,16 +6,6 @@ Enterprise multi-agent voice AI platform for healthcare call centers with hybrid
 
 Wardline is a HIPAA-compliant SaaS platform that revolutionizes hospital call triage through intelligent agent orchestration. Powered by Pipecat for real-time voice AI, the platform seamlessly blends automated AI agents with human specialists for 24/7 patient care, emergency screening, and administrative automation.
 
-### ✅ Implementation Complete (Feb 2026)
-- **Dynamic workflow system** with visual editor (ReactFlow)
-- **7 node types** with full configuration panels
-- **Real-time safety monitoring** - 60+ keywords, <50ms detection
-- **Hospital configuration** - Multi-tenant with per-hospital settings
-- **Full CI/CD** - GitHub Actions + Docker deployment
-- **HIPAA-compliant** - See `tests/security/SECURITY_AUDIT_CHECKLIST.md`
-
-**Quick Start**: `docker-compose up -d` | **Deploy**: `./scripts/deploy.sh staging`
-
 ## Architecture
 
 ### Multi-Agent Platform
