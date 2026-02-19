@@ -10,6 +10,7 @@ import {
 import { QueueAssignmentService } from '../../queues/queue-assignment.service';
 import { QueuesService } from '../../queues/queues.service';
 import { CallContextService } from '../../calls/call-context.service';
+import { AuditService } from '../../../audit/audit.service';
 
 @Injectable()
 export class WorkflowExecutionService {
@@ -20,6 +21,7 @@ export class WorkflowExecutionService {
         private readonly queuesService: QueuesService,
         private readonly assignmentService: QueueAssignmentService,
         private readonly callContextService: CallContextService,
+        private readonly auditService: AuditService,
     ) { }
 
     /**
@@ -448,20 +450,50 @@ export class WorkflowExecutionService {
     }
 
     /**
-     * Log routing decision to audit
+     * Log routing decision to audit trail
      */
-    private async logRoutingDecision(callId: string, decision: any) {
-        // This would create an audit log entry
+    private async logRoutingDecision(callId: string, decision: any): Promise<void> {
         this.logger.log(`Routing decision for call ${callId}:`, decision);
-        // await this.auditService.log(...);
+        try {
+            const call = await this.prisma.callSession.findUnique({
+                where: { id: callId },
+                select: { hospitalId: true },
+            });
+            if (call) {
+                await this.auditService.logAction({
+                    hospitalId: call.hospitalId,
+                    action: 'ROUTING_DECISION',
+                    entityType: 'CallSession',
+                    entityId: callId,
+                    metadata: decision,
+                });
+            }
+        } catch (err) {
+            this.logger.error(`Failed to log routing decision: ${err}`);
+        }
     }
 
     /**
-     * Log safety check event
+     * Log safety check event to audit trail
      */
-    private async logSafetyCheck(callId: string, keywords: string[]) {
-        // This would create a safety event log
+    private async logSafetyCheck(callId: string, keywords: string[]): Promise<void> {
         this.logger.log(`Safety check for call ${callId}: ${keywords.join(', ')}`);
-        // await this.auditService.logSafety(...);
+        try {
+            const call = await this.prisma.callSession.findUnique({
+                where: { id: callId },
+                select: { hospitalId: true },
+            });
+            if (call) {
+                await this.auditService.logAction({
+                    hospitalId: call.hospitalId,
+                    action: 'SAFETY_CHECK',
+                    entityType: 'CallSession',
+                    entityId: callId,
+                    metadata: { keywords, timestamp: new Date() },
+                });
+            }
+        } catch (err) {
+            this.logger.error(`Failed to log safety check: ${err}`);
+        }
     }
 }

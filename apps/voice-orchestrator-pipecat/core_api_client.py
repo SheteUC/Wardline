@@ -221,6 +221,80 @@ class CoreAPIClient:
             logger.error(f"Error checking insurance: {e}")
             return None
     
+    async def create_appointment(
+        self,
+        hospital_id: str,
+        patient_name: str,
+        patient_phone: str,
+        service_type: str,
+        preferred_date: str = "",
+        call_id: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Create a new appointment request via the scheduling API."""
+        try:
+            payload: Dict[str, Any] = {
+                "hospitalId": hospital_id,
+                "patientName": patient_name,
+                "patientPhone": patient_phone,
+                "serviceType": service_type,
+                "provider": "manual",
+                "scheduledAt": preferred_date or "TBD",
+                "duration": 30,
+                "status": "SCHEDULED",
+            }
+            if call_id:
+                payload["callId"] = call_id
+
+            response = await self.client.post(
+                f"{self.base_url}/hospitals/{hospital_id}/appointments",
+                json=payload,
+            )
+            if response.status_code in [200, 201]:
+                return response.json()
+            logger.warning(f"create_appointment failed: {response.status_code}: {response.text}")
+            return None
+        except Exception as e:
+            logger.error(f"Error creating appointment: {e}")
+            return None
+
+    async def create_prescription_refill(
+        self,
+        hospital_id: str,
+        patient_name: str,
+        patient_phone: str,
+        medication_name: str,
+        pharmacy_name: str = "",
+        pharmacy_phone: str = "",
+        call_id: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Submit a prescription refill request via the prescriptions API."""
+        try:
+            payload: Dict[str, Any] = {
+                "hospitalId": hospital_id,
+                "patientName": patient_name,
+                "patientPhone": patient_phone,
+                "medicationName": medication_name,
+                "status": "PENDING",
+            }
+            if pharmacy_name:
+                payload["pharmacyName"] = pharmacy_name
+            if pharmacy_phone:
+                payload["pharmacyPhone"] = pharmacy_phone
+            if call_id:
+                payload["callId"] = call_id
+
+            response = await self.client.post(
+                f"{self.base_url}/hospitals/{hospital_id}/prescriptions",
+                json=payload,
+            )
+            if response.status_code in [200, 201]:
+                return response.json()
+            logger.warning(f"create_prescription_refill failed: {response.status_code}: {response.text}")
+            return None
+        except Exception as e:
+            logger.error(f"Error creating prescription refill: {e}")
+            return None
+
     # ========================================================================
     # Workflow Management APIs (Phase 1)
     # ========================================================================

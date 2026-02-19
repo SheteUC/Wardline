@@ -10,6 +10,7 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { AgentSessionStatus, CallAssignmentStatus } from '@wardline/types';
 import { AgentsService } from '../modules/agents/agents.service';
+import { QueueAssignmentService } from '../modules/queues/queue-assignment.service';
 
 @WebSocketGateway({
     cors: {
@@ -28,7 +29,10 @@ export class AgentWebSocketGateway implements OnGatewayConnection, OnGatewayDisc
     private readonly logger = new Logger(AgentWebSocketGateway.name);
     private agentSessions = new Map<string, string>(); // socketId -> agentId
 
-    constructor(private readonly agentsService: AgentsService) { }
+    constructor(
+        private readonly agentsService: AgentsService,
+        private readonly queueAssignmentService: QueueAssignmentService,
+    ) { }
 
     /**
      * Handle client connection
@@ -247,13 +251,16 @@ export class AgentWebSocketGateway implements OnGatewayConnection, OnGatewayDisc
         this.logger.log(`Agent ${data.agentId} accepting assignment ${data.assignmentId}`);
 
         try {
-            // This would call the queue assignment service
-            // const assignment = await this.queueService.acceptAssignment(data.assignmentId, data.agentId);
+            // Update assignment status in the database
+            const assignment = await this.queueAssignmentService.acceptAssignment(
+                data.assignmentId,
+                data.agentId,
+            );
 
-            // Notify about acceptance
+            // Broadcast status change to all listeners (agent + supervisors)
             this.notifyAssignmentStatusChange(data.assignmentId, CallAssignmentStatus.ACCEPTED, data.agentId);
 
-            return { success: true };
+            return { success: true, assignment };
         } catch (error: any) {
             this.logger.error(`Error accepting assignment: ${error.message}`);
             return { success: false, error: error.message };

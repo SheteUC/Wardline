@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Save, Play, CheckCircle, AlertTriangle, ArrowLeft, 
-    Loader2, Download, Upload, Settings
+    Loader2, Download, Upload, Settings, Trash2, Rocket
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -36,6 +36,11 @@ import ConditionalNode from './nodes/ConditionalNode';
 import SafetyCheckNode from './nodes/SafetyCheckNode';
 import IntegrationNode from './nodes/IntegrationNode';
 import EndNode from './nodes/EndNode';
+import EmergencyScreenNode from './nodes/EmergencyScreenNode';
+import QuestionNode from './nodes/QuestionNode';
+import WebhookNode from './nodes/WebhookNode';
+import HumanDirectNode from './nodes/HumanDirectNode';
+import CollectInfoNode from './nodes/CollectInfoNode';
 // Legacy node types (for backward compatibility)
 import VoicePromptNode from './nodes/VoicePromptNode';
 import IntentDetectNode from './nodes/IntentDetectNode';
@@ -49,6 +54,11 @@ import { ConditionalConfigPanel } from './config-panels/ConditionalConfigPanel';
 import { SafetyCheckConfigPanel } from './config-panels/SafetyCheckConfigPanel';
 import { IntegrationConfigPanel } from './config-panels/IntegrationConfigPanel';
 import { EndNodeConfigPanel } from './config-panels/EndNodeConfigPanel';
+import { EmergencyScreenConfigPanel } from './config-panels/EmergencyScreenConfigPanel';
+import { QuestionConfigPanel } from './config-panels/QuestionConfigPanel';
+import { WebhookConfigPanel } from './config-panels/WebhookConfigPanel';
+import { HumanDirectConfigPanel } from './config-panels/HumanDirectConfigPanel';
+import { CollectInfoConfigPanel } from './config-panels/CollectInfoConfigPanel';
 
 // Import node palette
 import { NodePalette } from './NodePalette';
@@ -66,6 +76,12 @@ const nodeTypes: NodeTypes = {
     'safety-check': SafetyCheckNode,
     'integration': IntegrationNode,
     'end': EndNode,
+    // New node types
+    'emergency-screen': EmergencyScreenNode,
+    'question': QuestionNode,
+    'webhook': WebhookNode,
+    'human-agent-direct': HumanDirectNode,
+    'collect-info': CollectInfoNode,
     // Legacy node types (for backward compatibility with old workflow data)
     'voice-prompt': VoicePromptNode,
     'intent-detect': IntentDetectNode,
@@ -86,6 +102,12 @@ const getNodeColor = (node: Node) => {
         'safety-check': '#f97316',
         'integration': '#14b8a6',
         'end': '#64748b',
+        // New node types
+        'emergency-screen': '#ef4444',
+        'question': '#22c55e',
+        'webhook': '#6366f1',
+        'human-agent-direct': '#3b82f6',
+        'collect-info': '#06b6d4',
         // Legacy node types
         'voice-prompt': '#10b981',
         'intent-detect': '#6366f1',
@@ -180,16 +202,42 @@ export function EnhancedWorkflowEditor({
         }
     }, [setNodes, selectedNode]);
     
+    const deleteSelectedNode = useCallback(() => {
+        if (!selectedNode) return;
+        // Remove the node
+        setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
+        // Remove any connected edges
+        setEdges((eds) => eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id));
+        setSelectedNode(null);
+        setHasChanges(true);
+    }, [selectedNode, setNodes, setEdges]);
+    
+    // Keyboard shortcut: Delete / Backspace to remove selected node
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode) {
+                // Don't delete if user is typing in an input/textarea
+                const tag = (e.target as HTMLElement)?.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+                e.preventDefault();
+                deleteSelectedNode();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedNode, deleteSelectedNode]);
+    
     const addNodeToCanvas = useCallback((nodeType: any) => {
         const newNode: Node = {
             id: `node-${Date.now()}`,
             type: nodeType.type,
             position: { x: 250, y: 100 + nodes.length * 20 },
-            data: nodeType.defaultData,
+            data: { ...nodeType.defaultData, label: nodeType.defaultData?.label || nodeType.label },
         };
         
         setNodes((nds) => [...nds, newNode]);
         setHasChanges(true);
+        setSelectedNode(newNode);
     }, [nodes, setNodes]);
     
     const handleSave = useCallback(async () => {
@@ -260,209 +308,227 @@ export function EnhancedWorkflowEditor({
     }, [workflowId, workflowName, nodes, edges]);
     
     return (
-        <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/dashboard/workflows">
-                        <Button variant="ghost" size="icon">
-                            <ArrowLeft className="h-4 h-4" />
-                        </Button>
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold">{workflowName}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {nodes.length} nodes • {edges.length} connections
-                        </p>
-                    </div>
-                    {hasChanges && (
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                            Unsaved Changes
-                        </Badge>
+        <div className="flex flex-col h-[calc(100vh-12rem)]">
+            {/* Minimal Top Bar */}
+            <div className="flex items-center justify-end gap-2 pb-3 mb-3">
+                {hasChanges && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 mr-auto">
+                        Unsaved Changes
+                    </Badge>
+                )}
+                <Button variant="outline" size="sm" onClick={handleValidate} disabled={isValidating}>
+                    {isValidating ? (
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    ) : (
+                        <CheckCircle className="h-4 w-4 mr-1.5" />
                     )}
-                </div>
-                
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={exportWorkflow}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleValidate} disabled={isValidating}>
-                        {isValidating ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                        )}
-                        Validate
-                    </Button>
-                    <Button variant="outline" size="sm">
-                        <Play className="h-4 w-4 mr-2" />
-                        Simulate
-                    </Button>
-                    <Button size="sm" onClick={handleSave} disabled={!hasChanges}>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save
-                    </Button>
-                </div>
+                    Validate
+                </Button>
+                <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={!hasChanges}
+                    className="bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-600/40 disabled:text-white/60"
+                >
+                    <Rocket className="h-4 w-4 mr-1.5" />
+                    Deploy
+                </Button>
             </div>
             
             {/* Validation Results */}
             {validationResult && (
-                <Card className={validationResult.valid ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}>
-                    <CardContent className="py-3">
-                        <div className="flex items-start gap-3">
-                            {validationResult.valid ? (
-                                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                            ) : (
-                                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div className={`mb-4 rounded-lg border p-3 ${validationResult.valid ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+                    <div className="flex items-start gap-2">
+                        {validationResult.valid ? (
+                            <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                        ) : (
+                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">
+                                {validationResult.valid ? 'Workflow is valid' : 'Validation failed'}
+                            </p>
+                            {validationResult.errors && validationResult.errors.length > 0 && (
+                                <ul className="text-xs mt-1 space-y-0.5">
+                                    {validationResult.errors.map((error: any, i: number) => (
+                                        <li key={i} className="text-red-700">• {error.message}</li>
+                                    ))}
+                                </ul>
                             )}
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm">
-                                    {validationResult.valid ? 'Workflow is valid' : 'Validation failed'}
-                                </p>
-                                {validationResult.errors && validationResult.errors.length > 0 && (
-                                    <ul className="text-xs mt-2 space-y-1">
-                                        {validationResult.errors.map((error: any, i: number) => (
-                                            <li key={i} className="text-red-700">
-                                                • {error.message}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                                {validationResult.warnings && validationResult.warnings.length > 0 && (
-                                    <ul className="text-xs mt-2 space-y-1">
-                                        {validationResult.warnings.map((warning: any, i: number) => (
-                                            <li key={i} className="text-amber-700">
-                                                ⚠ {warning.message}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             )}
             
             {/* Main Editor Layout */}
-            <div className="grid grid-cols-12 gap-4">
+            <div className="flex gap-4 flex-1 min-h-0">
                 {/* Node Palette - Left Sidebar */}
-                <div className="col-span-2">
+                <div className="w-56 shrink-0">
                     <NodePalette onAddNode={addNodeToCanvas} />
                 </div>
                 
                 {/* Flow Canvas - Center */}
-                <div className="col-span-7">
-                    <Card>
-                        <CardContent className="p-0">
-                            <div style={{ height: '700px' }}>
-                                <ReactFlow
-                                    nodes={nodes}
-                                    edges={edges}
-                                    onNodesChange={onNodesChange}
-                                    onEdgesChange={onEdgesChange}
-                                    onConnect={onConnect}
-                                    onNodeClick={onNodeClick}
-                                    nodeTypes={nodeTypes}
-                                    fitView
-                                    minZoom={0.2}
-                                    maxZoom={2}
-                                    defaultEdgeOptions={defaultEdgeOptions}
-                                >
-                                    <Controls />
-                                    <MiniMap
-                                        nodeStrokeColor="#e2e8f0"
-                                        nodeColor={getNodeColor}
-                                        className="!bg-background border rounded-lg"
-                                    />
-                                    <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-                                    <Panel position="top-right" className="bg-background/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border">
-                                        <div className="text-xs space-y-1">
-                                            <div className="font-semibold">Workflow Info</div>
-                                            <div className="text-muted-foreground">
-                                                {nodes.length} nodes • {edges.length} edges
-                                            </div>
-                                            {validationResult?.valid && (
-                                                <div className="flex items-center gap-1 text-green-600">
-                                                    <CheckCircle className="w-3 h-3" />
-                                                    <span>Validated</span>
-                                                </div>
-                                            )}
+                <div className="flex-1 min-w-0">
+                    <Card className="h-full">
+                        <CardContent className="p-0 h-full">
+                            <ReactFlow
+                                nodes={nodes}
+                                edges={edges}
+                                onNodesChange={onNodesChange}
+                                onEdgesChange={onEdgesChange}
+                                onConnect={onConnect}
+                                onNodeClick={onNodeClick}
+                                nodeTypes={nodeTypes}
+                                fitView
+                                minZoom={0.2}
+                                maxZoom={2}
+                                defaultEdgeOptions={defaultEdgeOptions}
+                            >
+                                <Controls position="bottom-left" />
+                                <MiniMap
+                                    nodeStrokeColor="#e2e8f0"
+                                    nodeColor={getNodeColor}
+                                    className="!bg-background border rounded-lg"
+                                    position="bottom-right"
+                                />
+                                <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+                                <Panel position="top-right" className="bg-background/95 backdrop-blur-sm rounded-lg p-2.5 shadow-lg border">
+                                    <div className="text-xs space-y-1">
+                                        <div className="font-semibold text-foreground">Workflow Info</div>
+                                        <div className="text-muted-foreground">
+                                            {nodes.length} nodes • {edges.length} edges
                                         </div>
-                                    </Panel>
-                                </ReactFlow>
-                            </div>
+                                        {validationResult?.valid && (
+                                            <div className="flex items-center gap-1 text-green-600">
+                                                <CheckCircle className="w-3 h-3" />
+                                                <span>Validated</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </Panel>
+                            </ReactFlow>
                         </CardContent>
                     </Card>
                 </div>
                 
                 {/* Configuration Panel - Right Sidebar */}
-                <div className="col-span-3">
-                    <Card className="h-[700px] flex flex-col">
-                        <CardContent className="p-4 flex-1 flex flex-col">
+                <div className="w-80 shrink-0">
+                    <Card className="h-full flex flex-col">
+                        <CardContent className="p-4 flex-1 flex flex-col min-h-0">
                             {selectedNode ? (
                                 <>
-                                    <div className="pb-3 border-b mb-4">
-                                        <h3 className="font-semibold">Node Configuration</h3>
-                                        <p className="text-xs text-muted-foreground mt-0.5">
-                                            Configure selected node
-                                        </p>
-                                    </div>
-                                    
-                                    <ScrollArea className="flex-1 pr-4">
-                                        {selectedNode.type === 'start' && (
-                                            <StartNodeConfigPanel
-                                                data={selectedNode.data}
-                                                onChange={(updates) => updateNodeData(selectedNode.id, updates)}
-                                            />
-                                        )}
-                                        {selectedNode.type === 'ai-agent' && (
-                                            <AIAgentConfigPanel
-                                                data={selectedNode.data}
-                                                onChange={(updates) => updateNodeData(selectedNode.id, updates)}
-                                            />
-                                        )}
-                                        {selectedNode.type === 'human-agent-queue' && (
-                                            <HumanQueueConfigPanel
-                                                data={selectedNode.data}
-                                                onChange={(updates) => updateNodeData(selectedNode.id, updates)}
-                                            />
-                                        )}
-                                        {selectedNode.type === 'conditional' && (
-                                            <ConditionalConfigPanel
-                                                data={selectedNode.data}
-                                                onChange={(updates) => updateNodeData(selectedNode.id, updates)}
-                                            />
-                                        )}
-                                        {selectedNode.type === 'safety-check' && (
-                                            <SafetyCheckConfigPanel
-                                                data={selectedNode.data}
-                                                onChange={(updates) => updateNodeData(selectedNode.id, updates)}
-                                            />
-                                        )}
-                                        {selectedNode.type === 'integration' && (
-                                            <IntegrationConfigPanel
-                                                data={selectedNode.data}
-                                                onChange={(updates) => updateNodeData(selectedNode.id, updates)}
-                                            />
-                                        )}
-                                        {selectedNode.type === 'end' && (
-                                            <EndNodeConfigPanel
-                                                data={selectedNode.data}
-                                                onChange={(updates) => updateNodeData(selectedNode.id, updates)}
-                                            />
-                                        )}
-                                        {!['start', 'ai-agent', 'human-agent-queue', 'conditional', 'safety-check', 'integration', 'end'].includes(selectedNode.type || '') && (
-                                            <div className="text-center py-8">
-                                                <p className="text-sm text-muted-foreground">
-                                                    No configuration available for this node type
+                                    <div className="pb-3 border-b mb-3 shrink-0">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="font-semibold text-sm">Node Configuration</h3>
+                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                    {(selectedNode.data as Record<string, unknown>)?.label as string || selectedNode.type}
                                                 </p>
                                             </div>
-                                        )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={deleteSelectedNode}
+                                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                title="Delete node"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    
+                                    <ScrollArea className="flex-1 min-h-0 pr-3 -mr-3">
+                                        <div className="space-y-4 pb-4">
+                                            {selectedNode.type === 'start' && (
+                                                <StartNodeConfigPanel
+                                                    data={{ label: 'Start', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'ai-agent' && (
+                                                <AIAgentConfigPanel
+                                                    data={{ label: 'AI Agent', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'human-agent-queue' && (
+                                                <HumanQueueConfigPanel
+                                                    data={{ label: 'Human Queue', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'conditional' && (
+                                                <ConditionalConfigPanel
+                                                    data={{ label: 'Conditional', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'safety-check' && (
+                                                <SafetyCheckConfigPanel
+                                                    data={{ label: 'Safety Check', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'integration' && (
+                                                <IntegrationConfigPanel
+                                                    data={{ label: 'Integration', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'end' && (
+                                                <EndNodeConfigPanel
+                                                    data={{ label: 'End', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'emergency-screen' && (
+                                                <EmergencyScreenConfigPanel
+                                                    data={{ label: 'Emergency Screen', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'question' && (
+                                                <QuestionConfigPanel
+                                                    data={{ label: 'Question', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'webhook' && (
+                                                <WebhookConfigPanel
+                                                    data={{ label: 'Webhook', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'human-agent-direct' && (
+                                                <HumanDirectConfigPanel
+                                                    data={{ label: 'Direct to Agent', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'collect-info' && (
+                                                <CollectInfoConfigPanel
+                                                    data={{ label: 'Collect Info', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {['voice-prompt', 'intent-detect', 'route'].includes(selectedNode.type || '') && (
+                                                <div className="text-center py-8 px-4">
+                                                    <p className="text-sm text-muted-foreground mb-2">
+                                                        Legacy node type
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        This is a legacy node. Consider using the newer node types for better features.
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {!['start', 'ai-agent', 'human-agent-queue', 'conditional', 'safety-check', 'integration', 'end', 'emergency-screen', 'question', 'webhook', 'human-agent-direct', 'collect-info', 'voice-prompt', 'intent-detect', 'route'].includes(selectedNode.type || '') && (
+                                                <div className="text-center py-8">
+                                                    <p className="text-sm text-muted-foreground">
+                                                        No configuration available for this node type
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </ScrollArea>
                                 </>
                             ) : (
@@ -481,39 +547,6 @@ export function EnhancedWorkflowEditor({
                     </Card>
                 </div>
             </div>
-            
-            {/* Node Type Legend */}
-            <Card>
-                <CardContent className="py-3">
-                    <div className="flex items-center gap-4 text-xs">
-                        <span className="font-semibold">Node Types:</span>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-purple-500"></div>
-                            <span>AI Agent</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-blue-500"></div>
-                            <span>Human Queue</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-amber-500"></div>
-                            <span>Conditional</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-orange-500"></div>
-                            <span>Safety Check</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-teal-500"></div>
-                            <span>Integration</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-gray-500"></div>
-                            <span>End</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
             
             {/* Workflow Settings Panel */}
             {showSettings && (

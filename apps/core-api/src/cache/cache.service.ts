@@ -1,18 +1,20 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Logger } from '@wardline/utils';
+import Redis from 'ioredis';
 
 /**
- * In-memory cache service for frequently accessed data.
- * Reduces database load and improves response times.
- * 
+ * Redis-backed cache service with in-memory fallback.
+ *
  * Features:
- * - TTL-based expiration
- * - LRU eviction when max size is reached
- * - Tag-based invalidation for related data
+ * - Redis primary store (shared across instances, survives restarts)
+ * - In-memory LRU fallback when Redis is unavailable
+ * - TTL-based expiration (delegated to Redis)
+ * - Tag-based invalidation via Redis Sets
+ * - Prefix-based invalidation via Redis SCAN
  * - Statistics tracking
  */
 
-interface CacheEntry<T> {
+interface FallbackEntry<T> {
     value: T;
     expiresAt: number;
     tags: string[];
@@ -24,226 +26,354 @@ interface CacheStats {
     misses: number;
     size: number;
     evictions: number;
+    usingRedis: boolean;
 }
 
 @Injectable()
-export class CacheService implements OnModuleDestroy {
+export class CacheService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(CacheService.name);
-    private readonly cache = new Map<string, CacheEntry<unknown>>();
-    private readonly maxSize = 1000; // Max entries in cache
-    private readonly defaultTtl = 60 * 1000; // 1 minute default TTL
-    private stats: CacheStats = { hits: 0, misses: 0, size: 0, evictions: 0 };
-    private cleanupInterval: NodeJS.Timeout;
 
-    constructor() {
-        // Run cleanup every 30 seconds
-        this.cleanupInterval = setInterval(() => this.cleanup(), 30000);
-        this.logger.info('Cache service initialized');
-    }
+    // Redis client (primary)
+    private redis: Redis | null = null;
+    private redisAvailable = false;
 
-    onModuleDestroy() {
-        if (this.cleanupInterval) {
-            clearInterval(this.cleanupInterval);
+    // In-memory LRU fallback
+    private readonly fallback = new Map<string, FallbackEntry<unknown>>();
+    private readonly maxFallbackSize = 1000;
+    private readonly defaultTtl = 60 * 1000; // 1 minute
+
+    private stats: CacheStats = {
+        hits: 0,
+        misses: 0,
+        size: 0,
+        evictions: 0,
+        usingRedis: false,
+    };
+
+    private cleanupInterval: NodeJS.Timeout | null = null;
+
+    async onModuleInit() {
+        await this._connectRedis();
+        // Fallback cleanup only needed when Redis is absent
+        if (!this.redisAvailable) {
+            this.cleanupInterval = setInterval(() => this._cleanupFallback(), 30_000);
         }
     }
 
-    /**
-     * Get a value from the cache
-     * @param key - Cache key
-     * @returns Cached value or undefined if not found/expired
-     */
-    get<T>(key: string): T | undefined {
-        const entry = this.cache.get(key) as CacheEntry<T> | undefined;
+    onModuleDestroy() {
+        if (this.cleanupInterval) clearInterval(this.cleanupInterval);
+        if (this.redis) {
+            this.redis.disconnect();
+        }
+    }
 
+    // -------------------------------------------------------------------------
+    // Public API (all methods are now async)
+    // -------------------------------------------------------------------------
+
+    async get<T>(key: string): Promise<T | undefined> {
+        if (this.redisAvailable && this.redis) {
+            try {
+                const raw = await this.redis.get(key);
+                if (raw === null) {
+                    this.stats.misses++;
+                    return undefined;
+                }
+                this.stats.hits++;
+                return JSON.parse(raw) as T;
+            } catch (err) {
+                this.logger.warn(`Redis get error, falling back: ${err}`);
+                this._handleRedisError();
+            }
+        }
+        return this._fallbackGet<T>(key);
+    }
+
+    async set<T>(
+        key: string,
+        value: T,
+        options?: { ttl?: number; tags?: string[] },
+    ): Promise<void> {
+        const ttl = options?.ttl ?? this.defaultTtl;
+        const tags = options?.tags ?? [];
+
+        if (this.redisAvailable && this.redis) {
+            try {
+                const pipeline = this.redis.pipeline();
+                // Store value with TTL (PX = milliseconds)
+                pipeline.set(key, JSON.stringify(value), 'PX', ttl);
+                // Register key under each tag set (tag set also expires after ttl)
+                for (const tag of tags) {
+                    pipeline.sadd(`tag:${tag}`, key);
+                    pipeline.pexpire(`tag:${tag}`, ttl * 10); // tag set lives longer
+                }
+                await pipeline.exec();
+                return;
+            } catch (err) {
+                this.logger.warn(`Redis set error, falling back: ${err}`);
+                this._handleRedisError();
+            }
+        }
+        this._fallbackSet(key, value, ttl, tags);
+    }
+
+    async getOrSet<T>(
+        key: string,
+        factory: () => Promise<T>,
+        options?: { ttl?: number; tags?: string[] },
+    ): Promise<T> {
+        const cached = await this.get<T>(key);
+        if (cached !== undefined) return cached;
+        const value = await factory();
+        await this.set(key, value, options);
+        return value;
+    }
+
+    async delete(key: string): Promise<boolean> {
+        if (this.redisAvailable && this.redis) {
+            try {
+                const deleted = await this.redis.del(key);
+                return deleted > 0;
+            } catch (err) {
+                this.logger.warn(`Redis del error: ${err}`);
+                this._handleRedisError();
+            }
+        }
+        return this.fallback.delete(key);
+    }
+
+    async invalidateByTag(tag: string): Promise<number> {
+        if (this.redisAvailable && this.redis) {
+            try {
+                const tagKey = `tag:${tag}`;
+                const keys = await this.redis.smembers(tagKey);
+                if (keys.length > 0) {
+                    const pipeline = this.redis.pipeline();
+                    pipeline.del(...keys);
+                    pipeline.del(tagKey);
+                    await pipeline.exec();
+                }
+                this.logger.debug(`Redis: invalidated ${keys.length} keys for tag "${tag}"`);
+                return keys.length;
+            } catch (err) {
+                this.logger.warn(`Redis invalidateByTag error: ${err}`);
+                this._handleRedisError();
+            }
+        }
+        return this._fallbackInvalidateByTag(tag);
+    }
+
+    async invalidateByPrefix(prefix: string): Promise<number> {
+        if (this.redisAvailable && this.redis) {
+            try {
+                let count = 0;
+                let cursor = '0';
+                do {
+                    const [next, keys] = await this.redis.scan(
+                        cursor,
+                        'MATCH',
+                        `${prefix}*`,
+                        'COUNT',
+                        100,
+                    );
+                    cursor = next;
+                    if (keys.length > 0) {
+                        await this.redis.del(...keys);
+                        count += keys.length;
+                    }
+                } while (cursor !== '0');
+                this.logger.debug(`Redis: invalidated ${count} keys with prefix "${prefix}"`);
+                return count;
+            } catch (err) {
+                this.logger.warn(`Redis invalidateByPrefix error: ${err}`);
+                this._handleRedisError();
+            }
+        }
+        return this._fallbackInvalidateByPrefix(prefix);
+    }
+
+    async clear(): Promise<void> {
+        if (this.redisAvailable && this.redis) {
+            try {
+                // Only flush in development to avoid accidental production wipes
+                if (process.env.NODE_ENV !== 'production') {
+                    await this.redis.flushdb();
+                }
+                return;
+            } catch (err) {
+                this.logger.warn(`Redis clear error: ${err}`);
+                this._handleRedisError();
+            }
+        }
+        this.fallback.clear();
+    }
+
+    getStats(): CacheStats & { hitRate: number } {
+        const total = this.stats.hits + this.stats.misses;
+        return {
+            ...this.stats,
+            usingRedis: this.redisAvailable,
+            hitRate: total > 0 ? (this.stats.hits / total) * 100 : 0,
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Redis connection management
+    // -------------------------------------------------------------------------
+
+    private async _connectRedis() {
+        const url = process.env.REDIS_URL;
+        if (!url) {
+            this.logger.warn('REDIS_URL not set — using in-memory cache fallback');
+            return;
+        }
+
+        try {
+            this.redis = new Redis(url, {
+                lazyConnect: true,
+                enableOfflineQueue: false,
+                maxRetriesPerRequest: 1,
+                connectTimeout: 5000,
+            });
+
+            this.redis.on('error', (err) => {
+                if (this.redisAvailable) {
+                    this.logger.warn(`Redis error: ${err.message}`);
+                }
+                this._handleRedisError();
+            });
+
+            this.redis.on('connect', () => {
+                if (!this.redisAvailable) {
+                    this.logger.info('Redis connected — switching to Redis cache');
+                    this.redisAvailable = true;
+                    this.stats.usingRedis = true;
+                }
+            });
+
+            await this.redis.connect();
+            this.redisAvailable = true;
+            this.stats.usingRedis = true;
+            this.logger.info('Cache service initialised with Redis');
+        } catch (err) {
+            this.logger.warn(`Cannot connect to Redis: ${err} — using in-memory fallback`);
+            this.redisAvailable = false;
+        }
+    }
+
+    private _handleRedisError() {
+        if (this.redisAvailable) {
+            this.redisAvailable = false;
+            this.stats.usingRedis = false;
+            this.logger.warn('Redis unavailable — falling back to in-memory cache');
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // In-memory fallback helpers
+    // -------------------------------------------------------------------------
+
+    private _fallbackGet<T>(key: string): T | undefined {
+        const entry = this.fallback.get(key) as FallbackEntry<T> | undefined;
         if (!entry) {
             this.stats.misses++;
             return undefined;
         }
-
-        // Check if expired
         if (Date.now() > entry.expiresAt) {
-            this.cache.delete(key);
+            this.fallback.delete(key);
             this.stats.misses++;
             return undefined;
         }
-
-        // Update access time for LRU
         entry.accessedAt = Date.now();
         this.stats.hits++;
         return entry.value;
     }
 
-    /**
-     * Set a value in the cache
-     * @param key - Cache key
-     * @param value - Value to cache
-     * @param options - TTL in ms and tags for invalidation
-     */
-    set<T>(key: string, value: T, options?: { ttl?: number; tags?: string[] }): void {
-        const ttl = options?.ttl ?? this.defaultTtl;
-        const tags = options?.tags ?? [];
-
-        // Evict if at max size
-        if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
-            this.evictLRU();
+    private _fallbackSet<T>(key: string, value: T, ttl: number, tags: string[]): void {
+        if (this.fallback.size >= this.maxFallbackSize && !this.fallback.has(key)) {
+            this._evictLRU();
         }
-
-        this.cache.set(key, {
+        this.fallback.set(key, {
             value,
             expiresAt: Date.now() + ttl,
             tags,
             accessedAt: Date.now(),
         });
-
-        this.stats.size = this.cache.size;
+        this.stats.size = this.fallback.size;
     }
 
-    /**
-     * Get or set a value - runs the factory if cache miss
-     * @param key - Cache key
-     * @param factory - Async function to produce the value if not cached
-     * @param options - TTL and tags
-     */
-    async getOrSet<T>(
-        key: string,
-        factory: () => Promise<T>,
-        options?: { ttl?: number; tags?: string[] }
-    ): Promise<T> {
-        const cached = this.get<T>(key);
-        if (cached !== undefined) {
-            return cached;
-        }
-
-        const value = await factory();
-        this.set(key, value, options);
-        return value;
-    }
-
-    /**
-     * Delete a specific key from the cache
-     */
-    delete(key: string): boolean {
-        return this.cache.delete(key);
-    }
-
-    /**
-     * Invalidate all entries with a specific tag
-     * Useful for invalidating related data (e.g., all hospital data)
-     */
-    invalidateByTag(tag: string): number {
+    private _fallbackInvalidateByTag(tag: string): number {
         let count = 0;
-        for (const [key, entry] of this.cache.entries()) {
+        for (const [key, entry] of this.fallback.entries()) {
             if (entry.tags.includes(tag)) {
-                this.cache.delete(key);
+                this.fallback.delete(key);
                 count++;
             }
         }
-        this.logger.debug(`Invalidated ${count} entries with tag: ${tag}`);
         return count;
     }
 
-    /**
-     * Invalidate all entries matching a key prefix
-     */
-    invalidateByPrefix(prefix: string): number {
+    private _fallbackInvalidateByPrefix(prefix: string): number {
         let count = 0;
-        for (const key of this.cache.keys()) {
+        for (const key of this.fallback.keys()) {
             if (key.startsWith(prefix)) {
-                this.cache.delete(key);
+                this.fallback.delete(key);
                 count++;
             }
         }
-        this.logger.debug(`Invalidated ${count} entries with prefix: ${prefix}`);
         return count;
     }
 
-    /**
-     * Clear all entries
-     */
-    clear(): void {
-        this.cache.clear();
-        this.stats.size = 0;
-        this.logger.info('Cache cleared');
-    }
-
-    /**
-     * Get cache statistics
-     */
-    getStats(): CacheStats & { hitRate: number } {
-        const total = this.stats.hits + this.stats.misses;
-        return {
-            ...this.stats,
-            hitRate: total > 0 ? (this.stats.hits / total) * 100 : 0,
-        };
-    }
-
-    /**
-     * Remove expired entries
-     */
-    private cleanup(): void {
+    private _cleanupFallback(): void {
         const now = Date.now();
         let removed = 0;
-
-        for (const [key, entry] of this.cache.entries()) {
+        for (const [key, entry] of this.fallback.entries()) {
             if (now > entry.expiresAt) {
-                this.cache.delete(key);
+                this.fallback.delete(key);
                 removed++;
             }
         }
-
         if (removed > 0) {
-            this.stats.size = this.cache.size;
-            this.logger.debug(`Cleaned up ${removed} expired entries`);
+            this.stats.size = this.fallback.size;
         }
     }
 
-    /**
-     * Evict least recently used entry
-     */
-    private evictLRU(): void {
+    private _evictLRU(): void {
         let oldestKey: string | null = null;
         let oldestTime = Infinity;
-
-        for (const [key, entry] of this.cache.entries()) {
+        for (const [key, entry] of this.fallback.entries()) {
             if (entry.accessedAt < oldestTime) {
                 oldestTime = entry.accessedAt;
                 oldestKey = key;
             }
         }
-
         if (oldestKey) {
-            this.cache.delete(oldestKey);
+            this.fallback.delete(oldestKey);
             this.stats.evictions++;
         }
     }
 }
 
-// Cache key generators for consistent key formatting
+// ---------------------------------------------------------------------------
+// Cache key generators — unchanged so callers don't need to update imports
+// ---------------------------------------------------------------------------
 export const CacheKeys = {
-    // Hospital cache keys
     hospital: (id: string) => `hospital:${id}`,
     hospitalSettings: (id: string) => `hospital:${id}:settings`,
     hospitals: () => 'hospitals:list',
-
-    // Calls cache keys
     callsList: (hospitalId: string, hash: string) => `calls:${hospitalId}:list:${hash}`,
     callDetail: (id: string) => `call:${id}`,
     callAnalytics: (hospitalId: string, startDate: string, endDate: string) =>
         `calls:${hospitalId}:analytics:${startDate}:${endDate}`,
-
-    // Team cache keys
     teamMembers: (hospitalId: string) => `team:${hospitalId}:members`,
-
-    // Workflows cache keys
     workflowsList: (hospitalId: string) => `workflows:${hospitalId}:list`,
     workflowDetail: (id: string) => `workflow:${id}`,
 };
 
-// TTL constants (in milliseconds)
+// TTL constants (milliseconds)
 export const CacheTTL = {
-    SHORT: 30 * 1000,      // 30 seconds - for frequently changing data
-    MEDIUM: 2 * 60 * 1000, // 2 minutes - for moderately changing data
-    LONG: 10 * 60 * 1000,  // 10 minutes - for rarely changing data
-    ANALYTICS: 60 * 1000,  // 1 minute - for analytics (balance freshness vs. performance)
+    SHORT: 30 * 1000,
+    MEDIUM: 2 * 60 * 1000,
+    LONG: 10 * 60 * 1000,
+    ANALYTICS: 60 * 1000,
 };
-

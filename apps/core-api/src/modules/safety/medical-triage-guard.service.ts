@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AgentWebSocketGateway } from '../../websocket/websocket.gateway';
 
 @Injectable()
 export class MedicalTriageGuardService {
@@ -80,7 +81,10 @@ export class MedicalTriageGuardService {
         'pneumonia',
     ];
 
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly wsGateway: AgentWebSocketGateway,
+    ) { }
 
     /**
      * Detect medical content in transcript
@@ -275,16 +279,26 @@ export class MedicalTriageGuardService {
     }
 
     /**
-     * Alert supervisors about emergency escalation
+     * Alert supervisors about emergency escalation via WebSocket broadcast.
+     * Future enhancement: SMS/email for off-duty supervisors.
      */
     private async alertSupervisors(callId: string, keywords: string[]): Promise<void> {
-        // TODO: Implement supervisor alerting (WebSocket, SMS, email)
         this.logger.warn(`EMERGENCY ALERT: Call ${callId} - Keywords: ${keywords.join(', ')}`);
-        
-        // This would typically:
-        // 1. Send WebSocket notification to online supervisors
-        // 2. Send SMS to on-call supervisors
-        // 3. Create high-priority notification in system
+
+        // 1. Real-time WebSocket broadcast to all connected supervisors/dashboards
+        this.wsGateway.notifyEmergency(
+            callId,
+            `Emergency keywords detected: ${keywords.join(', ')}`,
+            keywords,
+        );
+
+        // 2. Log the supervisor alert in audit trail
+        await this.logSafetyEvent(callId, {
+            type: 'supervisor_alert',
+            keywords,
+            timestamp: new Date(),
+            channel: 'websocket',
+        });
     }
 
     /**

@@ -17,6 +17,7 @@ from config import settings
 from call_context import context_manager, CallContext, CallState
 from core_api_client import api_client
 from prompts import get_greeting_prompt, get_system_prompt
+from twilio_transport import TwilioMediaStreamAdapter
 
 # Configure logging
 # Use enqueue=True to avoid file locking issues on Windows
@@ -133,41 +134,62 @@ async def handle_incoming_call(request: Request):
     # Generate TwiML response
     response = VoiceResponse()
     
-    # Greeting inside gather so it starts listening immediately
-    greeting = get_greeting_prompt(context.hospital_name)
-    
-    # Speech hints help Twilio recognize medical/appointment terms better
-    speech_hints = (
-        "appointment, schedule, scheduling, reschedule, cancel, "
-        "prescription, refill, medication, pharmacy, "
-        "insurance, billing, bill, payment, "
-        "radiology, cardiology, primary care, pharmacy, medical records, "
-        "doctor, nurse, physician, "
-        "yes, no, correct, that's right, "
-        "January, February, March, April, May, June, "
-        "July, August, September, October, November, December"
-    )
-    
-    gather = Gather(
-        input="speech",
-        action="/voice/process",
-        method="POST",
-        speech_timeout="3",  # Wait 3 seconds of silence before processing
-        timeout=10,  # Max 10 seconds to wait for speech to start
-        speech_model="phone_call",
-        enhanced=True,
-        language="en-US",
-        hints=speech_hints,  # Help recognize common medical terms
-    )
-    gather.say(greeting, voice="Polly.Joanna")
-    response.append(gather)
-    
-    # Fallback if no input - prompt again
-    response.say(
-        "I didn't catch that. How can I help you today?",
-        voice="Polly.Joanna"
-    )
-    response.redirect("/voice/incoming")
+    # ---------------------------------------------------------------------------
+    # Choose call mode:
+    #   - Streaming mode (Pipecat real-time): uses <Connect><Stream> to pipe
+    #     audio to the /media/{call_sid} WebSocket endpoint.
+    #   - Gather mode (fallback): classic request/response with Twilio Gather.
+    # ---------------------------------------------------------------------------
+    use_streaming = getattr(settings, "use_streaming", False)
+    base_url = settings.webhook_base_url.rstrip("/")
+
+    if use_streaming and base_url:
+        logger.info(f"Using Pipecat streaming mode for {call_sid}")
+
+        # Greet the caller first, then connect the media stream
+        greeting = get_greeting_prompt(context.hospital_name)
+        response.say(greeting, voice="Polly.Joanna")
+
+        # Open a bidirectional media stream to our WebSocket endpoint
+        connect = Connect()
+        stream = Stream(url=f"{base_url.replace('https://', 'wss://').replace('http://', 'ws://')}/media/{call_sid}")
+        connect.append(stream)
+        response.append(connect)
+    else:
+        logger.info(f"Using Gather (request/response) mode for {call_sid}")
+
+        # Greeting inside gather so it starts listening immediately
+        greeting = get_greeting_prompt(context.hospital_name)
+        
+        # Speech hints help Twilio recognise medical/appointment terms better
+        speech_hints = (
+            "appointment, schedule, scheduling, reschedule, cancel, "
+            "prescription, refill, medication, pharmacy, "
+            "insurance, billing, bill, payment, "
+            "radiology, cardiology, primary care, pharmacy, medical records, "
+            "doctor, nurse, physician, "
+            "yes, no, correct, that's right, "
+            "January, February, March, April, May, June, "
+            "July, August, September, October, November, December"
+        )
+        
+        gather = Gather(
+            input="speech",
+            action="/voice/process",
+            method="POST",
+            speech_timeout="3",
+            timeout=10,
+            speech_model="phone_call",
+            enhanced=True,
+            language="en-US",
+            hints=speech_hints,
+        )
+        gather.say(greeting, voice="Polly.Joanna")
+        response.append(gather)
+        
+        # Fallback if no input
+        response.say("I didn't catch that. How can I help you today?", voice="Polly.Joanna")
+        response.redirect("/voice/incoming")
     
     return Response(content=str(response), media_type="text/xml")
 
@@ -397,38 +419,27 @@ async def generate_ai_response(context: CallContext, user_message: str) -> str:
 @app.websocket("/media/{call_sid}")
 async def websocket_media_stream(websocket: WebSocket, call_sid: str):
     """
-    WebSocket endpoint for Twilio Media Streams
-    This will be used for real-time Pipecat integration
+    WebSocket endpoint for Twilio Media Streams.
+    Bridges Twilio audio to the Pipecat real-time pipeline.
     """
     await websocket.accept()
     logger.info(f"🔌 WebSocket connected for call {call_sid}")
     
+    # Retrieve (or create) call context
+    context = context_manager.get_context(call_sid)
+    if not context:
+        logger.warning(f"No context for call {call_sid} — creating minimal context")
+        context = context_manager.create_context(call_sid=call_sid)
+
     try:
-        while True:
-            data = await websocket.receive_text()
-            message = json.loads(data)
-            event = message.get("event")
-            
-            if event == "connected":
-                logger.info("✅ Twilio stream connected")
-            
-            elif event == "start":
-                stream_sid = message.get("start", {}).get("streamSid")
-                logger.info(f"🎙️ Stream started: {stream_sid}")
-            
-            elif event == "media":
-                # Handle audio chunk
-                # In full Pipecat integration, this would feed into the pipeline
-                pass
-            
-            elif event == "stop":
-                logger.info("⏹️ Stream stopped")
-                break
-                
-    except WebSocketDisconnect:
-        logger.info(f"🔌 WebSocket disconnected for {call_sid}")
+        from flow_manager import WardlineFlowManager
+        flow_manager = WardlineFlowManager(context)
+
+        adapter = TwilioMediaStreamAdapter(websocket, call_sid)
+        await adapter.run(context=context, flow_manager=flow_manager)
+
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error(f"WebSocket media stream error for {call_sid}: {e}", exc_info=True)
     finally:
         # Clean up agents
         agent_type = _get_agent_type()
@@ -442,6 +453,7 @@ async def websocket_media_stream(websocket: WebSocket, call_sid: str):
             from conversation_agent import conversation_agent_manager
             conversation_agent_manager.remove_agent(call_sid)
         context_manager.remove_context(call_sid)
+        logger.info(f"🗑️ Cleaned up resources for {call_sid}")
 
 
 # =============================================================================

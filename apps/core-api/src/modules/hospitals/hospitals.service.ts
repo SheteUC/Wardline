@@ -48,7 +48,7 @@ export class HospitalsService {
         });
 
         // Invalidate hospitals list cache
-        this.cache.delete(CacheKeys.hospitals());
+        await this.cache.delete(CacheKeys.hospitals());
 
         this.logger.info('Hospital created', { id: hospital.id });
         return hospital;
@@ -139,7 +139,7 @@ export class HospitalsService {
         }
 
         // Cache by ID for future lookups
-        this.cache.set(CacheKeys.hospital(hospital.id), hospital, {
+        await this.cache.set(CacheKeys.hospital(hospital.id), hospital, {
             ttl: CacheTTL.LONG,
             tags: ['hospitals', `hospital:${hospital.id}`],
         });
@@ -176,8 +176,8 @@ export class HospitalsService {
         });
 
         // Invalidate caches
-        this.cache.delete(CacheKeys.hospital(id));
-        this.cache.delete(CacheKeys.hospitals());
+        await this.cache.delete(CacheKeys.hospital(id));
+        await this.cache.delete(CacheKeys.hospitals());
 
         this.logger.info('Hospital updated', { id });
         return hospital;
@@ -196,8 +196,8 @@ export class HospitalsService {
         });
 
         // Invalidate all caches for this hospital
-        this.cache.invalidateByTag(`hospital:${id}`);
-        this.cache.delete(CacheKeys.hospitals());
+        await this.cache.invalidateByTag(`hospital:${id}`);
+        await this.cache.delete(CacheKeys.hospitals());
 
         this.logger.warn('Hospital suspended (soft delete)', { id });
         return hospital;
@@ -214,7 +214,7 @@ export class HospitalsService {
         });
 
         // Invalidate hospital cache
-        this.cache.delete(CacheKeys.hospital(id));
+        await this.cache.delete(CacheKeys.hospital(id));
 
         return result;
     }

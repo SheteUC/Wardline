@@ -346,7 +346,7 @@ export class CallsService {
         });
 
         // Invalidate call list caches for this hospital
-        this.cache.invalidateByTag(`hospital:${data.hospitalId}`);
+        await this.cache.invalidateByTag(`hospital:${data.hospitalId}`);
 
         return call;
     }
@@ -405,7 +405,7 @@ export class CallsService {
                 }
 
                 // Invalidate caches
-                this.cache.invalidateByTag(`hospital:${call.hospitalId}`);
+                await this.cache.invalidateByTag(`hospital:${call.hospitalId}`);
             }
         }
 
@@ -415,7 +415,7 @@ export class CallsService {
         });
 
         // Invalidate call detail cache
-        this.cache.delete(CacheKeys.callDetail(id));
+        await this.cache.delete(CacheKeys.callDetail(id));
 
         return result;
     }
@@ -463,7 +463,7 @@ export class CallsService {
         });
 
         // Invalidate call detail cache since transcript changed
-        this.cache.delete(CacheKeys.callDetail(callId));
+        await this.cache.delete(CacheKeys.callDetail(callId));
 
         return result;
     }
@@ -507,8 +507,8 @@ export class CallsService {
         });
 
         // Invalidate caches
-        this.cache.delete(CacheKeys.callDetail(data.callId));
-        this.cache.invalidateByTag(`hospital:${data.hospitalId}`);
+        await this.cache.delete(CacheKeys.callDetail(data.callId));
+        await this.cache.invalidateByTag(`hospital:${data.hospitalId}`);
 
         return handoff;
     }

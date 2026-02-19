@@ -3,11 +3,17 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from '../../auth/public.decorator';
 import { CallsService } from './calls.service';
 import { CreateCallDto, UpdateCallDto, SaveTranscriptDto, CreateHandoffDto } from './dto/calls.dto';
+import { QueueAssignmentService } from '../queues/queue-assignment.service';
+import { QueuesService } from '../queues/queues.service';
 
 @ApiTags('calls')
 @Controller('api')
 export class CallsController {
-    constructor(private readonly callsService: CallsService) { }
+    constructor(
+        private readonly callsService: CallsService,
+        private readonly queuesService: QueuesService,
+        private readonly assignmentService: QueueAssignmentService,
+    ) { }
 
     // ========================================
     // Existing endpoints (hospital-scoped)
@@ -111,6 +117,49 @@ export class CallsController {
             }
             throw err;
         }
+    }
+
+    @Post('calls/:id/escalate')
+    @Public()
+    @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({ summary: 'Escalate a call to a human agent queue' })
+    @ApiResponse({ status: 201, description: 'Escalation created' })
+    @ApiResponse({ status: 404, description: 'Call not found' })
+    async escalateCall(
+        @Param('id') callId: string,
+        @Body() body: { reason: string; specialization?: string; hospitalId?: string },
+    ) {
+        // Find call to get hospitalId if not provided
+        const call = await this.callsService.findOne(callId);
+        const hospitalId = body.hospitalId || call.hospitalId;
+        const specialization = body.specialization || 'general';
+
+        // Find or create queue for this specialization
+        const queuesResult = await this.queuesService.findAll(hospitalId, { specialization });
+        let queue = queuesResult.data?.[0];
+
+        if (!queue) {
+            queue = await this.queuesService.create(hospitalId, {
+                name: `${specialization} Queue`,
+                specialization,
+                priority: 0,
+            });
+        }
+
+        // Mark call as clinical escalation
+        await this.callsService.update(callId, {
+            tag: 'CLINICAL_ESCALATION',
+            handoffReason: body.reason,
+        } as any);
+
+        // Assign call to queue
+        const assignment = await this.assignmentService.assignCallToAgent(
+            queue.id,
+            callId,
+            { strategy: 'skill_based' },
+        );
+
+        return { id: assignment.id, queueId: queue.id, status: assignment.status };
     }
 
     @Post('handoffs')

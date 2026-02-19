@@ -24,6 +24,7 @@
         "@nestjs/swagger": "^7.1.17",
         "@nestjs/websockets": "^11.1.12",
         "@prisma/adapter-pg": "^7.4.0",
+        "@types/ioredis": "^5.0.0",
         "@wardline/config": "workspace:*",
         "@wardline/db": "workspace:*",
         "@wardline/types": "workspace:*",
@@ -31,6 +32,7 @@
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.0",
         "compression": "^1.7.4",
+        "ioredis": "^5.9.3",
         "reflect-metadata": "^0.1.13",
         "rxjs": "^7.8.1",
         "socket.io": "^4.8.3"

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import {
     LayoutDashboard, Phone, Activity, Bell, Search, Menu, X,
-    BrainCircuit, Globe, Bot, ListTodo
+    BrainCircuit, Globe, Bot, ListTodo, Headphones
 } from 'lucide-react';
 import { Button } from "@/components/dashboard/shared";
 
@@ -48,14 +48,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 onClick={() => {
                     if (isMobile) setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1
-          ${isActive
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                className={`w-full flex items-center justify-between pl-4 pr-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1 border-l-2 -ml-px
+                    ${isActive
+                        ? 'bg-primary/10 text-primary border-primary font-semibold'
+                        : 'border-transparent text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:border-muted-foreground/30'
                     }`}
             >
                 <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
+                    <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                     {label}
                 </div>
                 {badge !== undefined && badge > 0 && (
@@ -98,9 +98,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <NavItem href="/dashboard/workflows" icon={BrainCircuit} label="Workflows" />
                         <NavItem href="/dashboard/agents" icon={Bot} label="Agents" />
                         <NavItem href="/dashboard/queues" icon={ListTodo} label="Queues" />
+                        {(['agent', 'AGENT', 'supervisor', 'SUPERVISOR'].includes(userRole)) && (
+                            <NavItem href="/dashboard/agent-console" icon={Headphones} label="Agent Console" />
+                        )}
+                        <NavItem href="/dashboard/settings/workflows" icon={Globe} label="Settings" />
 
-                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">Settings</div>
-                        <NavItem href="/dashboard/settings" icon={Globe} label="General" />
+                        <div className="text-xs font-semibold text-muted-foreground uppercase px-4 mb-2 mt-6">General</div>
+                        <NavItem href="/dashboard/settings" icon={Globe} label="Settings" />
                     </nav>
 
                     <div className="bg-sidebar-accent p-4 rounded-xl border border-sidebar-border mt-4">

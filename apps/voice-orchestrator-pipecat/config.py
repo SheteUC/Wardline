@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     tts_voice: str = Field(default="en-US-JennyNeural", alias="TTS_VOICE")
     stt_language: str = Field(default="en-US", alias="STT_LANGUAGE")
 
+    # Set USE_STREAMING=true to enable real-time Pipecat pipeline via Twilio Media Streams.
+    # Requires WEBHOOK_BASE_URL to be a publicly accessible wss:// URL (e.g. via ngrok).
+    # When false (default), uses the Twilio Gather request/response fallback mode.
+    use_streaming: bool = Field(default=False, alias="USE_STREAMING")
+
 
 settings = Settings()
 

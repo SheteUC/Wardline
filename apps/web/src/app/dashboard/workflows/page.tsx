@@ -162,9 +162,9 @@ export default function WorkflowsPage() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="h-full flex flex-col">
             {!hospitalId && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3 mb-4">
                     <span className="text-amber-700 text-sm">
                         No hospital selected. Set up your hospital in{" "}
                         <a href="/dashboard/settings" className="underline font-medium">Settings</a> to save workflows.
