@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * User role in a hospital organization
+ * User role in a business organization
  */
 export enum UserRole {
     OWNER = 'owner',
@@ -40,23 +40,29 @@ export enum RecordingConsent {
 }
 
 /**
- * Call disposition tags
+ * Call disposition tags — maps to the 5 starter agents
  */
 export enum CallTag {
     SCHEDULING = 'Scheduling',
-    BILLING_INSURANCE = 'Billing/Insurance',
-    RECORDS_FORMS = 'Records/Forms',
-    REFILL_PRIOR_AUTH = 'Refill/Prior-Auth',
-    CLINICAL_ESCALATION = 'Clinical Escalation',
+    BILLING = 'Billing',
+    INSURANCE = 'Insurance',
+    FAQ = 'FAQ',
+    PRESCRIPTION_REFILL = 'Prescription Refill',
+    HUMAN_TRANSFER = 'Human Transfer',
+    EMERGENCY = 'Emergency',
+    VOICEMAIL = 'Voicemail',
 }
 
 /**
- * Hospital status
+ * Business (tenant) status
  */
-export enum HospitalStatus {
+export enum BusinessStatus {
     ACTIVE = 'active',
     SUSPENDED = 'suspended',
 }
+
+/** @deprecated Use BusinessStatus */
+export const HospitalStatus = BusinessStatus;
 
 /**
  * Recording default setting
@@ -105,24 +111,27 @@ export enum SentimentLabel {
 }
 
 /**
- * Workflow node types
+ * Workflow node types — 13-node palette for the visual call flow editor
  */
 export enum WorkflowNodeType {
-    START = 'start',
-    EMERGENCY_SCREEN = 'emergency-screen',
+    // Entry / Exit
+    GREETING = 'greeting',
+    END_CALL = 'end-call',
+    // Core routing
     INTENT_DETECT = 'intent-detect',
-    QUESTION = 'question',
     ROUTE = 'route',
-    WEBHOOK = 'webhook',
-    END = 'end',
-    // Multi-Agent Platform node types
-    AI_AGENT = 'ai-agent',
-    HUMAN_AGENT_QUEUE = 'human-agent-queue',
-    HUMAN_AGENT_DIRECT = 'human-agent-direct',
-    CONDITIONAL = 'conditional',
-    SAFETY_CHECK = 'safety-check',
+    CONTINUATION_CHECK = 'continuation-check',
+    // Data collection
     COLLECT_INFO = 'collect-info',
-    INTEGRATION = 'integration',
+    CONFIRMATION = 'confirmation',
+    // Knowledge & actions
+    KNOWLEDGE_BASE = 'knowledge-base',
+    AVAILABILITY_CHECK = 'availability-check',
+    ACTION = 'action',
+    // Escalation paths
+    HUMAN_TRANSFER = 'human-transfer',
+    VOICEMAIL = 'voicemail',
+    EMERGENCY_ESCALATE = 'emergency-escalate',
 }
 
 /**
@@ -131,21 +140,19 @@ export enum WorkflowNodeType {
 export enum VoiceState {
     INITIALIZING = 'INITIALIZING',
     GREETING = 'GREETING',
-    EMERGENCY_SCREENING = 'EMERGENCY_SCREENING',
-    TRIAGE = 'TRIAGE',
-    BOOKING = 'BOOKING',
+    INTENT_DETECTION = 'INTENT_DETECTION',
+    AGENT_HANDLING = 'AGENT_HANDLING',
+    CONTINUATION_CHECK = 'CONTINUATION_CHECK',
     ESCALATING = 'ESCALATING',
+    VOICEMAIL = 'VOICEMAIL',
     ENDING = 'ENDING',
     COMPLETED = 'COMPLETED',
 }
 
 // ============================================================================
-// Call Center Feature Enums
+// Prescription & Insurance Enums (kept — used by Agents 3 & 5)
 // ============================================================================
 
-/**
- * Prescription refill status
- */
 export enum RefillStatus {
     PENDING = 'pending',
     APPROVED = 'approved',
@@ -153,18 +160,12 @@ export enum RefillStatus {
     COMPLETED = 'completed',
 }
 
-/**
- * Patient verification status
- */
 export enum VerificationStatus {
     UNVERIFIED = 'unverified',
     VERIFIED = 'verified',
     FAILED = 'failed',
 }
 
-/**
- * Insurance eligibility status
- */
 export enum EligibilityStatus {
     ELIGIBLE = 'eligible',
     NOT_ELIGIBLE = 'not_eligible',
@@ -172,50 +173,14 @@ export enum EligibilityStatus {
     EXPIRED = 'expired',
 }
 
-/**
- * Insurance inquiry type
- */
 export enum InsuranceInquiryType {
     ACCEPTANCE = 'acceptance',
     COVERAGE = 'coverage',
     ELIGIBILITY = 'eligibility',
+    CLAIM_STATUS = 'claim_status',
+    PRIOR_AUTH_STATUS = 'prior_auth_status',
 }
 
-/**
- * Marketing event type
- */
-export enum EventType {
-    SEMINAR = 'seminar',
-    LECTURE = 'lecture',
-    CLASS = 'class',
-    WORKSHOP = 'workshop',
-    HEALTH_FAIR = 'health_fair',
-    SCREENING = 'screening',
-}
-
-/**
- * Marketing event status
- */
-export enum EventStatus {
-    UPCOMING = 'upcoming',
-    IN_PROGRESS = 'in_progress',
-    COMPLETED = 'completed',
-    CANCELLED = 'cancelled',
-}
-
-/**
- * Event registration status
- */
-export enum RegistrationStatus {
-    REGISTERED = 'registered',
-    WAITLISTED = 'waitlisted',
-    CANCELLED = 'cancelled',
-    NO_SHOW = 'no_show',
-}
-
-/**
- * Insurance plan type
- */
 export enum InsurancePlanType {
     HMO = 'HMO',
     PPO = 'PPO',
@@ -227,44 +192,23 @@ export enum InsurancePlanType {
     OTHER = 'Other',
 }
 
-// Schema exports
-export const userRoleSchema = z.nativeEnum(UserRole);
-export const callDirectionSchema = z.nativeEnum(CallDirection);
-export const callStatusSchema = z.nativeEnum(CallStatus);
-export const recordingConsentSchema = z.nativeEnum(RecordingConsent);
-export const callTagSchema = z.nativeEnum(CallTag);
-export const hospitalStatusSchema = z.nativeEnum(HospitalStatus);
-export const recordingDefaultSchema = z.nativeEnum(RecordingDefault);
-export const workflowStatusSchema = z.nativeEnum(WorkflowStatus);
-export const workflowVersionStatusSchema = z.nativeEnum(WorkflowVersionStatus);
-export const speakerSchema = z.nativeEnum(Speaker);
-export const sentimentLabelSchema = z.nativeEnum(SentimentLabel);
-export const workflowNodeTypeSchema = z.nativeEnum(WorkflowNodeType);
-export const voiceStateSchema = z.nativeEnum(VoiceState);
-// Call Center Feature Schemas
-export const refillStatusSchema = z.nativeEnum(RefillStatus);
-export const verificationStatusSchema = z.nativeEnum(VerificationStatus);
-export const eligibilityStatusSchema = z.nativeEnum(EligibilityStatus);
-export const insuranceInquiryTypeSchema = z.nativeEnum(InsuranceInquiryType);
-export const eventTypeSchema = z.nativeEnum(EventType);
-export const eventStatusSchema = z.nativeEnum(EventStatus);
-export const registrationStatusSchema = z.nativeEnum(RegistrationStatus);
-export const insurancePlanTypeSchema = z.nativeEnum(InsurancePlanType);
-
 // ============================================================================
-// Multi-Agent Platform Enums
+// Agent Catalog Enums
 // ============================================================================
 
 /**
- * Agent type (AI or Human)
+ * The 5 starter agents available in the catalog
  */
-export enum AgentType {
-    AI = 'AI',
-    HUMAN = 'HUMAN',
+export enum AgentCatalogId {
+    SCHEDULING = 'scheduling',
+    BILLING = 'billing',
+    INSURANCE = 'insurance',
+    FAQ = 'faq',
+    PRESCRIPTION_REFILL = 'prescription-refill',
 }
 
 /**
- * Agent status
+ * Agent deployment status (catalog item can be deployed or not)
  */
 export enum AgentStatus {
     ACTIVE = 'ACTIVE',
@@ -273,30 +217,36 @@ export enum AgentStatus {
 }
 
 /**
- * Call assignment status
+ * Tool connection status
  */
-export enum CallAssignmentStatus {
-    QUEUED = 'QUEUED',
-    ASSIGNED = 'ASSIGNED',
-    ACCEPTED = 'ACCEPTED',
-    COMPLETED = 'COMPLETED',
-    ABANDONED = 'ABANDONED',
-    FAILED = 'FAILED',
+export enum ToolStatus {
+    CONNECTED = 'connected',
+    DISCONNECTED = 'disconnected',
+    ERROR = 'error',
 }
 
-/**
- * Agent session status
- */
-export enum AgentSessionStatus {
-    ONLINE = 'ONLINE',
-    OFFLINE = 'OFFLINE',
-    BUSY = 'BUSY',
-    BREAK = 'BREAK',
-    AWAY = 'AWAY',
-}
+// ============================================================================
+// Zod Schema Exports
+// ============================================================================
 
-// Multi-Agent Platform Schemas
-export const agentTypeSchema = z.nativeEnum(AgentType);
+export const userRoleSchema = z.nativeEnum(UserRole);
+export const callDirectionSchema = z.nativeEnum(CallDirection);
+export const callStatusSchema = z.nativeEnum(CallStatus);
+export const recordingConsentSchema = z.nativeEnum(RecordingConsent);
+export const callTagSchema = z.nativeEnum(CallTag);
+export const businessStatusSchema = z.nativeEnum(BusinessStatus);
+export const recordingDefaultSchema = z.nativeEnum(RecordingDefault);
+export const workflowStatusSchema = z.nativeEnum(WorkflowStatus);
+export const workflowVersionStatusSchema = z.nativeEnum(WorkflowVersionStatus);
+export const speakerSchema = z.nativeEnum(Speaker);
+export const sentimentLabelSchema = z.nativeEnum(SentimentLabel);
+export const workflowNodeTypeSchema = z.nativeEnum(WorkflowNodeType);
+export const voiceStateSchema = z.nativeEnum(VoiceState);
+export const refillStatusSchema = z.nativeEnum(RefillStatus);
+export const verificationStatusSchema = z.nativeEnum(VerificationStatus);
+export const eligibilityStatusSchema = z.nativeEnum(EligibilityStatus);
+export const insuranceInquiryTypeSchema = z.nativeEnum(InsuranceInquiryType);
+export const insurancePlanTypeSchema = z.nativeEnum(InsurancePlanType);
+export const agentCatalogIdSchema = z.nativeEnum(AgentCatalogId);
 export const agentStatusSchema = z.nativeEnum(AgentStatus);
-export const callAssignmentStatusSchema = z.nativeEnum(CallAssignmentStatus);
-export const agentSessionStatusSchema = z.nativeEnum(AgentSessionStatus);
+export const toolStatusSchema = z.nativeEnum(ToolStatus);

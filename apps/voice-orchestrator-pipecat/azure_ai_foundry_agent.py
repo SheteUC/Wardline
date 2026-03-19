@@ -131,6 +131,16 @@ class AzureAIFoundryAgentManager:
             del self._agents[call_sid]
             logger.info(f"Removed AzureAIFoundryAgent for call {call_sid}")
 
+    def update_config(self, call_sid: str, new_config: dict):
+        """Update agent config mid-call (stored in context for next run)."""
+        agent = self._agents.get(call_sid)
+        if agent:
+            # AI Foundry does not support mid-thread prompt injection;
+            # store the persona so subsequent messages carry updated context.
+            if "persona" in new_config:
+                agent.context.active_persona = new_config["persona"]
+            logger.info(f"Updated AzureAIFoundryAgent config for {call_sid}")
+
 
 # Module-level singleton
 azure_ai_foundry_agent_manager = AzureAIFoundryAgentManager()

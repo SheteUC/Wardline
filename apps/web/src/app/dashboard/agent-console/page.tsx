@@ -71,9 +71,31 @@ interface TranscriptLine {
 // ---------------------------------------------------------------------------
 
 export default function AgentConsolePage() {
-    const { user } = useUser();
+    const { user, isLoaded } = useUser();
     const agentId = (user?.publicMetadata?.agentId as string) || '';
     const userId = user?.id || '';
+
+    // Guard: show setup instructions if agentId is not set
+    if (isLoaded && !agentId) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center max-w-md space-y-3 p-6 border rounded-xl bg-muted/30">
+                    <div className="w-14 h-14 mx-auto rounded-full bg-orange-100 flex items-center justify-center">
+                        <AlertTriangle className="w-7 h-7 text-orange-500" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Agent Profile Not Linked</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Your account is not yet linked to an agent profile. Contact your
+                        administrator to set up your agent account before using the Agent Console.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Administrators: create an agent record and link it to this Clerk user ID:{' '}
+                        <code className="font-mono bg-muted px-1 rounded">{userId || 'unknown'}</code>
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     // Agent status
     const [agentStatus, setAgentStatusLocal] = useState<AgentStatus>('ONLINE');

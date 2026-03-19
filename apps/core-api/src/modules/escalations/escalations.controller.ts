@@ -1,62 +1,36 @@
-import { Controller, Post, Get, Put, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Public } from '../../auth/public.decorator';
 import { EscalationsService, EscalationContext } from './escalations.service';
-import { Permissions } from '../../auth/permissions.decorator';
-import { Auditable } from '../../audit/auditable.decorator';
-import { UserRole } from '@wardline/types';
 
-@ApiTags('escalations')
-@ApiBearerAuth()
-@Controller('escalations')
+@Controller('api/escalations')
 export class EscalationsController {
     constructor(private readonly escalationsService: EscalationsService) {}
 
-    @Post()
-    @ApiOperation({ summary: 'Create escalation request from AI to human' })
-    @ApiResponse({ status: 201, description: 'Escalation created successfully' })
-    @Auditable('escalation', 'CREATE')
-    createEscalation(@Body() context: EscalationContext) {
-        return this.escalationsService.createEscalation(context);
+    /** Called by voice orchestrator to escalate a call to human transfer */
+    @Post('human-transfer')
+    @Public()
+    escalateToHuman(@Body() context: EscalationContext) {
+        return this.escalationsService.escalateToHuman(context);
     }
 
-    @Get(':id')
-    @Permissions(UserRole.READONLY)
-    @ApiOperation({ summary: 'Get escalation by ID' })
-    @ApiResponse({ status: 200, description: 'Escalation details' })
-    getEscalation(@Param('id') escalationId: string) {
-        return this.escalationsService.getEscalation(escalationId);
+    /** Called by voice orchestrator to flag a call as emergency */
+    @Post('emergency')
+    @Public()
+    escalateEmergency(@Body() body: {
+        callId: string;
+        businessId: string;
+        callerPhone: string;
+        transcript: string;
+    }) {
+        return this.escalationsService.escalateEmergency(body);
     }
 
-    @Put(':id/accept')
-    @Permissions(UserRole.AGENT)
-    @ApiOperation({ summary: 'Accept escalation (agent accepts call)' })
-    @ApiResponse({ status: 200, description: 'Escalation accepted' })
-    @Auditable('escalation', 'ACCEPT')
-    acceptEscalation(
-        @Param('id') escalationId: string,
-        @Body('agentId') agentId: string,
+    /** Recent escalations for a business (dashboard) */
+    @Get('businesses/:businessId')
+    getRecentEscalations(
+        @Param('businessId') businessId: string,
+        @Query('limit') limit?: string,
     ) {
-        return this.escalationsService.acceptEscalation(escalationId, agentId);
-    }
-
-    @Put(':id/complete')
-    @Permissions(UserRole.AGENT)
-    @ApiOperation({ summary: 'Complete escalation' })
-    @ApiResponse({ status: 200, description: 'Escalation completed' })
-    @Auditable('escalation', 'COMPLETE')
-    completeEscalation(
-        @Param('id') escalationId: string,
-        @Body('outcome') outcome: 'resolved' | 'escalated_further' | 'abandoned',
-        @Body('notes') notes?: string,
-    ) {
-        return this.escalationsService.completeEscalation(escalationId, outcome, notes);
-    }
-
-    @Get()
-    @Permissions(UserRole.READONLY)
-    @ApiOperation({ summary: 'Get pending escalations for a queue' })
-    @ApiResponse({ status: 200, description: 'List of pending escalations' })
-    getPendingEscalations(@Query('queueId') queueId: string) {
-        return this.escalationsService.getPendingEscalations(queueId);
+        return this.escalationsService.getRecentEscalations(businessId, limit ? parseInt(limit) : 20);
     }
 }

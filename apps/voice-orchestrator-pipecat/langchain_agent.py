@@ -185,6 +185,15 @@ class AgentManager:
             del self._agents[call_sid]
             logger.info(f"Removed LangChainToolsAgent for call {call_sid}")
 
+    def update_config(self, call_sid: str, new_config: dict):
+        """Update agent config mid-call (re-initializes on next turn)."""
+        agent = self._agents.get(call_sid)
+        if agent and "systemPrompt" in new_config:
+            # Store updated prompt; agent will rebuild on next _ensure_initialized
+            agent._initialized = False
+            agent.context.active_persona = new_config.get("persona")
+            logger.info(f"Scheduled LangChainToolsAgent reconfigure for {call_sid}")
+
 
 # Module-level singleton
 agent_manager = AgentManager()

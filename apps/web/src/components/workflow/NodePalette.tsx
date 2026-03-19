@@ -9,7 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import {
     Bot, Users, GitBranch, Shield, Plug, PhoneOff,
     Play, AlertCircle, Search, Sparkles,
-    Siren, HelpCircle, Webhook, UserCheck, ClipboardList
+    Siren, HelpCircle, Webhook, UserCheck, ClipboardList,
+    Target, Route
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -210,6 +211,34 @@ const NODE_TYPES: NodeType[] = [
         defaultData: {
             label: 'Collect Information',
             fields: [],
+        }
+    },
+
+    // Intent & routing nodes
+    {
+        type: 'intent-detect',
+        label: 'Intent Detect',
+        description: 'Detect caller intent from the conversation',
+        icon: Target,
+        category: 'ai',
+        color: 'indigo',
+        defaultData: {
+            label: 'Detect Intent',
+            intents: [],
+            confidenceThreshold: 0.7,
+        }
+    },
+    {
+        type: 'route',
+        label: 'Route',
+        description: 'Route call based on field conditions',
+        icon: Route,
+        category: 'core',
+        color: 'amber',
+        defaultData: {
+            label: 'Route Call',
+            routingRules: [],
+            fallbackTarget: '',
         }
     },
 

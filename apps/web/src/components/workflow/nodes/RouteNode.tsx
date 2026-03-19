@@ -7,13 +7,14 @@ import { Badge } from '@/components/ui/badge';
 
 export interface RouteNodeData {
     label: string;
-    routes?: string[];
+    routingRules?: Array<{ condition: string; target: string }>;
+    fallbackTarget?: string;
 }
 
 type RouteNodeType = Node<RouteNodeData, 'route'>;
 
 const RouteNode = ({ data, selected }: NodeProps<RouteNodeType>) => {
-    const routeCount = data.routes?.length || 0;
+    const ruleCount = data.routingRules?.length || 0;
     
     return (
         <div
@@ -32,14 +33,16 @@ const RouteNode = ({ data, selected }: NodeProps<RouteNodeType>) => {
             
             <div className="text-xs text-yellow-700 space-y-1">
                 <div className="flex items-center gap-1 flex-wrap">
-                    {routeCount > 0 && (
+                    {ruleCount > 0 && (
                         <Badge variant="outline" className="text-[10px] bg-white/50">
-                            {routeCount} routes
+                            {ruleCount} rule{ruleCount !== 1 ? 's' : ''}
                         </Badge>
                     )}
-                    <Badge variant="outline" className="text-[10px] bg-white/50">
-                        Legacy
-                    </Badge>
+                    {data.fallbackTarget && (
+                        <Badge variant="outline" className="text-[10px] bg-white/50">
+                            fallback set
+                        </Badge>
+                    )}
                 </div>
             </div>
 

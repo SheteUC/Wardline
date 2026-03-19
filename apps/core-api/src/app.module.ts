@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
@@ -8,21 +9,19 @@ import { AuthGuard } from './auth/auth.guard';
 import { RbacGuard } from './auth/rbac.guard';
 import { AuditModule } from './audit/audit.module';
 import { AuditInterceptor } from './audit/audit.interceptor';
-import { HospitalsModule } from './modules/hospitals/hospitals.module';
+import { BusinessesModule } from './modules/businesses/businesses.module';
 import { UsersModule } from './modules/users/users.module';
-import { IntentsModule } from './modules/intents/intents.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CallsModule } from './modules/calls/calls.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
-// Call Center Feature Modules
-import { DepartmentsModule } from './modules/departments/departments.module';
+import { TranscriptRetentionTask } from './tasks/transcript-retention.task';
+// Feature Modules
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { InsuranceModule } from './modules/insurance/insurance.module';
-import { MarketingEventsModule } from './modules/marketing-events/marketing-events.module';
-// Multi-Agent Platform Modules
+// Agent Platform Modules
 import { AgentsModule } from './modules/agents/agents.module';
-import { QueuesModule } from './modules/queues/queues.module';
 import { SafetyModule } from './modules/safety/safety.module';
+import { EscalationsModule } from './modules/escalations/escalations.module';
 import { WebSocketModule } from './websocket/websocket.module';
 
 @Module({
@@ -31,26 +30,24 @@ import { WebSocketModule } from './websocket/websocket.module';
             isGlobal: true,
             envFilePath: ['.env.local', '.env'],
         }),
+        ScheduleModule.forRoot(),
         PrismaModule,
         CacheModule, // Global in-memory cache for improved performance
         ClerkModule,
         AuditModule,
         WebSocketModule, // WebSocket for real-time updates
-        HospitalsModule,
+        BusinessesModule,
         UsersModule,
-        IntentsModule,
         WorkflowsModule,
         CallsModule,
         SchedulingModule,
-        // Call Center Feature Modules
-        DepartmentsModule,
+        // Feature Modules
         PrescriptionsModule,
         InsuranceModule,
-        MarketingEventsModule,
-        // Multi-Agent Platform Modules
+        // Agent Platform Modules
         AgentsModule,
-        QueuesModule,
         SafetyModule,
+        EscalationsModule,
     ],
     providers: [
         // Global authentication guard - validates JWT tokens
@@ -68,6 +65,8 @@ import { WebSocketModule } from './websocket/websocket.module';
             provide: APP_INTERCEPTOR,
             useClass: AuditInterceptor,
         },
+        // Nightly transcript retention cleanup
+        TranscriptRetentionTask,
     ],
 })
 export class AppModule { }

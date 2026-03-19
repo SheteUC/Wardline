@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MedicalTriageGuardService } from './medical-triage-guard.service';
-import { WebSocketModule } from '../../websocket/websocket.module';
+import { SafetyGuardService } from './safety-guard.service';
+import { SafetyController } from './safety.controller';
 
 @Module({
-    imports: [WebSocketModule],
-    providers: [MedicalTriageGuardService],
-    exports: [MedicalTriageGuardService],
+    controllers: [SafetyController],
+    providers: [SafetyGuardService],
+    exports: [SafetyGuardService],
 })
-export class SafetyModule { }
+export class SafetyModule {}

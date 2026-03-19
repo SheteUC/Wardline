@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 export interface IntentDetectNodeData {
     label: string;
     intents?: string[];
+    confidenceThreshold?: number;
 }
 
 type IntentDetectNodeType = Node<IntentDetectNodeData, 'intent-detect'>;
@@ -34,12 +35,14 @@ const IntentDetectNode = ({ data, selected }: NodeProps<IntentDetectNodeType>) =
                 <div className="flex items-center gap-1 flex-wrap">
                     {intentCount > 0 && (
                         <Badge variant="outline" className="text-[10px] bg-white/50">
-                            {intentCount} intents
+                            {intentCount} intent{intentCount !== 1 ? 's' : ''}
                         </Badge>
                     )}
-                    <Badge variant="outline" className="text-[10px] bg-white/50">
-                        Legacy
-                    </Badge>
+                    {data.confidenceThreshold !== undefined && (
+                        <Badge variant="outline" className="text-[10px] bg-white/50">
+                            {Math.round(data.confidenceThreshold * 100)}% threshold
+                        </Badge>
+                    )}
                 </div>
             </div>
 

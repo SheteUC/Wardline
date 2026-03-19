@@ -1,169 +1,59 @@
 # Wardline
 
-Enterprise multi-agent voice AI platform for healthcare call centers with hybrid AI + human orchestration.
+AI voice receptionist SaaS platform for medical and dental clinics. Inbound calls are handled 24/7 by configurable AI agents that schedule appointments, answer FAQs, process billing inquiries, verify insurance, and log prescription refill requests — with a seamless handoff to a human (or voicemail) when needed.
 
-## Overview
+No code required. Clinic owners configure call behavior visually.
 
-Wardline is a HIPAA-compliant SaaS platform that revolutionizes hospital call triage through intelligent agent orchestration. Powered by Pipecat for real-time voice AI, the platform seamlessly blends automated AI agents with human specialists for 24/7 patient care, emergency screening, and administrative automation.
-
-## Architecture
-
-### Multi-Agent Platform
+## Platform Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  PHONE CALL → Pipecat Voice Orchestrator (Python/FastAPI)       │
-│  ├─ Real-time speech recognition (Azure Speech)                 │
-│  ├─ AI conversation (Azure OpenAI GPT-4)                        │
-│  ├─ Natural TTS (Azure Neural Voices)                           │
-│  └─ Emergency detection & sentiment analysis                    │
-│                            ↕                                    │
-│  Core API (NestJS) - Multi-Agent Backend                        │
-│  ├─ Workflow execution engine (15+ node types)                  │
-│  ├─ Queue management & assignment (4 strategies)                │
-│  ├─ Agent orchestration (AI + Human)                            │
-│  ├─ Medical safety guard (60+ keywords)                         │
-│  └─ WebSocket gateway (real-time events)                        │
-│                            ↕                                    │
-│  Web Dashboard (Next.js)                                        │
-│  ├─ Visual workflow editor (ReactFlow)                          │
-│  ├─ Agent management & monitoring                               │
-│  ├─ Queue metrics & analytics                                   │
-│  └─ Human agent dashboard                                       │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│  INBOUND CALL → Pipecat Voice Orchestrator (Python)        │
+│  ├─ Real-time speech recognition (Azure Speech)            │
+│  ├─ AI receptionist (Azure OpenAI GPT-4)                   │
+│  ├─ Natural TTS (Azure Neural Voices)                       │
+│  ├─ One-problem-at-a-time conversation loop                 │
+│  └─ Always-on emergency keyword detection                   │
+│                         ↕                                   │
+│  Core API (NestJS)                                          │
+│  ├─ Agent catalog + deployed agent management               │
+│  ├─ Visual workflow execution engine (13 node types)        │
+│  ├─ Voicemail recording & notification                      │
+│  ├─ Call log with turn-level detail                         │
+│  └─ Safety guard (configurable keywords)                    │
+│                         ↕                                   │
+│  Web Dashboard (Next.js)                                    │
+│  ├─ Agent catalog (browse & deploy agents)                  │
+│  ├─ Active agents (configure tools, toggle on/off)          │
+│  ├─ Visual call flow editor (ReactFlow)                     │
+│  ├─ Call Logs with turn-level insight                       │
+│  └─ Voicemail inbox                                         │
+└────────────────────────────────────────────────────────────┘
 ```
 
-### Applications
+## The 5 Starter Agents
 
-- **apps/web**: Next.js 14 App Router with shadcn/ui (Port 3000)
-  - Visual workflow editor with ReactFlow
-  - Real-time agent dashboard with WebSocket
-  - Analytics and queue monitoring
-  
-- **apps/core-api**: NestJS REST API + WebSocket Gateway (Port 3001)
-  - Multi-agent orchestration platform
-  - Workflow execution engine
-  - Queue management with 4 assignment strategies
-  - Medical safety guard with 60+ keywords
-  - Redis caching for performance
-  
-- **apps/voice-orchestrator-pipecat**: Python/FastAPI + Pipecat (Port 3002)
-  - Twilio media stream handling
-  - Real-time voice AI with <200ms latency
-  - Azure Speech Services integration
-  - Azure OpenAI conversation engine
+| Agent | What it handles | Scope boundary |
+|---|---|---|
+| **Appointment Scheduling** | Book, reschedule, cancel | No symptoms, no clinical questions |
+| **Billing & Payments** | Balance inquiries, payment processing | No disputes, no payment plan negotiation |
+| **Insurance Verification** | Plan acceptance, basic coverage, claim/auth status | No denials, no appeals |
+| **General FAQ & Info** | Hours, location, services, providers, prep instructions | No clinical advice |
+| **Prescription Refill** | Log refill requests, check refill status | No new prescriptions, no clinical questions |
 
-### Packages
+## Call Flow Model
 
-- **packages/db**: Prisma schema with 20+ models including Agent, CallQueue, CallAssignment
-- **packages/types**: 50+ TypeScript interfaces for domain models
-- **packages/config**: Environment configuration with validation
-- **packages/utils**: Logging, error handling, audit trail
-- **packages/ui**: Design system components
+Every inbound call follows this pattern:
 
-## Prerequisites
-
-- Node.js 18+
-- pnpm 8+
-- PostgreSQL 14+
-- Azure subscription (with Azure AI Speech and Azure OpenAI)
-- Twilio account (HIPAA-flagged with BAA)
-- Clerk account
-- Stripe account
-- PostHog account
-
-## Getting Started
-
-### 1. Installation
-
-```bash
-pnpm install
 ```
+Greet → Detect Intent → Route to Agent → Resolve Problem
+      → "Anything else?" → Loop or End Call
 
-### 2. Environment Setup
-
-Copy `.env.example` to `.env` and fill in your credentials:
-
-```bash
-cp .env.example .env
+At any point:
+  Emergency keyword detected → 911 advisory (always enforced)
+  Out-of-scope question → deflect + offer human transfer
+  Human transfer → if no answer → Voicemail
 ```
-
-### 3. Database Setup
-
-```bash
-# Generate Prisma client
-pnpm db:generate
-
-# Run migrations
-pnpm db:migrate
-```
-
-### 4. Development
-
-Start all services in development mode:
-
-```bash
-pnpm dev
-```
-
-Individual services:
-
-```bash
-# Web UI (port 3000)
-pnpm --filter @wardline/web dev
-
-# Core API (port 3001)
-pnpm --filter @wardline/core-api dev
-
-# Voice Orchestrator (port 3002)
-cd apps/voice-orchestrator-pipecat && python server.py
-```
-
-## Key Features
-
-### Multi-Agent Orchestration
-- **AI Agents**: LangChain-powered agents with tools and conversation memory
-- **5 Pre-built Tools**: Insurance check, appointment scheduling, prescription refills, department lookup, human transfer
-- **Human Agents**: Clinical staff dashboard with real-time assignments
-- **Smart Routing**: 4 assignment strategies (skill-based, round-robin, least-busy, priority)
-- **Queue Management**: Real-time metrics, SLA tracking, wait time monitoring
-
-### Voice AI Platform
-- **Ultra-Low Latency**: <200ms response time with Pipecat streaming
-- **Natural Conversations**: Azure Speech + OpenAI GPT-4 integration
-- **Sentiment Analysis**: Real-time frustration and urgency detection
-- **Emergency Detection**: Automatic escalation for critical keywords
-
-### Workflow Automation
-- **Visual Editor**: ReactFlow-based drag-and-drop workflow designer
-- **15+ Node Types**: AI agent, human queue, conditional, safety check, integration
-- **Workflow Validation**: Enforces safety rules at design time
-- **Real-Time Execution**: Dynamic routing based on call context
-
-### Medical Safety
-- **60+ Medical Keywords**: Categorized by severity (emergency, clinical, mental health)
-- **Automatic Escalation**: Enforced human routing for medical content
-- **Design-Time Validation**: Prevents unsafe workflows from being published
-- **Runtime Enforcement**: Medical triage guard monitors all conversations
-- **Complete Audit Trail**: Every safety event logged for compliance
-
-### Performance & Scale
-- **Redis Caching**: Sub-second response times for repeat queries
-- **Database Indexing**: Optimized queries for high-volume operations
-- **WebSocket Real-Time**: Instant updates without polling
-- **Horizontal Scaling**: Stateless architecture ready for multi-region
-
-## HIPAA Compliance
-
-This platform is designed for HIPAA compliance with the following requirements:
-
-- **BAAs**: Required with Twilio, Microsoft Azure, and Vercel
-- **Encryption**: TLS 1.3 everywhere, database encryption at rest
-- **Access Controls**: RBAC with MFA via Clerk, role-based permissions
-- **Audit Logging**: All PHI access, routing decisions, and safety events logged
-- **Minimum Necessary**: Limited data collection and exposure
-- **Retention**: Configurable per-hospital (default 30 days)
-- **Safety Enforcement**: Multi-layer medical content guardrails
 
 ## Project Structure
 
@@ -171,86 +61,143 @@ This platform is designed for HIPAA compliance with the following requirements:
 wardline/
 ├── apps/
 │   ├── web/                            # Next.js 14 frontend
-│   │   ├── src/app/dashboard/agents/  # Agent management UI
-│   │   ├── src/app/dashboard/queues/  # Queue monitoring
-│   │   ├── src/app/dashboard/workflows/ # Workflow editor
-│   │   ├── src/app/agent/dashboard/   # Human agent dashboard
-│   │   └── src/lib/hooks/             # WebSocket & query hooks
-│   ├── core-api/                      # NestJS REST API + WebSocket
-│   │   ├── src/modules/agents/        # Agent CRUD & session tracking
-│   │   ├── src/modules/queues/        # Queue & assignment management
-│   │   ├── src/modules/workflows/     # Workflow execution & validation
-│   │   ├── src/modules/safety/        # Medical triage guard
-│   │   ├── src/modules/calls/         # Call session management
-│   │   ├── src/websocket/             # WebSocket gateway
-│   │   └── src/cache/                 # Redis caching service
-│   └── voice-orchestrator-pipecat/    # Pipecat voice AI
-│       ├── server.py                  # FastAPI server
-│       ├── bot.py                     # Pipecat pipeline
-│       ├── prompts.py                 # System prompts
-│       └── core_api_client.py         # Core API integration
+│   │   └── src/app/dashboard/
+│   │       ├── agents/                 # Catalog + Active agents tabs
+│   │       ├── calls/                  # Call Logs
+│   │       ├── voicemails/             # Voicemail inbox
+│   │       ├── workflows/              # Visual call flow editor
+│   │       └── settings/               # Business settings
+│   ├── core-api/                       # NestJS REST API
+│   │   └── src/modules/
+│   │       ├── agents/                 # Catalog + deployed agent CRUD
+│   │       ├── businesses/             # Tenant management
+│   │       ├── calls/                  # Call logs + voicemail endpoints
+│   │       ├── workflows/              # Execution engine (13-node palette)
+│   │       ├── safety/                 # Safety guard (emergency + out-of-scope)
+│   │       ├── escalations/            # Human transfer + emergency escalation
+│   │       ├── prescriptions/          # Agent 5 — refill requests
+│   │       └── insurance/              # Agent 3 — insurance verification
+│   └── voice-orchestrator-pipecat/    # Python/FastAPI + Pipecat
+│       ├── server.py                   # FastAPI + Twilio webhook
+│       ├── conversation_agent.py       # One-problem-at-a-time AI agent
+│       └── call_context.py             # Call state + turn management
 └── packages/
-    ├── db/                            # Prisma ORM
-    │   ├── prisma/schema.prisma       # 20+ models
-    │   └── src/seed-agents.ts         # Agent seeding
-    ├── types/                         # TypeScript types
-    │   ├── src/domain.ts              # 50+ interfaces
-    │   └── src/enums.ts               # Agent, queue, workflow enums
-    ├── config/                        # Environment validation
-    ├── utils/                         # Shared utilities
-    └── ui/                            # Design system
+    ├── db/
+    │   ├── prisma/schema.prisma        # Business, Agent, CallSession, VoicemailRecord
+    │   └── src/seed-agents.ts          # 5 starter agent definitions + seeder
+    ├── types/
+    │   ├── src/domain.ts               # AgentCatalogItem, DeployedAgent, CallTurn, etc.
+    │   └── src/enums.ts                # WorkflowNodeType (13 nodes), AgentCatalogId, etc.
+    ├── config/                         # Environment validation
+    └── utils/                          # Logging, error handling, audit trail
 ```
 
-## Testing
+## Applications
 
+### `apps/web` — Next.js 14 Dashboard (Port 3000)
+- **Agents page**: Browse the catalog, deploy agents, configure tools (no code)
+- **Call Logs**: All inbound calls with tag, agent, turns, outcome, duration
+- **Voicemail inbox**: Listen, read transcription, call back
+- **Call Flow editor**: Visual drag-and-drop workflow with 13 node types
+- **Settings**: Business info, recording defaults, custom safety keywords
 
-### Automated Tests
+### `apps/core-api` — NestJS API (Port 3001)
+- `GET /api/businesses/:id/agents` — list deployed agents
+- `POST /api/businesses/:id/agents/deploy/:catalogId` — deploy a catalog agent
+- `PATCH /api/businesses/:id/agents/:id/tool-config` — save tool credentials
+- `GET /api/businesses/:id/call-logs` — paginated call log
+- `GET /api/businesses/:id/voicemails` — voicemail inbox
+- `POST /api/calls/:id/voicemail` — record voicemail (called by orchestrator)
+- `POST /api/safety/check` — real-time safety check
+- `POST /api/escalations/human-transfer` — initiate human transfer
+- `POST /api/escalations/emergency` — flag emergency call
 
-Tests are located within each application:
+### `apps/voice-orchestrator-pipecat` — Python/FastAPI (Port 3002)
+- Twilio media stream → Pipecat pipeline → Azure Speech STT → GPT-4 → Azure TTS
+- Emergency check on every utterance (before LLM call)
+- One-problem-at-a-time loop with continuation check node
+- Voicemail recording when human transfer fails
+
+## Node Palette (13 node types)
+
+| Node | Purpose |
+|---|---|
+| `greeting` | Configurable welcome message |
+| `intent-detect` | NLU classify caller intent → route to agent |
+| `route` | Conditional branching |
+| `continuation-check` | "Anything else?" loop gate |
+| `collect-info` | Structured field collection |
+| `confirmation` | Read back collected data |
+| `knowledge-base` | FAQ lookup from configured knowledge base |
+| `availability-check` | Calendar integration — offer open slots |
+| `action` | Call an external tool (billing, EHR, etc.) |
+| `human-transfer` | Warm/cold transfer with context |
+| `voicemail` | Record message when no human available |
+| `emergency-escalate` | 911 advisory (always-on, cannot be disabled) |
+| `end-call` | Graceful close |
+
+## Prerequisites
+
+- Node.js 18+
+- pnpm 8+
+- PostgreSQL 14+
+- Azure subscription (Azure AI Speech + Azure OpenAI)
+- Twilio account
+- Clerk account (auth)
+- Stripe account (billing)
+
+## Getting Started
 
 ```bash
-# Run core-api tests
-pnpm --filter @wardline/core-api test
+# Install
+pnpm install
 
-# Run web tests
-pnpm --filter @wardline/web test
+# Environment
+cp .env.example .env
 
-# Run voice orchestrator tests
-cd apps/voice-orchestrator-pipecat && pytest
+# Database
+pnpm db:generate
+pnpm db:migrate
+
+# Seed starter agents (run after first business is created)
+pnpm db:seed
+
+# Development
+pnpm dev
 ```
 
-### Test API Endpoints
-
+Individual services:
 ```bash
-# Test core API
-node test-api-complete.js
-
-# Test with authentication
-.\test-with-token.ps1
+pnpm --filter @wardline/web dev          # Port 3000
+pnpm --filter @wardline/core-api dev     # Port 3001
+cd apps/voice-orchestrator-pipecat && python server.py  # Port 3002
 ```
+
+## Safety Architecture
+
+The system enforces two layers of protection that **cannot be disabled** by any business owner:
+
+1. **Emergency escalation** — A curated list of keywords (chest pain, seizure, suicidal, etc.) triggers an immediate 911 advisory and call escalation on every utterance, before any LLM processing.
+
+2. **Out-of-scope deflection** — Clinical questions (symptoms, diagnoses, medication advice) are immediately deflected with an offer to transfer to a human. The AI agent never engages on these topics.
+
+Business owners can *add* custom keywords to both lists via Business Settings, but cannot remove the system defaults.
 
 ## Deployment
 
-### Vercel Deployment (Web)
-
+### Vercel (Web)
 ```bash
-cd apps/web
-vercel deploy --prod
+cd apps/web && vercel deploy --prod
 ```
 
-### Azure Deployment (API & Voice)
-
-Deploy NestJS API and Pipecat voice orchestrator to Azure Container Apps:
-
+### Azure Container Apps (API + Voice)
 ```bash
-# Core API
 az containerapp create --name wardline-api \
   --resource-group wardline-rg \
   --environment wardline-env \
   --image wardline-api:latest \
   --target-port 3001
 
-# Voice Orchestrator
 az containerapp create --name wardline-voice \
   --resource-group wardline-rg \
   --environment wardline-env \
@@ -258,17 +205,20 @@ az containerapp create --name wardline-voice \
   --target-port 3002
 ```
 
-### Environment Variables
+### Required Environment Variables
 
-Ensure all services have access to:
-- `DATABASE_URL` - PostgreSQL connection string
-- `REDIS_URL` - Redis cache connection
-- `AZURE_SPEECH_KEY` & `AZURE_SPEECH_REGION`
-- `AZURE_OPENAI_KEY` & `AZURE_OPENAI_ENDPOINT`
-- `TWILIO_ACCOUNT_SID` & `TWILIO_AUTH_TOKEN`
-- `CORE_API_BASE_URL` - Internal API endpoint
-- `WEBHOOK_BASE_URL` - Public Twilio webhook URL
+| Variable | Used by |
+|---|---|
+| `DATABASE_URL` | core-api, db |
+| `REDIS_URL` | core-api |
+| `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION` | voice-orchestrator |
+| `AZURE_OPENAI_KEY` + `AZURE_OPENAI_ENDPOINT` | voice-orchestrator, core-api |
+| `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` | voice-orchestrator |
+| `CLERK_SECRET_KEY` + `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | web, core-api |
+| `STRIPE_SECRET_KEY` | core-api |
+| `CORE_API_BASE_URL` | voice-orchestrator |
+| `WEBHOOK_BASE_URL` | voice-orchestrator (Twilio webhook) |
 
 ## License
 
-Proprietary - All rights reserved
+Proprietary — All rights reserved

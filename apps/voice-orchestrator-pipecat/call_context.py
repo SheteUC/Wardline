@@ -1,5 +1,5 @@
 """
-Call context management for tracking conversation state
+Call context management — tracks conversation state for the one-problem-at-a-time model.
 """
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
@@ -11,186 +11,112 @@ class CallState(Enum):
     """States in the call flow"""
     INITIALIZING = "initializing"
     GREETING = "greeting"
-    LISTENING = "listening"
-    PROCESSING = "processing"
-    RESPONDING = "responding"
-    COLLECTING_INFO = "collecting_info"
+    INTENT_DETECTION = "intent_detection"
+    AGENT_HANDLING = "agent_handling"
+    CONTINUATION_CHECK = "continuation_check"
     ESCALATING = "escalating"
-    TRANSFERRING = "transferring"
+    VOICEMAIL = "voicemail"
     ENDING = "ending"
     COMPLETED = "completed"
 
 
 class IntentType(Enum):
-    """Types of caller intents"""
+    """Caller intents — mapped to the 5 starter agents"""
     SCHEDULING = "scheduling"
     BILLING = "billing"
-    PRESCRIPTION_REFILL = "refill"
     INSURANCE = "insurance"
-    MEDICAL_RECORDS = "records"
-    CLINICAL_TRIAGE = "clinical-triage"
-    DEPARTMENT_ROUTING = "department"
-    GENERAL_INQUIRY = "general"
+    FAQ = "faq"
+    PRESCRIPTION_REFILL = "prescription_refill"
+    HUMAN_TRANSFER = "human_transfer"
     EMERGENCY = "emergency"
-    TRANSFER_TO_HUMAN = "transfer"
     UNKNOWN = "unknown"
 
 
 @dataclass
-class SentimentData:
-    """Sentiment analysis results"""
-    overall_score: float = 0.5  # 0-1, 0.5 = neutral
-    frustration_level: float = 0.0
-    urgency_level: float = 0.0
-    escalation_needed: bool = False
-    reason: str = ""
+class CallTurn:
+    """A single resolved problem turn within the call"""
+    turn_number: int
+    agent_id: str             # catalogId of the agent that handled it
+    intent_key: str
+    collected_fields: Dict[str, Any] = field(default_factory=dict)
+    outcome: str = "resolved"  # resolved | escalated | voicemail | emergency
+    started_at: str = ""
+    resolved_at: Optional[str] = None
 
 
 @dataclass
-class CollectedField:
-    """A field collected from the caller"""
-    key: str
-    value: Any
-    confirmed: bool = False
-
-
-@dataclass
-class ConversationTurn:
-    """A single turn in the conversation"""
-    role: str  # "user" or "assistant"
+class ConversationMessage:
+    """One message in the LLM conversation history"""
+    role: str   # "system" | "user" | "assistant" | "tool"
     content: str
-    timestamp: datetime = field(default_factory=datetime.now)
-    intent: Optional[str] = None
-    sentiment: Optional[float] = None
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    tool_call_id: Optional[str] = None
+    tool_name: Optional[str] = None
 
 
 @dataclass
 class CallContext:
-    """Complete context for a phone call"""
-    # Call identification
-    call_sid: str
-    stream_sid: Optional[str] = None
-    call_id: Optional[str] = None  # Core API call record ID
-    
-    # Caller info
-    caller_phone: str = ""
+    """Full state for one inbound call"""
+    # Identity
+    call_id: str
+    business_id: str
+    phone_number_id: str
+    twilio_call_sid: str
+    caller_phone: str
     caller_name: Optional[str] = None
-    
-    # Hospital info
-    hospital_id: str = ""
-    hospital_name: str = "Wardline Medical Center"
-    to_phone: str = ""
-    
-    # State
+
+    # State machine
     state: CallState = CallState.INITIALIZING
-    detected_intent: Optional[IntentType] = None
+    current_turn: int = 0
+    max_turns: int = 5
+
+    # Completed problem turns
+    completed_turns: List[CallTurn] = field(default_factory=list)
+
+    # Current turn state
+    active_agent_id: Optional[str] = None   # catalogId
+    detected_intent: Optional[str] = None
+    collected_fields: Dict[str, Any] = field(default_factory=dict)
+
+    # Conversation history (for LLM)
+    messages: List[ConversationMessage] = field(default_factory=list)
+    transcript: List[str] = field(default_factory=list)
+
+    # Safety
     is_emergency: bool = False
-    
-    # Conversation
-    conversation_history: List[ConversationTurn] = field(default_factory=list)
-    collected_fields: Dict[str, CollectedField] = field(default_factory=dict)
-    
-    # Sentiment tracking
-    sentiment: SentimentData = field(default_factory=SentimentData)
-    
-    # Configuration loaded from DB
-    intents: List[Dict[str, Any]] = field(default_factory=list)
-    departments: List[Dict[str, Any]] = field(default_factory=list)
-    workflow: Optional[Dict[str, Any]] = None
-    
+    needs_continuation_check: bool = False
+
     # Timestamps
-    started_at: datetime = field(default_factory=datetime.now)
+    started_at: datetime = field(default_factory=datetime.utcnow)
     ended_at: Optional[datetime] = None
-    
-    # Escalation
-    escalation_reason: Optional[str] = None
-    transfer_target: Optional[str] = None
-    
-    def add_user_message(self, content: str, intent: Optional[str] = None):
-        """Add a user message to history"""
-        self.conversation_history.append(ConversationTurn(
-            role="user",
-            content=content,
-            intent=intent
-        ))
-    
-    def add_assistant_message(self, content: str):
-        """Add an assistant message to history"""
-        self.conversation_history.append(ConversationTurn(
-            role="assistant",
-            content=content
-        ))
-    
-    def get_conversation_text(self, last_n: int = 10) -> str:
-        """Get conversation as text for analysis"""
-        turns = self.conversation_history[-last_n:] if last_n else self.conversation_history
-        return "\n".join([
-            f"{turn.role.capitalize()}: {turn.content}"
-            for turn in turns
-        ])
-    
-    def get_messages_for_llm(self, last_n: int = 10) -> List[Dict[str, str]]:
-        """Get conversation history formatted for LLM"""
-        turns = self.conversation_history[-last_n:] if last_n else self.conversation_history
-        return [
-            {"role": turn.role, "content": turn.content}
-            for turn in turns
-        ]
-    
-    def collect_field(self, key: str, value: Any, confirmed: bool = False):
-        """Collect a field from the conversation"""
-        self.collected_fields[key] = CollectedField(
-            key=key,
-            value=value,
-            confirmed=confirmed
-        )
-    
-    def has_required_fields(self, required: List[str]) -> bool:
-        """Check if all required fields are collected"""
-        return all(
-            key in self.collected_fields and self.collected_fields[key].confirmed
-            for key in required
-        )
-    
-    def should_escalate(self) -> bool:
-        """Determine if call should be escalated to human"""
-        if self.is_emergency:
-            return True
-        if self.sentiment.escalation_needed:
-            return True
-        if self.sentiment.frustration_level > 0.7:
-            return True
-        if self.detected_intent == IntentType.TRANSFER_TO_HUMAN:
-            return True
-        return False
 
+    def resolve_current_turn(self, outcome: str = "resolved") -> None:
+        """Mark the current agent turn as resolved and prepare for continuation check."""
+        if self.active_agent_id and self.detected_intent:
+            turn = CallTurn(
+                turn_number=self.current_turn,
+                agent_id=self.active_agent_id,
+                intent_key=self.detected_intent,
+                collected_fields=dict(self.collected_fields),
+                outcome=outcome,
+                started_at=self.started_at.isoformat(),
+                resolved_at=datetime.utcnow().isoformat(),
+            )
+            self.completed_turns.append(turn)
 
-class CallContextManager:
-    """Manager for all active call contexts"""
-    
-    def __init__(self):
-        self._contexts: Dict[str, CallContext] = {}
-    
-    def create_context(self, call_sid: str, **kwargs) -> CallContext:
-        """Create a new call context"""
-        context = CallContext(call_sid=call_sid, **kwargs)
-        self._contexts[call_sid] = context
-        return context
-    
-    def get_context(self, call_sid: str) -> Optional[CallContext]:
-        """Get context by call SID"""
-        return self._contexts.get(call_sid)
-    
-    def remove_context(self, call_sid: str):
-        """Remove a call context"""
-        if call_sid in self._contexts:
-            del self._contexts[call_sid]
-    
-    def get_all_active(self) -> List[CallContext]:
-        """Get all active call contexts"""
-        return list(self._contexts.values())
+        self.current_turn += 1
+        self.active_agent_id = None
+        self.detected_intent = None
+        self.collected_fields = {}
+        self.needs_continuation_check = True
+        self.state = CallState.CONTINUATION_CHECK
 
+    def can_handle_more_turns(self) -> bool:
+        return self.current_turn < self.max_turns
 
-# Global context manager
-context_manager = CallContextManager()
-
+    def add_message(self, role: str, content: str, **kwargs) -> None:
+        self.messages.append(ConversationMessage(role=role, content=content, **kwargs))
+        if role == "user":
+            self.transcript.append(f"CALLER: {content}")
+        elif role == "assistant":
+            self.transcript.append(f"AGENT: {content}")

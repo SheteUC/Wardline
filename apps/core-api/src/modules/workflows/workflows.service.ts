@@ -196,7 +196,7 @@ export class WorkflowsService {
         const latestVersion = workflow.versions[0];
         const graph = latestVersion.graphJson;
 
-        this.logger.log(`Simulating workflow ${workflowId} with inputs:`, testInputs);
+        this.logger.info(`Simulating workflow ${workflowId} with inputs:`, testInputs);
 
         // Simple simulation: trace through nodes
         const executionPath: string[] = [];

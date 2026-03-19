@@ -1,164 +1,94 @@
 import {
-    Controller,
-    Get,
-    Post,
-    Patch,
-    Delete,
-    Param,
-    Body,
-    Query,
-    HttpCode,
-    HttpStatus,
+    Controller, Get, Post, Patch, Delete,
+    Param, Body, Query, HttpCode, HttpStatus,
 } from '@nestjs/common';
-import { NotFoundException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AgentsService } from './agents.service';
-import {
-    CreateAgentDto,
-    UpdateAgentDto,
-    UpdateAgentStatusDto,
-    UpdateAgentAvailabilityDto,
-    AgentQueryDto,
-} from './dto/agent.dto';
 
-@ApiTags('agents')
-@Controller('api/hospitals/:hospitalId/agents')
+@Controller('api/businesses/:businessId/agents')
 export class AgentsController {
-    constructor(private readonly agentsService: AgentsService) { }
+    constructor(private readonly agentsService: AgentsService) {}
 
-    // ========================================
-    // Agent CRUD
-    // ========================================
+    // -------------------------------------------------------------------------
+    // Catalog (read-only templates)
+    // -------------------------------------------------------------------------
 
-    @Post()
-    @HttpCode(HttpStatus.CREATED)
-    @ApiOperation({ summary: 'Create a new agent (AI or Human)' })
-    @ApiResponse({ status: 201, description: 'Agent created' })
-    @ApiResponse({ status: 400, description: 'Bad request' })
-    async create(
-        @Param('hospitalId') hospitalId: string,
-        @Body() dto: CreateAgentDto,
-    ): Promise<any> {
-        return this.agentsService.create(hospitalId, dto);
+    @Get('catalog')
+    getCatalog() {
+        return this.agentsService.getCatalog();
     }
 
+    @Get('catalog/:catalogId')
+    getCatalogItem(@Param('catalogId') catalogId: string) {
+        return this.agentsService.getCatalogItem(catalogId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Deployed Agents
+    // -------------------------------------------------------------------------
+
     @Get()
-    @ApiOperation({ summary: 'List all agents for a hospital' })
-    @ApiResponse({ status: 200, description: 'Agents retrieved' })
-    async findAll(
-        @Param('hospitalId') hospitalId: string,
-        @Query() query: AgentQueryDto,
-    ): Promise<any> {
-        return this.agentsService.findAll(hospitalId, query);
+    findAll(@Param('businessId') businessId: string) {
+        return this.agentsService.findAll(businessId);
     }
 
     @Get(':id')
-    @ApiOperation({ summary: 'Get agent by ID' })
-    @ApiResponse({ status: 200, description: 'Agent retrieved' })
-    @ApiResponse({ status: 404, description: 'Agent not found' })
-    async findOne(@Param('id') id: string): Promise<any> {
-        try {
-            return await this.agentsService.findOne(id);
-        } catch (error: any) {
-            if (error instanceof NotFoundException) {
-                throw error;
-            }
-            throw error;
-        }
+    findOne(@Param('id') id: string) {
+        return this.agentsService.findOne(id);
     }
 
-    @Patch(':id')
-    @ApiOperation({ summary: 'Update an agent' })
-    @ApiResponse({ status: 200, description: 'Agent updated' })
-    @ApiResponse({ status: 404, description: 'Agent not found' })
-    async update(
+    @Get(':id/stats')
+    getStats(
         @Param('id') id: string,
-        @Body() dto: UpdateAgentDto,
-    ): Promise<any> {
-        return this.agentsService.update(id, dto);
+        @Param('businessId') businessId: string,
+    ) {
+        return this.agentsService.getStats(id, businessId);
+    }
+
+    /** Deploy a catalog agent for this business */
+    @Post('deploy/:catalogId')
+    @HttpCode(HttpStatus.CREATED)
+    deploy(
+        @Param('businessId') businessId: string,
+        @Param('catalogId') catalogId: string,
+    ) {
+        return this.agentsService.deploy(businessId, catalogId);
+    }
+
+    @Patch(':id/status')
+    updateStatus(
+        @Param('id') id: string,
+        @Body() body: { status: 'ACTIVE' | 'INACTIVE' | 'PAUSED' },
+    ) {
+        return this.agentsService.updateStatus(id, body.status);
+    }
+
+    @Patch(':id/tool-config')
+    updateToolConfig(
+        @Param('id') id: string,
+        @Body() body: Record<string, unknown>,
+    ) {
+        return this.agentsService.updateToolConfig(id, body);
+    }
+
+    @Patch(':id/agent-config')
+    updateAgentConfig(
+        @Param('id') id: string,
+        @Body() body: Record<string, unknown>,
+    ) {
+        return this.agentsService.updateAgentConfig(id, body);
+    }
+
+    @Patch(':id/node-graph')
+    updateNodeGraph(
+        @Param('id') id: string,
+        @Body() body: Record<string, unknown>,
+    ) {
+        return this.agentsService.updateNodeGraph(id, body);
     }
 
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Delete an agent' })
-    @ApiResponse({ status: 204, description: 'Agent deleted' })
-    @ApiResponse({ status: 404, description: 'Agent not found' })
-    async delete(@Param('id') id: string) {
-        await this.agentsService.delete(id);
-    }
-
-    // ========================================
-    // Agent Status & Availability
-    // ========================================
-
-    @Post(':id/status')
-    @ApiOperation({ summary: 'Update agent status (ONLINE/OFFLINE/BUSY/BREAK/AWAY)' })
-    @ApiResponse({ status: 200, description: 'Status updated' })
-    @ApiResponse({ status: 404, description: 'Agent not found' })
-    async updateStatus(
-        @Param('id') id: string,
-        @Body() dto: UpdateAgentStatusDto,
-    ): Promise<any> {
-        return this.agentsService.updateStatus(id, dto.status);
-    }
-
-    @Get(':id/availability')
-    @ApiOperation({ summary: 'Get agent availability schedule' })
-    @ApiResponse({ status: 200, description: 'Availability retrieved' })
-    @ApiResponse({ status: 404, description: 'Agent not found' })
-    async getAvailability(@Param('id') id: string) {
-        return this.agentsService.getAvailability(id);
-    }
-
-    @Post(':id/availability')
-    @ApiOperation({ summary: 'Update agent availability schedule' })
-    @ApiResponse({ status: 200, description: 'Availability updated' })
-    @ApiResponse({ status: 404, description: 'Agent not found' })
-    async updateAvailability(
-        @Param('id') id: string,
-        @Body() dto: UpdateAgentAvailabilityDto,
-    ): Promise<any> {
-        return this.agentsService.updateAvailability(id, dto.availability);
-    }
-
-    // ========================================
-    // Agent Performance & History
-    // ========================================
-
-    @Get(':id/metrics')
-    @ApiOperation({ summary: 'Get agent performance metrics' })
-    @ApiResponse({ status: 200, description: 'Metrics retrieved' })
-    async getMetrics(
-        @Param('id') id: string,
-        @Query('startDate') startDate?: string,
-        @Query('endDate') endDate?: string,
-    ) {
-        return this.agentsService.getMetrics(
-            id,
-            startDate ? new Date(startDate) : undefined,
-            endDate ? new Date(endDate) : undefined,
-        );
-    }
-
-    @Get(':id/calls')
-    @ApiOperation({ summary: 'Get agent call history' })
-    @ApiResponse({ status: 200, description: 'Call history retrieved' })
-    async getCallHistory(
-        @Param('id') id: string,
-        @Query('page') page?: number,
-        @Query('limit') limit?: number,
-    ) {
-        return this.agentsService.getCallHistory(
-            id,
-            page ? parseInt(String(page)) : 1,
-            limit ? parseInt(String(limit)) : 20,
-        );
-    }
-
-    @Get(':id/session')
-    @ApiOperation({ summary: 'Get current agent session' })
-    @ApiResponse({ status: 200, description: 'Session retrieved' })
-    async getCurrentSession(@Param('id') id: string) {
-        return this.agentsService.getCurrentSession(id);
+    async undeploy(@Param('id') id: string) {
+        await this.agentsService.undeploy(id);
     }
 }

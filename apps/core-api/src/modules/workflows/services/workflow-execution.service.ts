@@ -1,16 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import {
-    WorkflowNode,
-    WorkflowGraph,
-    CallContext,
-    ExecutionResult,
-    AIAgentConfig,
-} from '@wardline/types';
-import { QueueAssignmentService } from '../../queues/queue-assignment.service';
-import { QueuesService } from '../../queues/queues.service';
+import { WorkflowNode, WorkflowGraph, CallContext, ExecutionResult } from '@wardline/types';
 import { CallContextService } from '../../calls/call-context.service';
-import { AuditService } from '../../../audit/audit.service';
+import { SafetyGuardService } from '../../safety/safety-guard.service';
+import { Logger } from '@wardline/utils';
+
+const MAX_TURNS_PER_CALL = 5;
 
 @Injectable()
 export class WorkflowExecutionService {
@@ -18,28 +13,25 @@ export class WorkflowExecutionService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly queuesService: QueuesService,
-        private readonly assignmentService: QueueAssignmentService,
         private readonly callContextService: CallContextService,
-        private readonly auditService: AuditService,
-    ) { }
+        private readonly safetyGuard: SafetyGuardService,
+    ) {}
 
     /**
-     * Execute a workflow node with stateful context management
+     * Main entry point — execute a single node within the call workflow.
+     * Always runs the safety check before any node logic.
      */
     async executeNode(
         node: WorkflowNode,
         callContext: CallContext,
-        workflow: WorkflowGraph
+        workflow: WorkflowGraph,
     ): Promise<ExecutionResult> {
-        this.logger.log(`Executing node ${node.id} of type ${node.type}`);
+        this.logger.info(`Executing node ${node.id} (${node.type})`, { callId: callContext.callId });
 
-        // Get or create stateful context
-        const context = this.callContextService.getOrCreate(callContext.callId, callContext);
-
-        // Update context with any new data from callContext parameter
-        if (callContext.transcript && callContext.transcript.length > 0) {
-            this.callContextService.update(context.callId, {
+        // Sync live context
+        const ctx = this.callContextService.getOrCreate(callContext.callId, callContext);
+        if (callContext.transcript?.length) {
+            this.callContextService.update(ctx.callId, {
                 transcript: callContext.transcript,
                 extractedFields: callContext.extractedFields,
                 sentiment: callContext.sentiment,
@@ -48,452 +40,272 @@ export class WorkflowExecutionService {
             });
         }
 
-        try {
-            switch (node.type) {
-                case 'start':
-                    return this.executeStart(node, callContext);
-                case 'emergency-screen':
-                    return this.executeEmergencyScreen(node, callContext);
-                case 'intent-detect':
-                    return this.executeIntentDetect(node, callContext);
-                case 'question':
-                    return this.executeQuestion(node, callContext);
-                case 'route':
-                    return this.executeRoute(node, callContext);
-                case 'webhook':
-                    return this.executeWebhook(node, callContext);
-                case 'ai-agent':
-                    return this.executeAIAgent(node, callContext);
-                case 'human-agent-queue':
-                    return this.queueForHumanAgent(node, callContext);
-                case 'human-agent-direct':
-                    return this.assignToHumanAgent(node, callContext);
-                case 'conditional':
-                    return this.evaluateCondition(node, callContext, workflow);
-                case 'safety-check':
-                    return this.performSafetyCheck(node, callContext);
-                case 'collect-info':
-                    return this.collectInformation(node, callContext);
-                case 'integration':
-                    return this.executeIntegration(node, callContext);
-                case 'end':
-                    return this.executeEnd(node, callContext);
-                default:
-                    return {
-                        status: 'error',
-                        error: `Unknown node type: ${node.type}`,
-                    };
-            }
-        } catch (error: any) {
-            this.logger.error(`Error executing node ${node.id}: ${error.message}`);
-            return {
-                status: 'error',
-                error: error.message,
-            };
-        }
-    }
-
-    /**
-     * Execute start node
-     */
-    private async executeStart(_node: WorkflowNode, _callContext: CallContext): Promise<ExecutionResult> {
-        return {
-            status: 'success',
-            data: { message: 'Call started' },
-        };
-    }
-
-    /**
-     * Execute emergency screening node
-     */
-    private async executeEmergencyScreen(_node: WorkflowNode, callContext: CallContext): Promise<ExecutionResult> {
-        // Emergency detection logic would go here
-        // For now, check if the call is already marked as emergency
-        if (callContext.isEmergency) {
-            return {
-                status: 'escalated',
-                data: { emergency: true },
-            };
-        }
-
-        return {
-            status: 'success',
-            data: { emergency: false },
-        };
-    }
-
-    /**
-     * Execute intent detection node
-     */
-    private async executeIntentDetect(_node: WorkflowNode, callContext: CallContext): Promise<ExecutionResult> {
-        // Intent detection would be done by the voice orchestrator
-        // Here we just return the detected intent from context
-        return {
-            status: 'success',
-            data: {
-                intent: callContext.detectedIntent,
-                fields: callContext.extractedFields,
-            },
-        };
-    }
-
-    /**
-     * Execute question node
-     */
-    private async executeQuestion(node: WorkflowNode, _callContext: CallContext): Promise<ExecutionResult> {
-        // Question execution would be handled by voice orchestrator
-        const config = node.config as { question: string; field: string };
-        return {
-            status: 'success',
-            data: { question: config.question },
-        };
-    }
-
-    /**
-     * Execute route node
-     */
-    private async executeRoute(_node: WorkflowNode, _callContext: CallContext): Promise<ExecutionResult> {
-        // const _config = _node.config as { routingRules: any[] };
-        // Routing logic based on rules
-        return {
-            status: 'success',
-            data: { routed: true },
-        };
-    }
-
-    /**
-     * Execute webhook node
-     */
-    private async executeWebhook(_node: WorkflowNode, _callContext: CallContext): Promise<ExecutionResult> {
-        // const _config = _node.config as { url: string; method: string; headers?: Record<string, string> };
-        // Webhook execution would make HTTP request
-        return {
-            status: 'success',
-            data: { webhookCalled: true },
-        };
-    }
-
-    /**
-     * Execute AI agent node - configures AI behavior
-     */
-    private async executeAIAgent(node: WorkflowNode, callContext: CallContext): Promise<ExecutionResult> {
-        const aiConfig = node.config as unknown as AIAgentConfig;
-
-        this.logger.log(`Configuring AI agent with persona: ${aiConfig.persona}`);
-
-        // Send config to voice orchestrator to update AI behavior
-        // This would typically call the VoiceOrchestratorClient
-
-        // Check escalation rules
-        const shouldEscalate = this.checkEscalationRules(aiConfig.escalationRules, callContext);
-
-        if (shouldEscalate) {
-            this.logger.log('Escalation rule triggered');
-            return {
-                status: 'escalated',
-                data: { reason: 'Escalation rule matched' },
-            };
-        }
-
-        return {
-            status: 'success',
-            data: {
-                aiConfig: {
-                    persona: aiConfig.persona,
-                    capabilities: aiConfig.capabilities,
-                },
-            },
-        };
-    }
-
-    /**
-     * Queue call for human agent
-     */
-    private async queueForHumanAgent(node: WorkflowNode, callContext: CallContext): Promise<ExecutionResult> {
-        const queueConfig = node.config as {
-            specialization: string;
-            priority?: number;
-        };
-
-        this.logger.log(`Queueing call for human agent with specialization: ${queueConfig.specialization}`);
-
-        // Find or create queue
-        const queues = await this.queuesService.findAll(callContext.hospitalId, {
-            specialization: queueConfig.specialization,
-        });
-
-        let queue;
-        if (queues.data.length === 0) {
-            // Create queue if it doesn't exist
-            queue = await this.queuesService.create(callContext.hospitalId, {
-                name: `${queueConfig.specialization} Queue`,
-                specialization: queueConfig.specialization,
-                priority: queueConfig.priority || 0,
-            });
-        } else {
-            queue = queues.data[0];
-        }
-
-        // Assign call to queue
-        const assignment = await this.assignmentService.assignCallToAgent(
-            queue.id,
-            callContext.callId,
-            { strategy: 'skill_based', priorityLevel: queueConfig.priority }
-        );
-
-        // Log to audit
-        await this.logRoutingDecision(callContext.callId, {
-            type: 'queue',
-            target: queue.id,
-            specialization: queueConfig.specialization,
-        });
-
-        return {
-            status: 'waiting_for_agent',
-            data: {
-                queueId: queue.id,
-                assignmentId: assignment.id,
-                assignmentStatus: assignment.status,
-            },
-        };
-    }
-
-    /**
-     * Assign call directly to a specific human agent
-     */
-    private async assignToHumanAgent(node: WorkflowNode, callContext: CallContext): Promise<ExecutionResult> {
-        const config = node.config as { agentId: string };
-
-        this.logger.log(`Assigning call directly to agent: ${config.agentId}`);
-
-        // Create direct assignment
-        const assignment = await this.prisma.callAssignment.create({
-            data: {
-                callId: callContext.callId,
-                agentId: config.agentId,
-                status: 'ASSIGNED',
-                assignedAt: new Date(),
-            },
-        });
-
-        // Log to audit
-        await this.logRoutingDecision(callContext.callId, {
-            type: 'direct_agent',
-            target: config.agentId,
-        });
-
-        return {
-            status: 'waiting_for_agent',
-            data: {
-                agentId: config.agentId,
-                assignmentId: assignment.id,
-            },
-        };
-    }
-
-    /**
-     * Evaluate conditional node (if/else logic)
-     */
-    private async evaluateCondition(
-        node: WorkflowNode,
-        callContext: CallContext,
-        _workflow: WorkflowGraph
-    ): Promise<ExecutionResult> {
-        const config = node.config as {
-            condition: {
-                field: string;
-                operator: 'equals' | 'contains' | 'greater_than' | 'less_than';
-                value: string | number;
-            };
-            trueNodeId: string;
-            falseNodeId: string;
-        };
-
-        const fieldValue = callContext.extractedFields[config.condition.field];
-        let conditionMet = false;
-
-        switch (config.condition.operator) {
-            case 'equals':
-                conditionMet = fieldValue === config.condition.value;
-                break;
-            case 'contains':
-                conditionMet = String(fieldValue).includes(String(config.condition.value));
-                break;
-            case 'greater_than':
-                conditionMet = Number(fieldValue) > Number(config.condition.value);
-                break;
-            case 'less_than':
-                conditionMet = Number(fieldValue) < Number(config.condition.value);
-                break;
-        }
-
-        return {
-            status: 'success',
-            nextNodeId: conditionMet ? config.trueNodeId : config.falseNodeId,
-            data: { conditionMet },
-        };
-    }
-
-    /**
-     * Perform safety check for medical keywords
-     */
-    private async performSafetyCheck(node: WorkflowNode, callContext: CallContext): Promise<ExecutionResult> {
-        const config = node.config as {
-            keywords: string[];
-            action: 'escalate' | 'flag' | 'notify';
-        };
-
-        const transcript = callContext.transcript.join(' ').toLowerCase();
-        const triggeredKeywords = config.keywords.filter(keyword =>
-            transcript.includes(keyword.toLowerCase())
-        );
-
-        if (triggeredKeywords.length > 0) {
-            this.logger.warn(`Safety check triggered: ${triggeredKeywords.join(', ')}`);
-
-            // Log safety event
-            await this.logSafetyCheck(callContext.callId, triggeredKeywords);
-
-            if (config.action === 'escalate') {
+        // Safety check runs on every turn — cannot be bypassed
+        if (callContext.transcript?.length) {
+            const latestUtterance = callContext.transcript[callContext.transcript.length - 1] ?? '';
+            const safety = this.safetyGuard.quickEmergencyCheck(latestUtterance);
+            if (safety.isEmergency) {
+                this.logger.warn('Emergency detected mid-execution', { callId: callContext.callId, keywords: safety.triggeredKeywords });
                 return {
                     status: 'escalated',
-                    data: {
-                        reason: 'Medical keywords detected',
-                        keywords: triggeredKeywords,
-                    },
+                    data: { isEmergency: true, triggeredKeywords: safety.triggeredKeywords },
+                    nextNodeId: this.findNodeByType(workflow, 'emergency-escalate')?.id,
                 };
             }
         }
 
+        try {
+            switch (node.type) {
+                case 'greeting':
+                    return this.executeGreeting(node, callContext);
+                case 'intent-detect':
+                    return this.executeIntentDetect(node, callContext);
+                case 'route':
+                    return this.executeRoute(node, callContext, workflow);
+                case 'continuation-check':
+                    return this.executeContinuationCheck(node, callContext);
+                case 'collect-info':
+                    return this.executeCollectInfo(node, callContext);
+                case 'confirmation':
+                    return this.executeConfirmation(node, callContext);
+                case 'knowledge-base':
+                    return this.executeKnowledgeBase(node, callContext);
+                case 'availability-check':
+                    return this.executeAvailabilityCheck(node, callContext);
+                case 'action':
+                    return this.executeAction(node, callContext);
+                case 'human-transfer':
+                    return this.executeHumanTransfer(node, callContext);
+                case 'voicemail':
+                    return this.executeVoicemail(node, callContext);
+                case 'emergency-escalate':
+                    return this.executeEmergencyEscalate(node, callContext);
+                case 'end-call':
+                    return this.executeEndCall(node, callContext);
+                default:
+                    this.logger.warn(`Unknown node type: ${(node as any).type}`);
+                    return { status: 'error', error: `Unknown node type: ${(node as any).type}` };
+            }
+        } catch (err: unknown) {
+            const error = err as Error;
+            this.logger.error(`Node execution error`, { nodeId: node.id, error: error.message });
+            return { status: 'error', error: error.message };
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Node Handlers
+    // -------------------------------------------------------------------------
+
+    private executeGreeting(node: WorkflowNode, ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
         return {
             status: 'success',
             data: {
-                safetyCheckPassed: triggeredKeywords.length === 0,
-                triggeredKeywords,
+                speak: config.greetingScript
+                    ?.replace('{businessName}', config.businessName ?? 'our clinic')
+                    ?? `Thank you for calling. How can I help you today?`,
+            },
+            nextNodeId: this.getEdgeTarget(null, 'default', ctx.callId),
+        };
+    }
+
+    private executeIntentDetect(_node: WorkflowNode, _ctx: CallContext): ExecutionResult {
+        // Intent detection is handled by the voice orchestrator (LLM).
+        // This node signals to the orchestrator to run intent classification.
+        return {
+            status: 'waiting_for_input',
+            data: { action: 'detect_intent' },
+        };
+    }
+
+    private executeRoute(node: WorkflowNode, ctx: CallContext, workflow: WorkflowGraph): ExecutionResult {
+        const config = node.config as any;
+        const routes = config.routes as Array<{ condition: string; targetNodeId: string; label: string }>;
+        const intent = ctx.detectedIntent ?? '';
+
+        for (const route of routes ?? []) {
+            if (intent.includes(route.condition) || route.condition === intent) {
+                return { status: 'success', nextNodeId: route.targetNodeId, data: { matchedRoute: route.label } };
+            }
+        }
+
+        const defaultNode = workflow.nodes.find(n => n.id === config.defaultTargetNodeId);
+        return {
+            status: 'success',
+            nextNodeId: defaultNode?.id ?? config.defaultTargetNodeId,
+            data: { matchedRoute: 'default' },
+        };
+    }
+
+    /**
+     * Continuation check — the "one problem at a time" loop gate.
+     * After each agent resolves a problem, the call passes through here.
+     * The orchestrator asks "Anything else?" and routes back to intent-detect
+     * or to end-call.
+     */
+    private executeContinuationCheck(node: WorkflowNode, ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
+        const maxTurns = config.maxTurns ?? MAX_TURNS_PER_CALL;
+
+        if (ctx.currentTurn >= maxTurns) {
+            this.logger.info('Max turns reached — ending call', { callId: ctx.callId, turns: ctx.currentTurn });
+            return {
+                status: 'success',
+                data: {
+                    speak: "We've addressed several things today. Is there one last thing I can help with?",
+                    maxTurnsReached: true,
+                },
+                nextNodeId: null,
+            };
+        }
+
+        return {
+            status: 'continuation_check',
+            continuationPrompt: config.promptScript ?? 'Is there anything else I can help you with today?',
+            data: { currentTurn: ctx.currentTurn, maxTurns },
+        };
+    }
+
+    private executeCollectInfo(_node: WorkflowNode, _ctx: CallContext): ExecutionResult {
+        return {
+            status: 'waiting_for_input',
+            data: { action: 'collect_fields' },
+        };
+    }
+
+    private executeConfirmation(node: WorkflowNode, ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
+        let script: string = config.script ?? 'To confirm: {summary}';
+        for (const [k, v] of Object.entries(ctx.extractedFields)) {
+            script = script.replace(`{${k}}`, String(v));
+        }
+        return { status: 'success', data: { speak: script } };
+    }
+
+    private executeKnowledgeBase(_node: WorkflowNode, _ctx: CallContext): ExecutionResult {
+        return {
+            status: 'waiting_for_input',
+            data: { action: 'knowledge_base_lookup' },
+        };
+    }
+
+    private executeAvailabilityCheck(_node: WorkflowNode, _ctx: CallContext): ExecutionResult {
+        return {
+            status: 'waiting_for_input',
+            data: { action: 'availability_check' },
+        };
+    }
+
+    private executeAction(node: WorkflowNode, _ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
+        return {
+            status: 'waiting_for_input',
+            data: { action: 'external_tool_call', tool: config.tool, outputKey: config.outputKey },
+        };
+    }
+
+    private executeHumanTransfer(node: WorkflowNode, ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
+        this.logger.info('Human transfer initiated', { callId: ctx.callId, phone: config.transferPhone });
+        return {
+            status: 'escalated',
+            data: {
+                action: 'human_transfer',
+                transferPhone: config.transferPhone,
+                contextSummary: config.contextSummary,
+                noAnswerBehavior: config.noAnswerBehavior ?? 'voicemail',
+                speak: "I'll connect you with a staff member now. Please hold.",
             },
         };
     }
 
-    /**
-     * Collect information from caller
-     */
-    private async collectInformation(node: WorkflowNode, _callContext: CallContext): Promise<ExecutionResult> {
-        const config = node.config as {
-            fields: { name: string; type: string; required: boolean }[];
+    private executeVoicemail(node: WorkflowNode, ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
+        this.logger.info('Voicemail initiated', { callId: ctx.callId });
+        return {
+            status: 'voicemail',
+            data: {
+                action: 'record_voicemail',
+                promptScript: config.promptScript,
+                notifyEmail: config.notifyEmail,
+                notifyPhone: config.notifyPhone,
+                maxDurationSeconds: config.maxDurationSeconds ?? 120,
+            },
         };
+    }
 
-        // Information collection would be handled by voice orchestrator
+    private executeEmergencyEscalate(node: WorkflowNode, _ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
+        this.logger.warn('Emergency escalation node executed');
+        return {
+            status: 'escalated',
+            data: {
+                isEmergency: true,
+                action: 'emergency_escalate',
+                speak: config.message ??
+                    "If this is a life-threatening emergency, please hang up and call 911 immediately. " +
+                    "I'm connecting you now.",
+                transferToEmergency: config.transferToEmergency ?? false,
+                transferPhone: config.transferPhone,
+            },
+        };
+    }
+
+    private executeEndCall(node: WorkflowNode, _ctx: CallContext): ExecutionResult {
+        const config = node.config as any;
         return {
             status: 'success',
-            data: { fieldsToCollect: config.fields },
+            data: {
+                action: 'end_call',
+                speak: config.script ?? 'Thank you for calling. Have a great day!',
+            },
         };
     }
 
-    /**
-     * Execute external integration
-     */
-    private async executeIntegration(node: WorkflowNode, _callContext: CallContext): Promise<ExecutionResult> {
-        const config = node.config as {
-            integration: string;
-            action: string;
-            params: Record<string, any>;
-        };
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
 
-        // Integration logic would go here (e.g., TimeTap, NexHealth)
-        this.logger.log(`Executing integration: ${config.integration}.${config.action}`);
+    private findNodeByType(workflow: WorkflowGraph, type: string): WorkflowNode | undefined {
+        return workflow.nodes.find(n => n.type === type);
+    }
 
-        return {
-            status: 'success',
-            data: { integrationCalled: true },
-        };
+    private getEdgeTarget(_condition: string | null, _label: string, _callId: string): string | undefined {
+        return undefined;
     }
 
     /**
-     * Execute end node
+     * Advance the call's turn counter after a problem is resolved.
      */
-    private async executeEnd(_node: WorkflowNode, _callContext: CallContext): Promise<ExecutionResult> {
-        return {
-            status: 'success',
-            data: { message: 'Call ended' },
-        };
-    }
-
-    /**
-     * Check if any escalation rules are triggered
-     */
-    private checkEscalationRules(rules: any[], callContext: CallContext): boolean {
-        for (const rule of rules) {
-            const { condition } = rule;
-
-            switch (condition.type) {
-                case 'keyword':
-                    const transcript = callContext.transcript.join(' ').toLowerCase();
-                    if (transcript.includes(String(condition.value).toLowerCase())) {
-                        return true;
-                    }
-                    break;
-                case 'sentiment':
-                    if (callContext.sentiment && callContext.sentiment < Number(condition.value)) {
-                        return true;
-                    }
-                    break;
-                case 'duration':
-                    // Would check call duration
-                    break;
-                case 'interaction_count':
-                    // Would check number of interactions
-                    break;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Log routing decision to audit trail
-     */
-    private async logRoutingDecision(callId: string, decision: any): Promise<void> {
-        this.logger.log(`Routing decision for call ${callId}:`, decision);
+    async incrementTurn(callId: string): Promise<void> {
         try {
-            const call = await this.prisma.callSession.findUnique({
+            await this.prisma.callSession.update({
                 where: { id: callId },
-                select: { hospitalId: true },
+                data: { turnCount: { increment: 1 } },
             });
-            if (call) {
-                await this.auditService.logAction({
-                    hospitalId: call.hospitalId,
-                    action: 'ROUTING_DECISION',
-                    entityType: 'CallSession',
-                    entityId: callId,
-                    metadata: decision,
-                });
-            }
-        } catch (err) {
-            this.logger.error(`Failed to log routing decision: ${err}`);
+        } catch {
+            // Non-critical
         }
     }
 
     /**
-     * Log safety check event to audit trail
+     * Append a resolved turn to the call's turnsJson record.
      */
-    private async logSafetyCheck(callId: string, keywords: string[]): Promise<void> {
-        this.logger.log(`Safety check for call ${callId}: ${keywords.join(', ')}`);
+    async recordTurn(callId: string, turn: Record<string, unknown>): Promise<void> {
         try {
             const call = await this.prisma.callSession.findUnique({
                 where: { id: callId },
-                select: { hospitalId: true },
+                select: { turnsJson: true },
             });
-            if (call) {
-                await this.auditService.logAction({
-                    hospitalId: call.hospitalId,
-                    action: 'SAFETY_CHECK',
-                    entityType: 'CallSession',
-                    entityId: callId,
-                    metadata: { keywords, timestamp: new Date() },
-                });
-            }
-        } catch (err) {
-            this.logger.error(`Failed to log safety check: ${err}`);
+            const turns = (call?.turnsJson as unknown[]) ?? [];
+            turns.push(turn);
+            await this.prisma.callSession.update({
+                where: { id: callId },
+                data: { turnsJson: turns as any, turnCount: turns.length },
+            });
+        } catch {
+            // Non-critical
         }
     }
 }

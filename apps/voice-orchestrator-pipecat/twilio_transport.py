@@ -153,13 +153,29 @@ class TwilioMediaStreamAdapter:
     async def run(self, context=None, flow_manager=None):
         """
         Main loop: read Twilio messages and drive the Pipecat pipeline.
-        Falls back to no-op if Pipecat is unavailable.
+        Falls back to graceful no-op if Pipecat is unavailable.
         """
         logger.info(f"TwilioMediaStreamAdapter starting for call {self._call_sid}")
 
+        if not PIPECAT_AVAILABLE:
+            logger.warning(
+                f"Pipecat is not installed — streaming mode unavailable for {self._call_sid}. "
+                "Install 'pipecat-ai' or set USE_STREAMING=false to use Gather mode."
+            )
+            # Drain the WebSocket so Twilio doesn't get a closed connection immediately
+            async for _ in self._ws_iter():
+                pass
+            return
+
         try:
             async for raw_message in self._ws_iter():
-                message = json.loads(raw_message)
+                # Guard against malformed JSON from Twilio
+                try:
+                    message = json.loads(raw_message)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Received non-JSON message for {self._call_sid}: {e}")
+                    continue
+
                 event = message.get("event")
 
                 if event == "connected":
@@ -174,8 +190,7 @@ class TwilioMediaStreamAdapter:
                     self._input.set_stream_sid(stream_sid)
                     self._output = TwilioOutputTransport(self._websocket, stream_sid)
 
-                    # Start Pipecat pipeline if available
-                    if PIPECAT_AVAILABLE and context and flow_manager:
+                    if context and flow_manager:
                         await self._start_pipecat_pipeline(context, flow_manager)
 
                 elif event == "media":
@@ -188,6 +203,11 @@ class TwilioMediaStreamAdapter:
                     logger.info(f"Twilio stream stop event for {self._call_sid}")
                     break
 
+                elif event == "mark":
+                    # Twilio mark event — used to sync audio playback completion
+                    mark_name = message.get("mark", {}).get("name", "")
+                    logger.debug(f"Twilio mark received: {mark_name} for {self._call_sid}")
+
         except Exception as e:
             logger.error(f"TwilioMediaStreamAdapter.run error: {e}", exc_info=True)
         finally:
@@ -197,6 +217,13 @@ class TwilioMediaStreamAdapter:
         """Start the Pipecat bot pipeline in the background."""
         try:
             from bot import create_bot_pipeline
+            from config import settings as _settings
+
+            # Validate required credentials before creating the pipeline
+            if not _settings.azure_speech_key:
+                raise ValueError("AZURE_SPEECH_KEY is not configured — cannot start streaming pipeline")
+            if not _settings.azure_openai_key and _settings.agent_type != "azure_ai_foundry":
+                raise ValueError("AZURE_OPENAI_KEY is not configured — cannot start streaming pipeline")
 
             class _TwilioTransportShim:
                 """Minimal shim so create_bot_pipeline accepts our adapter."""
@@ -207,9 +234,14 @@ class TwilioMediaStreamAdapter:
                     return _AudioOutputProcessor(self._output)
 
             transport_shim = _TwilioTransportShim()
-            pipeline, initial_messages = await create_bot_pipeline(
-                context, transport_shim, flow_manager
-            )
+            result = await create_bot_pipeline(context, transport_shim, flow_manager)
+
+            # create_bot_pipeline may return (pipeline, messages) or just pipeline
+            if isinstance(result, tuple):
+                pipeline, initial_messages = result
+            else:
+                pipeline = result
+                initial_messages = []
 
             self._pipeline_task = PipelineTask(
                 pipeline,
@@ -219,29 +251,39 @@ class TwilioMediaStreamAdapter:
                 ),
             )
 
-            from pipecat.frames.frames import LLMMessagesFrame
-            await self._pipeline_task.queue_frames([LLMMessagesFrame(initial_messages)])
+            if initial_messages:
+                from pipecat.frames.frames import LLMMessagesFrame
+                await self._pipeline_task.queue_frames([LLMMessagesFrame(initial_messages)])
 
             runner = PipelineRunner()
             self._runner_task = asyncio.create_task(runner.run(self._pipeline_task))
             logger.info(f"Pipecat pipeline started for {self._call_sid}")
 
+        except ValueError as e:
+            # Configuration errors — log clearly and let the call continue in Gather mode
+            logger.error(f"Pipecat pipeline configuration error for {self._call_sid}: {e}")
+            self._pipeline_task = None
         except Exception as e:
-            logger.error(f"Failed to start Pipecat pipeline: {e}", exc_info=True)
+            logger.error(f"Failed to start Pipecat pipeline for {self._call_sid}: {e}", exc_info=True)
+            self._pipeline_task = None
 
     async def _shutdown(self):
         """Gracefully shut down the pipeline."""
-        if self._pipeline_task and PIPECAT_AVAILABLE:
+        if self._pipeline_task is not None and PIPECAT_AVAILABLE:
             try:
                 await self._pipeline_task.queue_frames([EndFrame()])
-            except Exception:
+                # Give the pipeline up to 3 seconds to flush remaining frames
+                await asyncio.wait_for(asyncio.shield(asyncio.sleep(3)), timeout=3)
+            except (asyncio.TimeoutError, Exception):
                 pass
-        if self._runner_task:
+        if self._runner_task is not None:
             self._runner_task.cancel()
             try:
                 await self._runner_task
             except (asyncio.CancelledError, Exception):
                 pass
+        self._pipeline_task = None
+        self._runner_task = None
         logger.info(f"TwilioMediaStreamAdapter shut down for {self._call_sid}")
 
     async def _ws_iter(self):

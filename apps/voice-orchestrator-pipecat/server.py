@@ -121,6 +121,9 @@ async def handle_incoming_call(request: Request):
             
             if call_data:
                 context.call_id = call_data.get("id")
+                # Register reverse mapping so Core API endpoints can look up context
+                if context.call_id:
+                    context_manager.register_call_id(call_sid, context.call_id)
                 logger.info(f"Using call session: {context.call_id}")
             else:
                 logger.warning(f"Could not create or retrieve call session for {call_sid}")
@@ -454,6 +457,224 @@ async def websocket_media_stream(websocket: WebSocket, call_sid: str):
             conversation_agent_manager.remove_agent(call_sid)
         context_manager.remove_context(call_sid)
         logger.info(f"🗑️ Cleaned up resources for {call_sid}")
+
+
+# =============================================================================
+# Core API → Voice Orchestrator control endpoints
+# These are called by the NestJS VoiceOrchestratorClient during workflow
+# execution to control active calls mid-stream.
+# =============================================================================
+
+def _get_agent_manager_for_call(call_sid: str):
+    """Return the active agent manager instance for a call."""
+    agent_type = _get_agent_type()
+    if agent_type == "azure_ai_foundry":
+        from azure_ai_foundry_agent import azure_ai_foundry_agent_manager
+        return azure_ai_foundry_agent_manager
+    elif agent_type == "langchain_tools":
+        from langchain_agent import agent_manager
+        return agent_manager
+    else:
+        from conversation_agent import conversation_agent_manager
+        return conversation_agent_manager
+
+
+def _resolve_context(call_id: str):
+    """Look up context by Core API call_id; return (context, call_sid) or (None, None)."""
+    ctx = context_manager.get_context_by_call_id(call_id)
+    if ctx:
+        return ctx, ctx.call_sid
+    return None, None
+
+
+@app.post("/calls/{call_id}/ai-config")
+async def update_ai_config(call_id: str, request: Request):
+    """
+    Update the AI agent's persona and system prompt mid-call.
+    Called by WorkflowExecutionService when executing an ai-agent node.
+    """
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    body = await request.json()
+    persona = body.get("persona", "")
+    system_prompt = body.get("systemPrompt", "")
+
+    context.active_persona = persona
+    manager = _get_agent_manager_for_call(call_sid)
+    manager.update_config(call_sid, body)
+
+    logger.info(f"AI config updated for call {call_id}: persona={persona!r}")
+    return {"success": True, "callId": call_id, "persona": persona}
+
+
+@app.post("/calls/{call_id}/hold")
+async def hold_call(call_id: str, request: Request):
+    """
+    Pause the AI pipeline and play a hold message.
+    The ConversationProcessor respects context.paused to skip LLM calls.
+    """
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    body = await request.json()
+    hold_message = body.get("message", "Please hold while we connect you with a team member.")
+
+    context.paused = True
+    context.state = CallState.TRANSFERRING
+    context.add_assistant_message(hold_message)
+
+    logger.info(f"Call {call_id} placed on hold")
+    return {"success": True, "callId": call_id, "message": hold_message}
+
+
+@app.post("/calls/{call_id}/resume")
+async def resume_call(call_id: str, request: Request):
+    """Resume a previously held call."""
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    context.paused = False
+    context.state = CallState.LISTENING
+    logger.info(f"Call {call_id} resumed")
+    return {"success": True, "callId": call_id}
+
+
+@app.post("/calls/{call_id}/transfer")
+async def transfer_call(call_id: str, request: Request):
+    """
+    Mark the call for transfer to a human agent and notify the pipeline.
+    The pipeline will complete the current utterance then hand off.
+    """
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    body = await request.json()
+    reason = body.get("reason", "Customer requested transfer")
+    target = body.get("target", "general")
+
+    context.escalation_reason = reason
+    context.transfer_target = target
+    context.state = CallState.TRANSFERRING
+    from call_context import IntentType
+    context.detected_intent = IntentType.TRANSFER_TO_HUMAN
+
+    logger.info(f"Call {call_id} flagged for transfer to {target!r}: {reason}")
+    return {"success": True, "callId": call_id, "target": target}
+
+
+@app.post("/calls/{call_id}/context")
+async def update_call_context(call_id: str, request: Request):
+    """Update arbitrary call context fields (extracted fields, intent, etc.)."""
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    body = await request.json()
+    if "detectedIntent" in body and body["detectedIntent"]:
+        try:
+            from call_context import IntentType
+            context.detected_intent = IntentType(body["detectedIntent"])
+        except ValueError:
+            pass
+    if "isEmergency" in body:
+        context.is_emergency = bool(body["isEmergency"])
+    if "extractedFields" in body and isinstance(body["extractedFields"], dict):
+        for k, v in body["extractedFields"].items():
+            context.collect_field(k, v)
+
+    logger.info(f"Context updated for call {call_id}")
+    return {"success": True, "callId": call_id}
+
+
+@app.post("/calls/{call_id}/end")
+async def end_call(call_id: str, request: Request):
+    """
+    Gracefully end a call: mark context as completed.
+    The pipeline finishes naturally; context cleanup happens in the finally block.
+    """
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    body = await request.json()
+    closing_message = body.get("closingMessage", "Thank you for calling. Have a great day!")
+    context.state = CallState.ENDING
+    context.add_assistant_message(closing_message)
+
+    logger.info(f"Call {call_id} flagged for graceful end")
+    return {"success": True, "callId": call_id}
+
+
+@app.post("/calls/{call_id}/message")
+async def send_message(call_id: str, request: Request):
+    """
+    Inject an AI-spoken message into the conversation without waiting for caller input.
+    Stored in history; delivered by the pipeline on the next audio frame cycle.
+    """
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    body = await request.json()
+    text = body.get("text", "")
+    if text:
+        context.add_assistant_message(text)
+        logger.info(f"Injected message into call {call_id}: {text[:60]!r}")
+    return {"success": True, "callId": call_id}
+
+
+@app.get("/calls/{call_id}/state")
+async def get_call_state(call_id: str):
+    """Return the current state of a call as JSON (for the Core API to inspect)."""
+    context, _ = _resolve_context(call_id)
+    if not context:
+        return {"found": False, "callId": call_id}
+
+    return {
+        "found": True,
+        "callId": call_id,
+        "callSid": context.call_sid,
+        "state": context.state.value,
+        "isEmergency": context.is_emergency,
+        "paused": context.paused,
+        "detectedIntent": context.detected_intent.value if context.detected_intent else None,
+        "sentimentScore": context.sentiment.overall_score,
+        "frustrationLevel": context.sentiment.frustration_level,
+        "escalationNeeded": context.sentiment.escalation_needed,
+        "turnCount": len(context.conversation_history),
+        "activePersona": context.active_persona,
+    }
+
+
+@app.post("/calls/{call_id}/escalate")
+async def escalate_call(call_id: str, request: Request):
+    """
+    Trigger escalation flow: mark context and notify via Core API.
+    The voice pipeline will initiate human transfer on the next turn.
+    """
+    context, call_sid = _resolve_context(call_id)
+    if not context:
+        return {"success": False, "error": "Call not found or already ended"}
+
+    body = await request.json()
+    reason = body.get("reason", "Escalation triggered by workflow")
+    specialization = body.get("specialization", "general")
+
+    context.is_emergency = body.get("isEmergency", context.is_emergency)
+    context.escalation_reason = reason
+    context.transfer_target = specialization
+    context.state = CallState.ESCALATING
+    from call_context import IntentType
+    context.detected_intent = IntentType.TRANSFER_TO_HUMAN
+    context.sentiment.escalation_needed = True
+
+    logger.warning(f"Escalation triggered for call {call_id}: {reason}")
+    return {"success": True, "callId": call_id, "specialization": specialization}
 
 
 # =============================================================================

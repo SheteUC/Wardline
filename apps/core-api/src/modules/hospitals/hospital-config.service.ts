@@ -123,7 +123,7 @@ export class HospitalConfigService {
             timestamp: Date.now(),
         });
 
-        this.logger.log(`Loaded configuration for hospital ${hospitalId}`);
+        this.logger.info(`Loaded configuration for hospital ${hospitalId}`);
 
         return config;
     }
@@ -176,7 +176,7 @@ export class HospitalConfigService {
             timestamp: Date.now(),
         });
 
-        this.logger.log(`Updated configuration for hospital ${hospitalId}`);
+        this.logger.info(`Updated configuration for hospital ${hospitalId}`);
 
         return updatedConfig;
     }
@@ -186,7 +186,7 @@ export class HospitalConfigService {
      */
     invalidateCache(hospitalId: string): void {
         this.configCache.delete(hospitalId);
-        this.logger.log(`Cleared config cache for hospital ${hospitalId}`);
+        this.logger.info(`Cleared config cache for hospital ${hospitalId}`);
     }
 
     /**

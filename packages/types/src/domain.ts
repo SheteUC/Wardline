@@ -1,34 +1,38 @@
 import { z } from 'zod';
-import { workflowNodeTypeSchema } from './enums';
+import { workflowNodeTypeSchema, AgentCatalogId, ToolStatus } from './enums';
+
+// ============================================================================
+// Workflow Node & Graph
+// ============================================================================
 
 /**
- * Workflow node configuration
+ * Workflow node configuration — 13-node visual palette
  */
 export interface WorkflowNode {
     id: string;
-    type: 
-        | 'start'
-        | 'emergency-screen'
+    type:
+        // Entry / Exit
+        | 'greeting'
+        | 'end-call'
+        // Core routing
         | 'intent-detect'
-        | 'question'
         | 'route'
-        | 'webhook'
-        | 'end'
-        // Multi-Agent Platform node types
-        | 'ai-agent'
-        | 'human-agent-queue'
-        | 'human-agent-direct'
-        | 'conditional'
-        | 'safety-check'
+        | 'continuation-check'
+        // Data collection
         | 'collect-info'
-        | 'integration';
+        | 'confirmation'
+        // Knowledge & actions
+        | 'knowledge-base'
+        | 'availability-check'
+        | 'action'
+        // Escalation paths
+        | 'human-transfer'
+        | 'voicemail'
+        | 'emergency-escalate';
     config: Record<string, unknown>;
     position?: { x: number; y: number };
 }
 
-/**
- * Workflow edge (connection between nodes)
- */
 export interface WorkflowEdge {
     id: string;
     fromNodeId: string;
@@ -36,45 +40,165 @@ export interface WorkflowEdge {
     condition?: string;
 }
 
-/**
- * Workflow graph structure
- */
 export interface WorkflowGraph {
     nodes: WorkflowNode[];
     edges: WorkflowEdge[];
 }
 
+// ============================================================================
+// Agent Catalog & Deployed Agents
+// ============================================================================
+
 /**
- * Handoff payload structure
+ * Tool that an agent connects to (external integration)
  */
-export interface HandoffPayload {
-    callId: string;
-    hospitalId: string;
+export interface AgentTool {
+    id: string;
+    name: string;
+    description: string;
+    /** e.g. 'scheduling', 'billing', 'ehr', 'insurance', 'knowledge-base' */
+    type: string;
+    status: ToolStatus;
+    /** Credentials / config stored encrypted at rest */
+    config: Record<string, unknown>;
+    /** JSON Schema of what the business owner must fill in */
+    configSchema: ToolConfigField[];
+}
+
+export interface ToolConfigField {
+    key: string;
+    label: string;
+    type: 'text' | 'password' | 'url' | 'select' | 'boolean';
+    required: boolean;
+    placeholder?: string;
+    options?: string[];
+    helpText?: string;
+}
+
+/**
+ * Read-only catalog entry (template) — curated by Wardline
+ */
+export interface AgentCatalogItem {
+    catalogId: AgentCatalogId;
+    name: string;
+    description: string;
+    /** Short plain-English statement of what this agent will NOT do */
+    scopeBoundary: string;
+    icon: string;
+    color: string;
+    /** Default node graph template */
+    defaultNodes: WorkflowGraph;
+    /** The tool this agent connects to */
+    tool: Omit<AgentTool, 'status' | 'config'>;
+    /** What the business owner can configure */
+    configSchema: AgentConfigField[];
+    /** Tags shown in catalog */
+    tags: string[];
+}
+
+export interface AgentConfigField {
+    key: string;
+    label: string;
+    type: 'text' | 'textarea' | 'toggle' | 'number' | 'select';
+    defaultValue?: unknown;
+    required: boolean;
+    helpText?: string;
+    options?: string[];
+}
+
+/**
+ * A deployed (live) agent instance — copy of a catalog item, per business
+ */
+export interface DeployedAgent {
+    id: string;
+    businessId: string;
+    catalogId: AgentCatalogId;
+    name: string;
+    description?: string;
+    status: 'ACTIVE' | 'INACTIVE' | 'PAUSED';
+    /** Business-specific overrides to the default node graph */
+    nodeGraph: WorkflowGraph;
+    /** Tool credentials configured by the business owner */
+    toolConfig: Record<string, unknown>;
+    /** Business-specific config (greeting text, field labels, etc.) */
+    agentConfig: Record<string, unknown>;
+    callStats?: AgentCallStats;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AgentCallStats {
+    totalCalls: number;
+    resolvedCalls: number;
+    escalatedCalls: number;
+    voicemailCalls: number;
+    avgHandleTimeMs: number;
+    resolutionRate: number;
+}
+
+// ============================================================================
+// Call Session & Turns (one-problem-at-a-time)
+// ============================================================================
+
+/**
+ * A single problem-resolution turn within a call session
+ */
+export interface CallTurn {
+    turnNumber: number;
+    agentId: string;
+    catalogId: AgentCatalogId;
     intentKey: string;
-    tag: 'Scheduling' | 'Billing/Insurance' | 'Records/Forms' | 'Refill/Prior-Auth' | 'Clinical Escalation';
-    patient?: {
-        externalId?: string;
-        name?: string;
-        dob?: string;
-        phone?: string;
-    };
-    summary: string;
-    fields: Record<string, unknown>;
-    transcriptUrl?: string;
+    collectedFields: Record<string, unknown>;
+    outcome: 'resolved' | 'escalated' | 'voicemail' | 'emergency' | 'failed';
+    startedAt: string;
+    resolvedAt?: string;
+}
+
+/**
+ * Voicemail record created when no human is available
+ */
+export interface VoicemailRecord {
+    id: string;
+    callId: string;
+    businessId: string;
+    callerPhone: string;
+    callerName?: string;
+    recordingUrl: string;
+    transcription?: string;
+    context: string;
+    isListened: boolean;
     createdAt: string;
 }
 
 /**
- * Intent configuration (stored in JSON fields)
+ * Handoff payload — passed to human staff when transfer occurs
  */
+export interface HandoffPayload {
+    callId: string;
+    businessId: string;
+    intentKey: string;
+    tag: 'Scheduling' | 'Billing' | 'Insurance' | 'FAQ' | 'Prescription Refill' | 'Emergency';
+    caller?: {
+        name?: string;
+        phone?: string;
+        dob?: string;
+    };
+    summary: string;
+    collectedFields: Record<string, unknown>;
+    resolvedTurns: CallTurn[];
+    transcriptUrl?: string;
+    createdAt: string;
+}
+
+// ============================================================================
+// Intent Configuration
+// ============================================================================
+
 export interface IntentConfig {
     requiredFields: IntentField[];
     routingRules: RoutingRule[];
 }
 
-/**
- * Intent field definition
- */
 export interface IntentField {
     key: string;
     label: string;
@@ -88,18 +212,15 @@ export interface IntentField {
     };
 }
 
-/**
- * Routing rule definition
- */
 export interface RoutingRule {
     priority: number;
     conditions: RoutingCondition[];
     target: {
-        type: 'phone' | 'queue' | 'webhook';
+        type: 'phone' | 'agent' | 'voicemail';
         value: string;
     };
     fallback?: {
-        type: 'phone' | 'queue';
+        type: 'phone' | 'voicemail';
         value: string;
     };
     schedule?: {
@@ -108,67 +229,194 @@ export interface RoutingRule {
     };
 }
 
-/**
- * Routing condition
- */
 export interface RoutingCondition {
     field: string;
     operator: 'equals' | 'contains' | 'greater_than' | 'less_than';
     value: string;
 }
 
-/**
- * Business hours definition
- */
 export interface BusinessHours {
     dayOfWeek: number; // 0-6 (Sunday-Saturday)
     startTime: string; // HH:mm format
-    endTime: string;   // HH:mm format
+    endTime: string;
 }
 
-/**
- * Emergency detection result
- */
-export interface EmergencyDetectionResult {
+// ============================================================================
+// Safety & Emergency Detection
+// ============================================================================
+
+export interface SafetyDetectionResult {
     isEmergency: boolean;
+    isOutOfScope: boolean;
     confidence: number;
     triggeredKeywords: string[];
-    mlScore?: number;
+    recommendedAction: 'continue' | 'deflect' | 'emergency_escalate' | 'human_transfer';
 }
 
-/**
- * Intent detection result
- */
+/** @deprecated Use SafetyDetectionResult */
+export type EmergencyDetectionResult = SafetyDetectionResult;
+
+export interface OutOfScopeDeflection {
+    detectedTopic: string;
+    deflectionMessage: string;
+    escalateToHuman: boolean;
+}
+
+// ============================================================================
+// Intent Detection
+// ============================================================================
+
 export interface IntentDetectionResult {
     intentKey: string;
     confidence: number;
     subIntent?: string;
     extractedFields: Record<string, unknown>;
+    /** Which catalog agent should handle this */
+    targetAgentCatalogId?: AgentCatalogId;
 }
 
-/**
- * Call state machine states
- */
+// ============================================================================
+// Call State Machine
+// ============================================================================
+
 export type CallState =
     | 'initiated'
-    | 'consent'
-    | 'emergency-screen'
-    | 'intake'
-    | 'scheduling'
-    | 'handoff'
+    | 'greeting'
+    | 'intent-detection'
+    | 'agent-handling'
+    | 'continuation-check'
+    | 'escalating'
+    | 'voicemail'
     | 'completed'
     | 'failed';
 
-/**
- * Call event for state machine transitions
- */
 export interface CallEvent {
     type: string;
     payload?: Record<string, unknown>;
     timestamp: Date;
 }
 
-// Zod schemas for validation
+/**
+ * Full call context passed through the workflow execution engine
+ */
+export interface CallContext {
+    callId: string;
+    businessId: string;
+    phoneNumberId: string;
+    direction: 'inbound' | 'outbound';
+    caller?: {
+        name?: string;
+        phone?: string;
+    };
+    transcript: string[];
+    currentTurn: number;
+    completedTurns: CallTurn[];
+    detectedIntent?: string;
+    activeAgentId?: string;
+    extractedFields: Record<string, unknown>;
+    sentiment?: number;
+    isEmergency: boolean;
+    needsContinuationCheck: boolean;
+}
+
+// ============================================================================
+// Workflow Execution
+// ============================================================================
+
+export interface ExecutionResult {
+    status: 'success' | 'waiting_for_input' | 'continuation_check' | 'error' | 'escalated' | 'voicemail';
+    nextNodeId?: string;
+    data?: Record<string, unknown>;
+    error?: string;
+    /** Set when status = 'continuation_check' — prompts "Anything else?" */
+    continuationPrompt?: string;
+}
+
+export interface ValidationResult {
+    valid: boolean;
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+}
+
+export interface ValidationError {
+    nodeId?: string;
+    type: string;
+    message: string;
+}
+
+export interface ValidationWarning {
+    nodeId?: string;
+    type: string;
+    message: string;
+}
+
+// ============================================================================
+// Node-specific Config Shapes
+// ============================================================================
+
+export interface GreetingNodeConfig {
+    businessName: string;
+    greetingScript: string;
+    /** e.g. "Monday-Friday 9AM-5PM" — injected into greeting if after hours */
+    businessHours?: string;
+}
+
+export interface IntentDetectNodeConfig {
+    /** Which intents (agent catalog IDs) to listen for */
+    enabledAgents: AgentCatalogId[];
+    confidenceThreshold: number;
+    fallbackToHuman: boolean;
+}
+
+export interface RouteNodeConfig {
+    routes: Array<{
+        condition: string;
+        targetNodeId: string;
+        label: string;
+    }>;
+    defaultTargetNodeId: string;
+}
+
+export interface CollectInfoNodeConfig {
+    fields: IntentField[];
+    retryAttempts: number;
+    timeoutSeconds: number;
+}
+
+export interface KnowledgeBaseNodeConfig {
+    knowledgeBaseId: string;
+    maxResults: number;
+    fallbackMessage: string;
+}
+
+export interface HumanTransferNodeConfig {
+    transferPhone: string;
+    transferExtension?: string;
+    contextSummary: boolean;
+    noAnswerBehavior: 'voicemail' | 'end_call';
+}
+
+export interface VoicemailNodeConfig {
+    promptScript: string;
+    notifyEmail?: string;
+    notifyPhone?: string;
+    maxDurationSeconds: number;
+}
+
+export interface EmergencyEscalateNodeConfig {
+    message: string;
+    transferToEmergency: boolean;
+    transferPhone?: string;
+}
+
+export interface ContinuationCheckNodeConfig {
+    promptScript: string;
+    maxTurns: number;
+}
+
+// ============================================================================
+// Zod Schemas
+// ============================================================================
 
 export const workflowNodeSchema = z.object({
     id: z.string(),
@@ -194,26 +442,27 @@ export const workflowGraphSchema = z.object({
 
 export const handoffPayloadSchema = z.object({
     callId: z.string().uuid(),
-    hospitalId: z.string().uuid(),
+    businessId: z.string().uuid(),
     intentKey: z.string(),
-    tag: z.enum(['Scheduling', 'Billing/Insurance', 'Records/Forms', 'Refill/Prior-Auth', 'Clinical Escalation']),
-    patient: z.object({
-        externalId: z.string().optional(),
+    tag: z.enum(['Scheduling', 'Billing', 'Insurance', 'FAQ', 'Prescription Refill', 'Emergency']),
+    caller: z.object({
         name: z.string().optional(),
-        dob: z.string().optional(),
         phone: z.string().optional(),
+        dob: z.string().optional(),
     }).optional(),
     summary: z.string(),
-    fields: z.record(z.unknown()),
+    collectedFields: z.record(z.unknown()),
+    resolvedTurns: z.array(z.any()),
     transcriptUrl: z.string().url().optional(),
     createdAt: z.string().datetime(),
 });
 
-export const emergencyDetectionResultSchema = z.object({
+export const safetyDetectionResultSchema = z.object({
     isEmergency: z.boolean(),
+    isOutOfScope: z.boolean(),
     confidence: z.number().min(0).max(1),
     triggeredKeywords: z.array(z.string()),
-    mlScore: z.number().min(0).max(1).optional(),
+    recommendedAction: z.enum(['continue', 'deflect', 'emergency_escalate', 'human_transfer']),
 });
 
 export const intentDetectionResultSchema = z.object({
@@ -221,209 +470,12 @@ export const intentDetectionResultSchema = z.object({
     confidence: z.number().min(0).max(1),
     subIntent: z.string().optional(),
     extractedFields: z.record(z.unknown()),
-});
-
-// ============================================================================
-// Multi-Agent Platform Interfaces
-// ============================================================================
-
-/**
- * AI Agent Configuration
- */
-export interface AIAgentConfig {
-    persona: string; // e.g., "Scheduling Assistant", "Billing Specialist"
-    systemPrompt: string; // LLM system prompt
-    capabilities: string[]; // ["schedule_appointments", "answer_billing_questions"]
-    knowledgeBase?: string; // Optional knowledge base reference
-    escalationRules: EscalationRule[]; // When to escalate to human
-    maxInteractions?: number; // Auto-escalate after N turns
-}
-
-/**
- * Human Agent Profile
- */
-export interface HumanAgentProfile {
-    userId: string; // Link to User model
-    specialization: string[]; // ["clinical", "scheduling", "billing"]
-    skills: string[]; // Detailed skill tags
-    availability: AvailabilitySchedule;
-    maxConcurrentCalls: number;
-    contactInfo: {
-        phone?: string;
-        email?: string;
-        sms?: string;
-    };
-    notificationPreferences: {
-        inApp: boolean;
-        sms: boolean;
-        email: boolean;
-    };
-}
-
-/**
- * Availability Schedule
- */
-export interface AvailabilitySchedule {
-    timezone: string;
-    schedule: ScheduleBlock[];
-    breaks?: BreakSchedule[];
-}
-
-/**
- * Schedule Block
- */
-export interface ScheduleBlock {
-    dayOfWeek: number; // 0-6 (Sunday-Saturday)
-    startTime: string; // "09:00"
-    endTime: string; // "17:00"
-}
-
-/**
- * Break Schedule
- */
-export interface BreakSchedule {
-    dayOfWeek: number;
-    startTime: string;
-    endTime: string;
-    type: 'lunch' | 'break';
-}
-
-/**
- * Escalation Rule
- */
-export interface EscalationRule {
-    condition: {
-        type: 'keyword' | 'intent' | 'sentiment' | 'duration' | 'interaction_count';
-        value: string | number;
-        operator: 'contains' | 'equals' | 'greater_than' | 'less_than';
-    };
-    action: {
-        type: 'route_to_queue' | 'assign_to_agent' | 'notify';
-        target: string; // queue name or agent ID
-    };
-    priority: number;
-}
-
-/**
- * Call Context for Workflow Execution
- */
-export interface CallContext {
-    callId: string;
-    hospitalId: string;
-    phoneNumberId: string;
-    direction: 'inbound' | 'outbound';
-    caller?: {
-        name?: string;
-        phone?: string;
-    };
-    transcript: string[];
-    detectedIntent?: string;
-    extractedFields: Record<string, unknown>;
-    sentiment?: number;
-    isEmergency: boolean;
-}
-
-/**
- * Workflow Execution Result
- */
-export interface ExecutionResult {
-    status: 'success' | 'waiting_for_agent' | 'error' | 'escalated';
-    nextNodeId?: string;
-    data?: Record<string, unknown>;
-    error?: string;
-}
-
-/**
- * Validation Result
- */
-export interface ValidationResult {
-    valid: boolean;
-    errors: ValidationError[];
-    warnings: ValidationWarning[];
-}
-
-/**
- * Validation Error
- */
-export interface ValidationError {
-    nodeId?: string;
-    type: string;
-    message: string;
-}
-
-/**
- * Validation Warning
- */
-export interface ValidationWarning {
-    nodeId?: string;
-    type: string;
-    message: string;
-}
-
-/**
- * Assignment Options
- */
-export interface AssignmentOptions {
-    strategy: 'skill_based' | 'round_robin' | 'least_busy' | 'priority_based';
-    priorityLevel?: number;
-}
-
-// Zod schemas for validation
-
-export const aiAgentConfigSchema = z.object({
-    persona: z.string(),
-    systemPrompt: z.string(),
-    capabilities: z.array(z.string()),
-    knowledgeBase: z.string().optional(),
-    escalationRules: z.array(z.object({
-        condition: z.object({
-            type: z.enum(['keyword', 'intent', 'sentiment', 'duration', 'interaction_count']),
-            value: z.union([z.string(), z.number()]),
-            operator: z.enum(['contains', 'equals', 'greater_than', 'less_than']),
-        }),
-        action: z.object({
-            type: z.enum(['route_to_queue', 'assign_to_agent', 'notify']),
-            target: z.string(),
-        }),
-        priority: z.number(),
-    })),
-    maxInteractions: z.number().optional(),
-});
-
-export const humanAgentProfileSchema = z.object({
-    userId: z.string().uuid(),
-    specialization: z.array(z.string()),
-    skills: z.array(z.string()),
-    availability: z.object({
-        timezone: z.string(),
-        schedule: z.array(z.object({
-            dayOfWeek: z.number().min(0).max(6),
-            startTime: z.string(),
-            endTime: z.string(),
-        })),
-        breaks: z.array(z.object({
-            dayOfWeek: z.number().min(0).max(6),
-            startTime: z.string(),
-            endTime: z.string(),
-            type: z.enum(['lunch', 'break']),
-        })).optional(),
-    }),
-    maxConcurrentCalls: z.number().min(1),
-    contactInfo: z.object({
-        phone: z.string().optional(),
-        email: z.string().email().optional(),
-        sms: z.string().optional(),
-    }),
-    notificationPreferences: z.object({
-        inApp: z.boolean(),
-        sms: z.boolean(),
-        email: z.boolean(),
-    }),
+    targetAgentCatalogId: z.string().optional(),
 });
 
 export const callContextSchema = z.object({
     callId: z.string().uuid(),
-    hospitalId: z.string().uuid(),
+    businessId: z.string().uuid(),
     phoneNumberId: z.string().uuid(),
     direction: z.enum(['inbound', 'outbound']),
     caller: z.object({
@@ -431,8 +483,12 @@ export const callContextSchema = z.object({
         phone: z.string().optional(),
     }).optional(),
     transcript: z.array(z.string()),
+    currentTurn: z.number().min(0),
+    completedTurns: z.array(z.any()),
     detectedIntent: z.string().optional(),
+    activeAgentId: z.string().optional(),
     extractedFields: z.record(z.unknown()),
     sentiment: z.number().min(-1).max(1).optional(),
     isEmergency: z.boolean(),
+    needsContinuationCheck: z.boolean(),
 });

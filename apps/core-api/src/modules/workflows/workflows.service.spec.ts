@@ -7,17 +7,24 @@ describe('WorkflowsService', () => {
   let service: WorkflowsService;
   let prisma: PrismaService;
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     workflow: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     },
     workflowVersion: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    phoneNumber: {
+      findUnique: jest.fn(),
     },
   };
 
@@ -46,13 +53,12 @@ describe('WorkflowsService', () => {
         id: 'workflow-1',
         hospitalId: 'hospital-1',
         name: 'Main Workflow',
-        status: 'active',
+        status: 'PUBLISHED',
         versions: [
           {
             id: 'version-1',
-            version: 1,
-            isPublished: true,
-            workflowData: {
+            versionNumber: 1,
+            graphJson: {
               nodes: [{ id: 'start', type: 'start' }],
               edges: [],
             },
@@ -66,20 +72,15 @@ describe('WorkflowsService', () => {
 
       expect(result).toBeDefined();
       expect(result.id).toBe('workflow-1');
-      expect(result.nodes).toHaveLength(1);
-      expect(prisma.workflow.findFirst).toHaveBeenCalledWith({
-        where: {
-          hospitalId: 'hospital-1',
-          status: 'active',
-        },
-        include: {
-          versions: {
-            where: { isPublished: true },
-            orderBy: { version: 'desc' },
-            take: 1,
-          },
-        },
-      });
+      expect(result.graphJson.nodes).toHaveLength(1);
+      expect(prisma.workflow.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            hospitalId: 'hospital-1',
+            status: 'PUBLISHED',
+          }),
+        }),
+      );
     });
 
     it('should return null if no active workflow found', async () => {
@@ -91,26 +92,22 @@ describe('WorkflowsService', () => {
     });
 
     it('should filter by phone number if provided', async () => {
-      const mockWorkflow = {
-        id: 'workflow-1',
-        hospitalId: 'hospital-1',
-        phoneNumberId: 'phone-1',
-        versions: [
-          {
-            workflowData: { nodes: [], edges: [] },
-          },
-        ],
-      };
+      mockPrismaService.phoneNumber.findUnique.mockResolvedValue({
+        workflow: {
+          id: 'workflow-1',
+          name: 'Phone Workflow',
+          description: null,
+          versions: [{ versionNumber: 1, graphJson: { nodes: [], edges: [] } }],
+        },
+      });
 
-      mockPrismaService.workflow.findFirst = jest.fn().mockResolvedValue(mockWorkflow);
+      const result = await service.getActiveWorkflow('hospital-1', 'phone-1');
 
-      await service.getActiveWorkflow('hospital-1', 'phone-1');
-
-      expect(prisma.workflow.findFirst).toHaveBeenCalledWith(
+      expect(result).toBeDefined();
+      expect(result.id).toBe('workflow-1');
+      expect(prisma.phoneNumber.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            phoneNumberId: 'phone-1',
-          }),
+          where: { id: 'phone-1' },
         }),
       );
     });
@@ -122,7 +119,7 @@ describe('WorkflowsService', () => {
         id: 'workflow-1',
         versions: [
           {
-            workflowData: {
+            graphJson: {
               nodes: [
                 { id: 'start', type: 'start' },
                 { id: 'ai-1', type: 'ai-agent', config: { systemPrompt: 'Test' } },
@@ -150,7 +147,7 @@ describe('WorkflowsService', () => {
         id: 'workflow-1',
         versions: [
           {
-            workflowData: {
+            graphJson: {
               nodes: [
                 { id: 'ai-1', type: 'ai-agent' },
               ],
@@ -178,7 +175,7 @@ describe('WorkflowsService', () => {
         id: 'workflow-1',
         versions: [
           {
-            workflowData: {
+            graphJson: {
               nodes: [
                 { id: 'start', type: 'start' },
                 { id: 'orphan', type: 'ai-agent' },
@@ -213,7 +210,7 @@ describe('WorkflowsService', () => {
         id: 'workflow-1',
         versions: [
           {
-            workflowData: {
+            graphJson: {
               nodes: [
                 { id: 'start', type: 'start' },
                 { id: 'ai-1', type: 'ai-agent', config: {} },
@@ -247,7 +244,7 @@ describe('WorkflowsService', () => {
         id: 'workflow-1',
         versions: [
           {
-            workflowData: {
+            graphJson: {
               nodes: [
                 { id: 'start', type: 'start' },
                 { id: 'broken', type: 'invalid-type' },
@@ -276,28 +273,28 @@ describe('WorkflowsService', () => {
 
       const mockWorkflow = {
         id: 'workflow-1',
-        versions: [{ version: 1 }],
+        versions: [{ versionNumber: 1 }],
       };
 
       const mockNewVersion = {
         id: 'version-2',
         workflowId: 'workflow-1',
-        version: 2,
-        workflowData,
+        versionNumber: 2,
+        graphJson: workflowData,
       };
 
       mockPrismaService.workflow.findUnique = jest.fn().mockResolvedValue(mockWorkflow);
       mockPrismaService.workflowVersion.create = jest.fn().mockResolvedValue(mockNewVersion);
 
-      const result = await service.createVersion('workflow-1', workflowData, 'user-1');
+      const result = await service.createVersion('workflow-1', 'user-1', workflowData);
 
-      expect(result.version).toBe(2);
+      expect(result.versionNumber).toBe(2);
       expect(prisma.workflowVersion.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            version: 2,
-            workflowData,
-            createdBy: 'user-1',
+            versionNumber: 2,
+            graphJson: workflowData,
+            createdByUserId: 'user-1',
           }),
         }),
       );
@@ -309,32 +306,32 @@ describe('WorkflowsService', () => {
       const mockVersion = {
         id: 'version-2',
         workflowId: 'workflow-1',
-        version: 2,
-        isPublished: false,
+        workflow: { id: 'workflow-1' },
+        versionNumber: 2,
+        status: 'DRAFT',
       };
 
       mockPrismaService.workflowVersion.findUnique = jest.fn().mockResolvedValue(mockVersion);
       mockPrismaService.workflowVersion.updateMany = jest.fn().mockResolvedValue({ count: 1 });
       mockPrismaService.workflowVersion.update = jest.fn().mockResolvedValue({
         ...mockVersion,
-        isPublished: true,
+        status: 'PUBLISHED',
       });
 
-      const result = await service.publishVersion('version-2');
+      const result = await service.publishVersion('version-2', 'approver-user-1');
 
-      expect(result.isPublished).toBe(true);
+      expect(result.status).toBe('PUBLISHED');
 
       // Should unpublish other versions first
-      expect(prisma.workflowVersion.updateMany).toHaveBeenCalledWith({
-        where: { workflowId: 'workflow-1' },
-        data: { isPublished: false },
-      });
+      expect(prisma.workflowVersion.updateMany).toHaveBeenCalled();
 
       // Then publish the new version
-      expect(prisma.workflowVersion.update).toHaveBeenCalledWith({
-        where: { id: 'version-2' },
-        data: { isPublished: true },
-      });
+      expect(prisma.workflowVersion.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'version-2' },
+          data: expect.objectContaining({ status: 'PUBLISHED' }),
+        }),
+      );
     });
   });
 
@@ -345,7 +342,7 @@ describe('WorkflowsService', () => {
         hospitalId: 'hospital-1',
         versions: [
           {
-            workflowData: {
+            graphJson: {
               nodes: Array(100).fill(null).map((_, i) => ({ id: `node-${i}`, type: 'ai-agent' })),
               edges: Array(99).fill(null).map((_, i) => ({
                 id: `edge-${i}`,

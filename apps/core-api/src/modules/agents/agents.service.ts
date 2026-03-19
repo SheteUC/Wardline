@@ -1,400 +1,156 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Agent, AgentType, AgentStatus, AgentSessionStatus } from '@wardline/db';
-import { CreateAgentDto, UpdateAgentDto } from './dto/agent.dto';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Logger } from '@wardline/utils';
+import { AGENT_CATALOG } from '@wardline/db/src/seed-agents';
 
 @Injectable()
 export class AgentsService {
-    constructor(private readonly prisma: PrismaService) { }
+    private readonly logger = new Logger(AgentsService.name);
 
-    /**
-     * Create a new agent (AI or Human)
-     */
-    async create(hospitalId: string, dto: CreateAgentDto): Promise<Agent> {
-        // Validate that AI agents have aiConfig and Human agents have humanProfile
-        if (dto.type === AgentType.AI && !dto.aiConfig) {
-            throw new Error('AI agents must have aiConfig');
-        }
-        if (dto.type === AgentType.HUMAN && !dto.humanProfile) {
-            throw new Error('Human agents must have humanProfile');
-        }
+    constructor(private readonly prisma: PrismaService) {}
 
-        return this.prisma.agent.create({
-            data: {
-                hospitalId,
-                type: dto.type,
-                name: dto.name,
-                description: dto.description,
-                aiConfig: dto.aiConfig as any,
-                humanProfile: dto.humanProfile as any,
-                status: AgentStatus.ACTIVE,
-            },
+    // -------------------------------------------------------------------------
+    // Catalog (read-only templates)
+    // -------------------------------------------------------------------------
+
+    getCatalog() {
+        return AGENT_CATALOG.map(item => ({
+            catalogId: item.catalogId,
+            name: item.name,
+            description: item.description,
+            scopeBoundary: item.scopeBoundary,
+            icon: item.icon,
+            color: item.color,
+            tags: item.tags,
+            toolConfigSchema: item.toolConfigSchema,
+        }));
+    }
+
+    getCatalogItem(catalogId: string) {
+        const item = AGENT_CATALOG.find(a => a.catalogId === catalogId);
+        if (!item) throw new NotFoundException(`Catalog agent "${catalogId}" not found`);
+        return item;
+    }
+
+    // -------------------------------------------------------------------------
+    // Deployed Agents (per-business instances)
+    // -------------------------------------------------------------------------
+
+    async findAll(businessId: string): Promise<any[]> {
+        return this.prisma.agent.findMany({
+            where: { businessId },
+            orderBy: { createdAt: 'asc' },
         });
     }
 
-    /**
-     * Find all agents for a hospital
-     */
-    async findAll(
-        hospitalId: string,
-        filters?: { type?: AgentType; status?: AgentStatus; page?: number; limit?: number }
-    ): Promise<any> {
-        const page = filters?.page || 1;
-        const limit = filters?.limit || 20;
-        const skip = (page - 1) * limit;
-
-        const where = {
-            hospitalId,
-            ...(filters?.type && { type: filters.type }),
-            ...(filters?.status && { status: filters.status }),
-        };
-
-        const [agents, total] = await Promise.all([
-            this.prisma.agent.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    _count: {
-                        select: {
-                            callAssignments: true,
-                            agentSessions: true,
-                        },
-                    },
-                },
-            }),
-            this.prisma.agent.count({ where }),
-        ]);
-
-        return {
-            data: agents,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-            },
-        };
+    async findOne(id: string): Promise<any> {
+        const agent = await this.prisma.agent.findUnique({ where: { id } });
+        if (!agent) throw new NotFoundException(`Agent "${id}" not found`);
+        return agent;
     }
 
-    /**
-     * Find a specific agent by ID
-     */
-    async findOne(id: string): Promise<Agent> {
-        const agent = await this.prisma.agent.findUnique({
-            where: { id },
-            include: {
-                hospital: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                    },
-                },
-                _count: {
-                    select: {
-                        callAssignments: true,
-                        agentSessions: true,
-                    },
-                },
-            },
-        });
-
-        if (!agent) {
-            throw new NotFoundException(`Agent not found: ${id}`);
-        }
-
+    async findByCatalogId(businessId: string, catalogId: string): Promise<any> {
+        const agent = await this.prisma.agent.findFirst({ where: { businessId, catalogId } });
+        if (!agent) throw new NotFoundException(`Agent "${catalogId}" not deployed for this business`);
         return agent;
     }
 
     /**
-     * Update an agent
+     * Deploy a catalog agent for a business (creates the deployed instance).
      */
-    async update(id: string, dto: UpdateAgentDto): Promise<Agent> {
-        try {
-            return await this.prisma.agent.update({
-                where: { id },
-                data: {
-                    ...(dto.name && { name: dto.name }),
-                    ...(dto.description !== undefined && { description: dto.description }),
-                    ...(dto.status && { status: dto.status }),
-                    ...(dto.aiConfig && { aiConfig: dto.aiConfig as any }),
-                    ...(dto.humanProfile && { humanProfile: dto.humanProfile as any }),
-                },
-            });
-        } catch (error: any) {
-            if (error.code === 'P2025') {
-                throw new NotFoundException(`Agent not found: ${id}`);
-            }
-            throw error;
-        }
-    }
+    async deploy(businessId: string, catalogId: string): Promise<any> {
+        const catalogItem = this.getCatalogItem(catalogId);
 
-    /**
-     * Delete an agent
-     */
-    async delete(id: string): Promise<void> {
-        try {
-            await this.prisma.agent.delete({
-                where: { id },
-            });
-        } catch (error: any) {
-            if (error.code === 'P2025') {
-                throw new NotFoundException(`Agent not found: ${id}`);
-            }
-            throw error;
-        }
-    }
+        const existing = await this.prisma.agent.findFirst({ where: { businessId, catalogId } });
+        if (existing) throw new ConflictException(`Agent "${catalogId}" is already deployed`);
 
-    /**
-     * Update agent status (ACTIVE, INACTIVE, PAUSED)
-     */
-    async updateStatus(id: string, status: AgentStatus): Promise<Agent> {
-        return this.update(id, { status: status as any });
-    }
-
-    /**
-     * Get agent availability (for human agents)
-     */
-    async getAvailability(id: string) {
-        const agent = await this.findOne(id);
-
-        if (agent.type !== AgentType.HUMAN) {
-            throw new Error('Only human agents have availability schedules');
-        }
-
-        return (agent.humanProfile as any)?.availability || null;
-    }
-
-    /**
-     * Update agent availability (for human agents)
-     */
-    async updateAvailability(id: string, availability: any): Promise<Agent> {
-        const agent = await this.findOne(id);
-
-        if (agent.type !== AgentType.HUMAN) {
-            throw new Error('Only human agents have availability schedules');
-        }
-
-        const humanProfile = agent.humanProfile as any;
-        return this.update(id, {
-            humanProfile: {
-                ...humanProfile,
-                availability,
-            },
-        });
-    }
-
-    /**
-     * Get agent performance metrics
-     */
-    async getMetrics(id: string, startDate?: Date, endDate?: Date) {
-        const agent = await this.findOne(id);
-
-        const where: any = {
-            agentId: id,
-            status: 'COMPLETED',
-        };
-
-        if (startDate) {
-            where.completedAt = { gte: startDate };
-        }
-        if (endDate) {
-            where.completedAt = { ...where.completedAt, lte: endDate };
-        }
-
-        const [
-            totalCalls,
-            completedAssignments,
-            sessions,
-        ] = await Promise.all([
-            // Total calls handled
-            this.prisma.callAssignment.count({ where }),
-
-            // Get completed assignments to calculate average handle time
-            this.prisma.callAssignment.findMany({
-                where,
-                select: {
-                    acceptedAt: true,
-                    completedAt: true,
-                },
-            }),
-
-            // Agent sessions
-            this.prisma.agentSession.findMany({
-                where: {
-                    agentId: id,
-                    ...(startDate && { startedAt: { gte: startDate } }),
-                    ...(endDate && { startedAt: { lte: endDate } }),
-                },
-                orderBy: { startedAt: 'desc' },
-                take: 10,
-            }),
-        ]);
-
-        // Calculate average handle time in seconds
-        let avgHandleTimeSeconds = 0;
-        if (completedAssignments.length > 0) {
-            const totalHandleTime = completedAssignments.reduce((sum, assignment) => {
-                if (assignment.acceptedAt && assignment.completedAt) {
-                    return sum + (assignment.completedAt.getTime() - assignment.acceptedAt.getTime());
-                }
-                return sum;
-            }, 0);
-            avgHandleTimeSeconds = totalHandleTime / completedAssignments.length / 1000;
-        }
-
-        return {
-            agentId: id,
-            agentName: agent.name,
-            totalCalls,
-            avgHandleTime: avgHandleTimeSeconds,
-            sessions,
-        };
-    }
-
-    /**
-     * Get agent call history
-     */
-    async getCallHistory(id: string, page = 1, limit = 20) {
-        const skip = (page - 1) * limit;
-
-        const [assignments, total] = await Promise.all([
-            this.prisma.callAssignment.findMany({
-                where: { agentId: id },
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    call: {
-                        select: {
-                            id: true,
-                            twilioCallSid: true,
-                            direction: true,
-                            status: true,
-                            startedAt: true,
-                            endedAt: true,
-                            isEmergency: true,
-                            tag: true,
-                        },
-                    },
-                },
-            }),
-            this.prisma.callAssignment.count({ where: { agentId: id } }),
-        ]);
-
-        return {
-            data: assignments,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-            },
-        };
-    }
-
-    /**
-     * Get available agents for a queue
-     */
-    async getAvailableAgents(hospitalId: string, specialization?: string): Promise<any[]> {
-        // Get agents that are ACTIVE and have an ONLINE session
-        const activeSessions = await this.prisma.agentSession.findMany({
-            where: {
-                status: AgentSessionStatus.ONLINE,
-                agent: {
-                    hospitalId,
-                    status: AgentStatus.ACTIVE,
-                    type: AgentType.HUMAN,
-                },
-            },
-            include: {
-                agent: {
-                    include: {
-                        callAssignments: {
-                            where: {
-                                status: {
-                                    in: ['ASSIGNED', 'ACCEPTED'],
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        });
-
-        // Filter by specialization if provided
-        const availableAgents = activeSessions
-            .filter(session => {
-                const humanProfile = session.agent.humanProfile as any;
-                if (!specialization) return true;
-                return humanProfile?.specialization?.includes(specialization);
-            })
-            .filter(session => {
-                // Check if agent is below max concurrent calls
-                const humanProfile = session.agent.humanProfile as any;
-                const maxConcurrent = humanProfile?.maxConcurrentCalls || 1;
-                const activeCalls = session.agent.callAssignments.length;
-                return activeCalls < maxConcurrent;
-            })
-            .map(session => session.agent);
-
-        return availableAgents;
-    }
-
-    /**
-     * Create or update agent session (for presence tracking)
-     */
-    async updateAgentSession(agentId: string, status: AgentSessionStatus) {
-        // Find active session for this agent
-        const activeSession = await this.prisma.agentSession.findFirst({
-            where: {
-                agentId,
-                endedAt: null,
-            },
-        });
-
-        if (status === AgentSessionStatus.OFFLINE) {
-            // End the active session
-            if (activeSession) {
-                return this.prisma.agentSession.update({
-                    where: { id: activeSession.id },
-                    data: {
-                        status: AgentSessionStatus.OFFLINE,
-                        endedAt: new Date(),
-                    },
-                });
-            }
-            return null;
-        }
-
-        if (activeSession) {
-            // Update existing session
-            return this.prisma.agentSession.update({
-                where: { id: activeSession.id },
-                data: { status },
-            });
-        }
-
-        // Create new session
-        return this.prisma.agentSession.create({
+        return this.prisma.agent.create({
             data: {
-                agentId,
-                status,
+                businessId,
+                catalogId,
+                name: catalogItem.name,
+                description: catalogItem.description,
+                status: 'ACTIVE',
+                nodeGraph: catalogItem.defaultNodeGraph as any,
+                toolConfig: {},
+                agentConfig: {
+                    scopeBoundary: catalogItem.scopeBoundary,
+                    icon: catalogItem.icon,
+                    color: catalogItem.color,
+                    tags: catalogItem.tags,
+                    toolConfigSchema: catalogItem.toolConfigSchema,
+                },
             },
         });
     }
 
     /**
-     * Get current agent session
+     * Update agent status (activate / pause / deactivate)
      */
-    async getCurrentSession(agentId: string) {
-        return this.prisma.agentSession.findFirst({
-            where: {
-                agentId,
-                endedAt: null,
-            },
-        });
+    async updateStatus(id: string, status: 'ACTIVE' | 'INACTIVE' | 'PAUSED'): Promise<any> {
+        return this.prisma.agent.update({ where: { id }, data: { status } });
+    }
+
+    /**
+     * Update the tool credentials for a deployed agent
+     */
+    async updateToolConfig(id: string, toolConfig: Record<string, unknown>): Promise<any> {
+        this.logger.info('Updating tool config', { agentId: id });
+        return this.prisma.agent.update({ where: { id }, data: { toolConfig: toolConfig as any } });
+    }
+
+    /**
+     * Update agent-level config (greeting scripts, thresholds, etc.)
+     */
+    async updateAgentConfig(id: string, agentConfig: Record<string, unknown>): Promise<any> {
+        return this.prisma.agent.update({ where: { id }, data: { agentConfig: agentConfig as any } });
+    }
+
+    /**
+     * Update the node graph for a deployed agent
+     */
+    async updateNodeGraph(id: string, nodeGraph: Record<string, unknown>): Promise<any> {
+        return this.prisma.agent.update({ where: { id }, data: { nodeGraph: nodeGraph as any } });
+    }
+
+    /**
+     * Call stats for a deployed agent — derived from call session tags
+     */
+    async getStats(id: string, businessId: string): Promise<any> {
+        const agent = await this.findOne(id);
+
+        const tagMap: Record<string, string> = {
+            scheduling: 'SCHEDULING',
+            billing: 'BILLING',
+            insurance: 'INSURANCE',
+            faq: 'FAQ',
+            'prescription-refill': 'PRESCRIPTION_REFILL',
+        };
+
+        const tag = tagMap[agent.catalogId];
+        if (!tag) return { totalCalls: 0, escalatedCalls: 0, voicemailCalls: 0, resolutionRate: 0 };
+
+        const [totalCalls, escalatedCalls, voicemailCalls] = await Promise.all([
+            this.prisma.callSession.count({ where: { businessId, tag: tag as any } }),
+            this.prisma.callSession.count({ where: { businessId, tag: tag as any, handoffs: { some: {} } } }),
+            this.prisma.callSession.count({ where: { businessId, tag: 'VOICEMAIL' as any } }),
+        ]);
+
+        const resolvedCalls = totalCalls - escalatedCalls - voicemailCalls;
+        const resolutionRate = totalCalls > 0 ? Math.round((resolvedCalls / totalCalls) * 100) : 0;
+
+        return { totalCalls, resolvedCalls, escalatedCalls, voicemailCalls, resolutionRate };
+    }
+
+    /**
+     * Remove a deployed agent from the business
+     */
+    async undeploy(id: string): Promise<void> {
+        try {
+            await this.prisma.agent.delete({ where: { id } });
+        } catch (err: any) {
+            if (err.code === 'P2025') throw new NotFoundException(`Agent "${id}" not found`);
+            throw err;
+        }
     }
 }

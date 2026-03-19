@@ -50,7 +50,7 @@ export class WorkflowExecutionLogService {
      */
     async getLogsForWorkflow(
         workflowId: string,
-        limit: number = 100,
+        _limit: number = 100,
     ): Promise<WorkflowExecutionLog[]> {
         this.logger.log(`Fetching execution logs for workflow ${workflowId}`);
         // In production, query from database

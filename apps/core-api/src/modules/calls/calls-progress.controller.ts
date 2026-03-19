@@ -32,7 +32,7 @@ export class CallsProgressController {
         @Param('callId') callId: string,
         @Body() progressData: CallProgressUpdate,
     ) {
-        this.logger.log(`Progress update for call ${callId}: state=${progressData.current_state}`);
+        this.logger.info(`Progress update for call ${callId}: state=${progressData.current_state}`);
 
         // In production, update call session in database
         // For now, just log

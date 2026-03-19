@@ -59,6 +59,8 @@ import { QuestionConfigPanel } from './config-panels/QuestionConfigPanel';
 import { WebhookConfigPanel } from './config-panels/WebhookConfigPanel';
 import { HumanDirectConfigPanel } from './config-panels/HumanDirectConfigPanel';
 import { CollectInfoConfigPanel } from './config-panels/CollectInfoConfigPanel';
+import { IntentDetectConfigPanel } from './config-panels/IntentDetectConfigPanel';
+import { RouteConfigPanel } from './config-panels/RouteConfigPanel';
 
 // Import node palette
 import { NodePalette } from './NodePalette';
@@ -511,17 +513,29 @@ export function EnhancedWorkflowEditor({
                                                     onChange={(updates) => updateNodeData(selectedNode.id, updates)}
                                                 />
                                             )}
-                                            {['voice-prompt', 'intent-detect', 'route'].includes(selectedNode.type || '') && (
+                                            {selectedNode.type === 'intent-detect' && (
+                                                <IntentDetectConfigPanel
+                                                    data={{ label: 'Detect Intent', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'route' && (
+                                                <RouteConfigPanel
+                                                    data={{ label: 'Route Call', ...selectedNode.data }}
+                                                    onChange={(updates) => updateNodeData(selectedNode.id, updates)}
+                                                />
+                                            )}
+                                            {selectedNode.type === 'voice-prompt' && (
                                                 <div className="text-center py-8 px-4">
                                                     <p className="text-sm text-muted-foreground mb-2">
                                                         Legacy node type
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        This is a legacy node. Consider using the newer node types for better features.
+                                                        This is a legacy voice-prompt node. Consider using the Question or AI Agent node instead.
                                                     </p>
                                                 </div>
                                             )}
-                                            {!['start', 'ai-agent', 'human-agent-queue', 'conditional', 'safety-check', 'integration', 'end', 'emergency-screen', 'question', 'webhook', 'human-agent-direct', 'collect-info', 'voice-prompt', 'intent-detect', 'route'].includes(selectedNode.type || '') && (
+                                            {!['start', 'ai-agent', 'human-agent-queue', 'conditional', 'safety-check', 'integration', 'end', 'emergency-screen', 'question', 'webhook', 'human-agent-direct', 'collect-info', 'intent-detect', 'route', 'voice-prompt'].includes(selectedNode.type || '') && (
                                                 <div className="text-center py-8">
                                                     <p className="text-sm text-muted-foreground">
                                                         No configuration available for this node type
