@@ -31,6 +31,52 @@ export interface TranscriptSegment {
     createdAt?: string;
 }
 
+export interface OperatingHoursSlot {
+    dayOfWeek: number;
+    isClosed: boolean;
+    startTime: string | null;
+    endTime: string | null;
+}
+
+export interface FollowUpTask {
+    id: string;
+    businessId: string;
+    callId?: string;
+    voicemailId?: string;
+    type:
+        | 'URGENT_CALLBACK'
+        | 'VOICEMAIL_REVIEW'
+        | 'MANUAL_REVIEW'
+        | 'APPOINTMENT_REQUEST'
+        | 'REFILL_REQUEST'
+        | 'INSURANCE_CHECK'
+        | 'BILLING_REQUEST';
+    status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+    title: string;
+    summary: string;
+    callerName?: string;
+    callerPhone?: string;
+    urgencyKeywords: string[];
+    metadata?: Record<string, unknown>;
+    dueAt?: string;
+    completedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    call?: {
+        id: string;
+        tag?: string;
+        startedAt?: string;
+        isEmergency?: boolean;
+    };
+    voicemail?: {
+        id: string;
+        isListened: boolean;
+        createdAt: string;
+        recordingUrl?: string;
+    };
+}
+
 export interface VoicemailRecord {
     id: string;
     callId: string;
@@ -48,6 +94,7 @@ export interface VoicemailRecord {
         startedAt?: string;
         isEmergency?: boolean;
     };
+    followUpTask?: Pick<FollowUpTask, 'id' | 'type' | 'priority' | 'status' | 'metadata'>;
 }
 
 export interface CallListItem {
@@ -65,6 +112,7 @@ export interface CallListItem {
     turnCount: number;
     hasVoicemail: boolean;
     voicemailListened: boolean;
+    followUpTaskCount?: number;
     duration: number;
     sentimentScore?: number;
     startedAt: string;
@@ -182,6 +230,7 @@ export interface BusinessSettings {
     settings?: {
         recordingDefault: string;
         transcriptRetentionDays: number;
+        operatingHours?: OperatingHoursSlot[];
         outOfScopeKeywords: string[];
         emergencyKeywords: string[];
     };
@@ -218,6 +267,37 @@ export interface BusinessIntegration {
     lastHealthCheckAt?: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface IntegrationHealthCheckResult {
+    ok: boolean;
+    message: string;
+    integration: BusinessIntegration;
+}
+
+export interface BusinessRuntimeConfig {
+    business: {
+        id: string;
+        name: string;
+        slug: string;
+        timeZone: string;
+        status: string;
+    };
+    settings: NonNullable<BusinessSettings['settings']>;
+    phoneNumbers: Array<{
+        id: string;
+        label: string;
+        twilioPhoneNumber: string;
+    }>;
+    integrations: Array<Pick<BusinessIntegration, 'id' | 'category' | 'vendor' | 'status' | 'capabilities' | 'lastHealthCheckAt'>>;
+    connectedIntegrationCategories: string[];
+    activeWorkflow?: {
+        id: string;
+        name: string;
+        description?: string;
+        version?: number;
+        graphJson?: unknown;
+    } | null;
 }
 
 export interface AgentCatalogItem {

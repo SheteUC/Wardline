@@ -352,6 +352,31 @@ export class WorkflowValidatorService {
                         });
                     }
                     break;
+
+                case 'integration':
+                    const integrationConfig = node.config as any;
+                    if (integrationConfig?.mode !== 'runtime_action') {
+                        errors.push({
+                            nodeId: node.id,
+                            type: 'invalid_config',
+                            message: `Integration node "${node.id}" must use a runtime action instead of vendor-specific HTTP config`,
+                        });
+                    }
+                    if (!integrationConfig?.runtimeAction) {
+                        errors.push({
+                            nodeId: node.id,
+                            type: 'invalid_config',
+                            message: `Integration node "${node.id}" must define a runtime action`,
+                        });
+                    }
+                    if (!integrationConfig?.integrationCategory) {
+                        errors.push({
+                            nodeId: node.id,
+                            type: 'invalid_config',
+                            message: `Integration node "${node.id}" must define an integration category`,
+                        });
+                    }
+                    break;
             }
         }
 

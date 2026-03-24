@@ -19,7 +19,7 @@ def ctx():
     from call_context import CallContext
     context = CallContext(call_sid="CA_test")
     context.call_id = "call-1"
-    context.hospital_id = "hosp-1"
+    context.business_id = "biz-1"
     return context
 
 
@@ -74,7 +74,7 @@ class TestLoadWorkflow:
         manager = WardlineFlowManager(ctx)
         # _load_default_workflow will also need a stub
         with patch.object(manager, "_load_default_workflow", new=AsyncMock(return_value=True)):
-            result = await manager.load_workflow("hosp-1")
+            result = await manager.load_workflow("biz-1")
         # Falls back to default, which returns True
         assert result is True
 
@@ -83,7 +83,7 @@ class TestLoadWorkflow:
         from flow_manager import WardlineFlowManager
         mock_api.get_active_workflow.return_value = simple_workflow_data
         manager = WardlineFlowManager(ctx)
-        result = await manager.load_workflow("hosp-1")
+        result = await manager.load_workflow("biz-1")
         assert result is True
         assert manager.workflow_graph is not None
         assert len(manager.workflow_graph.nodes) == 3
@@ -93,8 +93,8 @@ class TestLoadWorkflow:
         from flow_manager import WardlineFlowManager
         mock_api.get_active_workflow.return_value = simple_workflow_data
         manager = WardlineFlowManager(ctx)
-        await manager.load_workflow("hosp-1")
-        await manager.load_workflow("hosp-1")
+        await manager.load_workflow("biz-1")
+        await manager.load_workflow("biz-1")
         # API should only be called once
         mock_api.get_active_workflow.assert_awaited_once()
 
@@ -103,7 +103,7 @@ class TestLoadWorkflow:
         from flow_manager import WardlineFlowManager
         mock_api.get_active_workflow.return_value = {"graphJson": {}}
         manager = WardlineFlowManager(ctx)
-        result = await manager.load_workflow("hosp-1")
+        result = await manager.load_workflow("biz-1")
         assert result is False
 
 
@@ -117,7 +117,7 @@ class TestExecution:
         from flow_manager import WardlineFlowManager
         mock_api.get_active_workflow.return_value = simple_workflow_data
         manager = WardlineFlowManager(ctx)
-        await manager.load_workflow("hosp-1")
+        await manager.load_workflow("biz-1")
 
         with patch("flow_manager.create_node_executor") as mock_exec_factory:
             mock_executor = MagicMock()
@@ -134,7 +134,7 @@ class TestExecution:
         from flow_manager import WardlineFlowManager
         mock_api.get_active_workflow.return_value = simple_workflow_data
         manager = WardlineFlowManager(ctx)
-        await manager.load_workflow("hosp-1")
+        await manager.load_workflow("biz-1")
         await manager.start_execution()
 
         assert manager.execution_state is not None
@@ -156,7 +156,7 @@ class TestExecution:
         }
         mock_api.get_active_workflow.return_value = short_workflow
         manager = WardlineFlowManager(ctx)
-        await manager.load_workflow("hosp-1")
+        await manager.load_workflow("biz-1")
 
         with patch("flow_manager.create_node_executor") as mock_factory:
             exec_mock = MagicMock()
@@ -180,7 +180,7 @@ class TestEmergencyDetection:
         from flow_manager import WardlineFlowManager
         mock_api.get_active_workflow.return_value = simple_workflow_data
         manager = WardlineFlowManager(ctx)
-        await manager.load_workflow("hosp-1")
+        await manager.load_workflow("biz-1")
 
         ctx.is_emergency = True
 
@@ -219,7 +219,7 @@ class TestInfiniteLoopGuard:
         }
         mock_api.get_active_workflow.return_value = looping_workflow
         manager = WardlineFlowManager(ctx)
-        await manager.load_workflow("hosp-1")
+        await manager.load_workflow("biz-1")
 
         call_count = 0
         max_iterations = 50

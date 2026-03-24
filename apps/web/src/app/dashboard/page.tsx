@@ -20,6 +20,7 @@ import {
     useAgents,
     useCallAnalytics,
     useCalls,
+    useFollowUpTasks,
     useIntegrations,
     useVoicemails,
 } from '@/lib/hooks/query-hooks';
@@ -61,12 +62,19 @@ export default function DashboardPage() {
     const callsQuery = useCalls({ page: 1, pageSize: 6 });
     const analyticsQuery = useCallAnalytics(startOfToday, now);
     const voicemailsQuery = useVoicemails(true);
+    const followUpTasksQuery = useFollowUpTasks();
     const agentsQuery = useAgents();
     const integrationsQuery = useIntegrations();
 
     const recentCalls = callsQuery.data?.data ?? [];
     const analytics = analyticsQuery.data;
     const voicemails = voicemailsQuery.data ?? [];
+    const openTasks = (followUpTasksQuery.data ?? []).filter(
+        (task) => task.status !== 'COMPLETED' && task.status !== 'CANCELLED',
+    );
+    const urgentTasks = openTasks.filter(
+        (task) => task.priority === 'URGENT' || task.type === 'URGENT_CALLBACK',
+    );
     const agents = agentsQuery.data ?? [];
     const integrations = integrationsQuery.data ?? [];
 
@@ -143,7 +151,7 @@ export default function DashboardPage() {
                     },
                     {
                         label: 'Urgent Calls',
-                        value: analytics?.emergencyCalls ?? 0,
+                        value: urgentTasks.length,
                         detail: 'Requires follow-up queue review',
                         icon: AlertTriangle,
                     },

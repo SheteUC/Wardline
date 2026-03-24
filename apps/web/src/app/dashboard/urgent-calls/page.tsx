@@ -3,18 +3,28 @@
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, ChevronRight, Phone } from 'lucide-react';
-import { Card } from '@/components/dashboard/shared';
-import { useCalls } from '@/lib/hooks/query-hooks';
+import { Button, Card } from '@/components/dashboard/shared';
+import { useFollowUpTasks, useUpdateFollowUpTaskStatus } from '@/lib/hooks/query-hooks';
 
-const TAG_LABEL: Record<string, string> = {
-    EMERGENCY: 'Emergency',
-    HUMAN_TRANSFER: 'Escalated',
-    VOICEMAIL: 'Urgent voicemail',
+const TYPE_LABELS: Record<string, string> = {
+    URGENT_CALLBACK: 'Urgent callback',
+    MANUAL_REVIEW: 'Manual review',
+    APPOINTMENT_REQUEST: 'Appointment request',
+    REFILL_REQUEST: 'Refill request',
+    INSURANCE_CHECK: 'Insurance check',
+    BILLING_REQUEST: 'Billing request',
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 export default function UrgentCallsPage() {
-    const callsQuery = useCalls({ isEmergency: true, page: 1, pageSize: 50 });
-    const calls = callsQuery.data?.data ?? [];
+    const followUpTasksQuery = useFollowUpTasks({ priority: 'URGENT' });
+    const updateStatus = useUpdateFollowUpTaskStatus();
+    const tasks = (followUpTasksQuery.data ?? []).filter(
+        (task) => task.status !== 'COMPLETED' && task.status !== 'CANCELLED',
+    );
 
     return (
         <div className="space-y-5">
@@ -25,50 +35,120 @@ export default function UrgentCallsPage() {
                 <div>
                     <h2 className="text-xl font-semibold text-foreground">Urgent Calls</h2>
                     <p className="text-sm text-muted-foreground">
-                        Review urgent and emergency-tagged calls captured by the after-hours and safety flow.
+                        Priority voicemails and urgent tasks captured by the after-hours and safety guard flow.
                     </p>
                 </div>
             </div>
 
             <Card>
-                {callsQuery.isLoading ? (
+                {followUpTasksQuery.isLoading ? (
                     <div className="py-16 text-center text-sm text-muted-foreground">Loading urgent calls...</div>
-                ) : callsQuery.isError ? (
+                ) : followUpTasksQuery.isError ? (
                     <div className="py-16 text-center text-sm text-destructive">Failed to load urgent calls.</div>
-                ) : calls.length === 0 ? (
+                ) : tasks.length === 0 ? (
                     <div className="py-16 text-center text-sm text-muted-foreground">
                         No urgent calls are waiting right now.
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {calls.map((call) => (
-                            <Link
-                                key={call.id}
-                                href={`/dashboard/calls/${call.id}`}
-                                className="flex items-center justify-between rounded-2xl p-4 transition-colors hover:bg-[var(--background)]/60"
-                            >
-                                <div className="flex min-w-0 items-center gap-3">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-700 neo-inset">
-                                        <Phone className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm font-medium text-foreground">
-                                            {call.callerName ?? call.callerPhone}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">{call.callerPhone}</p>
+                        {tasks.map((task) => {
+                            const metadata = isRecord(task.metadata) ? task.metadata : {};
+                            const fallbackReason =
+                                typeof metadata.fallbackReason === 'string' ? metadata.fallbackReason : null;
+
+                            return (
+                                <div
+                                    key={task.id}
+                                    className="rounded-2xl bg-[var(--background)] p-4 neo-inset"
+                                >
+                                    <div className="flex flex-wrap items-start justify-between gap-4">
+                                        <Link
+                                            href={task.callId ? `/dashboard/calls/${task.callId}` : '/dashboard/follow-ups'}
+                                            className="min-w-0 flex-1"
+                                        >
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-700 neo-inset">
+                                                    <Phone className="h-4 w-4" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium text-foreground">
+                                                        {task.callerName ?? task.callerPhone ?? task.title}
+                                                    </p>
+                                                    <p className="truncate text-xs text-muted-foreground">
+                                                        {task.title}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p className="mt-3 text-sm text-muted-foreground">{task.summary}</p>
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                <span className="rounded-full bg-red-500/12 px-2 py-0.5 text-xs font-semibold text-red-800">
+                                                    {TYPE_LABELS[task.type] || 'Urgent'}
+                                                </span>
+                                                <span className="rounded-full bg-[var(--background)] px-2 py-0.5 text-xs font-medium text-muted-foreground neo-flat">
+                                                    {task.status.replaceAll('_', ' ').toLowerCase()}
+                                                </span>
+                                                {task.urgencyKeywords.map((keyword) => (
+                                                    <span
+                                                        key={keyword}
+                                                        className="rounded-full bg-amber-500/12 px-2 py-0.5 text-xs font-medium text-amber-800"
+                                                    >
+                                                        {keyword}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            {fallbackReason && (
+                                                <p className="mt-2 text-xs text-amber-700">
+                                                    Live action downgraded because {fallbackReason.replaceAll('_', ' ')}.
+                                                </p>
+                                            )}
+                                        </Link>
+
+                                        <div className="flex shrink-0 flex-col items-end gap-2">
+                                            <span className="text-xs text-muted-foreground">
+                                                {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}
+                                            </span>
+                                            <div className="flex gap-2">
+                                                {task.status === 'OPEN' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="h-8 px-3 text-xs"
+                                                        onClick={() =>
+                                                            updateStatus.mutate({
+                                                                taskId: task.id,
+                                                                status: 'IN_PROGRESS',
+                                                            })
+                                                        }
+                                                        disabled={updateStatus.isPending}
+                                                    >
+                                                        Start
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    className="h-8 px-3 text-xs"
+                                                    onClick={() =>
+                                                        updateStatus.mutate({
+                                                            taskId: task.id,
+                                                            status: 'COMPLETED',
+                                                        })
+                                                    }
+                                                    disabled={updateStatus.isPending}
+                                                >
+                                                    Complete
+                                                </Button>
+                                                <Link
+                                                    href={task.callId ? `/dashboard/calls/${task.callId}` : '/dashboard/follow-ups'}
+                                                    className="inline-flex h-8 items-center gap-1 rounded-2xl px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                                                >
+                                                    Open
+                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                </Link>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex shrink-0 items-center gap-3">
-                                    <span className="rounded-full bg-red-500/12 px-2 py-0.5 text-xs font-semibold text-red-800">
-                                        {TAG_LABEL[call.tag || 'EMERGENCY'] || call.tag || 'Urgent'}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {formatDistanceToNow(new Date(call.startedAt), { addSuffix: true })}
-                                    </span>
-                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                            </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </Card>

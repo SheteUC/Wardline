@@ -2,9 +2,13 @@
 node_modules/
 .pnp
 .pnp.js
+venv/
+.venv/
 
 # Testing
 coverage/
+.coverage
+.coverage.*
 *.log
 
 # Next.js
@@ -12,6 +16,13 @@ coverage/
 out/
 build/
 dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Environment files
 .env
@@ -34,10 +45,12 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+.corepack/
 
 # Prisma
 *.db
 *.db-journal
+*.tsbuildinfo
 
 # Azure / Deployment
 *.deployment

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Clock, Save, Shield, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +18,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useBusiness } from '@/lib/business-context';
 import { useBusinessSettings, useUpdateBusinessSettings } from '@/lib/hooks/query-hooks';
+import type { OperatingHoursSlot } from '@/lib/api-types';
 
 interface WorkflowSettingsPanelProps {
     onClose: () => void;
@@ -27,6 +29,32 @@ function normalizeKeywordList(value: string): string[] {
         .split(/[\n,]/)
         .map((item) => item.trim())
         .filter(Boolean);
+}
+
+const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const DEFAULT_OPERATING_HOURS: OperatingHoursSlot[] = [
+    { dayOfWeek: 0, isClosed: true, startTime: null, endTime: null },
+    { dayOfWeek: 1, isClosed: false, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 2, isClosed: false, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 3, isClosed: false, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 4, isClosed: false, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 5, isClosed: false, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 6, isClosed: true, startTime: null, endTime: null },
+];
+
+function normalizeOperatingHours(value?: OperatingHoursSlot[]): OperatingHoursSlot[] {
+    const byDay = new Map((value ?? []).map((entry) => [entry.dayOfWeek, entry]));
+    return DEFAULT_OPERATING_HOURS.map((fallback) => {
+        const current = byDay.get(fallback.dayOfWeek);
+        if (!current) return fallback;
+        return {
+            dayOfWeek: fallback.dayOfWeek,
+            isClosed: current.isClosed,
+            startTime: current.isClosed ? null : current.startTime ?? fallback.startTime,
+            endTime: current.isClosed ? null : current.endTime ?? fallback.endTime,
+        };
+    });
 }
 
 export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
@@ -40,6 +68,7 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
     const [transcriptRetentionDays, setTranscriptRetentionDays] = useState(7);
     const [emergencyKeywords, setEmergencyKeywords] = useState('');
     const [outOfScopeKeywords, setOutOfScopeKeywords] = useState('');
+    const [operatingHours, setOperatingHours] = useState<OperatingHoursSlot[]>(DEFAULT_OPERATING_HOURS);
 
     useEffect(() => {
         const settings = businessQuery.data?.settings;
@@ -49,8 +78,27 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
         setTranscriptRetentionDays(settings.transcriptRetentionDays ?? 7);
         setEmergencyKeywords((settings.emergencyKeywords || []).join(', '));
         setOutOfScopeKeywords((settings.outOfScopeKeywords || []).join(', '));
+        setOperatingHours(normalizeOperatingHours(settings.operatingHours));
         setHasChanges(false);
     }, [businessQuery.data?.settings]);
+
+    const updateOperatingHour = (dayOfWeek: number, patch: Partial<OperatingHoursSlot>) => {
+        setOperatingHours((current) =>
+            current.map((entry) => {
+                if (entry.dayOfWeek !== dayOfWeek) return entry;
+                const next = { ...entry, ...patch };
+                if (next.isClosed) {
+                    next.startTime = null;
+                    next.endTime = null;
+                } else {
+                    next.startTime = next.startTime ?? '09:00';
+                    next.endTime = next.endTime ?? '17:00';
+                }
+                return next;
+            }),
+        );
+        setHasChanges(true);
+    };
 
     const handleSave = async () => {
         if (!businessId) return;
@@ -60,6 +108,7 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
             await updateSettings.mutateAsync({
                 recordingDefault,
                 transcriptRetentionDays,
+                operatingHours,
                 emergencyKeywords: normalizeKeywordList(emergencyKeywords),
                 outOfScopeKeywords: normalizeKeywordList(outOfScopeKeywords),
             });
@@ -112,6 +161,70 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
                     <ScrollArea className="h-full px-6 py-5">
                         <div className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
                             <div className="space-y-6">
+                                <section className="rounded-2xl border p-5">
+                                    <div className="mb-4 flex items-start gap-3">
+                                        <div className="rounded-xl bg-emerald-100 p-2">
+                                            <Clock className="h-4 w-4 text-emerald-700" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold">Operating hours</h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                After-hours voicemail and urgent-call behavior use this weekly schedule in the business timezone.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {operatingHours.map((entry) => (
+                                            <div
+                                                key={entry.dayOfWeek}
+                                                className="grid gap-3 rounded-2xl border border-border/70 bg-[var(--background)] p-3 md:grid-cols-[160px_1fr_1fr]"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Checkbox
+                                                        id={`closed-${entry.dayOfWeek}`}
+                                                        checked={entry.isClosed}
+                                                        onCheckedChange={(checked) => {
+                                                            updateOperatingHour(entry.dayOfWeek, { isClosed: !!checked });
+                                                        }}
+                                                    />
+                                                    <label htmlFor={`closed-${entry.dayOfWeek}`} className="text-sm font-medium text-foreground">
+                                                        {DAY_LABELS[entry.dayOfWeek]}
+                                                    </label>
+                                                </div>
+
+                                                <div>
+                                                    <Label htmlFor={`start-${entry.dayOfWeek}`}>Opens</Label>
+                                                    <Input
+                                                        id={`start-${entry.dayOfWeek}`}
+                                                        type="time"
+                                                        value={entry.startTime ?? ''}
+                                                        disabled={entry.isClosed}
+                                                        onChange={(event) => {
+                                                            updateOperatingHour(entry.dayOfWeek, { startTime: event.target.value });
+                                                        }}
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label htmlFor={`end-${entry.dayOfWeek}`}>Closes</Label>
+                                                    <Input
+                                                        id={`end-${entry.dayOfWeek}`}
+                                                        type="time"
+                                                        value={entry.endTime ?? ''}
+                                                        disabled={entry.isClosed}
+                                                        onChange={(event) => {
+                                                            updateOperatingHour(entry.dayOfWeek, { endTime: event.target.value });
+                                                        }}
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+
                                 <section className="rounded-2xl border p-5">
                                     <div className="mb-4 flex items-start gap-3">
                                         <div className="rounded-xl bg-sky-100 p-2">
@@ -247,6 +360,7 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
                                     <div className="mt-4 space-y-3 text-sm text-muted-foreground">
                                         <p>Business recording default</p>
                                         <p>Transcript retention window</p>
+                                        <p>Weekly operating hours</p>
                                         <p>Emergency keyword overrides</p>
                                         <p>Out-of-scope keyword overrides</p>
                                     </div>

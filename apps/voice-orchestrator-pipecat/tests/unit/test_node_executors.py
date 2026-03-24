@@ -32,13 +32,17 @@ def mock_context():
     """Create a mock call context"""
     context = Mock(spec=CallContext)
     context.call_id = "test-call-123"
-    context.hospital_id = "hospital-1"
+    context.business_id = "business-1"
     context.call_sid = "CA123"
-    context.state = CallState.IN_PROGRESS
+    context.state = CallState.AGENT_HANDLING
     context.detected_intent = IntentType.APPOINTMENT
     context.conversation_history = []
     context.collected_fields = {}
-    context.sentiment = Mock(frustration=0.2, satisfaction=0.8)
+    context.caller_phone = "+15550000000"
+    context.caller_name = "Test Caller"
+    context.get_conversation_text = Mock(return_value="CALLER: I need help")
+    context.mark_action_outcome = Mock()
+    context.sentiment = Mock(frustration_level=0.2, urgency_level=0.1, overall_score=0.4)
     return context
 
 
@@ -307,112 +311,90 @@ class TestIntegrationNodeExecutor:
     """Test Integration node executor"""
     
     @pytest.mark.asyncio
-    async def test_get_request_success(self, mock_context):
-        """Test successful GET request"""
+    async def test_runtime_action_success(self, mock_context):
+        """Test successful runtime action execution"""
         node = WorkflowNode(
             id="int-1",
             type="integration",
             config={
-                "method": "GET",
-                "endpointUrl": "https://api.test.com/patient/123",
-                "responseMapping": {"data.id": "patient_id"},
+                "runtimeAction": "insurance-check",
+                "integrationCategory": "INSURANCE",
             }
         )
         
         executor = IntegrationNodeExecutor(node, mock_context)
         
-        with patch('httpx.AsyncClient.get', new_callable=AsyncMock) as mock_get:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": {"id": "P123", "name": "Test"}}
-            mock_get.return_value = mock_response
+        with patch('core_api_client.api_client.execute_runtime_action', new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = {
+                "handledLive": True,
+                "message": "I checked that insurance information live.",
+                "data": {"isAccepted": True},
+            }
             
             result = await executor.execute()
             
             assert result.success is True
-            assert "patient_id" in result.context_updates
-            assert result.context_updates["patient_id"] == "P123"
+            assert result.context_updates["runtime_action"] == "insurance-check"
+            assert result.context_updates["handledLive"] is True
     
     @pytest.mark.asyncio
-    async def test_post_request_with_template(self, mock_context):
-        """Test POST request with template variables"""
-        mock_context.collected_fields = {"name": "John Doe", "phone": "555-1234"}
+    async def test_builds_runtime_payload_from_collected_fields(self, mock_context):
+        """Test runtime payload mapping for appointment requests"""
+        mock_context.collected_fields = {
+            "caller_name": "John Doe",
+            "caller_phone": "555-1234",
+            "service_type": "Annual Exam",
+            "preferred_date": "2026-03-25",
+        }
         
         node = WorkflowNode(
             id="int-1",
             type="integration",
             config={
-                "method": "POST",
-                "endpointUrl": "https://api.test.com/appointments",
-                "bodyTemplate": '{"name": "{{name}}", "phone": "{{phone}}"}',
+                "runtimeAction": "appointment-request",
+                "integrationCategory": "SCHEDULING",
             }
         )
         
         executor = IntegrationNodeExecutor(node, mock_context)
         
-        with patch('httpx.AsyncClient.post', new_callable=AsyncMock) as mock_post:
-            mock_response = Mock()
-            mock_response.status_code = 201
-            mock_response.json.return_value = {"id": "APT123"}
-            mock_post.return_value = mock_response
+        with patch('core_api_client.api_client.execute_runtime_action', new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = {
+                "handledLive": True,
+                "message": "Appointment request submitted.",
+                "data": {"externalReferenceId": "APT123"},
+            }
             
             result = await executor.execute()
             
             assert result.success is True
-            # Verify template was replaced
-            call_args = mock_post.call_args
-            assert "John Doe" in str(call_args)
+            call_args = mock_execute.await_args.args
+            assert call_args[0] == "business-1"
+            assert call_args[1] == "appointment-request"
+            assert call_args[2]["callerName"] == "John Doe"
+            assert call_args[2]["serviceType"] == "Annual Exam"
+            assert call_args[2]["confirmed"] is True
     
     @pytest.mark.asyncio
-    async def test_retry_on_failure(self, mock_context):
-        """Test retry logic on failure"""
+    async def test_error_handling_returns_failure(self, mock_context):
+        """Test runtime action failure handling"""
         node = WorkflowNode(
             id="int-1",
             type="integration",
             config={
-                "method": "GET",
-                "endpointUrl": "https://api.test.com/test",
-                "retryCount": 3,
+                "runtimeAction": "billing-request",
+                "integrationCategory": "BILLING",
             }
         )
         
         executor = IntegrationNodeExecutor(node, mock_context)
         
-        with patch('httpx.AsyncClient.get', new_callable=AsyncMock) as mock_get:
-            # Fail twice, succeed on third
-            mock_get.side_effect = [
-                Exception("Timeout"),
-                Exception("Connection error"),
-                Mock(status_code=200, json=lambda: {"data": "success"})
-            ]
+        with patch('core_api_client.api_client.execute_runtime_action', new_callable=AsyncMock) as mock_execute:
+            mock_execute.side_effect = Exception("API Error")
             
             result = await executor.execute()
             
-            assert result.success is True
-            assert mock_get.call_count == 3
-    
-    @pytest.mark.asyncio
-    async def test_error_handling_continue(self, mock_context):
-        """Test continue on error"""
-        node = WorkflowNode(
-            id="int-1",
-            type="integration",
-            config={
-                "method": "GET",
-                "endpointUrl": "https://api.test.com/test",
-                "errorHandling": "continue",
-            }
-        )
-        
-        executor = IntegrationNodeExecutor(node, mock_context)
-        
-        with patch('httpx.AsyncClient.get', new_callable=AsyncMock) as mock_get:
-            mock_get.side_effect = Exception("API Error")
-            
-            result = await executor.execute()
-            
-            # Should continue despite error
-            assert result.success is True
+            assert result.success is False
             assert result.error_message is not None
 
 

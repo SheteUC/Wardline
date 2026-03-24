@@ -138,6 +138,39 @@ export const Speaker = {
 export type Speaker = (typeof Speaker)[keyof typeof Speaker]
 
 
+export const FollowUpTaskType = {
+  URGENT_CALLBACK: 'URGENT_CALLBACK',
+  VOICEMAIL_REVIEW: 'VOICEMAIL_REVIEW',
+  MANUAL_REVIEW: 'MANUAL_REVIEW',
+  APPOINTMENT_REQUEST: 'APPOINTMENT_REQUEST',
+  REFILL_REQUEST: 'REFILL_REQUEST',
+  INSURANCE_CHECK: 'INSURANCE_CHECK',
+  BILLING_REQUEST: 'BILLING_REQUEST'
+} as const
+
+export type FollowUpTaskType = (typeof FollowUpTaskType)[keyof typeof FollowUpTaskType]
+
+
+export const FollowUpTaskStatus = {
+  OPEN: 'OPEN',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type FollowUpTaskStatus = (typeof FollowUpTaskStatus)[keyof typeof FollowUpTaskStatus]
+
+
+export const FollowUpTaskPriority = {
+  LOW: 'LOW',
+  NORMAL: 'NORMAL',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT'
+} as const
+
+export type FollowUpTaskPriority = (typeof FollowUpTaskPriority)[keyof typeof FollowUpTaskPriority]
+
+
 export const AgentStatus = {
   ACTIVE: 'ACTIVE',
   INACTIVE: 'INACTIVE',

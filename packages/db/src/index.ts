@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './load-env';
 import { PrismaClient } from './generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
@@ -20,4 +20,5 @@ if (process.env.NODE_ENV !== 'production') {
     globalForPrisma.prisma = prisma;
 }
 
+export { AGENT_CATALOG } from './agent-catalog';
 export * from './generated/prisma/client';

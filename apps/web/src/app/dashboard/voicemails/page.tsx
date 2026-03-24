@@ -17,6 +17,10 @@ const TAG_LABEL: Record<string, string> = {
     EMERGENCY: 'Emergency',
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 export default function VoicemailsPage() {
     const [playing, setPlaying] = useState<string | null>(null);
     const voicemailsQuery = useVoicemails();
@@ -70,6 +74,24 @@ export default function VoicemailsPage() {
                             key={voicemail.id}
                             className={cn('transition-all', !voicemail.isListened && 'ring-2 ring-red-500/20')}
                         >
+                            {(() => {
+                                const followUpMetadata = isRecord(voicemail.followUpTask?.metadata)
+                                    ? voicemail.followUpTask.metadata
+                                    : {};
+                                const originatingAction =
+                                    typeof followUpMetadata.originatingAction === 'string'
+                                        ? followUpMetadata.originatingAction
+                                        : null;
+                                const fallbackReason =
+                                    typeof followUpMetadata.fallbackReason === 'string'
+                                        ? followUpMetadata.fallbackReason
+                                        : null;
+                                const liveAttemptMessage =
+                                    typeof followUpMetadata.liveAttemptMessage === 'string'
+                                        ? followUpMetadata.liveAttemptMessage
+                                        : null;
+
+                                return (
                             <div className="flex items-start gap-4">
                                 <div
                                     className={cn(
@@ -97,6 +119,16 @@ export default function VoicemailsPage() {
                                                         {TAG_LABEL[voicemail.call.tag] ?? voicemail.call.tag}
                                                     </span>
                                                 )}
+                                                {voicemail.followUpTask && (
+                                                    <span className="rounded-full bg-amber-500/12 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                                        Follow-up {voicemail.followUpTask.status.toLowerCase()}
+                                                    </span>
+                                                )}
+                                                {originatingAction && (
+                                                    <span className="rounded-full bg-[var(--background)] px-2 py-0.5 text-xs font-medium text-muted-foreground neo-flat">
+                                                        {originatingAction.replaceAll('-', ' ')}
+                                                    </span>
+                                                )}
                                             </div>
                                             {voicemail.callerName && (
                                                 <p className="text-xs text-muted-foreground">{voicemail.callerPhone}</p>
@@ -110,6 +142,23 @@ export default function VoicemailsPage() {
                                     </div>
 
                                     <p className="mb-2 text-xs text-muted-foreground">{voicemail.context}</p>
+                                    {voicemail.followUpTask && (
+                                        <div className="mb-2 space-y-1">
+                                            <p className="text-xs text-muted-foreground">
+                                                Linked task: {voicemail.followUpTask.type.replaceAll('_', ' ').toLowerCase()}
+                                            </p>
+                                            {fallbackReason && (
+                                                <p className="text-xs text-amber-700">
+                                                    Live action downgraded because {fallbackReason.replaceAll('_', ' ')}.
+                                                </p>
+                                            )}
+                                            {liveAttemptMessage && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Last runtime message: {liveAttemptMessage}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {voicemail.transcription && (
                                         <div className="mb-3 rounded-2xl bg-[var(--background)] p-3 neo-inset">
@@ -156,6 +205,8 @@ export default function VoicemailsPage() {
                                     </div>
                                 </div>
                             </div>
+                                );
+                            })()}
                         </Card>
                     ))}
                 </div>

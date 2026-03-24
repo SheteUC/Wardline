@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { resolve } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
 import { ClerkModule } from './auth/clerk.module';
@@ -19,12 +20,19 @@ import { AgentsModule } from './modules/agents/agents.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { EscalationsModule } from './modules/escalations/escalations.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { FollowUpTasksModule } from './modules/follow-up-tasks/follow-up-tasks.module';
+import { RuntimeActionsModule } from './modules/runtime-actions/runtime-actions.module';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            envFilePath: ['.env.local', '.env'],
+            envFilePath: [
+                resolve(__dirname, '../../../.env.local'),
+                resolve(__dirname, '../../../.env'),
+                resolve(__dirname, '../.env.local'),
+                resolve(__dirname, '../.env'),
+            ],
         }),
         ScheduleModule.forRoot(),
         PrismaModule,
@@ -40,6 +48,8 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
         SafetyModule,
         EscalationsModule,
         IntegrationsModule,
+        FollowUpTasksModule,
+        RuntimeActionsModule,
     ],
     providers: [
         // Global authentication guard - validates JWT tokens

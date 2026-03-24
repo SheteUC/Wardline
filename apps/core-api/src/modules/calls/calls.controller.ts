@@ -124,6 +124,9 @@ export class CallsController {
             recordingUrl: string;
             transcription?: string;
             context: string;
+            createFollowUp?: boolean;
+            isUrgent?: boolean;
+            urgencyKeywords?: string[];
         },
     ) {
         return this.callsService.createVoicemail({ callId, ...body });

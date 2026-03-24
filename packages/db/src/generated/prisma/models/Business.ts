@@ -212,6 +212,7 @@ export type BusinessWhereInput = {
   appointments?: Prisma.AppointmentListRelationFilter
   agents?: Prisma.AgentListRelationFilter
   voicemails?: Prisma.VoicemailRecordListRelationFilter
+  followUpTasks?: Prisma.FollowUpTaskListRelationFilter
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
   insurancePlans?: Prisma.InsurancePlanListRelationFilter
   insuranceInquiries?: Prisma.InsuranceInquiryListRelationFilter
@@ -240,6 +241,7 @@ export type BusinessOrderByWithRelationInput = {
   appointments?: Prisma.AppointmentOrderByRelationAggregateInput
   agents?: Prisma.AgentOrderByRelationAggregateInput
   voicemails?: Prisma.VoicemailRecordOrderByRelationAggregateInput
+  followUpTasks?: Prisma.FollowUpTaskOrderByRelationAggregateInput
   prescriptionRefills?: Prisma.PrescriptionRefillOrderByRelationAggregateInput
   insurancePlans?: Prisma.InsurancePlanOrderByRelationAggregateInput
   insuranceInquiries?: Prisma.InsuranceInquiryOrderByRelationAggregateInput
@@ -271,6 +273,7 @@ export type BusinessWhereUniqueInput = Prisma.AtLeast<{
   appointments?: Prisma.AppointmentListRelationFilter
   agents?: Prisma.AgentListRelationFilter
   voicemails?: Prisma.VoicemailRecordListRelationFilter
+  followUpTasks?: Prisma.FollowUpTaskListRelationFilter
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
   insurancePlans?: Prisma.InsurancePlanListRelationFilter
   insuranceInquiries?: Prisma.InsuranceInquiryListRelationFilter
@@ -325,6 +328,7 @@ export type BusinessCreateInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -353,6 +357,7 @@ export type BusinessUncheckedCreateInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -381,6 +386,7 @@ export type BusinessUpdateInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -409,6 +415,7 @@ export type BusinessUncheckedUpdateInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -632,6 +639,20 @@ export type BusinessUpdateOneRequiredWithoutVoicemailsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.BusinessUpdateToOneWithWhereWithoutVoicemailsInput, Prisma.BusinessUpdateWithoutVoicemailsInput>, Prisma.BusinessUncheckedUpdateWithoutVoicemailsInput>
 }
 
+export type BusinessCreateNestedOneWithoutFollowUpTasksInput = {
+  create?: Prisma.XOR<Prisma.BusinessCreateWithoutFollowUpTasksInput, Prisma.BusinessUncheckedCreateWithoutFollowUpTasksInput>
+  connectOrCreate?: Prisma.BusinessCreateOrConnectWithoutFollowUpTasksInput
+  connect?: Prisma.BusinessWhereUniqueInput
+}
+
+export type BusinessUpdateOneRequiredWithoutFollowUpTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.BusinessCreateWithoutFollowUpTasksInput, Prisma.BusinessUncheckedCreateWithoutFollowUpTasksInput>
+  connectOrCreate?: Prisma.BusinessCreateOrConnectWithoutFollowUpTasksInput
+  upsert?: Prisma.BusinessUpsertWithoutFollowUpTasksInput
+  connect?: Prisma.BusinessWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.BusinessUpdateToOneWithWhereWithoutFollowUpTasksInput, Prisma.BusinessUpdateWithoutFollowUpTasksInput>, Prisma.BusinessUncheckedUpdateWithoutFollowUpTasksInput>
+}
+
 export type BusinessCreateNestedOneWithoutAuditLogsInput = {
   create?: Prisma.XOR<Prisma.BusinessCreateWithoutAuditLogsInput, Prisma.BusinessUncheckedCreateWithoutAuditLogsInput>
   connectOrCreate?: Prisma.BusinessCreateOrConnectWithoutAuditLogsInput
@@ -765,6 +786,7 @@ export type BusinessCreateWithoutSettingsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -792,6 +814,7 @@ export type BusinessUncheckedCreateWithoutSettingsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -835,6 +858,7 @@ export type BusinessUpdateWithoutSettingsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -862,6 +886,7 @@ export type BusinessUncheckedUpdateWithoutSettingsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -889,6 +914,7 @@ export type BusinessCreateWithoutIntegrationsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -916,6 +942,7 @@ export type BusinessUncheckedCreateWithoutIntegrationsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -959,6 +986,7 @@ export type BusinessUpdateWithoutIntegrationsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -986,6 +1014,7 @@ export type BusinessUncheckedUpdateWithoutIntegrationsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1013,6 +1042,7 @@ export type BusinessCreateWithoutUsersInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1040,6 +1070,7 @@ export type BusinessUncheckedCreateWithoutUsersInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1083,6 +1114,7 @@ export type BusinessUpdateWithoutUsersInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1110,6 +1142,7 @@ export type BusinessUncheckedUpdateWithoutUsersInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1137,6 +1170,7 @@ export type BusinessCreateWithoutPhoneNumbersInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1164,6 +1198,7 @@ export type BusinessUncheckedCreateWithoutPhoneNumbersInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1207,6 +1242,7 @@ export type BusinessUpdateWithoutPhoneNumbersInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1234,6 +1270,7 @@ export type BusinessUncheckedUpdateWithoutPhoneNumbersInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1261,6 +1298,7 @@ export type BusinessCreateWithoutWorkflowsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1288,6 +1326,7 @@ export type BusinessUncheckedCreateWithoutWorkflowsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1331,6 +1370,7 @@ export type BusinessUpdateWithoutWorkflowsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1358,6 +1398,7 @@ export type BusinessUncheckedUpdateWithoutWorkflowsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1385,6 +1426,7 @@ export type BusinessCreateWithoutCallersInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1412,6 +1454,7 @@ export type BusinessUncheckedCreateWithoutCallersInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1455,6 +1498,7 @@ export type BusinessUpdateWithoutCallersInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1482,6 +1526,7 @@ export type BusinessUncheckedUpdateWithoutCallersInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1509,6 +1554,7 @@ export type BusinessCreateWithoutSchedulingIntegrationsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1536,6 +1582,7 @@ export type BusinessUncheckedCreateWithoutSchedulingIntegrationsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1579,6 +1626,7 @@ export type BusinessUpdateWithoutSchedulingIntegrationsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1606,6 +1654,7 @@ export type BusinessUncheckedUpdateWithoutSchedulingIntegrationsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1633,6 +1682,7 @@ export type BusinessCreateWithoutAppointmentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1660,6 +1710,7 @@ export type BusinessUncheckedCreateWithoutAppointmentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1703,6 +1754,7 @@ export type BusinessUpdateWithoutAppointmentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1730,6 +1782,7 @@ export type BusinessUncheckedUpdateWithoutAppointmentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1757,6 +1810,7 @@ export type BusinessCreateWithoutCallSessionsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1784,6 +1838,7 @@ export type BusinessUncheckedCreateWithoutCallSessionsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1827,6 +1882,7 @@ export type BusinessUpdateWithoutCallSessionsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1854,6 +1910,7 @@ export type BusinessUncheckedUpdateWithoutCallSessionsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1881,6 +1938,7 @@ export type BusinessCreateWithoutVoicemailsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationCreateNestedManyWithoutBusinessInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -1908,6 +1966,7 @@ export type BusinessUncheckedCreateWithoutVoicemailsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -1951,6 +2010,7 @@ export type BusinessUpdateWithoutVoicemailsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUpdateManyWithoutBusinessNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -1978,6 +2038,135 @@ export type BusinessUncheckedUpdateWithoutVoicemailsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
+  insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
+  insuranceVerifications?: Prisma.InsuranceVerificationUncheckedUpdateManyWithoutBusinessNestedInput
+}
+
+export type BusinessCreateWithoutFollowUpTasksInput = {
+  id?: string
+  name: string
+  slug: string
+  timeZone?: string
+  status?: $Enums.BusinessStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
+  integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
+  users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
+  phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutBusinessInput
+  callers?: Prisma.CallerCreateNestedManyWithoutBusinessInput
+  callSessions?: Prisma.CallSessionCreateNestedManyWithoutBusinessInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutBusinessInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutBusinessInput
+  subscriptions?: Prisma.StripeSubscriptionCreateNestedManyWithoutBusinessInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutBusinessInput
+  schedulingIntegrations?: Prisma.SchedulingIntegrationCreateNestedManyWithoutBusinessInput
+  appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
+  agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
+  insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
+  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
+  insuranceVerifications?: Prisma.InsuranceVerificationCreateNestedManyWithoutBusinessInput
+}
+
+export type BusinessUncheckedCreateWithoutFollowUpTasksInput = {
+  id?: string
+  name: string
+  slug: string
+  timeZone?: string
+  status?: $Enums.BusinessStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
+  integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
+  users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
+  phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutBusinessInput
+  callers?: Prisma.CallerUncheckedCreateNestedManyWithoutBusinessInput
+  callSessions?: Prisma.CallSessionUncheckedCreateNestedManyWithoutBusinessInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutBusinessInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutBusinessInput
+  subscriptions?: Prisma.StripeSubscriptionUncheckedCreateNestedManyWithoutBusinessInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutBusinessInput
+  schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedCreateNestedManyWithoutBusinessInput
+  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
+  insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
+  insuranceVerifications?: Prisma.InsuranceVerificationUncheckedCreateNestedManyWithoutBusinessInput
+}
+
+export type BusinessCreateOrConnectWithoutFollowUpTasksInput = {
+  where: Prisma.BusinessWhereUniqueInput
+  create: Prisma.XOR<Prisma.BusinessCreateWithoutFollowUpTasksInput, Prisma.BusinessUncheckedCreateWithoutFollowUpTasksInput>
+}
+
+export type BusinessUpsertWithoutFollowUpTasksInput = {
+  update: Prisma.XOR<Prisma.BusinessUpdateWithoutFollowUpTasksInput, Prisma.BusinessUncheckedUpdateWithoutFollowUpTasksInput>
+  create: Prisma.XOR<Prisma.BusinessCreateWithoutFollowUpTasksInput, Prisma.BusinessUncheckedCreateWithoutFollowUpTasksInput>
+  where?: Prisma.BusinessWhereInput
+}
+
+export type BusinessUpdateToOneWithWhereWithoutFollowUpTasksInput = {
+  where?: Prisma.BusinessWhereInput
+  data: Prisma.XOR<Prisma.BusinessUpdateWithoutFollowUpTasksInput, Prisma.BusinessUncheckedUpdateWithoutFollowUpTasksInput>
+}
+
+export type BusinessUpdateWithoutFollowUpTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
+  integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
+  users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
+  phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutBusinessNestedInput
+  callers?: Prisma.CallerUpdateManyWithoutBusinessNestedInput
+  callSessions?: Prisma.CallSessionUpdateManyWithoutBusinessNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutBusinessNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutBusinessNestedInput
+  subscriptions?: Prisma.StripeSubscriptionUpdateManyWithoutBusinessNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutBusinessNestedInput
+  schedulingIntegrations?: Prisma.SchedulingIntegrationUpdateManyWithoutBusinessNestedInput
+  appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
+  agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
+  insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
+  insuranceVerifications?: Prisma.InsuranceVerificationUpdateManyWithoutBusinessNestedInput
+}
+
+export type BusinessUncheckedUpdateWithoutFollowUpTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  timeZone?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
+  integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
+  users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
+  phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutBusinessNestedInput
+  callers?: Prisma.CallerUncheckedUpdateManyWithoutBusinessNestedInput
+  callSessions?: Prisma.CallSessionUncheckedUpdateManyWithoutBusinessNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutBusinessNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutBusinessNestedInput
+  subscriptions?: Prisma.StripeSubscriptionUncheckedUpdateManyWithoutBusinessNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
+  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2005,6 +2194,7 @@ export type BusinessCreateWithoutAuditLogsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -2032,6 +2222,7 @@ export type BusinessUncheckedCreateWithoutAuditLogsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -2075,6 +2266,7 @@ export type BusinessUpdateWithoutAuditLogsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -2102,6 +2294,7 @@ export type BusinessUncheckedUpdateWithoutAuditLogsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2129,6 +2322,7 @@ export type BusinessCreateWithoutSubscriptionsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -2156,6 +2350,7 @@ export type BusinessUncheckedCreateWithoutSubscriptionsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -2199,6 +2394,7 @@ export type BusinessUpdateWithoutSubscriptionsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -2226,6 +2422,7 @@ export type BusinessUncheckedUpdateWithoutSubscriptionsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2253,6 +2450,7 @@ export type BusinessCreateWithoutUsageRecordsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -2280,6 +2478,7 @@ export type BusinessUncheckedCreateWithoutUsageRecordsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -2323,6 +2522,7 @@ export type BusinessUpdateWithoutUsageRecordsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -2350,6 +2550,7 @@ export type BusinessUncheckedUpdateWithoutUsageRecordsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2377,6 +2578,7 @@ export type BusinessCreateWithoutAgentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationCreateNestedManyWithoutBusinessInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -2404,6 +2606,7 @@ export type BusinessUncheckedCreateWithoutAgentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -2447,6 +2650,7 @@ export type BusinessUpdateWithoutAgentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUpdateManyWithoutBusinessNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -2474,6 +2678,7 @@ export type BusinessUncheckedUpdateWithoutAgentsInput = {
   schedulingIntegrations?: Prisma.SchedulingIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2502,6 +2707,7 @@ export type BusinessCreateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
   insuranceVerifications?: Prisma.InsuranceVerificationCreateNestedManyWithoutBusinessInput
@@ -2529,6 +2735,7 @@ export type BusinessUncheckedCreateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
   insuranceVerifications?: Prisma.InsuranceVerificationUncheckedCreateNestedManyWithoutBusinessInput
@@ -2572,6 +2779,7 @@ export type BusinessUpdateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
   insuranceVerifications?: Prisma.InsuranceVerificationUpdateManyWithoutBusinessNestedInput
@@ -2599,6 +2807,7 @@ export type BusinessUncheckedUpdateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceVerifications?: Prisma.InsuranceVerificationUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2626,6 +2835,7 @@ export type BusinessCreateWithoutInsurancePlansInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
   insuranceVerifications?: Prisma.InsuranceVerificationCreateNestedManyWithoutBusinessInput
@@ -2653,6 +2863,7 @@ export type BusinessUncheckedCreateWithoutInsurancePlansInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
   insuranceVerifications?: Prisma.InsuranceVerificationUncheckedCreateNestedManyWithoutBusinessInput
@@ -2696,6 +2907,7 @@ export type BusinessUpdateWithoutInsurancePlansInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
   insuranceVerifications?: Prisma.InsuranceVerificationUpdateManyWithoutBusinessNestedInput
@@ -2723,6 +2935,7 @@ export type BusinessUncheckedUpdateWithoutInsurancePlansInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceVerifications?: Prisma.InsuranceVerificationUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2750,6 +2963,7 @@ export type BusinessCreateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceVerifications?: Prisma.InsuranceVerificationCreateNestedManyWithoutBusinessInput
@@ -2777,6 +2991,7 @@ export type BusinessUncheckedCreateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceVerifications?: Prisma.InsuranceVerificationUncheckedCreateNestedManyWithoutBusinessInput
@@ -2820,6 +3035,7 @@ export type BusinessUpdateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceVerifications?: Prisma.InsuranceVerificationUpdateManyWithoutBusinessNestedInput
@@ -2847,6 +3063,7 @@ export type BusinessUncheckedUpdateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceVerifications?: Prisma.InsuranceVerificationUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2874,6 +3091,7 @@ export type BusinessCreateWithoutInsuranceVerificationsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutBusinessInput
@@ -2901,6 +3119,7 @@ export type BusinessUncheckedCreateWithoutInsuranceVerificationsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutBusinessInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutBusinessInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutBusinessInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutBusinessInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput
   insurancePlans?: Prisma.InsurancePlanUncheckedCreateNestedManyWithoutBusinessInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutBusinessInput
@@ -2944,6 +3163,7 @@ export type BusinessUpdateWithoutInsuranceVerificationsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutBusinessNestedInput
@@ -2971,6 +3191,7 @@ export type BusinessUncheckedUpdateWithoutInsuranceVerificationsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutBusinessNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutBusinessNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutBusinessNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutBusinessNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput
   insurancePlans?: Prisma.InsurancePlanUncheckedUpdateManyWithoutBusinessNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2995,6 +3216,7 @@ export type BusinessCountOutputType = {
   appointments: number
   agents: number
   voicemails: number
+  followUpTasks: number
   prescriptionRefills: number
   insurancePlans: number
   insuranceInquiries: number
@@ -3015,6 +3237,7 @@ export type BusinessCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensio
   appointments?: boolean | BusinessCountOutputTypeCountAppointmentsArgs
   agents?: boolean | BusinessCountOutputTypeCountAgentsArgs
   voicemails?: boolean | BusinessCountOutputTypeCountVoicemailsArgs
+  followUpTasks?: boolean | BusinessCountOutputTypeCountFollowUpTasksArgs
   prescriptionRefills?: boolean | BusinessCountOutputTypeCountPrescriptionRefillsArgs
   insurancePlans?: boolean | BusinessCountOutputTypeCountInsurancePlansArgs
   insuranceInquiries?: boolean | BusinessCountOutputTypeCountInsuranceInquiriesArgs
@@ -3125,6 +3348,13 @@ export type BusinessCountOutputTypeCountVoicemailsArgs<ExtArgs extends runtime.T
 /**
  * BusinessCountOutputType without action
  */
+export type BusinessCountOutputTypeCountFollowUpTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FollowUpTaskWhereInput
+}
+
+/**
+ * BusinessCountOutputType without action
+ */
 export type BusinessCountOutputTypeCountPrescriptionRefillsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.PrescriptionRefillWhereInput
 }
@@ -3173,6 +3403,7 @@ export type BusinessSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   appointments?: boolean | Prisma.Business$appointmentsArgs<ExtArgs>
   agents?: boolean | Prisma.Business$agentsArgs<ExtArgs>
   voicemails?: boolean | Prisma.Business$voicemailsArgs<ExtArgs>
+  followUpTasks?: boolean | Prisma.Business$followUpTasksArgs<ExtArgs>
   prescriptionRefills?: boolean | Prisma.Business$prescriptionRefillsArgs<ExtArgs>
   insurancePlans?: boolean | Prisma.Business$insurancePlansArgs<ExtArgs>
   insuranceInquiries?: boolean | Prisma.Business$insuranceInquiriesArgs<ExtArgs>
@@ -3226,6 +3457,7 @@ export type BusinessInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   appointments?: boolean | Prisma.Business$appointmentsArgs<ExtArgs>
   agents?: boolean | Prisma.Business$agentsArgs<ExtArgs>
   voicemails?: boolean | Prisma.Business$voicemailsArgs<ExtArgs>
+  followUpTasks?: boolean | Prisma.Business$followUpTasksArgs<ExtArgs>
   prescriptionRefills?: boolean | Prisma.Business$prescriptionRefillsArgs<ExtArgs>
   insurancePlans?: boolean | Prisma.Business$insurancePlansArgs<ExtArgs>
   insuranceInquiries?: boolean | Prisma.Business$insuranceInquiriesArgs<ExtArgs>
@@ -3252,6 +3484,7 @@ export type $BusinessPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     appointments: Prisma.$AppointmentPayload<ExtArgs>[]
     agents: Prisma.$AgentPayload<ExtArgs>[]
     voicemails: Prisma.$VoicemailRecordPayload<ExtArgs>[]
+    followUpTasks: Prisma.$FollowUpTaskPayload<ExtArgs>[]
     prescriptionRefills: Prisma.$PrescriptionRefillPayload<ExtArgs>[]
     insurancePlans: Prisma.$InsurancePlanPayload<ExtArgs>[]
     insuranceInquiries: Prisma.$InsuranceInquiryPayload<ExtArgs>[]
@@ -3673,6 +3906,7 @@ export interface Prisma__BusinessClient<T, Null = never, ExtArgs extends runtime
   appointments<T extends Prisma.Business$appointmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Business$appointmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AppointmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   agents<T extends Prisma.Business$agentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Business$agentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   voicemails<T extends Prisma.Business$voicemailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Business$voicemailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoicemailRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  followUpTasks<T extends Prisma.Business$followUpTasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Business$followUpTasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FollowUpTaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   prescriptionRefills<T extends Prisma.Business$prescriptionRefillsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Business$prescriptionRefillsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PrescriptionRefillPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   insurancePlans<T extends Prisma.Business$insurancePlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Business$insurancePlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InsurancePlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   insuranceInquiries<T extends Prisma.Business$insuranceInquiriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Business$insuranceInquiriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InsuranceInquiryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -4429,6 +4663,30 @@ export type Business$voicemailsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.VoicemailRecordScalarFieldEnum | Prisma.VoicemailRecordScalarFieldEnum[]
+}
+
+/**
+ * Business.followUpTasks
+ */
+export type Business$followUpTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FollowUpTask
+   */
+  select?: Prisma.FollowUpTaskSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FollowUpTask
+   */
+  omit?: Prisma.FollowUpTaskOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FollowUpTaskInclude<ExtArgs> | null
+  where?: Prisma.FollowUpTaskWhereInput
+  orderBy?: Prisma.FollowUpTaskOrderByWithRelationInput | Prisma.FollowUpTaskOrderByWithRelationInput[]
+  cursor?: Prisma.FollowUpTaskWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FollowUpTaskScalarFieldEnum | Prisma.FollowUpTaskScalarFieldEnum[]
 }
 
 /**

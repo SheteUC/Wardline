@@ -329,6 +329,7 @@ export type CallSessionWhereInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
   insuranceInquiries?: Prisma.InsuranceInquiryListRelationFilter
   voicemails?: Prisma.VoicemailRecordListRelationFilter
+  followUpTasks?: Prisma.FollowUpTaskListRelationFilter
 }
 
 export type CallSessionOrderByWithRelationInput = {
@@ -359,6 +360,7 @@ export type CallSessionOrderByWithRelationInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillOrderByRelationAggregateInput
   insuranceInquiries?: Prisma.InsuranceInquiryOrderByRelationAggregateInput
   voicemails?: Prisma.VoicemailRecordOrderByRelationAggregateInput
+  followUpTasks?: Prisma.FollowUpTaskOrderByRelationAggregateInput
 }
 
 export type CallSessionWhereUniqueInput = Prisma.AtLeast<{
@@ -392,6 +394,7 @@ export type CallSessionWhereUniqueInput = Prisma.AtLeast<{
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
   insuranceInquiries?: Prisma.InsuranceInquiryListRelationFilter
   voicemails?: Prisma.VoicemailRecordListRelationFilter
+  followUpTasks?: Prisma.FollowUpTaskListRelationFilter
 }, "id" | "twilioCallSid">
 
 export type CallSessionOrderByWithAggregationInput = {
@@ -469,6 +472,7 @@ export type CallSessionCreateInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateInput = {
@@ -496,6 +500,7 @@ export type CallSessionUncheckedCreateInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUpdateInput = {
@@ -523,6 +528,7 @@ export type CallSessionUpdateInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateInput = {
@@ -550,6 +556,7 @@ export type CallSessionUncheckedUpdateInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateManyInput = {
@@ -911,6 +918,22 @@ export type CallSessionUpdateOneRequiredWithoutVoicemailsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutVoicemailsInput, Prisma.CallSessionUpdateWithoutVoicemailsInput>, Prisma.CallSessionUncheckedUpdateWithoutVoicemailsInput>
 }
 
+export type CallSessionCreateNestedOneWithoutFollowUpTasksInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutFollowUpTasksInput, Prisma.CallSessionUncheckedCreateWithoutFollowUpTasksInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutFollowUpTasksInput
+  connect?: Prisma.CallSessionWhereUniqueInput
+}
+
+export type CallSessionUpdateOneWithoutFollowUpTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutFollowUpTasksInput, Prisma.CallSessionUncheckedCreateWithoutFollowUpTasksInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutFollowUpTasksInput
+  upsert?: Prisma.CallSessionUpsertWithoutFollowUpTasksInput
+  disconnect?: Prisma.CallSessionWhereInput | boolean
+  delete?: Prisma.CallSessionWhereInput | boolean
+  connect?: Prisma.CallSessionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutFollowUpTasksInput, Prisma.CallSessionUpdateWithoutFollowUpTasksInput>, Prisma.CallSessionUncheckedUpdateWithoutFollowUpTasksInput>
+}
+
 export type CallSessionCreateNestedOneWithoutPrescriptionRefillsInput = {
   create?: Prisma.XOR<Prisma.CallSessionCreateWithoutPrescriptionRefillsInput, Prisma.CallSessionUncheckedCreateWithoutPrescriptionRefillsInput>
   connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutPrescriptionRefillsInput
@@ -967,6 +990,7 @@ export type CallSessionCreateWithoutBusinessInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutBusinessInput = {
@@ -993,6 +1017,7 @@ export type CallSessionUncheckedCreateWithoutBusinessInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutBusinessInput = {
@@ -1069,6 +1094,7 @@ export type CallSessionCreateWithoutPhoneNumberInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutPhoneNumberInput = {
@@ -1095,6 +1121,7 @@ export type CallSessionUncheckedCreateWithoutPhoneNumberInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutPhoneNumberInput = {
@@ -1147,6 +1174,7 @@ export type CallSessionCreateWithoutCallerInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutCallerInput = {
@@ -1173,6 +1201,7 @@ export type CallSessionUncheckedCreateWithoutCallerInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutCallerInput = {
@@ -1225,6 +1254,7 @@ export type CallSessionCreateWithoutAppointmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutAppointmentsInput = {
@@ -1251,6 +1281,7 @@ export type CallSessionUncheckedCreateWithoutAppointmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutAppointmentsInput = {
@@ -1293,6 +1324,7 @@ export type CallSessionUpdateWithoutAppointmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutAppointmentsInput = {
@@ -1319,6 +1351,7 @@ export type CallSessionUncheckedUpdateWithoutAppointmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutTranscriptSegmentsInput = {
@@ -1345,6 +1378,7 @@ export type CallSessionCreateWithoutTranscriptSegmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutTranscriptSegmentsInput = {
@@ -1371,6 +1405,7 @@ export type CallSessionUncheckedCreateWithoutTranscriptSegmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutTranscriptSegmentsInput = {
@@ -1413,6 +1448,7 @@ export type CallSessionUpdateWithoutTranscriptSegmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutTranscriptSegmentsInput = {
@@ -1439,6 +1475,7 @@ export type CallSessionUncheckedUpdateWithoutTranscriptSegmentsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutHandoffsInput = {
@@ -1465,6 +1502,7 @@ export type CallSessionCreateWithoutHandoffsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutHandoffsInput = {
@@ -1491,6 +1529,7 @@ export type CallSessionUncheckedCreateWithoutHandoffsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutHandoffsInput = {
@@ -1533,6 +1572,7 @@ export type CallSessionUpdateWithoutHandoffsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutHandoffsInput = {
@@ -1559,6 +1599,7 @@ export type CallSessionUncheckedUpdateWithoutHandoffsInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutVoicemailsInput = {
@@ -1585,6 +1626,7 @@ export type CallSessionCreateWithoutVoicemailsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutVoicemailsInput = {
@@ -1611,6 +1653,7 @@ export type CallSessionUncheckedCreateWithoutVoicemailsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutVoicemailsInput = {
@@ -1653,6 +1696,7 @@ export type CallSessionUpdateWithoutVoicemailsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutVoicemailsInput = {
@@ -1679,6 +1723,131 @@ export type CallSessionUncheckedUpdateWithoutVoicemailsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
+}
+
+export type CallSessionCreateWithoutFollowUpTasksInput = {
+  id?: string
+  twilioCallSid: string
+  direction: $Enums.CallDirection
+  status?: $Enums.CallStatus
+  recordingConsent?: $Enums.RecordingConsent | null
+  tag?: $Enums.CallTag | null
+  isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
+  phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
+  transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
+  appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
+  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
+  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+}
+
+export type CallSessionUncheckedCreateWithoutFollowUpTasksInput = {
+  id?: string
+  businessId: string
+  phoneNumberId: string
+  twilioCallSid: string
+  direction: $Enums.CallDirection
+  status?: $Enums.CallStatus
+  recordingConsent?: $Enums.RecordingConsent | null
+  tag?: $Enums.CallTag | null
+  callerId?: string | null
+  isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
+  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+}
+
+export type CallSessionCreateOrConnectWithoutFollowUpTasksInput = {
+  where: Prisma.CallSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutFollowUpTasksInput, Prisma.CallSessionUncheckedCreateWithoutFollowUpTasksInput>
+}
+
+export type CallSessionUpsertWithoutFollowUpTasksInput = {
+  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutFollowUpTasksInput, Prisma.CallSessionUncheckedUpdateWithoutFollowUpTasksInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutFollowUpTasksInput, Prisma.CallSessionUncheckedCreateWithoutFollowUpTasksInput>
+  where?: Prisma.CallSessionWhereInput
+}
+
+export type CallSessionUpdateToOneWithWhereWithoutFollowUpTasksInput = {
+  where?: Prisma.CallSessionWhereInput
+  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutFollowUpTasksInput, Prisma.CallSessionUncheckedUpdateWithoutFollowUpTasksInput>
+}
+
+export type CallSessionUpdateWithoutFollowUpTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
+  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
+  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
+  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
+  phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
+  transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
+  appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+}
+
+export type CallSessionUncheckedUpdateWithoutFollowUpTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
+  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
+  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
+  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
+  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutPrescriptionRefillsInput = {
@@ -1705,6 +1874,7 @@ export type CallSessionCreateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutPrescriptionRefillsInput = {
@@ -1731,6 +1901,7 @@ export type CallSessionUncheckedCreateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutPrescriptionRefillsInput = {
@@ -1773,6 +1944,7 @@ export type CallSessionUpdateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutPrescriptionRefillsInput = {
@@ -1799,6 +1971,7 @@ export type CallSessionUncheckedUpdateWithoutPrescriptionRefillsInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutInsuranceInquiriesInput = {
@@ -1825,6 +1998,7 @@ export type CallSessionCreateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutInsuranceInquiriesInput = {
@@ -1851,6 +2025,7 @@ export type CallSessionUncheckedCreateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutInsuranceInquiriesInput = {
@@ -1893,6 +2068,7 @@ export type CallSessionUpdateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutInsuranceInquiriesInput = {
@@ -1919,6 +2095,7 @@ export type CallSessionUncheckedUpdateWithoutInsuranceInquiriesInput = {
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateManyBusinessInput = {
@@ -1965,6 +2142,7 @@ export type CallSessionUpdateWithoutBusinessInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutBusinessInput = {
@@ -1991,6 +2169,7 @@ export type CallSessionUncheckedUpdateWithoutBusinessInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateManyWithoutBusinessInput = {
@@ -2057,6 +2236,7 @@ export type CallSessionUpdateWithoutPhoneNumberInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutPhoneNumberInput = {
@@ -2083,6 +2263,7 @@ export type CallSessionUncheckedUpdateWithoutPhoneNumberInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateManyWithoutPhoneNumberInput = {
@@ -2149,6 +2330,7 @@ export type CallSessionUpdateWithoutCallerInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutCallerInput = {
@@ -2175,6 +2357,7 @@ export type CallSessionUncheckedUpdateWithoutCallerInput = {
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateManyWithoutCallerInput = {
@@ -2209,6 +2392,7 @@ export type CallSessionCountOutputType = {
   prescriptionRefills: number
   insuranceInquiries: number
   voicemails: number
+  followUpTasks: number
 }
 
 export type CallSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2218,6 +2402,7 @@ export type CallSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.Exten
   prescriptionRefills?: boolean | CallSessionCountOutputTypeCountPrescriptionRefillsArgs
   insuranceInquiries?: boolean | CallSessionCountOutputTypeCountInsuranceInquiriesArgs
   voicemails?: boolean | CallSessionCountOutputTypeCountVoicemailsArgs
+  followUpTasks?: boolean | CallSessionCountOutputTypeCountFollowUpTasksArgs
 }
 
 /**
@@ -2272,6 +2457,13 @@ export type CallSessionCountOutputTypeCountVoicemailsArgs<ExtArgs extends runtim
   where?: Prisma.VoicemailRecordWhereInput
 }
 
+/**
+ * CallSessionCountOutputType without action
+ */
+export type CallSessionCountOutputTypeCountFollowUpTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FollowUpTaskWhereInput
+}
+
 
 export type CallSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2301,6 +2493,7 @@ export type CallSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   prescriptionRefills?: boolean | Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>
   insuranceInquiries?: boolean | Prisma.CallSession$insuranceInquiriesArgs<ExtArgs>
   voicemails?: boolean | Prisma.CallSession$voicemailsArgs<ExtArgs>
+  followUpTasks?: boolean | Prisma.CallSession$followUpTasksArgs<ExtArgs>
   _count?: boolean | Prisma.CallSessionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["callSession"]>
 
@@ -2384,6 +2577,7 @@ export type CallSessionInclude<ExtArgs extends runtime.Types.Extensions.Internal
   prescriptionRefills?: boolean | Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>
   insuranceInquiries?: boolean | Prisma.CallSession$insuranceInquiriesArgs<ExtArgs>
   voicemails?: boolean | Prisma.CallSession$voicemailsArgs<ExtArgs>
+  followUpTasks?: boolean | Prisma.CallSession$followUpTasksArgs<ExtArgs>
   _count?: boolean | Prisma.CallSessionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CallSessionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2409,6 +2603,7 @@ export type $CallSessionPayload<ExtArgs extends runtime.Types.Extensions.Interna
     prescriptionRefills: Prisma.$PrescriptionRefillPayload<ExtArgs>[]
     insuranceInquiries: Prisma.$InsuranceInquiryPayload<ExtArgs>[]
     voicemails: Prisma.$VoicemailRecordPayload<ExtArgs>[]
+    followUpTasks: Prisma.$FollowUpTaskPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2838,6 +3033,7 @@ export interface Prisma__CallSessionClient<T, Null = never, ExtArgs extends runt
   prescriptionRefills<T extends Prisma.CallSession$prescriptionRefillsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PrescriptionRefillPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   insuranceInquiries<T extends Prisma.CallSession$insuranceInquiriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$insuranceInquiriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InsuranceInquiryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   voicemails<T extends Prisma.CallSession$voicemailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$voicemailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoicemailRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  followUpTasks<T extends Prisma.CallSession$followUpTasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$followUpTasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FollowUpTaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3441,6 +3637,30 @@ export type CallSession$voicemailsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.VoicemailRecordScalarFieldEnum | Prisma.VoicemailRecordScalarFieldEnum[]
+}
+
+/**
+ * CallSession.followUpTasks
+ */
+export type CallSession$followUpTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FollowUpTask
+   */
+  select?: Prisma.FollowUpTaskSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FollowUpTask
+   */
+  omit?: Prisma.FollowUpTaskOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FollowUpTaskInclude<ExtArgs> | null
+  where?: Prisma.FollowUpTaskWhereInput
+  orderBy?: Prisma.FollowUpTaskOrderByWithRelationInput | Prisma.FollowUpTaskOrderByWithRelationInput[]
+  cursor?: Prisma.FollowUpTaskWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FollowUpTaskScalarFieldEnum | Prisma.FollowUpTaskScalarFieldEnum[]
 }
 
 /**

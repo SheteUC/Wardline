@@ -20,69 +20,88 @@ export default function WorkflowsPage() {
             return;
         }
 
+        if (!businessId) {
+            setWorkflowData(null);
+            setLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+
         const fetchMainWorkflow = async () => {
             try {
                 setLoading(true);
-                if (businessId) {
-                    const workflows = await apiClient.get<WorkflowListItem[]>(`/businesses/${businessId}/workflows`);
-                    if (workflows.length > 0) {
-                        const prioritized =
-                            workflows.find((workflow) => workflow.status === WorkflowStatus.PUBLISHED) ||
-                            workflows[0];
-                        const fullWorkflow = await apiClient.get<WorkflowDetail>(
-                            `/businesses/${businessId}/workflows/${prioritized.id}`,
-                        );
+                const workflows = await apiClient.get<WorkflowListItem[]>(`/businesses/${businessId}/workflows`);
+                if (cancelled) return;
 
-                        if (fullWorkflow.versions?.length > 0) {
-                            const latestVersion = fullWorkflow.versions[0];
-                            const graphJson = (latestVersion.graphJson as { nodes?: any[]; edges?: any[] }) || {};
-                            const nodes = (graphJson.nodes || []).map((node, index) => {
-                                const config = node.data || node.config || {};
-                                return {
-                                    id: node.id,
-                                    type: node.type || 'default',
-                                    position: node.position || { x: 100 + index * 80, y: 100 + index * 80 },
-                                    data: { label: config.label || config.message || node.type || 'Node', ...config },
-                                };
-                            });
+                if (workflows.length > 0) {
+                    const prioritized =
+                        workflows.find((workflow) => workflow.status === WorkflowStatus.PUBLISHED) ||
+                        workflows[0];
+                    const fullWorkflow = await apiClient.get<WorkflowDetail>(
+                        `/businesses/${businessId}/workflows/${prioritized.id}`,
+                    );
+                    if (cancelled) return;
 
-                            const edges = (graphJson.edges || []).map((edge) => ({
-                                id: edge.id || `edge-${edge.source || edge.fromNodeId}-${edge.target || edge.toNodeId}`,
-                                source: edge.source ?? edge.fromNodeId,
-                                target: edge.target ?? edge.toNodeId,
-                                label: edge.label,
-                                animated: edge.animated ?? false,
-                            }));
+                    if (fullWorkflow.versions?.length > 0) {
+                        const latestVersion = fullWorkflow.versions[0];
+                        const graphJson = (latestVersion.graphJson as { nodes?: any[]; edges?: any[] }) || {};
+                        const nodes = (graphJson.nodes || []).map((node, index) => {
+                            const config = node.data || node.config || {};
+                            return {
+                                id: node.id,
+                                type: node.type || 'default',
+                                position: node.position || { x: 100 + index * 80, y: 100 + index * 80 },
+                                data: { label: config.label || config.message || node.type || 'Node', ...config },
+                            };
+                        });
 
-                            setWorkflowData({
-                                id: fullWorkflow.id,
-                                name: fullWorkflow.name || 'Main Workflow',
-                                nodes,
-                                edges,
-                            });
-                            return;
-                        }
+                        const edges = (graphJson.edges || []).map((edge) => ({
+                            id: edge.id || `edge-${edge.source || edge.fromNodeId}-${edge.target || edge.toNodeId}`,
+                            source: edge.source ?? edge.fromNodeId,
+                            target: edge.target ?? edge.toNodeId,
+                            label: edge.label,
+                            animated: edge.animated ?? false,
+                        }));
+
+                        setWorkflowData({
+                            id: fullWorkflow.id,
+                            name: fullWorkflow.name || 'Main Workflow',
+                            nodes,
+                            edges,
+                        });
+                        return;
                     }
                 }
 
-                setWorkflowData({
-                    name: 'Main Workflow',
-                    nodes: [],
-                    edges: [],
-                });
+                if (!cancelled) {
+                    setWorkflowData({
+                        name: 'Main Workflow',
+                        nodes: [],
+                        edges: [],
+                    });
+                }
             } catch (err) {
                 console.error('Failed to fetch main workflow:', err);
-                setWorkflowData({
-                    name: 'Main Workflow',
-                    nodes: [],
-                    edges: [],
-                });
+                if (!cancelled) {
+                    setWorkflowData({
+                        name: 'Main Workflow',
+                        nodes: [],
+                        edges: [],
+                    });
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchMainWorkflow();
+        void fetchMainWorkflow();
+
+        return () => {
+            cancelled = true;
+        };
     }, [apiClient, businessId, businessLoading]);
 
     const handleSaveWorkflow = async (nodes: Node[], edges: Edge[]) => {
@@ -157,7 +176,7 @@ export default function WorkflowsPage() {
                     </span>
                 </div>
             )}
-            {workflowData && (
+            {businessId && workflowData && (
                 <EnhancedWorkflowEditor
                     workflowId={workflowData.id}
                     workflowName={workflowData.name}

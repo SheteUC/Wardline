@@ -4,12 +4,14 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from './auth.guard';
 import { ClerkService } from './clerk.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../modules/users/users.service';
 
 describe('AuthGuard', () => {
     let guard: AuthGuard;
     let clerkService: ClerkService;
     let prisma: PrismaService;
     let reflector: Reflector;
+    let usersService: UsersService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -19,6 +21,7 @@ describe('AuthGuard', () => {
                     provide: ClerkService,
                     useValue: {
                         verifyToken: jest.fn(),
+                        getClerkUser: jest.fn(),
                     },
                 },
                 {
@@ -27,6 +30,12 @@ describe('AuthGuard', () => {
                         user: {
                             findUnique: jest.fn(),
                         },
+                    },
+                },
+                {
+                    provide: UsersService,
+                    useValue: {
+                        findOrCreateByClerkId: jest.fn(),
                     },
                 },
                 {
@@ -42,6 +51,7 @@ describe('AuthGuard', () => {
         clerkService = module.get<ClerkService>(ClerkService);
         prisma = module.get<PrismaService>(PrismaService);
         reflector = module.get<Reflector>(Reflector);
+        usersService = module.get<UsersService>(UsersService);
     });
 
     describe('Public Routes', () => {
@@ -69,11 +79,11 @@ describe('AuthGuard', () => {
                 id: 'user-123',
                 clerkUserId: 'clerk-123',
                 email: 'test@example.com',
-                hospitals: [
+                businesses: [
                     {
-                        hospitalId: 'hospital-123',
+                        businessId: 'business-123',
                         role: 'ADMIN',
-                        hospital: { id: 'hospital-123', name: 'Test Hospital' },
+                        business: { id: 'business-123', name: 'Test Business' },
                     },
                 ],
             };
@@ -92,15 +102,37 @@ describe('AuthGuard', () => {
             expect(context.switchToHttp().getRequest().user).toEqual(mockUser);
         });
 
-        it('should throw UnauthorizedException when user not found in database', async () => {
+        it('should create the user from Clerk when not found locally', async () => {
+            const createdUser = {
+                id: 'user-123',
+                clerkUserId: 'clerk-123',
+                email: 'test@example.com',
+                businesses: [],
+            };
             const context = createMockContext({
                 headers: { authorization: 'Bearer valid-token' },
             });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
             jest.spyOn(clerkService, 'verifyToken').mockResolvedValue({ sub: 'clerk-123' });
-            jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
+            jest.spyOn(clerkService, 'getClerkUser').mockResolvedValue({
+                id: 'clerk-123',
+                emailAddresses: [{ emailAddress: 'test@example.com' }],
+                firstName: 'Test',
+                lastName: 'User',
+            } as any);
+            jest.spyOn(prisma.user, 'findUnique')
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce(createdUser as any);
 
-            await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+            const result = await guard.canActivate(context);
+
+            expect(result).toBe(true);
+            expect(usersService.findOrCreateByClerkId).toHaveBeenCalledWith(
+                'clerk-123',
+                'test@example.com',
+                'Test User',
+            );
+            expect(context.switchToHttp().getRequest().user).toEqual(createdUser);
         });
 
         it('should throw UnauthorizedException when token is invalid', async () => {

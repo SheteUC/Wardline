@@ -399,6 +399,7 @@ export const ModelName = {
   TranscriptSegment: 'TranscriptSegment',
   Handoff: 'Handoff',
   VoicemailRecord: 'VoicemailRecord',
+  FollowUpTask: 'FollowUpTask',
   AuditLog: 'AuditLog',
   StripeSubscription: 'StripeSubscription',
   UsageRecord: 'UsageRecord',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "business" | "businessSettings" | "businessIntegration" | "user" | "businessUser" | "phoneNumber" | "workflow" | "workflowVersion" | "caller" | "schedulingIntegration" | "appointment" | "callSession" | "transcriptSegment" | "handoff" | "voicemailRecord" | "auditLog" | "stripeSubscription" | "usageRecord" | "agent" | "prescriptionRefill" | "insurancePlan" | "insuranceInquiry" | "insuranceVerification"
+    modelProps: "business" | "businessSettings" | "businessIntegration" | "user" | "businessUser" | "phoneNumber" | "workflow" | "workflowVersion" | "caller" | "schedulingIntegration" | "appointment" | "callSession" | "transcriptSegment" | "handoff" | "voicemailRecord" | "followUpTask" | "auditLog" | "stripeSubscription" | "usageRecord" | "agent" | "prescriptionRefill" | "insurancePlan" | "insuranceInquiry" | "insuranceVerification"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1536,6 +1537,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FollowUpTask: {
+      payload: Prisma.$FollowUpTaskPayload<ExtArgs>
+      fields: Prisma.FollowUpTaskFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FollowUpTaskFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FollowUpTaskFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>
+        }
+        findFirst: {
+          args: Prisma.FollowUpTaskFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FollowUpTaskFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>
+        }
+        findMany: {
+          args: Prisma.FollowUpTaskFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>[]
+        }
+        create: {
+          args: Prisma.FollowUpTaskCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>
+        }
+        createMany: {
+          args: Prisma.FollowUpTaskCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FollowUpTaskCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>[]
+        }
+        delete: {
+          args: Prisma.FollowUpTaskDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>
+        }
+        update: {
+          args: Prisma.FollowUpTaskUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>
+        }
+        deleteMany: {
+          args: Prisma.FollowUpTaskDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FollowUpTaskUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FollowUpTaskUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>[]
+        }
+        upsert: {
+          args: Prisma.FollowUpTaskUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FollowUpTaskPayload>
+        }
+        aggregate: {
+          args: Prisma.FollowUpTaskAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFollowUpTask>
+        }
+        groupBy: {
+          args: Prisma.FollowUpTaskGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FollowUpTaskGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FollowUpTaskCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FollowUpTaskCountAggregateOutputType> | number
+        }
+      }
+    }
     AuditLog: {
       payload: Prisma.$AuditLogPayload<ExtArgs>
       fields: Prisma.AuditLogFieldRefs
@@ -2185,6 +2260,7 @@ export const BusinessSettingsScalarFieldEnum = {
   businessId: 'businessId',
   recordingDefault: 'recordingDefault',
   transcriptRetentionDays: 'transcriptRetentionDays',
+  operatingHours: 'operatingHours',
   outOfScopeKeywords: 'outOfScopeKeywords',
   emergencyKeywords: 'emergencyKeywords',
   timetapBaseUrl: 'timetapBaseUrl',
@@ -2399,6 +2475,29 @@ export const VoicemailRecordScalarFieldEnum = {
 export type VoicemailRecordScalarFieldEnum = (typeof VoicemailRecordScalarFieldEnum)[keyof typeof VoicemailRecordScalarFieldEnum]
 
 
+export const FollowUpTaskScalarFieldEnum = {
+  id: 'id',
+  businessId: 'businessId',
+  callId: 'callId',
+  voicemailId: 'voicemailId',
+  type: 'type',
+  status: 'status',
+  priority: 'priority',
+  title: 'title',
+  summary: 'summary',
+  callerName: 'callerName',
+  callerPhone: 'callerPhone',
+  urgencyKeywords: 'urgencyKeywords',
+  metadata: 'metadata',
+  dueAt: 'dueAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FollowUpTaskScalarFieldEnum = (typeof FollowUpTaskScalarFieldEnum)[keyof typeof FollowUpTaskScalarFieldEnum]
+
+
 export const AuditLogScalarFieldEnum = {
   id: 'id',
   businessId: 'businessId',
@@ -2570,14 +2669,6 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -2585,6 +2676,14 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 
@@ -2664,6 +2763,20 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
  * Reference to a field of type 'IntegrationCategory'
  */
 export type EnumIntegrationCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'IntegrationCategory'>
@@ -2688,20 +2801,6 @@ export type EnumIntegrationStatusFieldRefInput<$PrismaModel> = FieldRefInputType
  * Reference to a field of type 'IntegrationStatus[]'
  */
 export type ListEnumIntegrationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'IntegrationStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Json'
- */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-    
-
-
-/**
- * Reference to a field of type 'QueryMode'
- */
-export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -2849,6 +2948,48 @@ export type EnumSpeakerFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMo
  * Reference to a field of type 'Speaker[]'
  */
 export type ListEnumSpeakerFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Speaker[]'>
+    
+
+
+/**
+ * Reference to a field of type 'FollowUpTaskType'
+ */
+export type EnumFollowUpTaskTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FollowUpTaskType'>
+    
+
+
+/**
+ * Reference to a field of type 'FollowUpTaskType[]'
+ */
+export type ListEnumFollowUpTaskTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FollowUpTaskType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'FollowUpTaskStatus'
+ */
+export type EnumFollowUpTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FollowUpTaskStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'FollowUpTaskStatus[]'
+ */
+export type ListEnumFollowUpTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FollowUpTaskStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'FollowUpTaskPriority'
+ */
+export type EnumFollowUpTaskPriorityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FollowUpTaskPriority'>
+    
+
+
+/**
+ * Reference to a field of type 'FollowUpTaskPriority[]'
+ */
+export type ListEnumFollowUpTaskPriorityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FollowUpTaskPriority[]'>
     
 
 
@@ -3031,6 +3172,7 @@ export type GlobalOmitConfig = {
   transcriptSegment?: Prisma.TranscriptSegmentOmit
   handoff?: Prisma.HandoffOmit
   voicemailRecord?: Prisma.VoicemailRecordOmit
+  followUpTask?: Prisma.FollowUpTaskOmit
   auditLog?: Prisma.AuditLogOmit
   stripeSubscription?: Prisma.StripeSubscriptionOmit
   usageRecord?: Prisma.UsageRecordOmit

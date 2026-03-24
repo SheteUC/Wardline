@@ -29,22 +29,22 @@ class WardlineFlowManager:
         self._cache_ttl = 300  # 5 minutes cache for workflows
         self._workflow_cache: Dict[str, tuple[WorkflowGraph, float]] = {}
     
-    async def load_workflow(self, hospital_id: str, phone_number_id: Optional[str] = None) -> bool:
+    async def load_workflow(self, business_id: str, phone_number_id: Optional[str] = None) -> bool:
         """
         Load workflow configuration from Core API
         
         Args:
-            hospital_id: Hospital identifier
+            business_id: Business identifier
             phone_number_id: Optional phone number ID to get specific workflow
             
         Returns:
             True if workflow loaded successfully
         """
         try:
-            logger.info(f"📥 Loading workflow for hospital: {hospital_id}")
+            logger.info(f"📥 Loading workflow for business: {business_id}")
             
             # Check cache first
-            cache_key = f"{hospital_id}:{phone_number_id or 'default'}"
+            cache_key = f"{business_id}:{phone_number_id or 'default'}"
             if cache_key in self._workflow_cache:
                 cached_workflow, cached_time = self._workflow_cache[cache_key]
                 age = datetime.now().timestamp() - cached_time
@@ -56,10 +56,10 @@ class WardlineFlowManager:
             
             # Fetch from API
             # Note: This endpoint will be created in Phase 2
-            workflow_data = await api_client.get_active_workflow(hospital_id, phone_number_id)
+            workflow_data = await api_client.get_active_workflow(business_id, phone_number_id)
             
             if not workflow_data:
-                logger.warning(f"No active workflow found for hospital {hospital_id}")
+                logger.warning(f"No active workflow found for business {business_id}")
                 # Fall back to default workflow
                 return await self._load_default_workflow()
             
@@ -101,7 +101,7 @@ class WardlineFlowManager:
                 "id": workflow_data.get("id"),
                 "name": workflow_data.get("name"),
                 "version": workflow_data.get("version"),
-                "hospital_id": hospital_id,
+                "business_id": business_id,
             }
             
             logger.info(f"✅ Workflow loaded: {len(nodes)} nodes, {len(edges)} edges")
@@ -123,14 +123,14 @@ class WardlineFlowManager:
                 id="start",
                 type="start",
                 config={
-                    "greetingMessage": f"Thank you for calling {self.context.hospital_name}. How can I help you today?"
+                    "greetingMessage": f"Thank you for calling {self.context.business_name}. How can I help you today?"
                 }
             ),
             WorkflowNode(
                 id="ai-agent-main",
                 type="ai-agent",
                 config={
-                    "systemPrompt": f"""You are a helpful medical receptionist for {self.context.hospital_name}.
+                    "systemPrompt": f"""You are a helpful medical receptionist for {self.context.business_name}.
                     
 Your role is to:
 - Greet callers warmly
@@ -155,7 +155,7 @@ Be professional, empathetic, and efficient.""",
                 type="end",
                 config={
                     "endType": "hangup",
-                    "closingMessage": f"Thank you for calling {self.context.hospital_name}. Have a great day!"
+                    "closingMessage": f"Thank you for calling {self.context.business_name}. Have a great day!"
                 }
             ),
         ]
@@ -198,7 +198,7 @@ Be professional, empathetic, and efficient.""",
             f"workflow_{workflow_id}",
             {
                 "workflow_id": workflow_id,
-                "hospital_id": self.context.hospital_id,
+                "business_id": self.context.business_id,
                 "call_id": self.context.call_id,
                 "call_sid": self.context.call_sid,
             }

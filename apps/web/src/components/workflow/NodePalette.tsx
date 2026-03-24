@@ -131,18 +131,17 @@ const NODE_TYPES: NodeType[] = [
     {
         type: 'integration',
         label: 'Integration',
-        description: 'Call external API',
+        description: 'Run a live runtime action or create a follow-up',
         icon: Plug,
         category: 'integration',
         color: 'teal',
         defaultData: {
-            label: 'API Integration',
-            integrationType: 'external_api',
-            method: 'GET',
-            endpointUrl: '',
-            retryCount: 3,
-            timeoutSeconds: 10,
-            errorHandling: 'continue'
+            label: 'Runtime Action',
+            runtimeAction: 'appointment-request',
+            integrationCategory: 'SCHEDULING',
+            requiresConfirmation: true,
+            fallbackBehavior: 'create_follow_up',
+            prompt: 'Capture the caller request, confirm it, then send it through the configured integration.'
         }
     },
     {

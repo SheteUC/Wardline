@@ -214,7 +214,7 @@ export class WorkflowsService {
         const { WorkflowValidatorService } = await import('./services/workflow-validator.service');
         const validator = new WorkflowValidatorService();
 
-        const validationResult = validator.validate(latestVersion.graphJson);
+        const validationResult = validator.validate(this.compileGraph(latestVersion.graphJson));
 
         return {
             workflowId,
@@ -347,7 +347,7 @@ export class WorkflowsService {
                 id: node.id,
                 type: node.type,
                 position: node.position ?? { x: 0, y: 0 },
-                config: node.config ?? node.data ?? {},
+                config: this.normalizeNodeConfig(node.type, node.config ?? node.data ?? {}),
             }))
             : [];
 
@@ -383,6 +383,83 @@ export class WorkflowsService {
                 hasSafetyCheck: normalizedNodes.some((node: any) => node.type === 'safety-check'),
                 adjacency,
             },
+        };
+    }
+
+    private normalizeNodeConfig(nodeType: string, config: Record<string, unknown>) {
+        if (nodeType !== 'integration') {
+            return config;
+        }
+
+        return this.normalizeIntegrationNodeConfig(config);
+    }
+
+    private normalizeIntegrationNodeConfig(config: Record<string, unknown>) {
+        const runtimeActionFromCategory: Record<string, { actionName: string; category: string }> = {
+            appointment_scheduling: {
+                actionName: 'appointment-request',
+                category: 'SCHEDULING',
+            },
+            scheduling: {
+                actionName: 'appointment-request',
+                category: 'SCHEDULING',
+            },
+            prescription_refill: {
+                actionName: 'refill-request',
+                category: 'EHR_REFILL',
+            },
+            ehr_lookup: {
+                actionName: 'refill-request',
+                category: 'EHR_REFILL',
+            },
+            insurance_verification: {
+                actionName: 'insurance-check',
+                category: 'INSURANCE',
+            },
+            billing_request: {
+                actionName: 'billing-request',
+                category: 'BILLING',
+            },
+        };
+
+        const runtimeAction = typeof config.runtimeAction === 'string' ? config.runtimeAction : undefined;
+        const integrationCategory =
+            typeof config.integrationCategory === 'string' ? config.integrationCategory : undefined;
+        const legacyKey =
+            (typeof config.integrationType === 'string' && config.integrationType) ||
+            (typeof config.integration === 'string' && config.integration) ||
+            (typeof config.preset === 'string' && config.preset) ||
+            (typeof config.action === 'string' && config.action);
+        const translated = legacyKey ? runtimeActionFromCategory[legacyKey] : undefined;
+
+        return {
+            label: config.label ?? 'Runtime Action',
+            mode: 'runtime_action',
+            runtimeAction: runtimeAction ?? translated?.actionName ?? 'manual-follow-up',
+            integrationCategory: integrationCategory ?? translated?.category ?? 'MANUAL',
+            requiresConfirmation:
+                typeof config.requiresConfirmation === 'boolean'
+                    ? config.requiresConfirmation
+                    : !['insurance-check', 'manual-follow-up'].includes(
+                        runtimeAction ?? translated?.actionName ?? 'manual-follow-up',
+                    ),
+            fallbackBehavior:
+                typeof config.fallbackBehavior === 'string' ? config.fallbackBehavior : 'create_follow_up',
+            prompt:
+                typeof config.prompt === 'string'
+                    ? config.prompt
+                    : typeof config.description === 'string'
+                        ? config.description
+                        : '',
+            __legacySource:
+                legacyKey && !runtimeAction
+                    ? {
+                        integrationType: config.integrationType,
+                        integration: config.integration,
+                        action: config.action,
+                        endpointUrl: config.endpointUrl,
+                    }
+                    : undefined,
         };
     }
 

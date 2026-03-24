@@ -4,6 +4,7 @@ import { WorkflowsService } from './workflows.service';
 import { Permissions } from '../../auth/permissions.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
+import { Public } from '../../auth/public.decorator';
 
 @ApiTags('workflows')
 @ApiBearerAuth()
@@ -83,6 +84,7 @@ export class WorkflowsApiController {
     constructor(private readonly workflowsService: WorkflowsService) { }
 
     @Get('active')
+    @Public()
     @ApiOperation({ summary: 'Get active workflow for business (used by voice orchestrator)' })
     @ApiResponse({ status: 200, description: 'Active workflow configuration with graph JSON' })
     getActiveWorkflow(

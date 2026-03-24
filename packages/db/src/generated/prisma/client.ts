@@ -114,6 +114,11 @@ export type Handoff = Prisma.HandoffModel
  */
 export type VoicemailRecord = Prisma.VoicemailRecordModel
 /**
+ * Model FollowUpTask
+ * 
+ */
+export type FollowUpTask = Prisma.FollowUpTaskModel
+/**
  * Model AuditLog
  * 
  */

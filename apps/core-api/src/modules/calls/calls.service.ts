@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../../cache/cache.service';
 import { Logger } from '@wardline/utils';
 import * as crypto from 'crypto';
+import { FollowUpTasksService } from '../follow-up-tasks/follow-up-tasks.service';
 
 @Injectable()
 export class CallsService {
@@ -11,6 +12,7 @@ export class CallsService {
     constructor(
         private prisma: PrismaService,
         private cache: CacheService,
+        private followUpTasksService: FollowUpTasksService,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -50,6 +52,10 @@ export class CallsService {
                             phoneNumber: { select: { twilioPhoneNumber: true, label: true } },
                             caller: { select: { id: true, name: true, phone: true } },
                             voicemails: { select: { id: true, isListened: true } },
+                            followUpTasks: {
+                                where: { status: { in: ['OPEN', 'IN_PROGRESS'] as any } },
+                                select: { id: true, priority: true, status: true },
+                            },
                         },
                         orderBy: { startedAt: 'desc' },
                         skip,
@@ -72,6 +78,7 @@ export class CallsService {
                     turnCount: call.turnCount,
                     hasVoicemail: call.voicemails.length > 0,
                     voicemailListened: call.voicemails.every(v => v.isListened),
+                    followUpTaskCount: call.followUpTasks.length,
                     duration: call.endedAt
                         ? Math.floor((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000)
                         : 0,
@@ -101,6 +108,7 @@ export class CallsService {
                         appointments: { select: { id: true, callerName: true, scheduledAt: true, status: true } },
                         prescriptionRefills: { select: { id: true, medicationName: true, status: true } },
                         insuranceInquiries: { select: { id: true, inquiryType: true, resolved: true } },
+                        followUpTasks: true,
                     },
                 });
                 if (!call) throw new NotFoundException(`Call not found: ${id}`);
@@ -171,7 +179,18 @@ export class CallsService {
                 businessId,
                 ...(unlistenedOnly && { isListened: false }),
             },
-            include: { call: { select: { tag: true, startedAt: true } } },
+            include: {
+                call: { select: { tag: true, startedAt: true, isEmergency: true } },
+                followUpTask: {
+                    select: {
+                        id: true,
+                        type: true,
+                        priority: true,
+                        status: true,
+                        metadata: true,
+                    },
+                },
+            },
             orderBy: { createdAt: 'desc' },
         });
     }
@@ -191,14 +210,46 @@ export class CallsService {
         recordingUrl: string;
         transcription?: string;
         context: string;
+        createFollowUp?: boolean;
+        isUrgent?: boolean;
+        urgencyKeywords?: string[];
     }): Promise<any> {
-        const voicemail = await this.prisma.voicemailRecord.create({ data });
+        const voicemail = await this.prisma.voicemailRecord.create({
+            data: {
+                callId: data.callId,
+                businessId: data.businessId,
+                callerPhone: data.callerPhone,
+                callerName: data.callerName,
+                recordingUrl: data.recordingUrl,
+                transcription: data.transcription,
+                context: data.context,
+            },
+        });
 
         // Tag the call session as voicemail
         await this.prisma.callSession.update({
             where: { id: data.callId },
             data: { tag: 'VOICEMAIL' },
         }).catch(() => { /* call may not exist yet */ });
+
+        if (data.createFollowUp || data.isUrgent) {
+            await this.followUpTasksService.create({
+                businessId: data.businessId,
+                callId: data.callId,
+                voicemailId: voicemail.id,
+                type: data.isUrgent ? 'URGENT_CALLBACK' : 'VOICEMAIL_REVIEW',
+                priority: data.isUrgent ? 'URGENT' : 'NORMAL',
+                title: data.isUrgent ? 'Urgent after-hours voicemail' : 'Voicemail follow-up',
+                summary: data.context,
+                callerName: data.callerName,
+                callerPhone: data.callerPhone,
+                urgencyKeywords: data.urgencyKeywords ?? [],
+                metadata: {
+                    source: 'voicemail',
+                    transcription: data.transcription,
+                },
+            });
+        }
 
         this.logger.info('Voicemail recorded', { callId: data.callId, businessId: data.businessId });
         return voicemail;

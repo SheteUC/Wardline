@@ -1,22 +1,30 @@
 """
-Five pre-built AI tools for Wardline Voice AI.
-
-Each tool is an async function that accepts a CallContext as its first
-argument (so agents can pass hospital/call metadata) and keyword
-arguments matching the tool's parameter schema.
-
-Tools:
-  1. check_insurance       -- verify if a carrier/plan is accepted
-  2. schedule_appointment  -- book an appointment for a patient
-  3. request_prescription_refill -- submit a refill request
-  4. lookup_department     -- find a department's contact info
-  5. transfer_to_human     -- escalate to a human agent/queue
+Business-native tool helpers for the Wardline voice runtime.
 """
 from typing import Any, Dict, Optional
 from loguru import logger
 
 from call_context import CallContext, IntentType
 from core_api_client import api_client
+
+
+def _business_name(context: CallContext) -> str:
+    return context.business_name or context.hospital_name or "the practice"
+
+
+def _require_confirmation(
+    context: CallContext,
+    action_name: str,
+    summary: str,
+    payload: Dict[str, Any],
+) -> Dict[str, Any]:
+    context.set_pending_action(action_name, summary, payload)
+    return {
+        "success": False,
+        "requires_confirmation": True,
+        "pending_action": action_name,
+        "message": f"Before I submit that, please confirm: {summary}",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -29,7 +37,7 @@ async def check_insurance(
     plan_name: str = "",
 ) -> Dict[str, Any]:
     """
-    Check whether an insurance carrier / plan is accepted by the hospital.
+    Check whether an insurance carrier / plan is accepted by the practice.
 
     Returns a dict with:
       - accepted (bool)
@@ -41,8 +49,12 @@ async def check_insurance(
     logger.info(f"[Tool] check_insurance: carrier={carrier_name!r} plan={plan_name!r}")
     try:
         result = await api_client.check_insurance_plan(
-            hospital_id=context.hospital_id,
+            business_id=context.business_id,
             carrier_name=carrier_name,
+            plan_name=plan_name,
+            call_id=context.call_id,
+            caller_name=context.caller_name or "",
+            caller_phone=context.caller_phone or "",
         )
 
         if result is None:
@@ -88,6 +100,9 @@ async def schedule_appointment(
     patient_phone: str,
     service_type: str,
     preferred_date: str = "",
+    preferred_time: str = "",
+    notes: str = "",
+    confirmed: bool = False,
 ) -> Dict[str, Any]:
     """
     Schedule a new appointment for a patient.
@@ -102,33 +117,60 @@ async def schedule_appointment(
         f"service={service_type!r} date={preferred_date!r}"
     )
     try:
+        if not confirmed:
+            summary = (
+                f"you'd like { _business_name(context) } to request a {service_type} appointment "
+                f"for {patient_name} at {patient_phone}"
+            )
+            if preferred_date:
+                summary += f", with a preferred date of {preferred_date}"
+            if preferred_time:
+                summary += f" and preferred time {preferred_time}"
+            summary += "."
+            return _require_confirmation(
+                context,
+                "appointment-request",
+                summary,
+                {
+                    "patient_name": patient_name,
+                    "patient_phone": patient_phone,
+                    "service_type": service_type,
+                    "preferred_date": preferred_date,
+                    "preferred_time": preferred_time,
+                    "notes": notes,
+                },
+            )
+
         result = await api_client.create_appointment(
-            hospital_id=context.hospital_id,
+            business_id=context.business_id,
             call_id=context.call_id,
             patient_name=patient_name,
             patient_phone=patient_phone,
             service_type=service_type,
             preferred_date=preferred_date,
+            preferred_time=preferred_time,
+            notes=notes,
+            confirmed=True,
         )
 
         if result:
             context.detected_intent = IntentType.SCHEDULING
+            context.mark_action_outcome(result)
             return {
                 "success": True,
-                "appointment_id": result.get("id"),
-                "message": (
-                    f"I've submitted your appointment request for {service_type}. "
-                    "Our scheduling team will confirm the exact date and time with you shortly."
+                "appointment_id": result.get("recordId") or result.get("appointmentId"),
+                "handled_live": result.get("handledLive", False),
+                "follow_up_task_id": result.get("followUpTaskId"),
+                "message": result.get(
+                    "message",
+                    f"I've submitted your appointment request for {service_type}.",
                 ),
             }
         else:
             return {
                 "success": False,
                 "appointment_id": None,
-                "message": (
-                    "I wasn't able to schedule the appointment at the moment. "
-                    "Let me transfer you to our scheduling team."
-                ),
+                "message": "I wasn't able to capture the appointment request right now.",
             }
     except Exception as e:
         logger.error(f"schedule_appointment tool error: {e}")
@@ -150,6 +192,7 @@ async def request_prescription_refill(
     medication_name: str,
     pharmacy_name: str = "",
     pharmacy_phone: str = "",
+    confirmed: bool = False,
 ) -> Dict[str, Any]:
     """
     Submit a prescription refill request.
@@ -164,24 +207,49 @@ async def request_prescription_refill(
         f"medication={medication_name!r}"
     )
     try:
+        if not confirmed:
+            summary = (
+                f"you'd like { _business_name(context) } to submit a refill request for "
+                f"{medication_name} for {patient_name}"
+            )
+            if pharmacy_name:
+                summary += f" with {pharmacy_name}"
+            summary += "."
+            return _require_confirmation(
+                context,
+                "refill-request",
+                summary,
+                {
+                    "patient_name": patient_name,
+                    "patient_phone": patient_phone,
+                    "medication_name": medication_name,
+                    "pharmacy_name": pharmacy_name,
+                    "pharmacy_phone": pharmacy_phone,
+                },
+            )
+
         result = await api_client.create_prescription_refill(
-            hospital_id=context.hospital_id,
+            business_id=context.business_id,
             call_id=context.call_id,
             patient_name=patient_name,
             patient_phone=patient_phone,
             medication_name=medication_name,
             pharmacy_name=pharmacy_name,
             pharmacy_phone=pharmacy_phone,
+            confirmed=True,
         )
 
         if result:
             context.detected_intent = IntentType.PRESCRIPTION_REFILL
+            context.mark_action_outcome(result)
             return {
                 "success": True,
-                "refill_id": result.get("id"),
-                "message": (
-                    f"Your refill request for {medication_name} has been submitted. "
-                    "Your provider will review it within one business day and send it to your pharmacy."
+                "refill_id": result.get("recordId") or result.get("refillId"),
+                "handled_live": result.get("handledLive", False),
+                "follow_up_task_id": result.get("followUpTaskId"),
+                "message": result.get(
+                    "message",
+                    f"Your refill request for {medication_name} has been submitted.",
                 ),
             }
         else:
@@ -211,7 +279,7 @@ async def lookup_department(
     service_type: str,
 ) -> Dict[str, Any]:
     """
-    Find a hospital department by service type keyword.
+    Find a practice department by service type keyword.
 
     Returns a dict with:
       - found (bool)
@@ -221,7 +289,7 @@ async def lookup_department(
     logger.info(f"[Tool] lookup_department: service_type={service_type!r}")
     try:
         departments = context.departments or await api_client.get_departments(
-            context.hospital_id
+            context.business_id
         )
 
         # Case-insensitive partial match on name or service types
@@ -296,7 +364,7 @@ async def transfer_to_human(
     try:
         result = await api_client.create_escalation({
             "callId": context.call_id,
-            "hospitalId": context.hospital_id,
+            "businessId": context.business_id,
             "reason": reason,
             "specialization": specialization,
             "callerPhone": context.caller_phone,

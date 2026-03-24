@@ -122,7 +122,7 @@ class AIAgentNodeExecutor(NodeExecutor):
         logger.debug(f"System prompt: {config.system_prompt[:100]}...")
         logger.debug(f"Enabled tools: {config.enabled_tools}")
         
-        self.context.state = CallState.PROCESSING
+        self.context.state = CallState.AGENT_HANDLING
         
         # Note: Actual LLM execution happens in the Pipecat pipeline
         # This executor just configures the agent and manages state
@@ -169,25 +169,20 @@ class HumanQueueNodeExecutor(NodeExecutor):
         from core_api_client import api_client
         
         context_package = {
-            "call_id": self.context.call_id,
-            "hospital_id": self.context.hospital_id,
-            "queue_id": config.queue_id,
-            "priority": config.priority_level,
-            "required_skills": config.required_skills,
-            "caller_phone": self.context.caller_phone,
-            "caller_name": self.context.caller_name,
-            "intent": self.context.detected_intent.value if self.context.detected_intent else None,
-            "is_emergency": self.context.is_emergency,
+            "callId": self.context.call_id,
+            "businessId": self.context.business_id,
+            "reason": self.context.escalation_reason or f"Escalation requested for queue {config.queue_id}",
+            "specialization": config.queue_id,
+            "callerPhone": self.context.caller_phone,
+            "callerName": self.context.caller_name,
+            "context_summary": self.context.get_conversation_text(),
             "transcript": self.context.get_conversation_text(),
-            "collected_fields": {k: v.value for k, v in self.context.collected_fields.items() if not k.startswith("_")},
-            "sentiment": {
-                "frustration": self.context.sentiment.frustration_level,
-                "urgency": self.context.sentiment.urgency_level,
-                "overall_score": self.context.sentiment.overall_score,
-            },
-            "escalation_reason": self.context.escalation_reason,
-            "workflow_path": [],  # Will be populated by FlowManager
-            **config.context_package
+            "collectedFields": {k: v.value for k, v in self.context.collected_fields.items() if not k.startswith("_")},
+            "isUrgent": self.context.is_emergency or config.priority_level >= 2,
+            "requiredSkills": config.required_skills,
+            "intent": self.context.detected_intent.value if self.context.detected_intent else None,
+            "workflowPath": [],
+            **config.context_package,
         }
         
         # Send escalation request to Core API
@@ -351,120 +346,89 @@ class IntegrationNodeExecutor(NodeExecutor):
     """Executor for INTEGRATION nodes"""
     
     async def execute(self) -> NodeExecutionResult:
-        """Execute external integration call"""
+        """Execute a Business-native runtime action"""
         config = IntegrationConfig.from_dict(self.node.config)
         
-        logger.info(f"🔌 Executing integration: {config.integration_type}")
-        
-        # Import here to avoid circular dependency
-        import httpx
-        
+        logger.info(f"🔌 Executing runtime action: {config.runtime_action}")
+
         try:
-            # Build request
-            url = config.endpoint_url
-            if not url:
-                raise ValueError("No endpoint URL configured")
-            
-            # Replace template variables in URL and body
-            url = self._replace_template_vars(url)
-            
-            body = None
-            if config.body_template:
-                body_str = self._replace_template_vars(config.body_template)
-                try:
-                    body = json.loads(body_str)
-                except json.JSONDecodeError:
-                    body = body_str
-            
-            # Execute request with retries
-            async with httpx.AsyncClient(timeout=config.timeout_seconds) as client:
-                for attempt in range(config.retry_count):
-                    try:
-                        logger.debug(f"Integration request attempt {attempt + 1}/{config.retry_count}")
-                        
-                        if config.method == "GET":
-                            response = await client.get(url, headers=config.headers)
-                        elif config.method == "POST":
-                            response = await client.post(url, json=body, headers=config.headers)
-                        elif config.method == "PUT":
-                            response = await client.put(url, json=body, headers=config.headers)
-                        elif config.method == "DELETE":
-                            response = await client.delete(url, headers=config.headers)
-                        else:
-                            raise ValueError(f"Unsupported HTTP method: {config.method}")
-                        
-                        response.raise_for_status()
-                        
-                        # Parse response
-                        try:
-                            response_data = response.json()
-                        except:
-                            response_data = {"text": response.text}
-                        
-                        # Apply response mapping
-                        mapped_data = {}
-                        for source_key, target_key in config.response_mapping.items():
-                            if source_key in response_data:
-                                mapped_data[target_key] = response_data[source_key]
-                        
-                        # Store response data in context
-                        for key, value in mapped_data.items():
-                            self.context.collect_field(key, value, confirmed=True)
-                        
-                        logger.info(f"✅ Integration successful: {config.integration_type}")
-                        return NodeExecutionResult(
-                            success=True,
-                            context_updates=mapped_data
-                        )
-                    
-                    except httpx.HTTPError as e:
-                        logger.warning(f"Integration attempt {attempt + 1} failed: {e}")
-                        if attempt == config.retry_count - 1:
-                            raise
-                        await asyncio.sleep(1 * (attempt + 1))  # Exponential backoff
+            from core_api_client import api_client
+
+            payload = self._build_runtime_payload(config.runtime_action)
+            result = await api_client.execute_runtime_action(
+                self.context.business_id,
+                config.runtime_action,
+                payload,
+            )
+
+            if not result:
+                raise ValueError("Runtime action returned no result")
+
+            self.context.mark_action_outcome(result)
+            return NodeExecutionResult(
+                success=True,
+                messages=[result.get("message", "The request has been captured.")],
+                context_updates={
+                    "runtime_action": config.runtime_action,
+                    "handledLive": result.get("handledLive", False),
+                    "followUpTaskId": result.get("followUpTaskId"),
+                    "result": result.get("data", {}),
+                },
+            )
         
         except Exception as e:
             logger.error(f"Integration error: {e}")
-            
-            # Handle error based on configuration
-            if config.error_handling == "escalate":
-                return NodeExecutionResult(
-                    success=False,
-                    should_escalate=True,
-                    escalation_reason=f"Integration failed: {str(e)}"
-                )
-            elif config.error_handling == "end":
-                return NodeExecutionResult(
-                    success=False,
-                    should_end_call=True,
-                    error_message=f"Integration failed: {str(e)}"
-                )
-            else:  # continue
-                logger.info("Continuing despite integration error")
-                return NodeExecutionResult(
-                    success=True,
-                    context_updates={"integration_error": str(e)}
-                )
-    
-    def _replace_template_vars(self, template: str) -> str:
-        """Replace template variables like {{field_name}} with actual values"""
-        import re
-        
-        def replacer(match):
-            var_name = match.group(1)
-            
-            # Check collected fields
-            if var_name in self.context.collected_fields:
-                return str(self.context.collected_fields[var_name].value)
-            
-            # Check context attributes
-            value = self._get_context_value(var_name)
-            if value is not None:
-                return str(value)
-            
-            return match.group(0)  # Return original if not found
-        
-        return re.sub(r'\{\{([^}]+)\}\}', replacer, template)
+            return NodeExecutionResult(
+                success=False,
+                error_message=f"Runtime action failed: {str(e)}"
+            )
+
+    def _build_runtime_payload(self, runtime_action: str) -> Dict[str, Any]:
+        collected = {
+            key: getattr(value, "value", value)
+            for key, value in self.context.collected_fields.items()
+            if not key.startswith("_")
+        }
+
+        payload: Dict[str, Any] = {
+            "callId": self.context.call_id or None,
+            "callerName": collected.get("caller_name") or self.context.caller_name,
+            "callerPhone": collected.get("caller_phone") or self.context.caller_phone,
+        }
+
+        if runtime_action == "appointment-request":
+            payload.update({
+                "serviceType": collected.get("service_type") or collected.get("serviceType") or "appointment",
+                "preferredDate": collected.get("preferred_date") or collected.get("preferredDate"),
+                "preferredTime": collected.get("preferred_time") or collected.get("preferredTime"),
+                "notes": collected.get("notes"),
+                "confirmed": True,
+            })
+        elif runtime_action == "refill-request":
+            payload.update({
+                "medicationName": collected.get("medication_name") or collected.get("medicationName"),
+                "pharmacyName": collected.get("pharmacy_name") or collected.get("pharmacyName"),
+                "pharmacyPhone": collected.get("pharmacy_phone") or collected.get("pharmacyPhone"),
+                "callerDob": collected.get("caller_dob") or collected.get("callerDob"),
+                "prescriberName": collected.get("prescriber_name") or collected.get("prescriberName"),
+                "notes": collected.get("notes"),
+                "confirmed": True,
+            })
+        elif runtime_action == "insurance-check":
+            payload.update({
+                "carrierName": collected.get("carrier_name") or collected.get("carrierName"),
+                "planName": collected.get("plan_name") or collected.get("planName"),
+                "inquiryType": collected.get("inquiry_type") or collected.get("inquiryType") or "acceptance",
+            })
+        elif runtime_action == "billing-request":
+            payload.update({
+                "billingTopic": collected.get("billing_topic") or collected.get("billingTopic") or "billing support",
+                "accountReference": collected.get("account_reference") or collected.get("accountReference"),
+                "notes": collected.get("notes"),
+                "confirmed": True,
+            })
+
+        return payload
 
 
 class EndNodeExecutor(NodeExecutor):

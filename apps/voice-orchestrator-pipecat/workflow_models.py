@@ -183,29 +183,23 @@ class SafetyCheckConfig:
 @dataclass
 class IntegrationConfig:
     """Configuration for Integration nodes"""
-    integration_type: str  # ehr_lookup, scheduling, external_api
-    endpoint_url: Optional[str] = None
-    method: str = "GET"
-    headers: Dict[str, str] = field(default_factory=dict)
-    body_template: Optional[str] = None
-    response_mapping: Dict[str, str] = field(default_factory=dict)
-    timeout_seconds: int = 10
-    retry_count: int = 3
-    error_handling: str = "continue"  # continue, escalate, end
+    runtime_action: str = "manual-follow-up"
+    integration_category: str = "MANUAL"
+    requires_confirmation: bool = False
+    fallback_behavior: str = "create_follow_up"
+    prompt: Optional[str] = None
+    legacy_source: Dict[str, Any] = field(default_factory=dict)
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "IntegrationConfig":
         """Create from node config dictionary"""
         return cls(
-            integration_type=data.get("integrationType", "external_api"),
-            endpoint_url=data.get("endpointUrl"),
-            method=data.get("method", "GET"),
-            headers=data.get("headers", {}),
-            body_template=data.get("bodyTemplate"),
-            response_mapping=data.get("responseMapping", {}),
-            timeout_seconds=data.get("timeoutSeconds", 10),
-            retry_count=data.get("retryCount", 3),
-            error_handling=data.get("errorHandling", "continue"),
+            runtime_action=data.get("runtimeAction", "manual-follow-up"),
+            integration_category=data.get("integrationCategory", "MANUAL"),
+            requires_confirmation=data.get("requiresConfirmation", False),
+            fallback_behavior=data.get("fallbackBehavior", "create_follow_up"),
+            prompt=data.get("prompt"),
+            legacy_source=data.get("__legacySource", {}),
         )
 
 

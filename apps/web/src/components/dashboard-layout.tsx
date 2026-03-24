@@ -8,24 +8,29 @@ import {
     LayoutDashboard, Phone, Settings, Search, Menu, X,
     AlertTriangle, Bot, GitBranch, Bell, ListTodo, PhoneCall, PlugZap, Voicemail,
 } from 'lucide-react';
-import { useCalls, useIntegrations, useVoicemails } from '@/lib/hooks/query-hooks';
+import { useFollowUpTasks, useIntegrations, useVoicemails } from '@/lib/hooks/query-hooks';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { user } = useUser();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
-    const urgentCallsQuery = useCalls({ isEmergency: true, pageSize: 25 });
+    const followUpTasksQuery = useFollowUpTasks();
     const voicemailsQuery = useVoicemails(true);
     const integrationsQuery = useIntegrations();
 
     const userRole = (user?.publicMetadata?.role as string) || 'readonly';
-    const urgentCount = urgentCallsQuery.data?.total ?? 0;
+    const openTasks = (followUpTasksQuery.data ?? []).filter(
+        (task) => task.status !== 'COMPLETED' && task.status !== 'CANCELLED',
+    );
+    const urgentCount = openTasks.filter(
+        (task) => task.priority === 'URGENT' || task.type === 'URGENT_CALLBACK',
+    ).length;
     const voicemailCount = voicemailsQuery.data?.length ?? 0;
     const integrationFailureCount =
         integrationsQuery.data?.filter((integration) => integration.status !== 'CONNECTED').length ?? 0;
-    const followUpCount = urgentCount + voicemailCount;
-    const notificationCount = urgentCount + voicemailCount + integrationFailureCount;
+    const followUpCount = openTasks.length;
+    const notificationCount = followUpCount + integrationFailureCount;
 
     useEffect(() => {
         const handleResize = () => {

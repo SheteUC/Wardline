@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from typing import Optional
 from contextlib import asynccontextmanager
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
@@ -18,6 +19,155 @@ from call_context import context_manager, CallContext, CallState
 from core_api_client import api_client
 from prompts import get_greeting_prompt, get_system_prompt
 from twilio_transport import TwilioMediaStreamAdapter
+
+SYSTEM_EMERGENCY_KEYWORDS = [
+    "chest pain",
+    "can't breathe",
+    "difficulty breathing",
+    "stroke",
+    "heart attack",
+    "severe bleeding",
+    "unconscious",
+    "not breathing",
+    "suicidal",
+    "kill myself",
+]
+
+AFTER_HOURS_URGENT_KEYWORDS = [
+    "urgent",
+    "as soon as possible",
+    "asap",
+    "today",
+    "same day",
+    "right away",
+    "cannot wait",
+    "can't wait",
+]
+
+AFFIRMATIVE_KEYWORDS = ["yes", "yeah", "yep", "correct", "that's right", "please do", "confirm"]
+NEGATIVE_KEYWORDS = ["no", "nope", "don't", "do not", "cancel", "stop", "not now"]
+
+
+def _normalize_keyword_list(values) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip().lower() for value in values if str(value).strip()]
+
+
+def _match_keywords(text: str, keywords: list[str]) -> list[str]:
+    lowered = text.lower()
+    return [keyword for keyword in keywords if keyword and keyword in lowered]
+
+
+def _match_phone_number(phone_numbers: list[dict], to_number: str) -> Optional[dict]:
+    normalized = "".join(filter(str.isdigit, to_number))
+    for phone_number in phone_numbers:
+        candidate = "".join(filter(str.isdigit, phone_number.get("twilioPhoneNumber", "")))
+        if candidate and (candidate.endswith(normalized[-10:]) or normalized.endswith(candidate[-10:])):
+            return phone_number
+    return phone_numbers[0] if phone_numbers else None
+
+
+def _get_business_timezone(context: CallContext) -> str:
+    runtime_business = context.runtime_config.get("business", {}) if context.runtime_config else {}
+    return runtime_business.get("timeZone") or context.time_zone or "America/New_York"
+
+
+def _get_operating_hours(context: CallContext) -> list[dict]:
+    settings = context.runtime_config.get("settings", {}) if context.runtime_config else {}
+    hours = settings.get("operatingHours")
+    return hours if isinstance(hours, list) else []
+
+
+def _is_business_open(context: CallContext) -> bool:
+    operating_hours = _get_operating_hours(context)
+    if not operating_hours:
+        return True
+
+    now_local = datetime.now(ZoneInfo(_get_business_timezone(context)))
+    day_of_week = int(now_local.strftime("%w"))
+    current_time = now_local.strftime("%H:%M")
+
+    for entry in operating_hours:
+        if entry.get("dayOfWeek") != day_of_week:
+            continue
+        if entry.get("isClosed"):
+            return False
+
+        start_time = entry.get("startTime")
+        end_time = entry.get("endTime")
+        if not start_time or not end_time:
+            return False
+        return start_time <= current_time <= end_time
+
+    return False
+
+
+def _detect_emergency_keywords(context: CallContext, text: str) -> list[str]:
+    runtime_settings = context.runtime_config.get("settings", {}) if context.runtime_config else {}
+    custom_keywords = _normalize_keyword_list(runtime_settings.get("emergencyKeywords", []))
+    return _match_keywords(text, SYSTEM_EMERGENCY_KEYWORDS + custom_keywords)
+
+
+def _detect_after_hours_urgency(text: str) -> list[str]:
+    return _match_keywords(text, AFTER_HOURS_URGENT_KEYWORDS)
+
+
+def _is_confirmation(text: str, keywords: list[str]) -> bool:
+    lowered = text.lower()
+    return any(keyword in lowered for keyword in keywords)
+
+
+async def _execute_pending_action(context: CallContext) -> str:
+    payload = dict(context.pending_action_payload or {})
+    action_name = context.pending_action_name
+    if not action_name:
+        return "I'm sorry, I lost track of that request. What would you like to do next?"
+
+    if action_name == "appointment-request":
+        result = await api_client.create_appointment(
+            business_id=context.business_id,
+            patient_name=str(payload.get("patient_name") or context.caller_name or ""),
+            patient_phone=str(payload.get("patient_phone") or context.caller_phone or ""),
+            service_type=str(payload.get("service_type") or "appointment"),
+            preferred_date=str(payload.get("preferred_date") or ""),
+            preferred_time=str(payload.get("preferred_time") or ""),
+            notes=str(payload.get("notes") or ""),
+            call_id=context.call_id or None,
+            confirmed=True,
+        )
+    elif action_name == "refill-request":
+        result = await api_client.create_prescription_refill(
+            business_id=context.business_id,
+            patient_name=str(payload.get("patient_name") or context.caller_name or ""),
+            patient_phone=str(payload.get("patient_phone") or context.caller_phone or ""),
+            medication_name=str(payload.get("medication_name") or "your medication"),
+            pharmacy_name=str(payload.get("pharmacy_name") or ""),
+            pharmacy_phone=str(payload.get("pharmacy_phone") or ""),
+            call_id=context.call_id or None,
+            confirmed=True,
+        )
+    elif action_name == "billing-request":
+        result = await api_client.create_billing_request(
+            business_id=context.business_id,
+            caller_name=str(payload.get("caller_name") or context.caller_name or ""),
+            caller_phone=str(payload.get("caller_phone") or context.caller_phone or ""),
+            billing_topic=str(payload.get("billing_topic") or "billing support"),
+            account_reference=str(payload.get("account_reference") or ""),
+            notes=str(payload.get("notes") or ""),
+            call_id=context.call_id or None,
+            confirmed=True,
+        )
+    else:
+        context.clear_pending_action()
+        return "I can't submit that automatically yet, so I've held it for staff follow-up."
+
+    if result:
+        context.mark_action_outcome(result)
+        return str(result.get("message") or "Your request has been submitted.")
+
+    context.clear_pending_action()
+    return "I wasn't able to submit that right now, but the office can follow up on it."
 
 # Configure logging
 # Use enqueue=True to avoid file locking issues on Windows
@@ -92,20 +242,27 @@ async def handle_incoming_call(request: Request):
         to_phone=to_number,
     )
     
-    # Look up hospital by phone number
+    # Look up business by phone number
     try:
-        hospital = await api_client.get_business_by_phone(to_number)
-        if hospital:
-            context.hospital_id = hospital.get("id", "")
-            context.hospital_name = hospital.get("name", "Wardline Medical Center")
-            logger.info(f"Found hospital: {context.hospital_name} ({context.hospital_id})")
-            
-            context.intents = await api_client.get_intents(context.hospital_id)
-            context.departments = await api_client.get_departments(context.hospital_id)
-            
+        business = await api_client.get_business_by_phone(to_number)
+        if business:
+            context.business_id = business.get("id", "")
+            context.business_name = business.get("name", "Wardline Medical Center")
+            context.time_zone = business.get("timeZone", context.time_zone)
+            matched_phone_number = _match_phone_number(business.get("phoneNumbers", []), to_number)
+            if matched_phone_number:
+                context.phone_number_id = matched_phone_number.get("id", "")
+
+            runtime_config = await api_client.get_runtime_config(context.business_id)
+            if runtime_config:
+                context.runtime_config = runtime_config
+                context.time_zone = runtime_config.get("business", {}).get("timeZone", context.time_zone)
+            context.is_after_hours = not _is_business_open(context)
+
+            logger.info(f"Found business: {context.business_name} ({context.business_id})")
+
             # Create call session in core-api (or get existing if duplicate webhook)
             call_data = await api_client.create_call_session({
-                "hospitalId": context.hospital_id,  # Required field
                 "twilioCallSid": call_sid,
                 "direction": "INBOUND",  # Must be uppercase enum value
                 "fromNumber": from_number,
@@ -121,6 +278,7 @@ async def handle_incoming_call(request: Request):
             
             if call_data:
                 context.call_id = call_data.get("id")
+                context.phone_number_id = call_data.get("phoneNumberId", context.phone_number_id)
                 # Register reverse mapping so Core API endpoints can look up context
                 if context.call_id:
                     context_manager.register_call_id(call_sid, context.call_id)
@@ -128,11 +286,11 @@ async def handle_incoming_call(request: Request):
             else:
                 logger.warning(f"Could not create or retrieve call session for {call_sid}")
         else:
-            logger.warning(f"No hospital found for phone {to_number}, using defaults")
-            context.hospital_name = "Wardline Medical Center"
+            logger.warning(f"No business found for phone {to_number}, using defaults")
+            context.business_name = "Wardline Medical Center"
     except Exception as e:
-        logger.warning(f"Could not load hospital data: {e}")
-        context.hospital_name = "Wardline Medical Center"
+        logger.warning(f"Could not load business data: {e}")
+        context.business_name = "Wardline Medical Center"
     
     # Generate TwiML response
     response = VoiceResponse()
@@ -150,7 +308,14 @@ async def handle_incoming_call(request: Request):
         logger.info(f"Using Pipecat streaming mode for {call_sid}")
 
         # Greet the caller first, then connect the media stream
-        greeting = get_greeting_prompt(context.hospital_name)
+        if context.is_after_hours:
+            greeting = (
+                f"Thank you for calling {context.business_name}. "
+                "The office is currently closed. Please briefly tell me what you need, "
+                "and I will help route your after-hours message."
+            )
+        else:
+            greeting = get_greeting_prompt(context.business_name)
         response.say(greeting, voice="Polly.Joanna")
 
         # Open a bidirectional media stream to our WebSocket endpoint
@@ -162,7 +327,14 @@ async def handle_incoming_call(request: Request):
         logger.info(f"Using Gather (request/response) mode for {call_sid}")
 
         # Greeting inside gather so it starts listening immediately
-        greeting = get_greeting_prompt(context.hospital_name)
+        if context.is_after_hours:
+            greeting = (
+                f"Thank you for calling {context.business_name}. "
+                "The office is currently closed. Please briefly tell me what you need, "
+                "and I will help route your message."
+            )
+        else:
+            greeting = get_greeting_prompt(context.business_name)
         
         # Speech hints help Twilio recognise medical/appointment terms better
         speech_hints = (
@@ -231,15 +403,17 @@ async def process_speech(request: Request):
     context.add_user_message(speech_result)
     
     # Check for emergency keywords
-    emergency_keywords = [
-        "chest pain", "can't breathe", "difficulty breathing",
-        "stroke", "heart attack", "severe bleeding", "unconscious"
-    ]
-    is_emergency = any(kw in speech_result.lower() for kw in emergency_keywords)
-    
-    if is_emergency:
+    emergency_hits = _detect_emergency_keywords(context, speech_result)
+
+    if emergency_hits:
         context.is_emergency = True
         context.state = CallState.ESCALATING
+
+        if context.call_id:
+            await api_client.update_call_session(context.call_id, {
+                "isEmergency": True,
+                "tag": "EMERGENCY",
+            })
         
         response = VoiceResponse()
         response.say(
@@ -251,7 +425,80 @@ async def process_speech(request: Request):
         # In production, could dial 911 or emergency line
         response.hangup()
         return Response(content=str(response), media_type="text/xml")
-    
+
+    if context.is_after_hours:
+        urgency_hits = _detect_after_hours_urgency(speech_result)
+        context.matched_urgency_keywords = urgency_hits
+        context.state = CallState.VOICEMAIL
+
+        response = VoiceResponse()
+        if urgency_hits:
+            response.say(
+                "The office is currently closed, and I cannot connect urgent calls live after hours. "
+                "If this is life-threatening, please hang up and call 911 now. "
+                "Otherwise, please leave an urgent voicemail after the tone, and the practice will see it in the urgent queue on the next business day.",
+                voice="Polly.Joanna",
+            )
+        else:
+            response.say(
+                "The office is currently closed. Please leave a voicemail after the tone, and the practice will follow up on the next business day.",
+                voice="Polly.Joanna",
+            )
+
+        response.record(
+            action=f"/voice/voicemail/complete?priority={'urgent' if urgency_hits else 'normal'}",
+            method="POST",
+            max_length=120,
+            play_beep=True,
+            transcribe=True,
+        )
+        response.say("We did not receive a message. Goodbye.", voice="Polly.Joanna")
+        response.hangup()
+        return Response(content=str(response), media_type="text/xml")
+
+    if context.pending_confirmation_required:
+        if _is_confirmation(speech_result, AFFIRMATIVE_KEYWORDS):
+            confirmation_message = await _execute_pending_action(context)
+            context.add_assistant_message(confirmation_message)
+
+            response = VoiceResponse()
+            gather = Gather(
+                input="speech",
+                action="/voice/process",
+                method="POST",
+                speech_timeout="3",
+                timeout=15,
+                speech_model="phone_call",
+                enhanced=True,
+                language="en-US",
+            )
+            gather.say(f"{confirmation_message} Is there anything else I can help you with today?", voice="Polly.Joanna")
+            response.append(gather)
+            response.redirect("/voice/incoming")
+            return Response(content=str(response), media_type="text/xml")
+
+        if _is_confirmation(speech_result, NEGATIVE_KEYWORDS):
+            pending_summary = context.pending_action_summary or "that request"
+            context.clear_pending_action()
+            response = VoiceResponse()
+            gather = Gather(
+                input="speech",
+                action="/voice/process",
+                method="POST",
+                speech_timeout="3",
+                timeout=15,
+                speech_model="phone_call",
+                enhanced=True,
+                language="en-US",
+            )
+            gather.say(
+                f"Okay, I won't submit {pending_summary}. What would you like to change?",
+                voice="Polly.Joanna",
+            )
+            response.append(gather)
+            response.redirect("/voice/incoming")
+            return Response(content=str(response), media_type="text/xml")
+
     # Generate AI response
     ai_response = await generate_ai_response(context, speech_result)
     
@@ -314,6 +561,48 @@ async def process_speech(request: Request):
     )
     response.redirect("/voice/incoming")
     
+    return Response(content=str(response), media_type="text/xml")
+
+
+@app.post("/voice/voicemail/complete")
+async def complete_voicemail(request: Request):
+    """
+    Store an after-hours voicemail and create the linked follow-up task.
+    """
+    form_data = await request.form()
+    call_sid = form_data.get("CallSid", "")
+    recording_url = form_data.get("RecordingUrl", "")
+    transcription = form_data.get("TranscriptionText", "")
+    priority = request.query_params.get("priority", "normal")
+
+    context = context_manager.get_context(call_sid)
+    response = VoiceResponse()
+
+    if not context or not context.call_id or not context.business_id:
+        response.say("Thank you. Your message has been received. Goodbye.", voice="Polly.Joanna")
+        response.hangup()
+        return Response(content=str(response), media_type="text/xml")
+
+    await api_client.create_voicemail(
+        context.call_id,
+        {
+            "businessId": context.business_id,
+            "callerPhone": context.caller_phone,
+            "callerName": context.caller_name,
+            "recordingUrl": recording_url or "#",
+            "transcription": transcription or None,
+            "context": context.get_conversation_text(last_n=8) or "After-hours voicemail captured.",
+            "createFollowUp": True,
+            "isUrgent": priority == "urgent",
+            "urgencyKeywords": context.matched_urgency_keywords,
+        },
+    )
+
+    response.say(
+        "Thank you. Your message has been recorded and the office will review it on the next business day.",
+        voice="Polly.Joanna",
+    )
+    response.hangup()
     return Response(content=str(response), media_type="text/xml")
 
 

@@ -1,20 +1,22 @@
-import { Controller, Get, Post, Put, Patch, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Param, Query, Req } from '@nestjs/common';
 import { BusinessesService } from './businesses.service';
+import { Public } from '../../auth/public.decorator';
 
 @Controller('businesses')
 export class BusinessesController {
     constructor(private readonly businessesService: BusinessesService) {}
 
     @Post()
-    create(@Body() body: { name: string; slug: string; timeZone?: string }) {
-        return this.businessesService.create(body);
+    create(@Req() request: any, @Body() body: { name: string; slug: string; timeZone?: string }) {
+        return this.businessesService.create(body, request.user?.id);
     }
 
     @Get()
     findAll(
+        @Req() request: any,
         @Query('includeSettings') includeSettings?: string,
     ) {
-        return this.businessesService.findAll(includeSettings === 'true');
+        return this.businessesService.findAll(includeSettings === 'true', request.user?.id);
     }
 
     @Get('by-slug/:slug')
@@ -23,8 +25,15 @@ export class BusinessesController {
     }
 
     @Get('by-phone')
+    @Public()
     findByPhone(@Query('phoneNumber') phoneNumber: string) {
         return this.businessesService.findByPhone(phoneNumber);
+    }
+
+    @Get(':id/runtime-config')
+    @Public()
+    getRuntimeConfig(@Param('id') id: string) {
+        return this.businessesService.getRuntimeConfig(id);
     }
 
     @Get(':id')
@@ -46,6 +55,7 @@ export class BusinessesController {
         @Body() body: Partial<{
             recordingDefault: string;
             transcriptRetentionDays: number;
+            operatingHours: unknown;
             outOfScopeKeywords: string[];
             emergencyKeywords: string[];
         }>,

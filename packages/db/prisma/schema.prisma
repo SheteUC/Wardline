@@ -37,6 +37,7 @@ model Business {
   appointments           Appointment[]
   agents                 Agent[]
   voicemails             VoicemailRecord[]
+  followUpTasks          FollowUpTask[]
   prescriptionRefills    PrescriptionRefill[]
   insurancePlans         InsurancePlan[]
   insuranceInquiries     InsuranceInquiry[]
@@ -56,6 +57,7 @@ model BusinessSettings {
   businessId              String           @unique @map("business_id")
   recordingDefault        RecordingDefault @default(ON) @map("recording_default")
   transcriptRetentionDays Int              @default(30) @map("transcript_retention_days")
+  operatingHours          Json?            @map("operating_hours")
   /** Override list of out-of-scope keywords that trigger deflection */
   outOfScopeKeywords      String[]         @map("out_of_scope_keywords")
   /** Additional emergency keywords on top of system defaults */
@@ -358,6 +360,7 @@ model CallSession {
   prescriptionRefills PrescriptionRefill[]
   insuranceInquiries InsuranceInquiry[]
   voicemails         VoicemailRecord[]
+  followUpTasks      FollowUpTask[]
 
   @@index([businessId, startedAt])
   @@index([tag])
@@ -449,10 +452,64 @@ model VoicemailRecord {
 
   call     CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
   business Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  followUpTask FollowUpTask?
 
   @@index([businessId, isListened])
   @@index([callId])
   @@map("voicemail_records")
+}
+
+model FollowUpTask {
+  id              String               @id @default(uuid())
+  businessId      String               @map("business_id")
+  callId          String?              @map("call_id")
+  voicemailId     String?              @unique @map("voicemail_id")
+  type            FollowUpTaskType
+  status          FollowUpTaskStatus   @default(OPEN)
+  priority        FollowUpTaskPriority @default(NORMAL)
+  title           String
+  summary         String               @db.Text
+  callerName      String?              @map("caller_name")
+  callerPhone     String?              @map("caller_phone")
+  urgencyKeywords String[]             @map("urgency_keywords")
+  metadata        Json?
+  dueAt           DateTime?            @map("due_at")
+  completedAt     DateTime?            @map("completed_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  business  Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  call      CallSession?    @relation(fields: [callId], references: [id], onDelete: SetNull)
+  voicemail VoicemailRecord? @relation(fields: [voicemailId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, status, priority])
+  @@index([businessId, type, createdAt])
+  @@index([callId])
+  @@map("follow_up_tasks")
+}
+
+enum FollowUpTaskType {
+  URGENT_CALLBACK
+  VOICEMAIL_REVIEW
+  MANUAL_REVIEW
+  APPOINTMENT_REQUEST
+  REFILL_REQUEST
+  INSURANCE_CHECK
+  BILLING_REQUEST
+}
+
+enum FollowUpTaskStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum FollowUpTaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }
 
 // ============================================================================

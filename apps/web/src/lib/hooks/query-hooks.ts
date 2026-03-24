@@ -7,6 +7,7 @@ import {
     createAgentsService,
     createBusinessService,
     createCallsService,
+    createFollowUpTasksService,
     createHospitalService,
     createIntegrationsService,
     createQueuesService,
@@ -22,6 +23,7 @@ import type {
     CallAnalytics,
     CallDetail,
     CallListItem,
+    FollowUpTask,
     HospitalSettings,
     PaginatedResponse,
     TeamMember,
@@ -63,6 +65,9 @@ export const queryKeys = {
     integrations: (businessId: string) => ['integrations', businessId] as const,
     integrationDetail: (businessId: string, category: string) =>
         [...queryKeys.integrations(businessId), category] as const,
+
+    followUpTasks: (businessId: string, filters?: Record<string, unknown>) =>
+        ['follow-up-tasks', businessId, filters] as const,
 
     queues: (businessId: string) => ['queues', businessId] as const,
     queuesList: (businessId: string, filters?: Record<string, unknown>) =>
@@ -492,6 +497,46 @@ export function useIntegrations() {
     });
 }
 
+export function useFollowUpTasks(filters?: {
+    type?: string;
+    status?: string;
+    priority?: string;
+    search?: string;
+}) {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+
+    return useQuery({
+        queryKey: queryKeys.followUpTasks(businessId || '', filters),
+        queryFn: async () => {
+            if (!businessId) throw new Error('No business selected');
+            return createFollowUpTasksService(client, businessId).getFollowUpTasks(filters);
+        },
+        enabled: !!businessId,
+        staleTime: 1000 * 30,
+    });
+}
+
+export function useUpdateFollowUpTaskStatus() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ taskId, status }: { taskId: string; status: FollowUpTask['status'] }) => {
+            if (!businessId) throw new Error('No business selected');
+            return createFollowUpTasksService(client, businessId).updateFollowUpTaskStatus(taskId, status);
+        },
+        onSuccess: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: ['follow-up-tasks', businessId] });
+                queryClient.invalidateQueries({ queryKey: ['voicemails', businessId] });
+                queryClient.invalidateQueries({ queryKey: queryKeys.calls(businessId) });
+            }
+        },
+    });
+}
+
 export function useIntegration(category: string | null) {
     const client = useApiClient();
     const { businessId } = useBusiness();
@@ -666,6 +711,11 @@ export function useCacheInvalidation() {
                 queryClient.invalidateQueries({ queryKey: queryKeys.integrations(businessId) });
             }
         },
+        invalidateFollowUpTasks: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: ['follow-up-tasks', businessId] });
+            }
+        },
         invalidateQueues: () => {
             if (businessId) {
                 queryClient.invalidateQueries({ queryKey: queryKeys.queues(businessId) });
@@ -691,6 +741,7 @@ export type {
     CallAnalytics,
     CallDetail,
     CallListItem,
+    FollowUpTask,
     HospitalSettings,
     PaginatedResponse,
     TeamMember,

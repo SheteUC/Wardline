@@ -7,6 +7,11 @@ import { Badge } from '@/components/ui/badge';
 
 export interface IntegrationNodeData extends Record<string, unknown> {
     label: string;
+    runtimeAction?: string;
+    integrationCategory?: string;
+    requiresConfirmation?: boolean;
+    fallbackBehavior?: 'create_follow_up' | 'fail';
+    prompt?: string;
     preset?: string;
     integrationType?: string;
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -23,10 +28,10 @@ type IntegrationNodeType = Node<IntegrationNodeData, 'integration'>;
 
 const IntegrationNode = ({ data, selected }: NodeProps<IntegrationNodeType>) => {
     const getIcon = () => {
-        switch (data.integrationType) {
-            case 'ehr_lookup':
+        switch (data.integrationCategory) {
+            case 'EHR_REFILL':
                 return <Database className="w-4 h-4" />;
-            case 'scheduling':
+            case 'SCHEDULING':
                 return <Cloud className="w-4 h-4" />;
             default:
                 return <Plug className="w-4 h-4" />;
@@ -50,26 +55,26 @@ const IntegrationNode = ({ data, selected }: NodeProps<IntegrationNodeType>) => 
             
             <div className="text-xs text-teal-700 space-y-1">
                 <div className="flex items-center gap-1 flex-wrap">
-                    {data.integrationType && (
+                    {data.integrationCategory && (
                         <Badge variant="outline" className="text-[10px] bg-white/50">
-                            {data.integrationType.replace('_', ' ')}
+                            {data.integrationCategory.replace('_', ' ')}
                         </Badge>
                     )}
-                    {data.method && (
+                    {data.runtimeAction && (
                         <Badge variant="outline" className="text-[10px] bg-white/50 font-mono">
-                            {data.method}
+                            {data.runtimeAction}
                         </Badge>
                     )}
-                    {data.retryCount !== undefined && (
+                    {data.requiresConfirmation && (
                         <Badge variant="outline" className="text-[10px] bg-white/50">
-                            {data.retryCount} retries
+                            confirmation
                         </Badge>
                     )}
                 </div>
                 
-                {data.endpointUrl && (
+                {data.prompt && (
                     <div className="truncate text-[10px] opacity-75">
-                        {data.endpointUrl}
+                        {data.prompt}
                     </div>
                 )}
             </div>

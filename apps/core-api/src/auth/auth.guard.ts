@@ -4,6 +4,7 @@ import { ClerkService } from './clerk.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
 import { Logger } from '@wardline/utils';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../modules/users/users.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -13,6 +14,7 @@ export class AuthGuard implements CanActivate {
         private clerkService: ClerkService,
         private prisma: PrismaService,
         private reflector: Reflector,
+        private usersService: UsersService,
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -43,7 +45,7 @@ export class AuthGuard implements CanActivate {
             }
 
             // Find or fetch the user from database
-            const user = await this.prisma.user.findUnique({
+            let user = await this.prisma.user.findUnique({
                 where: { clerkUserId },
                 include: {
                     businesses: {
@@ -56,6 +58,28 @@ export class AuthGuard implements CanActivate {
 
             if (!user) {
                 this.logger.warn('User not found in database for Clerk user', { clerkUserId });
+
+                const clerkUser = await this.clerkService.getClerkUser(clerkUserId);
+                const email =
+                    clerkUser.emailAddresses?.[0]?.emailAddress || `${clerkUserId}@clerk.local`;
+                const fullName =
+                    `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || undefined;
+
+                await this.usersService.findOrCreateByClerkId(clerkUserId, email, fullName);
+
+                user = await this.prisma.user.findUnique({
+                    where: { clerkUserId },
+                    include: {
+                        businesses: {
+                            include: {
+                                business: true,
+                            },
+                        },
+                    },
+                });
+            }
+
+            if (!user) {
                 throw new UnauthorizedException('User not found');
             }
 

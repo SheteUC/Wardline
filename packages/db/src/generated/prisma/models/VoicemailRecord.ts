@@ -233,6 +233,7 @@ export type VoicemailRecordWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"VoicemailRecord"> | Date | string
   call?: Prisma.XOR<Prisma.CallSessionScalarRelationFilter, Prisma.CallSessionWhereInput>
   business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
+  followUpTask?: Prisma.XOR<Prisma.FollowUpTaskNullableScalarRelationFilter, Prisma.FollowUpTaskWhereInput> | null
 }
 
 export type VoicemailRecordOrderByWithRelationInput = {
@@ -249,6 +250,7 @@ export type VoicemailRecordOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   call?: Prisma.CallSessionOrderByWithRelationInput
   business?: Prisma.BusinessOrderByWithRelationInput
+  followUpTask?: Prisma.FollowUpTaskOrderByWithRelationInput
 }
 
 export type VoicemailRecordWhereUniqueInput = Prisma.AtLeast<{
@@ -268,6 +270,7 @@ export type VoicemailRecordWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"VoicemailRecord"> | Date | string
   call?: Prisma.XOR<Prisma.CallSessionScalarRelationFilter, Prisma.CallSessionWhereInput>
   business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
+  followUpTask?: Prisma.XOR<Prisma.FollowUpTaskNullableScalarRelationFilter, Prisma.FollowUpTaskWhereInput> | null
 }, "id">
 
 export type VoicemailRecordOrderByWithAggregationInput = {
@@ -316,6 +319,7 @@ export type VoicemailRecordCreateInput = {
   updatedAt?: Date | string
   call: Prisma.CallSessionCreateNestedOneWithoutVoicemailsInput
   business: Prisma.BusinessCreateNestedOneWithoutVoicemailsInput
+  followUpTask?: Prisma.FollowUpTaskCreateNestedOneWithoutVoicemailInput
 }
 
 export type VoicemailRecordUncheckedCreateInput = {
@@ -330,6 +334,7 @@ export type VoicemailRecordUncheckedCreateInput = {
   isListened?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  followUpTask?: Prisma.FollowUpTaskUncheckedCreateNestedOneWithoutVoicemailInput
 }
 
 export type VoicemailRecordUpdateInput = {
@@ -344,6 +349,7 @@ export type VoicemailRecordUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   call?: Prisma.CallSessionUpdateOneRequiredWithoutVoicemailsNestedInput
   business?: Prisma.BusinessUpdateOneRequiredWithoutVoicemailsNestedInput
+  followUpTask?: Prisma.FollowUpTaskUpdateOneWithoutVoicemailNestedInput
 }
 
 export type VoicemailRecordUncheckedUpdateInput = {
@@ -358,6 +364,7 @@ export type VoicemailRecordUncheckedUpdateInput = {
   isListened?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  followUpTask?: Prisma.FollowUpTaskUncheckedUpdateOneWithoutVoicemailNestedInput
 }
 
 export type VoicemailRecordCreateManyInput = {
@@ -452,6 +459,11 @@ export type VoicemailRecordMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type VoicemailRecordNullableScalarRelationFilter = {
+  is?: Prisma.VoicemailRecordWhereInput | null
+  isNot?: Prisma.VoicemailRecordWhereInput | null
+}
+
 export type VoicemailRecordCreateNestedManyWithoutBusinessInput = {
   create?: Prisma.XOR<Prisma.VoicemailRecordCreateWithoutBusinessInput, Prisma.VoicemailRecordUncheckedCreateWithoutBusinessInput> | Prisma.VoicemailRecordCreateWithoutBusinessInput[] | Prisma.VoicemailRecordUncheckedCreateWithoutBusinessInput[]
   connectOrCreate?: Prisma.VoicemailRecordCreateOrConnectWithoutBusinessInput | Prisma.VoicemailRecordCreateOrConnectWithoutBusinessInput[]
@@ -536,6 +548,22 @@ export type VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput = {
   deleteMany?: Prisma.VoicemailRecordScalarWhereInput | Prisma.VoicemailRecordScalarWhereInput[]
 }
 
+export type VoicemailRecordCreateNestedOneWithoutFollowUpTaskInput = {
+  create?: Prisma.XOR<Prisma.VoicemailRecordCreateWithoutFollowUpTaskInput, Prisma.VoicemailRecordUncheckedCreateWithoutFollowUpTaskInput>
+  connectOrCreate?: Prisma.VoicemailRecordCreateOrConnectWithoutFollowUpTaskInput
+  connect?: Prisma.VoicemailRecordWhereUniqueInput
+}
+
+export type VoicemailRecordUpdateOneWithoutFollowUpTaskNestedInput = {
+  create?: Prisma.XOR<Prisma.VoicemailRecordCreateWithoutFollowUpTaskInput, Prisma.VoicemailRecordUncheckedCreateWithoutFollowUpTaskInput>
+  connectOrCreate?: Prisma.VoicemailRecordCreateOrConnectWithoutFollowUpTaskInput
+  upsert?: Prisma.VoicemailRecordUpsertWithoutFollowUpTaskInput
+  disconnect?: Prisma.VoicemailRecordWhereInput | boolean
+  delete?: Prisma.VoicemailRecordWhereInput | boolean
+  connect?: Prisma.VoicemailRecordWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VoicemailRecordUpdateToOneWithWhereWithoutFollowUpTaskInput, Prisma.VoicemailRecordUpdateWithoutFollowUpTaskInput>, Prisma.VoicemailRecordUncheckedUpdateWithoutFollowUpTaskInput>
+}
+
 export type VoicemailRecordCreateWithoutBusinessInput = {
   id?: string
   callerPhone: string
@@ -547,6 +575,7 @@ export type VoicemailRecordCreateWithoutBusinessInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   call: Prisma.CallSessionCreateNestedOneWithoutVoicemailsInput
+  followUpTask?: Prisma.FollowUpTaskCreateNestedOneWithoutVoicemailInput
 }
 
 export type VoicemailRecordUncheckedCreateWithoutBusinessInput = {
@@ -560,6 +589,7 @@ export type VoicemailRecordUncheckedCreateWithoutBusinessInput = {
   isListened?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  followUpTask?: Prisma.FollowUpTaskUncheckedCreateNestedOneWithoutVoicemailInput
 }
 
 export type VoicemailRecordCreateOrConnectWithoutBusinessInput = {
@@ -616,6 +646,7 @@ export type VoicemailRecordCreateWithoutCallInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   business: Prisma.BusinessCreateNestedOneWithoutVoicemailsInput
+  followUpTask?: Prisma.FollowUpTaskCreateNestedOneWithoutVoicemailInput
 }
 
 export type VoicemailRecordUncheckedCreateWithoutCallInput = {
@@ -629,6 +660,7 @@ export type VoicemailRecordUncheckedCreateWithoutCallInput = {
   isListened?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  followUpTask?: Prisma.FollowUpTaskUncheckedCreateNestedOneWithoutVoicemailInput
 }
 
 export type VoicemailRecordCreateOrConnectWithoutCallInput = {
@@ -657,6 +689,78 @@ export type VoicemailRecordUpdateManyWithWhereWithoutCallInput = {
   data: Prisma.XOR<Prisma.VoicemailRecordUpdateManyMutationInput, Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallInput>
 }
 
+export type VoicemailRecordCreateWithoutFollowUpTaskInput = {
+  id?: string
+  callerPhone: string
+  callerName?: string | null
+  recordingUrl: string
+  transcription?: string | null
+  context: string
+  isListened?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  call: Prisma.CallSessionCreateNestedOneWithoutVoicemailsInput
+  business: Prisma.BusinessCreateNestedOneWithoutVoicemailsInput
+}
+
+export type VoicemailRecordUncheckedCreateWithoutFollowUpTaskInput = {
+  id?: string
+  callId: string
+  businessId: string
+  callerPhone: string
+  callerName?: string | null
+  recordingUrl: string
+  transcription?: string | null
+  context: string
+  isListened?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type VoicemailRecordCreateOrConnectWithoutFollowUpTaskInput = {
+  where: Prisma.VoicemailRecordWhereUniqueInput
+  create: Prisma.XOR<Prisma.VoicemailRecordCreateWithoutFollowUpTaskInput, Prisma.VoicemailRecordUncheckedCreateWithoutFollowUpTaskInput>
+}
+
+export type VoicemailRecordUpsertWithoutFollowUpTaskInput = {
+  update: Prisma.XOR<Prisma.VoicemailRecordUpdateWithoutFollowUpTaskInput, Prisma.VoicemailRecordUncheckedUpdateWithoutFollowUpTaskInput>
+  create: Prisma.XOR<Prisma.VoicemailRecordCreateWithoutFollowUpTaskInput, Prisma.VoicemailRecordUncheckedCreateWithoutFollowUpTaskInput>
+  where?: Prisma.VoicemailRecordWhereInput
+}
+
+export type VoicemailRecordUpdateToOneWithWhereWithoutFollowUpTaskInput = {
+  where?: Prisma.VoicemailRecordWhereInput
+  data: Prisma.XOR<Prisma.VoicemailRecordUpdateWithoutFollowUpTaskInput, Prisma.VoicemailRecordUncheckedUpdateWithoutFollowUpTaskInput>
+}
+
+export type VoicemailRecordUpdateWithoutFollowUpTaskInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recordingUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  transcription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  context?: Prisma.StringFieldUpdateOperationsInput | string
+  isListened?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  call?: Prisma.CallSessionUpdateOneRequiredWithoutVoicemailsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutVoicemailsNestedInput
+}
+
+export type VoicemailRecordUncheckedUpdateWithoutFollowUpTaskInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  callId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recordingUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  transcription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  context?: Prisma.StringFieldUpdateOperationsInput | string
+  isListened?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type VoicemailRecordCreateManyBusinessInput = {
   id?: string
   callId: string
@@ -681,6 +785,7 @@ export type VoicemailRecordUpdateWithoutBusinessInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   call?: Prisma.CallSessionUpdateOneRequiredWithoutVoicemailsNestedInput
+  followUpTask?: Prisma.FollowUpTaskUpdateOneWithoutVoicemailNestedInput
 }
 
 export type VoicemailRecordUncheckedUpdateWithoutBusinessInput = {
@@ -694,6 +799,7 @@ export type VoicemailRecordUncheckedUpdateWithoutBusinessInput = {
   isListened?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  followUpTask?: Prisma.FollowUpTaskUncheckedUpdateOneWithoutVoicemailNestedInput
 }
 
 export type VoicemailRecordUncheckedUpdateManyWithoutBusinessInput = {
@@ -733,6 +839,7 @@ export type VoicemailRecordUpdateWithoutCallInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   business?: Prisma.BusinessUpdateOneRequiredWithoutVoicemailsNestedInput
+  followUpTask?: Prisma.FollowUpTaskUpdateOneWithoutVoicemailNestedInput
 }
 
 export type VoicemailRecordUncheckedUpdateWithoutCallInput = {
@@ -746,6 +853,7 @@ export type VoicemailRecordUncheckedUpdateWithoutCallInput = {
   isListened?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  followUpTask?: Prisma.FollowUpTaskUncheckedUpdateOneWithoutVoicemailNestedInput
 }
 
 export type VoicemailRecordUncheckedUpdateManyWithoutCallInput = {
@@ -777,6 +885,7 @@ export type VoicemailRecordSelect<ExtArgs extends runtime.Types.Extensions.Inter
   updatedAt?: boolean
   call?: boolean | Prisma.CallSessionDefaultArgs<ExtArgs>
   business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
+  followUpTask?: boolean | Prisma.VoicemailRecord$followUpTaskArgs<ExtArgs>
 }, ExtArgs["result"]["voicemailRecord"]>
 
 export type VoicemailRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -829,6 +938,7 @@ export type VoicemailRecordOmit<ExtArgs extends runtime.Types.Extensions.Interna
 export type VoicemailRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   call?: boolean | Prisma.CallSessionDefaultArgs<ExtArgs>
   business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
+  followUpTask?: boolean | Prisma.VoicemailRecord$followUpTaskArgs<ExtArgs>
 }
 export type VoicemailRecordIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   call?: boolean | Prisma.CallSessionDefaultArgs<ExtArgs>
@@ -844,6 +954,7 @@ export type $VoicemailRecordPayload<ExtArgs extends runtime.Types.Extensions.Int
   objects: {
     call: Prisma.$CallSessionPayload<ExtArgs>
     business: Prisma.$BusinessPayload<ExtArgs>
+    followUpTask: Prisma.$FollowUpTaskPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1256,6 +1367,7 @@ export interface Prisma__VoicemailRecordClient<T, Null = never, ExtArgs extends 
   readonly [Symbol.toStringTag]: "PrismaPromise"
   call<T extends Prisma.CallSessionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSessionDefaultArgs<ExtArgs>>): Prisma.Prisma__CallSessionClient<runtime.Types.Result.GetResult<Prisma.$CallSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  followUpTask<T extends Prisma.VoicemailRecord$followUpTaskArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VoicemailRecord$followUpTaskArgs<ExtArgs>>): Prisma.Prisma__FollowUpTaskClient<runtime.Types.Result.GetResult<Prisma.$FollowUpTaskPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1689,6 +1801,25 @@ export type VoicemailRecordDeleteManyArgs<ExtArgs extends runtime.Types.Extensio
    * Limit how many VoicemailRecords to delete.
    */
   limit?: number
+}
+
+/**
+ * VoicemailRecord.followUpTask
+ */
+export type VoicemailRecord$followUpTaskArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FollowUpTask
+   */
+  select?: Prisma.FollowUpTaskSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FollowUpTask
+   */
+  omit?: Prisma.FollowUpTaskOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FollowUpTaskInclude<ExtArgs> | null
+  where?: Prisma.FollowUpTaskWhereInput
 }
 
 /**

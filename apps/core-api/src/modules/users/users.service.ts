@@ -10,21 +10,20 @@ export class UsersService {
     constructor(private prisma: PrismaService) { }
 
     async findOrCreateByClerkId(clerkUserId: string, email: string, fullName?: string): Promise<any> {
-        let user = await this.prisma.user.findUnique({
+        const user = await this.prisma.user.upsert({
             where: { clerkUserId },
+            update: {
+                email,
+                fullName,
+            },
+            create: {
+                clerkUserId,
+                email,
+                fullName,
+            },
         });
 
-        if (!user) {
-            user = await this.prisma.user.create({
-                data: {
-                    clerkUserId,
-                    email,
-                    fullName,
-                },
-            });
-            this.logger.info('User created', { userId: user.id, clerkUserId });
-        }
-
+        this.logger.info('User synced from Clerk', { userId: user.id, clerkUserId });
         return user;
     }
 

@@ -1,224 +1,400 @@
 # Wardline
 
-AI voice receptionist SaaS platform for medical and dental clinics. Inbound calls are handled 24/7 by configurable AI agents that schedule appointments, answer FAQs, process billing inquiries, verify insurance, and log prescription refill requests — with a seamless handoff to a human (or voicemail) when needed.
+Wardline is a Business-native AI voice receptionist platform for independent family medicine practices. The current V1 focuses on low-latency inbound call handling, operational reliability, and a controlled integration model instead of free-form agent behavior.
 
-No code required. Clinic owners configure call behavior visually.
+The system uses a shared US-only multi-tenant stack, one main workflow per business, English-only voice handling, athenahealth-first live connectors for supported categories, and a dashboard-first operations model for follow-up work.
 
-## Platform Overview
+## Current V1 Scope
 
+- Target customer: independent family medicine practices
+- Tenant model: `Business` only
+- Geography: US only
+- Language: English only
+- Workflow model: one active main workflow per business
+- Integration model: one configured vendor per category
+- Voice runtime: Azure-first live voice path with a custom orchestrator
+- After-hours urgent policy: no live urgent handling after hours; capture urgent voicemail and create a next-day queue item
+- Data posture: compact summaries and operational metadata by default, with optional short transcript retention for debugging
+
+## What Is Implemented
+
+- Business-native contracts across the active web, core API, and voice runtime paths
+- `GET /businesses/:id/runtime-config` for one-shot business runtime bootstrap
+- Weekly operating hours stored in business settings
+- Generic runtime actions for:
+  - `appointment-request`
+  - `refill-request`
+  - `insurance-check`
+  - `billing-request`
+  - `manual-follow-up`
+- Real connector health checks and normalized capability discovery for configured integrations
+- Persisted follow-up tasks for:
+  - urgent callbacks
+  - manual review
+  - appointment requests
+  - refill requests
+  - insurance checks
+  - billing requests
+- Dashboard queues for:
+  - Urgent Calls
+  - Voicemails
+  - Follow-ups
+  - Integrations
+- Workflow compilation that translates integration nodes into vendor-agnostic runtime actions
+- Voice confirmation handling so write actions do not execute until the caller explicitly confirms
+
+## Runtime Flow
+
+1. Twilio sends the inbound call to the Python voice orchestrator.
+2. The orchestrator looks up the business by phone number.
+3. The orchestrator loads `runtime-config`, including:
+   - business profile
+   - settings
+   - operating hours
+   - active workflow
+   - integration categories and capabilities
+4. A deterministic pre-LLM policy guard runs before normal conversation:
+   - emergency phrase hit -> 911 / emergency redirect
+   - after-hours urgent -> urgent voicemail + urgent follow-up task
+   - after-hours non-urgent -> voicemail
+   - business hours -> continue into workflow and runtime actions
+5. The workflow and tools collect fields, summarize the requested action, and require confirmation for write operations.
+6. The voice runtime calls a generic runtime-action endpoint on the Core API.
+7. The Core API resolves the configured integration and either:
+   - executes live if the connector is healthy and the capability is supported
+   - creates a `FollowUpTask` if the action is unsupported, disconnected, too slow, or fails validation
+8. The result is written back into:
+   - the call session timeline
+   - follow-up task metadata when fallback happens
+   - dashboard queues for staff operations
+
+## Safety And After-Hours Policy
+
+- Emergency phrases are checked before the normal AI flow.
+- After hours, urgent calls are not handled live in V1.
+- The caller is instructed to use `911` or the ER for emergencies.
+- Urgent after-hours calls become:
+  - a priority voicemail
+  - an urgent follow-up task
+  - a next-day item in the `Urgent Calls` dashboard queue
+- Non-urgent after-hours calls become a normal voicemail plus follow-up workflow when needed.
+
+## Integration Model
+
+Each business can configure one vendor per category.
+
+| Category | V1 default vendor | Purpose |
+| --- | --- | --- |
+| `SCHEDULING` | `athenahealth` | Appointment requests and related scheduling actions |
+| `EHR_REFILL` | `athenahealth` | Refill and EHR-adjacent request handling |
+| `INSURANCE` | `athenahealth` | Live insurance acceptance / coverage checks |
+| `BILLING` | `athenahealth` | Billing support requests |
+| `KNOWLEDGE` | `wardline` | Internal FAQ / knowledge answers |
+
+Business integrations are the source of truth. The active runtime uses:
+
+- `vendor`
+- `status`
+- `credentialsRef`
+- `settings`
+- `capabilities`
+- `lastHealthCheckAt`
+
+`credentialsRef` is an environment-variable lookup key on the Core API host. Example:
+
+```text
+credentialsRef = ATHENAHEALTH_SCHEDULING_TOKEN
 ```
-┌────────────────────────────────────────────────────────────┐
-│  INBOUND CALL → Pipecat Voice Orchestrator (Python)        │
-│  ├─ Real-time speech recognition (Azure Speech)            │
-│  ├─ AI receptionist (Azure OpenAI GPT-4)                   │
-│  ├─ Natural TTS (Azure Neural Voices)                       │
-│  ├─ One-problem-at-a-time conversation loop                 │
-│  └─ Always-on emergency keyword detection                   │
-│                         ↕                                   │
-│  Core API (NestJS)                                          │
-│  ├─ Agent catalog + deployed agent management               │
-│  ├─ Visual workflow execution engine (13 node types)        │
-│  ├─ Voicemail recording & notification                      │
-│  ├─ Call log with turn-level detail                         │
-│  └─ Safety guard (configurable keywords)                    │
-│                         ↕                                   │
-│  Web Dashboard (Next.js)                                    │
-│  ├─ Agent catalog (browse & deploy agents)                  │
-│  ├─ Active agents (configure tools, toggle on/off)          │
-│  ├─ Visual call flow editor (ReactFlow)                     │
-│  ├─ Call Logs with turn-level insight                       │
-│  └─ Voicemail inbox                                         │
-└────────────────────────────────────────────────────────────┘
+
+The current dashboard route `/dashboard/integration-failures` doubles as the minimal integration settings and health screen for this phase.
+
+## Runtime Action Contract
+
+All business runtime actions are exposed under:
+
+```text
+/api/businesses/:businessId/runtime-actions/*
 ```
 
-## The 5 Starter Agents
+Implemented endpoints:
 
-| Agent | What it handles | Scope boundary |
-|---|---|---|
-| **Appointment Scheduling** | Book, reschedule, cancel | No symptoms, no clinical questions |
-| **Billing & Payments** | Balance inquiries, payment processing | No disputes, no payment plan negotiation |
-| **Insurance Verification** | Plan acceptance, basic coverage, claim/auth status | No denials, no appeals |
-| **General FAQ & Info** | Hours, location, services, providers, prep instructions | No clinical advice |
-| **Prescription Refill** | Log refill requests, check refill status | No new prescriptions, no clinical questions |
+- `POST /api/businesses/:businessId/runtime-actions/appointment-request`
+- `POST /api/businesses/:businessId/runtime-actions/refill-request`
+- `POST /api/businesses/:businessId/runtime-actions/insurance-check`
+- `POST /api/businesses/:businessId/runtime-actions/billing-request`
+- `POST /api/businesses/:businessId/runtime-actions/manual-follow-up`
 
-## Call Flow Model
+Write actions require `confirmed: true`.
 
-Every inbound call follows this pattern:
+Standard response shape:
 
-```
-Greet → Detect Intent → Route to Agent → Resolve Problem
-      → "Anything else?" → Loop or End Call
-
-At any point:
-  Emergency keyword detected → 911 advisory (always enforced)
-  Out-of-scope question → deflect + offer human transfer
-  Human transfer → if no answer → Voicemail
-```
-
-## Project Structure
-
-```
-wardline/
-├── apps/
-│   ├── web/                            # Next.js 14 frontend
-│   │   └── src/app/dashboard/
-│   │       ├── agents/                 # Catalog + Active agents tabs
-│   │       ├── calls/                  # Call Logs
-│   │       ├── voicemails/             # Voicemail inbox
-│   │       ├── workflows/              # Visual call flow editor
-│   │       └── settings/               # Business settings
-│   ├── core-api/                       # NestJS REST API
-│   │   └── src/modules/
-│   │       ├── agents/                 # Catalog + deployed agent CRUD
-│   │       ├── businesses/             # Tenant management
-│   │       ├── calls/                  # Call logs + voicemail endpoints
-│   │       ├── workflows/              # Execution engine (13-node palette)
-│   │       ├── safety/                 # Safety guard (emergency + out-of-scope)
-│   │       ├── escalations/            # Human transfer + emergency escalation
-│   │       ├── prescriptions/          # Agent 5 — refill requests
-│   │       └── insurance/              # Agent 3 — insurance verification
-│   └── voice-orchestrator-pipecat/    # Python/FastAPI + Pipecat
-│       ├── server.py                   # FastAPI + Twilio webhook
-│       ├── conversation_agent.py       # One-problem-at-a-time AI agent
-│       └── call_context.py             # Call state + turn management
-└── packages/
-    ├── db/
-    │   ├── prisma/schema.prisma        # Business, Agent, CallSession, VoicemailRecord
-    │   └── src/seed-agents.ts          # 5 starter agent definitions + seeder
-    ├── types/
-    │   ├── src/domain.ts               # AgentCatalogItem, DeployedAgent, CallTurn, etc.
-    │   └── src/enums.ts                # WorkflowNodeType (13 nodes), AgentCatalogId, etc.
-    ├── config/                         # Environment validation
-    └── utils/                          # Logging, error handling, audit trail
+```json
+{
+  "ok": true,
+  "handledLive": false,
+  "fallbackCreated": true,
+  "requiresStaffFollowUp": true,
+  "message": "I have captured your billing request for staff follow-up.",
+  "integration": {
+    "category": "BILLING",
+    "vendor": "athenahealth",
+    "status": "CONNECTED",
+    "capabilities": {}
+  },
+  "data": {},
+  "followUpTaskId": "task_123"
+}
 ```
 
-## Applications
+## Main API Surfaces
 
-### `apps/web` — Next.js 14 Dashboard (Port 3000)
-- **Agents page**: Browse the catalog, deploy agents, configure tools (no code)
-- **Call Logs**: All inbound calls with tag, agent, turns, outcome, duration
-- **Voicemail inbox**: Listen, read transcription, call back
-- **Call Flow editor**: Visual drag-and-drop workflow with 13 node types
-- **Settings**: Business info, recording defaults, custom safety keywords
+### Business bootstrap
 
-### `apps/core-api` — NestJS API (Port 3001)
-- `GET /api/businesses/:id/agents` — list deployed agents
-- `POST /api/businesses/:id/agents/deploy/:catalogId` — deploy a catalog agent
-- `PATCH /api/businesses/:id/agents/:id/tool-config` — save tool credentials
-- `GET /api/businesses/:id/call-logs` — paginated call log
-- `GET /api/businesses/:id/voicemails` — voicemail inbox
-- `POST /api/calls/:id/voicemail` — record voicemail (called by orchestrator)
-- `POST /api/safety/check` — real-time safety check
-- `POST /api/escalations/human-transfer` — initiate human transfer
-- `POST /api/escalations/emergency` — flag emergency call
+- `GET /businesses/by-phone`
+- `GET /businesses/:id`
+- `PATCH /businesses/:id/settings`
+- `GET /businesses/:id/runtime-config`
 
-### `apps/voice-orchestrator-pipecat` — Python/FastAPI (Port 3002)
-- Twilio media stream → Pipecat pipeline → Azure Speech STT → GPT-4 → Azure TTS
-- Emergency check on every utterance (before LLM call)
-- One-problem-at-a-time loop with continuation check node
-- Voicemail recording when human transfer fails
+### Integrations
 
-## Node Palette (13 node types)
+- `GET /api/businesses/:businessId/integrations`
+- `GET /api/businesses/:businessId/integrations/:category`
+- `PUT /api/businesses/:businessId/integrations/:category`
+- `POST /api/businesses/:businessId/integrations/:category/test`
 
-| Node | Purpose |
-|---|---|
-| `greeting` | Configurable welcome message |
-| `intent-detect` | NLU classify caller intent → route to agent |
-| `route` | Conditional branching |
-| `continuation-check` | "Anything else?" loop gate |
-| `collect-info` | Structured field collection |
-| `confirmation` | Read back collected data |
-| `knowledge-base` | FAQ lookup from configured knowledge base |
-| `availability-check` | Calendar integration — offer open slots |
-| `action` | Call an external tool (billing, EHR, etc.) |
-| `human-transfer` | Warm/cold transfer with context |
-| `voicemail` | Record message when no human available |
-| `emergency-escalate` | 911 advisory (always-on, cannot be disabled) |
-| `end-call` | Graceful close |
+### Operational queues
 
-## Prerequisites
+- `GET /api/businesses/:businessId/follow-up-tasks`
+- `POST /api/businesses/:businessId/follow-up-tasks`
+- `PATCH /api/businesses/:businessId/follow-up-tasks/:id/status`
+- `GET /api/businesses/:businessId/call-logs`
+- `GET /api/businesses/:businessId/call-logs/analytics`
+- `GET /api/businesses/:businessId/call-logs/:id`
+- `GET /api/businesses/:businessId/voicemails`
+- `PATCH /api/voicemails/:id/mark-listened`
+
+### Voice orchestrator callbacks
+
+- `POST /api/calls`
+- `PATCH /api/calls/:id`
+- `POST /api/calls/:id/transcript`
+- `POST /api/calls/:id/voicemail`
+- `POST /api/handoffs`
+
+## Workflow System
+
+The workflow editor is still visual, but integration nodes no longer represent ad hoc vendor endpoints. They now compile into generic runtime actions.
+
+New integration-node model:
+
+- `runtimeAction`
+- `integrationCategory`
+- `requiresConfirmation`
+- `fallbackBehavior`
+- `prompt`
+
+Legacy vendor-style configs can still be translated during compilation for compatibility, but new work should use runtime-action nodes only.
+
+## Dashboard
+
+The current dashboard is API-backed and centered on operational work:
+
+- `/dashboard`
+- `/dashboard/calls`
+- `/dashboard/urgent-calls`
+- `/dashboard/voicemails`
+- `/dashboard/follow-ups`
+- `/dashboard/integration-failures`
+- `/dashboard/workflows`
+- `/dashboard/settings`
+
+Notable operational behaviors:
+
+- `Urgent Calls` is backed by persisted `FollowUpTask` records, not derived call filters
+- `Follow-ups` shows fallback reason, originating runtime action, and integration vendor metadata
+- `Voicemails` link to follow-up task status and runtime fallback metadata when present
+- `Workflow Settings` includes weekly operating-hours editing, recording defaults, transcript retention, and custom emergency / out-of-scope keywords
+
+## Repository Layout
+
+```text
+apps/
+  web/
+    src/app/dashboard/               Next.js dashboard
+    src/components/workflow/         Workflow editor and config panels
+    src/lib/                        Business-aware API client and query hooks
+
+  core-api/
+    src/modules/businesses/          Business settings and runtime-config
+    src/modules/calls/               Call logs, voicemail records, call session endpoints
+    src/modules/follow-up-tasks/     Persisted operational queues
+    src/modules/integrations/        Connector registry, settings, health checks
+    src/modules/runtime-actions/     Generic live actions + follow-up fallback
+    src/modules/workflows/           Workflow compile, validate, publish, simulate
+
+  voice-orchestrator-pipecat/
+    server.py                        Twilio webhook + after-hours policy + confirmation flow
+    call_context.py                  Canonical Business-native call context
+    core_api_client.py               Runtime-config and runtime-action client
+    tools.py                         Voice tools with confirmation gating
+    node_executors.py                Workflow executor runtime-action bridge
+    flow_manager.py                  Workflow loading and execution
+
+packages/
+  db/                               Prisma schema and generated client
+  types/                            Shared enums and types
+  config/                           Environment schemas
+  utils/                            Logging and helpers
+```
+
+## Local Development
+
+### Prerequisites
 
 - Node.js 18+
 - pnpm 8+
+- Python 3.11+
 - PostgreSQL 14+
-- Azure subscription (Azure AI Speech + Azure OpenAI)
+- Redis
 - Twilio account
-- Clerk account (auth)
-- Stripe account (billing)
+- Azure Speech
+- Azure OpenAI and/or Azure AI Foundry
+- Clerk
 
-## Getting Started
+### Install
 
 ```bash
-# Install
 pnpm install
+python -m pip install -r apps/voice-orchestrator-pipecat/requirements.txt
+```
 
-# Environment
-cp .env.example .env
+### Database
 
-# Database
+```bash
 pnpm db:generate
 pnpm db:migrate
-
-# Seed starter agents (run after first business is created)
-pnpm db:seed
-
-# Development
-pnpm dev
 ```
 
-Individual services:
+If you have an older local Wardline database from the pre-`Business` migration history, reset the local Docker volumes before rerunning migrations:
+
 ```bash
-pnpm --filter @wardline/web dev          # Port 3000
-pnpm --filter @wardline/core-api dev     # Port 3001
-cd apps/voice-orchestrator-pipecat && python server.py  # Port 3002
+docker compose down -v
+docker compose up -d postgres redis
 ```
 
-## Safety Architecture
+### Run services
 
-The system enforces two layers of protection that **cannot be disabled** by any business owner:
-
-1. **Emergency escalation** — A curated list of keywords (chest pain, seizure, suicidal, etc.) triggers an immediate 911 advisory and call escalation on every utterance, before any LLM processing.
-
-2. **Out-of-scope deflection** — Clinical questions (symptoms, diagnoses, medication advice) are immediately deflected with an offer to transfer to a human. The AI agent never engages on these topics.
-
-Business owners can *add* custom keywords to both lists via Business Settings, but cannot remove the system defaults.
-
-## Deployment
-
-### Vercel (Web)
 ```bash
-cd apps/web && vercel deploy --prod
+pnpm --filter @wardline/web dev
+pnpm --filter @wardline/core-api dev
+cd apps/voice-orchestrator-pipecat && python server.py
 ```
 
-### Azure Container Apps (API + Voice)
+Default local ports:
+
+- Web: `http://localhost:3000`
+- Core API: `http://localhost:3001`
+- Voice orchestrator: `http://localhost:3002`
+
+## Environment Variables
+
+### Shared / database
+
+| Variable | Notes |
+| --- | --- |
+| `DATABASE_URL` | Required by Prisma and the Core API |
+| `REDIS_URL` | Optional but recommended; Core API falls back to in-memory cache if missing |
+| `NODE_ENV` | `development`, `test`, or `production` |
+
+### Web
+
+| Variable | Notes |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Usually `http://localhost:3001` locally |
+| `NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL` | Usually `http://localhost:3002` locally |
+| `NEXT_PUBLIC_CORE_API_URL` | Used by some websocket hooks |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk frontend auth |
+| `CLERK_SECRET_KEY` | Required server-side in Next.js |
+
+### Core API
+
+| Variable | Notes |
+| --- | --- |
+| `PORT` | Defaults to `3001` |
+| `CLERK_SECRET_KEY` | Auth |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Optional if using Clerk webhooks |
+| `WEB_BASE_URL` or `WEB_URL` | Used for CORS / websocket allowlist |
+| `AZURE_OPENAI_KEY` | Required for current Core API env schema |
+| `AZURE_OPENAI_ENDPOINT` | Required for current Core API env schema |
+| `AZURE_OPENAI_DEPLOYMENT` | Required for current Core API env schema |
+| `STRIPE_SECRET_KEY` | Required by current Core API env schema |
+| `STRIPE_WEBHOOK_SECRET` | Required by current Core API env schema |
+
+### Voice orchestrator
+
+| Variable | Notes |
+| --- | --- |
+| `PORT` | Defaults to `3002` |
+| `CORE_API_BASE_URL` | Core API base URL |
+| `WEBHOOK_BASE_URL` | Public URL for Twilio callbacks / media streams |
+| `USE_STREAMING` | `true` for Twilio Media Streams, otherwise Gather fallback |
+| `VOICE_AGENT_TYPE` | `azure_ai_foundry`, `conversational`, or `langchain_tools` |
+| `TWILIO_ACCOUNT_SID` | Twilio |
+| `TWILIO_AUTH_TOKEN` | Twilio |
+| `TWILIO_PHONE_NUMBER` | Twilio number |
+| `AZURE_SPEECH_KEY` | Azure Speech |
+| `AZURE_SPEECH_REGION` | Azure Speech region |
+| `AZURE_EXISTING_AIPROJECT_ENDPOINT` | Azure AI Foundry project endpoint |
+| `AZURE_EXISTING_AGENT_ID` | Azure AI Foundry agent identifier |
+| `AZURE_OPENAI_KEY` | Needed for conversational / langchain modes and parts of streaming |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint |
+| `AZURE_OPENAI_DEPLOYMENT` | Azure OpenAI deployment |
+| `AZURE_OPENAI_API_VERSION` | Defaults in `config.py` |
+
+### Integration secrets
+
+Each configured `credentialsRef` should map to an environment variable available to the Core API process. Example:
+
+```text
+ATHENAHEALTH_SCHEDULING_TOKEN=...
+ATHENAHEALTH_REFILL_TOKEN=...
+ATHENAHEALTH_INSURANCE_TOKEN=...
+ATHENAHEALTH_BILLING_TOKEN=...
+```
+
+## Verification
+
+These are the main checks for the current V1 runtime:
+
 ```bash
-az containerapp create --name wardline-api \
-  --resource-group wardline-rg \
-  --environment wardline-env \
-  --image wardline-api:latest \
-  --target-port 3001
-
-az containerapp create --name wardline-voice \
-  --resource-group wardline-rg \
-  --environment wardline-env \
-  --image wardline-voice:latest \
-  --target-port 3002
+pnpm exec tsc --noEmit -p apps/core-api/tsconfig.json
+pnpm exec tsc --noEmit -p apps/web/tsconfig.json
+python -m py_compile \
+  apps/voice-orchestrator-pipecat/call_context.py \
+  apps/voice-orchestrator-pipecat/core_api_client.py \
+  apps/voice-orchestrator-pipecat/tools.py \
+  apps/voice-orchestrator-pipecat/server.py \
+  apps/voice-orchestrator-pipecat/node_executors.py \
+  apps/voice-orchestrator-pipecat/flow_manager.py
 ```
 
-### Required Environment Variables
+If `pytest` is installed in your Python environment, the focused voice runtime tests are:
 
-| Variable | Used by |
-|---|---|
-| `DATABASE_URL` | core-api, db |
-| `REDIS_URL` | core-api |
-| `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION` | voice-orchestrator |
-| `AZURE_OPENAI_KEY` + `AZURE_OPENAI_ENDPOINT` | voice-orchestrator, core-api |
-| `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` | voice-orchestrator |
-| `CLERK_SECRET_KEY` + `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | web, core-api |
-| `STRIPE_SECRET_KEY` | core-api |
-| `CORE_API_BASE_URL` | voice-orchestrator |
-| `WEBHOOK_BASE_URL` | voice-orchestrator (Twilio webhook) |
+```bash
+python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_tools.py
+python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_flow_manager.py
+python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_node_executors.py
+```
+
+## Known V1 Constraints
+
+- No live human queueing or staff presence management yet
+- No bilingual runtime yet
+- No multi-vendor routing within a category
+- No live after-hours urgent transfer in V1
+- Manual integration credential provisioning only
+- Some legacy `hospital` compatibility shims still exist outside the active path, but new work should use `Business` terminology and Business-scoped APIs only
 
 ## License
 
-Proprietary — All rights reserved
+Proprietary. All rights reserved.

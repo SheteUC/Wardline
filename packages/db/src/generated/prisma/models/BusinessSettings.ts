@@ -69,6 +69,7 @@ export type BusinessSettingsCountAggregateOutputType = {
   businessId: number
   recordingDefault: number
   transcriptRetentionDays: number
+  operatingHours: number
   outOfScopeKeywords: number
   emergencyKeywords: number
   timetapBaseUrl: number
@@ -126,6 +127,7 @@ export type BusinessSettingsCountAggregateInputType = {
   businessId?: true
   recordingDefault?: true
   transcriptRetentionDays?: true
+  operatingHours?: true
   outOfScopeKeywords?: true
   emergencyKeywords?: true
   timetapBaseUrl?: true
@@ -230,6 +232,7 @@ export type BusinessSettingsGroupByOutputType = {
   businessId: string
   recordingDefault: $Enums.RecordingDefault
   transcriptRetentionDays: number
+  operatingHours: runtime.JsonValue | null
   outOfScopeKeywords: string[]
   emergencyKeywords: string[]
   timetapBaseUrl: string | null
@@ -270,6 +273,7 @@ export type BusinessSettingsWhereInput = {
   businessId?: Prisma.StringFilter<"BusinessSettings"> | string
   recordingDefault?: Prisma.EnumRecordingDefaultFilter<"BusinessSettings"> | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFilter<"BusinessSettings"> | number
+  operatingHours?: Prisma.JsonNullableFilter<"BusinessSettings">
   outOfScopeKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
   emergencyKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
   timetapBaseUrl?: Prisma.StringNullableFilter<"BusinessSettings"> | string | null
@@ -288,6 +292,7 @@ export type BusinessSettingsOrderByWithRelationInput = {
   businessId?: Prisma.SortOrder
   recordingDefault?: Prisma.SortOrder
   transcriptRetentionDays?: Prisma.SortOrder
+  operatingHours?: Prisma.SortOrderInput | Prisma.SortOrder
   outOfScopeKeywords?: Prisma.SortOrder
   emergencyKeywords?: Prisma.SortOrder
   timetapBaseUrl?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -309,6 +314,7 @@ export type BusinessSettingsWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.BusinessSettingsWhereInput | Prisma.BusinessSettingsWhereInput[]
   recordingDefault?: Prisma.EnumRecordingDefaultFilter<"BusinessSettings"> | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFilter<"BusinessSettings"> | number
+  operatingHours?: Prisma.JsonNullableFilter<"BusinessSettings">
   outOfScopeKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
   emergencyKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
   timetapBaseUrl?: Prisma.StringNullableFilter<"BusinessSettings"> | string | null
@@ -327,6 +333,7 @@ export type BusinessSettingsOrderByWithAggregationInput = {
   businessId?: Prisma.SortOrder
   recordingDefault?: Prisma.SortOrder
   transcriptRetentionDays?: Prisma.SortOrder
+  operatingHours?: Prisma.SortOrderInput | Prisma.SortOrder
   outOfScopeKeywords?: Prisma.SortOrder
   emergencyKeywords?: Prisma.SortOrder
   timetapBaseUrl?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -352,6 +359,7 @@ export type BusinessSettingsScalarWhereWithAggregatesInput = {
   businessId?: Prisma.StringWithAggregatesFilter<"BusinessSettings"> | string
   recordingDefault?: Prisma.EnumRecordingDefaultWithAggregatesFilter<"BusinessSettings"> | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntWithAggregatesFilter<"BusinessSettings"> | number
+  operatingHours?: Prisma.JsonNullableWithAggregatesFilter<"BusinessSettings">
   outOfScopeKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
   emergencyKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
   timetapBaseUrl?: Prisma.StringNullableWithAggregatesFilter<"BusinessSettings"> | string | null
@@ -368,6 +376,7 @@ export type BusinessSettingsCreateInput = {
   id?: string
   recordingDefault?: $Enums.RecordingDefault
   transcriptRetentionDays?: number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsCreateemergencyKeywordsInput | string[]
   timetapBaseUrl?: string | null
@@ -386,6 +395,7 @@ export type BusinessSettingsUncheckedCreateInput = {
   businessId: string
   recordingDefault?: $Enums.RecordingDefault
   transcriptRetentionDays?: number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsCreateemergencyKeywordsInput | string[]
   timetapBaseUrl?: string | null
@@ -402,6 +412,7 @@ export type BusinessSettingsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   recordingDefault?: Prisma.EnumRecordingDefaultFieldUpdateOperationsInput | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsUpdateemergencyKeywordsInput | string[]
   timetapBaseUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -420,6 +431,7 @@ export type BusinessSettingsUncheckedUpdateInput = {
   businessId?: Prisma.StringFieldUpdateOperationsInput | string
   recordingDefault?: Prisma.EnumRecordingDefaultFieldUpdateOperationsInput | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsUpdateemergencyKeywordsInput | string[]
   timetapBaseUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -437,6 +449,7 @@ export type BusinessSettingsCreateManyInput = {
   businessId: string
   recordingDefault?: $Enums.RecordingDefault
   transcriptRetentionDays?: number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsCreateemergencyKeywordsInput | string[]
   timetapBaseUrl?: string | null
@@ -453,6 +466,7 @@ export type BusinessSettingsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   recordingDefault?: Prisma.EnumRecordingDefaultFieldUpdateOperationsInput | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsUpdateemergencyKeywordsInput | string[]
   timetapBaseUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -470,6 +484,7 @@ export type BusinessSettingsUncheckedUpdateManyInput = {
   businessId?: Prisma.StringFieldUpdateOperationsInput | string
   recordingDefault?: Prisma.EnumRecordingDefaultFieldUpdateOperationsInput | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsUpdateemergencyKeywordsInput | string[]
   timetapBaseUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -500,6 +515,7 @@ export type BusinessSettingsCountOrderByAggregateInput = {
   businessId?: Prisma.SortOrder
   recordingDefault?: Prisma.SortOrder
   transcriptRetentionDays?: Prisma.SortOrder
+  operatingHours?: Prisma.SortOrder
   outOfScopeKeywords?: Prisma.SortOrder
   emergencyKeywords?: Prisma.SortOrder
   timetapBaseUrl?: Prisma.SortOrder
@@ -620,6 +636,7 @@ export type BusinessSettingsCreateWithoutBusinessInput = {
   id?: string
   recordingDefault?: $Enums.RecordingDefault
   transcriptRetentionDays?: number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsCreateemergencyKeywordsInput | string[]
   timetapBaseUrl?: string | null
@@ -636,6 +653,7 @@ export type BusinessSettingsUncheckedCreateWithoutBusinessInput = {
   id?: string
   recordingDefault?: $Enums.RecordingDefault
   transcriptRetentionDays?: number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsCreateemergencyKeywordsInput | string[]
   timetapBaseUrl?: string | null
@@ -668,6 +686,7 @@ export type BusinessSettingsUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   recordingDefault?: Prisma.EnumRecordingDefaultFieldUpdateOperationsInput | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsUpdateemergencyKeywordsInput | string[]
   timetapBaseUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -684,6 +703,7 @@ export type BusinessSettingsUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   recordingDefault?: Prisma.EnumRecordingDefaultFieldUpdateOperationsInput | $Enums.RecordingDefault
   transcriptRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
+  operatingHours?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
   emergencyKeywords?: Prisma.BusinessSettingsUpdateemergencyKeywordsInput | string[]
   timetapBaseUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -703,6 +723,7 @@ export type BusinessSettingsSelect<ExtArgs extends runtime.Types.Extensions.Inte
   businessId?: boolean
   recordingDefault?: boolean
   transcriptRetentionDays?: boolean
+  operatingHours?: boolean
   outOfScopeKeywords?: boolean
   emergencyKeywords?: boolean
   timetapBaseUrl?: boolean
@@ -721,6 +742,7 @@ export type BusinessSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   businessId?: boolean
   recordingDefault?: boolean
   transcriptRetentionDays?: boolean
+  operatingHours?: boolean
   outOfScopeKeywords?: boolean
   emergencyKeywords?: boolean
   timetapBaseUrl?: boolean
@@ -739,6 +761,7 @@ export type BusinessSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   businessId?: boolean
   recordingDefault?: boolean
   transcriptRetentionDays?: boolean
+  operatingHours?: boolean
   outOfScopeKeywords?: boolean
   emergencyKeywords?: boolean
   timetapBaseUrl?: boolean
@@ -757,6 +780,7 @@ export type BusinessSettingsSelectScalar = {
   businessId?: boolean
   recordingDefault?: boolean
   transcriptRetentionDays?: boolean
+  operatingHours?: boolean
   outOfScopeKeywords?: boolean
   emergencyKeywords?: boolean
   timetapBaseUrl?: boolean
@@ -769,7 +793,7 @@ export type BusinessSettingsSelectScalar = {
   updatedAt?: boolean
 }
 
-export type BusinessSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "recordingDefault" | "transcriptRetentionDays" | "outOfScopeKeywords" | "emergencyKeywords" | "timetapBaseUrl" | "timetapApiKey" | "nexhealthBaseUrl" | "nexhealthApiKey" | "stripeCustomerId" | "posthogProjectApiKey" | "createdAt" | "updatedAt", ExtArgs["result"]["businessSettings"]>
+export type BusinessSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "recordingDefault" | "transcriptRetentionDays" | "operatingHours" | "outOfScopeKeywords" | "emergencyKeywords" | "timetapBaseUrl" | "timetapApiKey" | "nexhealthBaseUrl" | "nexhealthApiKey" | "stripeCustomerId" | "posthogProjectApiKey" | "createdAt" | "updatedAt", ExtArgs["result"]["businessSettings"]>
 export type BusinessSettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
@@ -790,6 +814,7 @@ export type $BusinessSettingsPayload<ExtArgs extends runtime.Types.Extensions.In
     businessId: string
     recordingDefault: $Enums.RecordingDefault
     transcriptRetentionDays: number
+    operatingHours: runtime.JsonValue | null
     /**
      * * Override list of out-of-scope keywords that trigger deflection
      */
@@ -1234,6 +1259,7 @@ export interface BusinessSettingsFieldRefs {
   readonly businessId: Prisma.FieldRef<"BusinessSettings", 'String'>
   readonly recordingDefault: Prisma.FieldRef<"BusinessSettings", 'RecordingDefault'>
   readonly transcriptRetentionDays: Prisma.FieldRef<"BusinessSettings", 'Int'>
+  readonly operatingHours: Prisma.FieldRef<"BusinessSettings", 'Json'>
   readonly outOfScopeKeywords: Prisma.FieldRef<"BusinessSettings", 'String[]'>
   readonly emergencyKeywords: Prisma.FieldRef<"BusinessSettings", 'String[]'>
   readonly timetapBaseUrl: Prisma.FieldRef<"BusinessSettings", 'String'>

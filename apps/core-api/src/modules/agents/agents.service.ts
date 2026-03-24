@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Logger } from '@wardline/utils';
-import { AGENT_CATALOG } from '@wardline/db/src/seed-agents';
+import { AGENT_CATALOG } from '@wardline/db';
 
 @Injectable()
 export class AgentsService {

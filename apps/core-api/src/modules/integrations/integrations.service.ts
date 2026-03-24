@@ -1,5 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CacheService } from '../../cache/cache.service';
+import { AuditService } from '../../audit/audit.service';
+import {
+    IntegrationConnectorsService,
+    ResolvedBusinessIntegration,
+    SupportedIntegrationCategory,
+} from './integration-connectors.service';
 
 const ALLOWED_CATEGORIES = new Set([
     'SCHEDULING',
@@ -11,12 +18,43 @@ const ALLOWED_CATEGORIES = new Set([
 
 @Injectable()
 export class IntegrationsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly cache: CacheService,
+        private readonly auditService: AuditService,
+        private readonly integrationConnectors: IntegrationConnectorsService,
+    ) {}
 
     async findAll(businessId: string): Promise<any[]> {
-        return this.prisma.businessIntegration.findMany({
+        const configured = await this.prisma.businessIntegration.findMany({
             where: { businessId },
             orderBy: { category: 'asc' },
+        });
+
+        const configuredByCategory = new Map(configured.map((integration) => [integration.category, integration]));
+
+        return this.integrationConnectors.getAllCategories().map((category) => {
+            const existing = configuredByCategory.get(category);
+            if (!existing) {
+                return this.integrationConnectors.buildDisconnectedIntegration(businessId, category);
+            }
+
+            const normalizedSettings = this.integrationConnectors.normalizeSettings(
+                category,
+                existing.vendor,
+                existing.settings,
+            );
+
+            return {
+                ...existing,
+                settings: normalizedSettings,
+                capabilities: this.integrationConnectors.buildCapabilities(
+                    category,
+                    existing.vendor,
+                    normalizedSettings,
+                    existing.status === 'CONNECTED',
+                ),
+            };
         });
     }
 
@@ -35,7 +73,22 @@ export class IntegrationsService {
             throw new NotFoundException(`Integration not configured for ${normalizedCategory}`);
         }
 
-        return integration;
+        const normalizedSettings = this.integrationConnectors.normalizeSettings(
+            normalizedCategory,
+            integration.vendor,
+            integration.settings,
+        );
+
+        return {
+            ...integration,
+            settings: normalizedSettings,
+            capabilities: this.integrationConnectors.buildCapabilities(
+                normalizedCategory,
+                integration.vendor,
+                normalizedSettings,
+                integration.status === 'CONNECTED',
+            ),
+        };
     }
 
     async upsert(
@@ -50,8 +103,20 @@ export class IntegrationsService {
         },
     ): Promise<any> {
         const normalizedCategory = this.normalizeCategory(category);
+        const vendor = body.vendor?.trim() || this.integrationConnectors.getDefaultVendor(normalizedCategory);
+        const normalizedSettings = this.integrationConnectors.normalizeSettings(
+            normalizedCategory,
+            vendor,
+            body.settings,
+        );
+        const normalizedCapabilities = body.capabilities ?? this.integrationConnectors.buildCapabilities(
+            normalizedCategory,
+            vendor,
+            normalizedSettings,
+            false,
+        );
 
-        return this.prisma.businessIntegration.upsert({
+        const integration = await this.prisma.businessIntegration.upsert({
             where: {
                 businessId_category: {
                     businessId,
@@ -59,40 +124,122 @@ export class IntegrationsService {
                 },
             },
             update: {
-                vendor: body.vendor,
-                status: (body.status?.toUpperCase() ?? 'CONNECTED') as any,
+                vendor,
+                status: (body.status?.toUpperCase() ?? 'DISCONNECTED') as any,
                 credentialsRef: body.credentialsRef,
-                settings: body.settings as any,
-                capabilities: body.capabilities as any,
-                lastHealthCheckAt: new Date(),
+                settings: normalizedSettings as any,
+                capabilities: normalizedCapabilities as any,
             },
             create: {
                 businessId,
                 category: normalizedCategory as any,
-                vendor: body.vendor,
-                status: (body.status?.toUpperCase() ?? 'CONNECTED') as any,
+                vendor,
+                status: (body.status?.toUpperCase() ?? 'DISCONNECTED') as any,
                 credentialsRef: body.credentialsRef,
-                settings: body.settings as any,
-                capabilities: body.capabilities as any,
-                lastHealthCheckAt: new Date(),
+                settings: normalizedSettings as any,
+                capabilities: normalizedCapabilities as any,
             },
         });
+
+        await this.auditService.logAction({
+            businessId,
+            action: 'integration.upserted',
+            entityType: 'business_integration',
+            entityId: integration.id,
+            metadata: {
+                category: normalizedCategory,
+                vendor,
+                credentialsRef: body.credentialsRef,
+            },
+        });
+        await this.invalidate(businessId);
+        return integration;
     }
 
     async testConnection(businessId: string, category: string): Promise<any> {
-        const integration = await this.findOne(businessId, category);
+        const resolvedIntegration = await this.findResolvedIntegration(businessId, category);
+        const healthResult = await this.integrationConnectors.testIntegration(resolvedIntegration);
 
-        const updated = await this.prisma.businessIntegration.update({
-            where: { id: integration.id },
-            data: {
-                status: integration.vendor ? 'CONNECTED' : 'ERROR',
+        const updated = await this.prisma.businessIntegration.upsert({
+            where: {
+                businessId_category: {
+                    businessId,
+                    category: resolvedIntegration.category as any,
+                },
+            },
+            update: {
+                vendor: resolvedIntegration.vendor,
+                credentialsRef: resolvedIntegration.credentialsRef,
+                settings: healthResult.settings as any,
+                capabilities: healthResult.capabilities as any,
+                status: healthResult.status as any,
+                lastHealthCheckAt: new Date(),
+            },
+            create: {
+                businessId,
+                category: resolvedIntegration.category as any,
+                vendor: resolvedIntegration.vendor,
+                credentialsRef: resolvedIntegration.credentialsRef,
+                settings: healthResult.settings as any,
+                capabilities: healthResult.capabilities as any,
+                status: healthResult.status as any,
                 lastHealthCheckAt: new Date(),
             },
         });
 
+        await this.auditService.logAction({
+            businessId,
+            action: healthResult.ok ? 'integration.health_check_passed' : 'integration.health_check_failed',
+            entityType: 'business_integration',
+            entityId: updated.id,
+            metadata: {
+                category: resolvedIntegration.category,
+                vendor: resolvedIntegration.vendor,
+                message: healthResult.message,
+                details: healthResult.metadata,
+            },
+        });
+        await this.invalidate(businessId);
+
         return {
-            ok: updated.status === 'CONNECTED',
+            ok: healthResult.ok,
+            message: healthResult.message,
             integration: updated,
+        };
+    }
+
+    async findResolvedIntegration(
+        businessId: string,
+        category: string,
+    ): Promise<ResolvedBusinessIntegration> {
+        const normalizedCategory = this.normalizeCategory(category);
+        const integration = await this.prisma.businessIntegration.findUnique({
+            where: {
+                businessId_category: {
+                    businessId,
+                    category: normalizedCategory as any,
+                },
+            },
+        });
+
+        if (!integration) {
+            return this.integrationConnectors.buildDisconnectedIntegration(businessId, normalizedCategory);
+        }
+
+        const normalizedSettings = this.integrationConnectors.normalizeSettings(
+            normalizedCategory,
+            integration.vendor,
+            integration.settings,
+        );
+        return {
+            ...integration,
+            settings: normalizedSettings,
+            capabilities: this.integrationConnectors.buildCapabilities(
+                normalizedCategory,
+                integration.vendor,
+                normalizedSettings,
+                integration.status === 'CONNECTED',
+            ),
         };
     }
 
@@ -101,6 +248,11 @@ export class IntegrationsService {
         if (!ALLOWED_CATEGORIES.has(normalized)) {
             throw new NotFoundException(`Unsupported integration category: ${category}`);
         }
-        return normalized;
+        return normalized as SupportedIntegrationCategory;
+    }
+
+    private async invalidate(businessId: string) {
+        await this.cache.invalidateByTag(`business:${businessId}`);
+        await this.cache.invalidateByPrefix(`follow-up-tasks:${businessId}:`);
     }
 }

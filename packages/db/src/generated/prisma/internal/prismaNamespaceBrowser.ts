@@ -66,6 +66,7 @@ export const ModelName = {
   TranscriptSegment: 'TranscriptSegment',
   Handoff: 'Handoff',
   VoicemailRecord: 'VoicemailRecord',
+  FollowUpTask: 'FollowUpTask',
   AuditLog: 'AuditLog',
   StripeSubscription: 'StripeSubscription',
   UsageRecord: 'UsageRecord',
@@ -110,6 +111,7 @@ export const BusinessSettingsScalarFieldEnum = {
   businessId: 'businessId',
   recordingDefault: 'recordingDefault',
   transcriptRetentionDays: 'transcriptRetentionDays',
+  operatingHours: 'operatingHours',
   outOfScopeKeywords: 'outOfScopeKeywords',
   emergencyKeywords: 'emergencyKeywords',
   timetapBaseUrl: 'timetapBaseUrl',
@@ -324,6 +326,29 @@ export const VoicemailRecordScalarFieldEnum = {
 export type VoicemailRecordScalarFieldEnum = (typeof VoicemailRecordScalarFieldEnum)[keyof typeof VoicemailRecordScalarFieldEnum]
 
 
+export const FollowUpTaskScalarFieldEnum = {
+  id: 'id',
+  businessId: 'businessId',
+  callId: 'callId',
+  voicemailId: 'voicemailId',
+  type: 'type',
+  status: 'status',
+  priority: 'priority',
+  title: 'title',
+  summary: 'summary',
+  callerName: 'callerName',
+  callerPhone: 'callerPhone',
+  urgencyKeywords: 'urgencyKeywords',
+  metadata: 'metadata',
+  dueAt: 'dueAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FollowUpTaskScalarFieldEnum = (typeof FollowUpTaskScalarFieldEnum)[keyof typeof FollowUpTaskScalarFieldEnum]
+
+
 export const AuditLogScalarFieldEnum = {
   id: 'id',
   businessId: 'businessId',
@@ -495,14 +520,6 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -510,4 +527,12 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

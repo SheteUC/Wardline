@@ -3,10 +3,13 @@ import type {
     AgentListItem,
     AgentStats,
     BusinessIntegration,
+    IntegrationHealthCheckResult,
+    BusinessRuntimeConfig,
     BusinessSettings,
     CallAnalytics,
     CallDetail,
     CallListItem,
+    FollowUpTask,
     PaginatedResponse,
     SystemHealth,
     TeamMember,
@@ -186,6 +189,10 @@ export const createBusinessService = (client: ApiClientMethods) => ({
     ): Promise<BusinessSettings['settings']> {
         return client.patch<BusinessSettings['settings']>(`/businesses/${businessId}/settings`, data);
     },
+
+    async getRuntimeConfig(businessId: string): Promise<BusinessRuntimeConfig> {
+        return client.get<BusinessRuntimeConfig>(`/businesses/${businessId}/runtime-config`);
+    },
 });
 
 export const createHospitalService = createBusinessService;
@@ -278,8 +285,35 @@ export const createIntegrationsService = (client: ApiClientMethods, businessId: 
         return client.put<BusinessIntegration>(`/api/businesses/${businessId}/integrations/${category}`, data);
     },
 
-    async testIntegration(category: string): Promise<BusinessIntegration> {
-        return client.post<BusinessIntegration>(`/api/businesses/${businessId}/integrations/${category}/test`, {});
+    async testIntegration(category: string): Promise<IntegrationHealthCheckResult> {
+        return client.post<IntegrationHealthCheckResult>(`/api/businesses/${businessId}/integrations/${category}/test`, {});
+    },
+});
+
+export const createFollowUpTasksService = (client: ApiClientMethods, businessId: string) => ({
+    async getFollowUpTasks(filters?: {
+        type?: string;
+        status?: string;
+        priority?: string;
+        search?: string;
+    }): Promise<FollowUpTask[]> {
+        const params = new URLSearchParams();
+        if (filters?.type) params.append('type', filters.type);
+        if (filters?.status) params.append('status', filters.status);
+        if (filters?.priority) params.append('priority', filters.priority);
+        if (filters?.search) params.append('search', filters.search);
+
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return client.get<FollowUpTask[]>(`/api/businesses/${businessId}/follow-up-tasks${query}`);
+    },
+
+    async updateFollowUpTaskStatus(
+        taskId: string,
+        status: FollowUpTask['status'],
+    ): Promise<FollowUpTask> {
+        return client.patch<FollowUpTask>(`/api/businesses/${businessId}/follow-up-tasks/${taskId}/status`, {
+            status,
+        });
     },
 });
 

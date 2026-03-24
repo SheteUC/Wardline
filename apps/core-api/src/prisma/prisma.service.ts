@@ -18,6 +18,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     declare readonly callSession: PrismaClientInstance['callSession'];
     declare readonly transcriptSegment: PrismaClientInstance['transcriptSegment'];
     declare readonly voicemailRecord: PrismaClientInstance['voicemailRecord'];
+    declare readonly followUpTask: PrismaClientInstance['followUpTask'];
+    declare readonly caller: PrismaClientInstance['caller'];
+    declare readonly prescriptionRefill: PrismaClientInstance['prescriptionRefill'];
+    declare readonly insurancePlan: PrismaClientInstance['insurancePlan'];
+    declare readonly insuranceInquiry: PrismaClientInstance['insuranceInquiry'];
     declare readonly auditLog: PrismaClientInstance['auditLog'];
 
     constructor() {
