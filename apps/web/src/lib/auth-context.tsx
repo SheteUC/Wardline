@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
-import { useHospital } from './hospital-context';
+import { useBusiness } from './business-context';
 import { UserRole } from '@wardline/types';
 
 /**
@@ -19,6 +19,7 @@ interface AuthContextType {
     isPatient: boolean;
     isSystemAdmin: boolean;
     isCallCenterAdmin: boolean;
+    isBusinessStaff: boolean;
     isHospitalStaff: boolean;
     isLoading: boolean;
     hasPermission: (requiredRoles: ExtendedUserRole[]) => boolean;
@@ -29,7 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user, isLoaded: userLoaded } = useUser();
     const { isLoaded: authLoaded } = useAuth();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
     const [userRole, setUserRole] = useState<ExtendedUserRole | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // In production, this would come from the database via API
         const metadata = user?.publicMetadata as {
             role?: ExtendedUserRole;
+            businessRoles?: Record<string, ExtendedUserRole>;
             hospitalRoles?: Record<string, ExtendedUserRole>;
         } | undefined;
 
@@ -50,9 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role = 'system_admin';
         } else if (metadata?.role === 'patient') {
             role = 'patient';
-        } else if (hospitalId && metadata?.hospitalRoles?.[hospitalId]) {
-            // Hospital-specific role
-            role = metadata.hospitalRoles[hospitalId];
+        } else if (businessId && metadata?.businessRoles?.[businessId]) {
+            role = metadata.businessRoles[businessId];
+        } else if (businessId && metadata?.hospitalRoles?.[businessId]) {
+            role = metadata.hospitalRoles[businessId];
         } else if (metadata?.role) {
             role = metadata.role as ExtendedUserRole;
         } else {
@@ -63,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setUserRole(role);
         setIsLoading(false);
-    }, [userLoaded, authLoaded, user, hospitalId]);
+    }, [userLoaded, authLoaded, user, businessId]);
 
     const value = useMemo(() => {
         const isPatient = userRole === 'patient';
@@ -71,8 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const isCallCenterAdmin = userRole === UserRole.ADMIN || 
                                    userRole === UserRole.SUPERVISOR || 
                                    userRole === UserRole.OWNER;
-        const isHospitalStaff = userRole === UserRole.ADMIN || 
-                                userRole === UserRole.SUPERVISOR || 
+        const isBusinessStaff = userRole === UserRole.ADMIN ||
+                                userRole === UserRole.SUPERVISOR ||
                                 userRole === UserRole.AGENT ||
                                 userRole === UserRole.OWNER ||
                                 userRole === UserRole.READONLY;
@@ -88,7 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isPatient,
             isSystemAdmin,
             isCallCenterAdmin,
-            isHospitalStaff,
+            isBusinessStaff,
+            isHospitalStaff: isBusinessStaff,
             isLoading,
             hasPermission,
         };

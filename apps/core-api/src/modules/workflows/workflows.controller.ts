@@ -7,7 +7,7 @@ import { UserRole } from '@wardline/types';
 
 @ApiTags('workflows')
 @ApiBearerAuth()
-@Controller('hospitals/:hospitalId/workflows')
+@Controller('businesses/:businessId/workflows')
 export class WorkflowsController {
     constructor(private readonly workflowsService: WorkflowsService) { }
 
@@ -15,17 +15,17 @@ export class WorkflowsController {
     @Permissions(UserRole.SUPERVISOR)
     @Auditable('workflow', 'CREATE')
     create(
-        @Param('hospitalId') hospitalId: string,
-        @Body('userId') userId: string,
+        @Param('businessId') businessId: string,
         @Body() data: any,
+        @Body('userId') userId?: string,
     ) {
-        return this.workflowsService.create(hospitalId, userId, data);
+        return this.workflowsService.create(businessId, userId, data);
     }
 
     @Get()
     @Permissions(UserRole.READONLY)
-    findAll(@Param('hospitalId') hospitalId: string) {
-        return this.workflowsService.findAllByHospital(hospitalId);
+    findAll(@Param('businessId') businessId: string) {
+        return this.workflowsService.findAllByBusiness(businessId);
     }
 
     @Get(':id')
@@ -39,8 +39,8 @@ export class WorkflowsController {
     @Auditable('workflow', 'CREATE_VERSION')
     createVersion(
         @Param('id') workflowId: string,
-        @Body('userId') userId: string,
         @Body('graphJson') graphJson: any,
+        @Body('userId') userId?: string,
     ) {
         return this.workflowsService.createVersion(workflowId, userId, graphJson);
     }
@@ -50,7 +50,7 @@ export class WorkflowsController {
     @Auditable('workflow', 'PUBLISH_VERSION')
     publishVersion(
         @Param('versionId') versionId: string,
-        @Body('approverUserId') approverUserId: string,
+        @Body('approverUserId') approverUserId?: string,
     ) {
         return this.workflowsService.publishVersion(versionId, approverUserId);
     }
@@ -83,12 +83,13 @@ export class WorkflowsApiController {
     constructor(private readonly workflowsService: WorkflowsService) { }
 
     @Get('active')
-    @ApiOperation({ summary: 'Get active workflow for hospital (used by voice orchestrator)' })
+    @ApiOperation({ summary: 'Get active workflow for business (used by voice orchestrator)' })
     @ApiResponse({ status: 200, description: 'Active workflow configuration with graph JSON' })
     getActiveWorkflow(
-        @Query('hospitalId') hospitalId: string,
+        @Query('businessId') businessId?: string,
+        @Query('hospitalId') hospitalId?: string,
         @Query('phoneNumberId') phoneNumberId?: string,
     ) {
-        return this.workflowsService.getActiveWorkflow(hospitalId, phoneNumberId);
+        return this.workflowsService.getActiveWorkflow(businessId || hospitalId || '', phoneNumberId);
     }
 }

@@ -1,12 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, Download, Phone, Bot, PhoneForwarded, Voicemail, AlertTriangle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, Button } from '@/components/dashboard/shared';
-import { formatDistanceToNow } from 'date-fns';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+    AlertTriangle,
+    Bot,
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    Download,
+    Phone,
+    PhoneForwarded,
+    Search,
+    Voicemail,
+} from 'lucide-react';
 import Link from 'next/link';
-
-// ─── Tag config ───────────────────────────────────────────────────────────────
+import { formatDistanceToNow } from 'date-fns';
+import { Button, Card } from '@/components/dashboard/shared';
+import { cn } from '@/lib/utils';
+import { useCalls, usePrefetchCallsPage } from '@/lib/hooks/query-hooks';
 
 const TAG_LABEL: Record<string, string> = {
     SCHEDULING: 'Scheduling',
@@ -14,66 +25,42 @@ const TAG_LABEL: Record<string, string> = {
     INSURANCE: 'Insurance',
     FAQ: 'FAQ',
     PRESCRIPTION_REFILL: 'Refill',
-    HUMAN_TRANSFER: 'Human Transfer',
+    HUMAN_TRANSFER: 'Human transfer',
     VOICEMAIL: 'Voicemail',
     EMERGENCY: 'Emergency',
 };
 
 const TAG_COLOR: Record<string, string> = {
-    SCHEDULING: 'bg-green-100 text-green-700',
-    BILLING: 'bg-blue-100 text-blue-700',
-    INSURANCE: 'bg-purple-100 text-purple-700',
-    FAQ: 'bg-amber-100 text-amber-700',
-    PRESCRIPTION_REFILL: 'bg-rose-100 text-rose-700',
-    HUMAN_TRANSFER: 'bg-orange-100 text-orange-700',
-    VOICEMAIL: 'bg-red-100 text-red-700',
-    EMERGENCY: 'bg-red-200 text-red-800',
+    SCHEDULING: 'bg-emerald-500/12 text-emerald-800',
+    BILLING: 'bg-sky-500/12 text-sky-800',
+    INSURANCE: 'bg-violet-500/12 text-violet-800',
+    FAQ: 'bg-amber-500/12 text-amber-900',
+    PRESCRIPTION_REFILL: 'bg-rose-500/12 text-rose-800',
+    HUMAN_TRANSFER: 'bg-orange-500/12 text-orange-900',
+    VOICEMAIL: 'bg-red-500/12 text-red-800',
+    EMERGENCY: 'bg-red-500/18 text-red-900',
 };
 
-const STATUS_COLOR: Record<string, string> = {
-    COMPLETED: 'bg-emerald-100 text-emerald-700',
-    ABANDONED: 'bg-gray-100 text-gray-500',
-    FAILED: 'bg-red-100 text-red-700',
-    INITIATED: 'bg-sky-100 text-sky-700',
-    ONGOING: 'bg-blue-100 text-blue-700',
-};
-
-function formatDuration(secs: number) {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
+function formatDuration(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-function OutcomeIcon({ tag, resolvedByAI }: { tag?: string; resolvedByAI: boolean }) {
-    if (tag === 'EMERGENCY') return <AlertTriangle className="h-4 w-4 text-red-600" />;
+function OutcomeIcon({
+    tag,
+    isEmergency,
+    resolvedByAI,
+}: {
+    tag?: string;
+    isEmergency: boolean;
+    resolvedByAI: boolean;
+}) {
+    if (isEmergency || tag === 'EMERGENCY') return <AlertTriangle className="h-4 w-4 text-red-600" />;
     if (tag === 'VOICEMAIL') return <Voicemail className="h-4 w-4 text-red-500" />;
     if (!resolvedByAI) return <PhoneForwarded className="h-4 w-4 text-orange-500" />;
     return <Bot className="h-4 w-4 text-emerald-600" />;
 }
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_CALLS = Array.from({ length: 24 }, (_, i) => {
-    const tags = ['SCHEDULING', 'BILLING', 'FAQ', 'INSURANCE', 'PRESCRIPTION_REFILL', 'HUMAN_TRANSFER', 'VOICEMAIL'];
-    const tag = tags[i % tags.length];
-    const resolvedByAI = !['HUMAN_TRANSFER', 'VOICEMAIL', 'EMERGENCY'].includes(tag);
-    const names = [null, 'Maria Torres', 'James Okafor', null, 'Sophia Lin', 'David Chen', null, 'Priya Patel'];
-    return {
-        id: `call-${i + 1}`,
-        callerName: names[i % names.length],
-        callerPhone: `(555) ${String(Math.floor(Math.random() * 900 + 100))}-${String(Math.floor(Math.random() * 9000 + 1000))}`,
-        tag,
-        status: 'COMPLETED',
-        duration: Math.floor(Math.random() * 240 + 30),
-        resolvedByAI,
-        turnCount: Math.floor(Math.random() * 3) + 1,
-        startedAt: new Date(Date.now() - (i * 28 + Math.random() * 20) * 60 * 1000).toISOString(),
-    };
-});
-
-const ALL_TAGS = ['all', ...Object.keys(TAG_LABEL)];
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CallLogsPage() {
     const [search, setSearch] = useState('');
@@ -81,169 +68,220 @@ export default function CallLogsPage() {
     const [page, setPage] = useState(1);
     const pageSize = 10;
 
-    const filtered = MOCK_CALLS.filter(call => {
-        const matchesSearch = !search
-            || (call.callerName?.toLowerCase().includes(search.toLowerCase()))
-            || call.callerPhone.includes(search);
-        const matchesTag = tagFilter === 'all' || call.tag === tagFilter;
-        return matchesSearch && matchesTag;
-    });
+    const filters = useMemo(
+        () => ({
+            search: search || undefined,
+            tag: tagFilter === 'all' ? undefined : tagFilter,
+            page,
+            pageSize,
+        }),
+        [page, pageSize, search, tagFilter],
+    );
 
-    const totalPages = Math.ceil(filtered.length / pageSize);
-    const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+    const callsQuery = useCalls(filters);
+    const prefetchCallsPage = usePrefetchCallsPage();
+    const calls = callsQuery.data?.data ?? [];
+    const total = callsQuery.data?.total ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    useEffect(() => {
+        if (page < totalPages) {
+            prefetchCallsPage({ ...filters, page: page + 1 });
+        }
+    }, [filters, page, prefetchCallsPage, totalPages]);
+
+    const resolvedByAI = calls.filter(
+        (call) => !call.isEmergency && call.tag !== 'HUMAN_TRANSFER' && call.tag !== 'VOICEMAIL',
+    ).length;
+    const escalated = calls.filter(
+        (call) => call.isEmergency || call.tag === 'HUMAN_TRANSFER' || call.tag === 'VOICEMAIL',
+    ).length;
 
     return (
-        <div className="space-y-4">
-            {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row gap-3">
-                {/* Search */}
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="space-y-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative max-w-md flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
-                        type="text"
+                        type="search"
                         placeholder="Search caller name or number..."
                         value={search}
-                        onChange={e => { setSearch(e.target.value); setPage(1); }}
-                        className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        onChange={(event) => {
+                            setSearch(event.target.value);
+                            setPage(1);
+                        }}
+                        className="w-full rounded-full border-0 bg-[var(--background)] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground neo-inset outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     />
                 </div>
 
-                {/* Tag filter */}
-                <div className="flex gap-1 flex-wrap">
-                    {['all', 'SCHEDULING', 'BILLING', 'FAQ', 'HUMAN_TRANSFER', 'VOICEMAIL'].map(t => (
+                <div className="flex flex-wrap gap-2">
+                    {['all', 'SCHEDULING', 'BILLING', 'FAQ', 'HUMAN_TRANSFER', 'VOICEMAIL', 'EMERGENCY'].map((tag) => (
                         <button
-                            key={t}
-                            onClick={() => { setTagFilter(t); setPage(1); }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                                tagFilter === t
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }`}
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                                setTagFilter(tag);
+                                setPage(1);
+                            }}
+                            className={cn(
+                                'rounded-full px-3 py-1.5 text-xs font-semibold transition-all',
+                                tagFilter === tag
+                                    ? 'bg-[var(--background)] text-primary neo-raised'
+                                    : 'bg-[var(--background)] text-muted-foreground neo-inset hover:text-foreground',
+                            )}
                         >
-                            {t === 'all' ? 'All' : TAG_LABEL[t]}
+                            {tag === 'all' ? 'All' : TAG_LABEL[tag]}
                         </button>
                     ))}
                 </div>
 
-                <Button variant="ghost" className="h-9 shrink-0">
-                    <Download className="h-4 w-4 mr-2" />
+                <Button variant="ghost" className="h-10 shrink-0 rounded-2xl" disabled>
+                    <Download className="mr-2 h-4 w-4" />
                     Export
                 </Button>
             </div>
 
-            {/* Summary row */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span><strong className="text-foreground">{filtered.length}</strong> calls</span>
-                <span>·</span>
-                <span className="text-emerald-600">
-                    <strong>{filtered.filter(c => c.resolvedByAI).length}</strong> resolved by AI
+                <span><strong className="text-foreground">{total}</strong> calls</span>
+                <span className="text-muted-foreground/50">·</span>
+                <span className="text-emerald-700">
+                    <strong>{resolvedByAI}</strong> resolved by AI
                 </span>
-                <span>·</span>
-                <span className="text-orange-600">
-                    <strong>{filtered.filter(c => !c.resolvedByAI).length}</strong> escalated
+                <span className="text-muted-foreground/50">·</span>
+                <span className="text-orange-700">
+                    <strong>{escalated}</strong> escalated or voicemail
                 </span>
             </div>
 
-            {/* Table */}
             <Card className="overflow-hidden p-0">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-border bg-muted/30">
-                                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Caller</th>
-                                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Agent</th>
-                                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Turns</th>
-                                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Outcome</th>
-                                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Duration</th>
-                                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Time</th>
-                                <th className="px-4 py-3" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginated.map(call => (
-                                <tr key={call.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${
-                                                call.resolvedByAI ? 'bg-emerald-100' : 'bg-orange-100'
-                                            }`}>
-                                                <OutcomeIcon tag={call.tag} resolvedByAI={call.resolvedByAI} />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-foreground text-xs">{call.callerName ?? call.callerPhone}</p>
-                                                {call.callerName && (
-                                                    <p className="text-xs text-muted-foreground">{call.callerPhone}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {call.tag ? (
-                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TAG_COLOR[call.tag] ?? 'bg-muted text-muted-foreground'}`}>
-                                                {TAG_LABEL[call.tag] ?? call.tag}
-                                            </span>
-                                        ) : (
-                                            <span className="text-muted-foreground text-xs">—</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="text-xs text-muted-foreground">{call.turnCount}</span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                            call.resolvedByAI ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
-                                        }`}>
-                                            {call.resolvedByAI ? 'AI Resolved' : 'Escalated'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 hidden sm:table-cell">
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Clock className="h-3 w-3" />
-                                            {formatDuration(call.duration)}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 hidden md:table-cell">
-                                        <span className="text-xs text-muted-foreground">
-                                            {formatDistanceToNow(new Date(call.startedAt), { addSuffix: true })}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Link href={`/dashboard/calls/${call.id}`} className="text-primary hover:underline text-xs">
-                                            View
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                        <span className="text-xs text-muted-foreground">
-                            Page {page} of {totalPages}
-                        </span>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="ghost"
-                                className="h-8"
-                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                className="h-8"
-                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </div>
+                {callsQuery.isLoading ? (
+                    <div className="py-16 text-center text-sm text-muted-foreground">Loading call logs...</div>
+                ) : callsQuery.isError ? (
+                    <div className="py-16 text-center text-sm text-destructive">Failed to load call logs.</div>
+                ) : calls.length === 0 ? (
+                    <div className="py-16 text-center text-sm text-muted-foreground">
+                        No calls matched this filter.
                     </div>
+                ) : (
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-border/60 bg-[var(--background)] neo-inset">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Caller</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Line</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Turns</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Outcome</th>
+                                        <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:table-cell">Duration</th>
+                                        <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground md:table-cell">Time</th>
+                                        <th className="px-4 py-3" />
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {calls.map((call) => {
+                                        const isResolvedByAI =
+                                            !call.isEmergency && call.tag !== 'HUMAN_TRANSFER' && call.tag !== 'VOICEMAIL';
+
+                                        return (
+                                            <tr key={call.id} className="border-b border-border/50 transition-colors last:border-0 hover:bg-[var(--background)]/80">
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            className={cn(
+                                                                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full neo-inset',
+                                                                isResolvedByAI ? 'text-emerald-700' : 'text-orange-700',
+                                                            )}
+                                                        >
+                                                            <OutcomeIcon
+                                                                tag={call.tag}
+                                                                isEmergency={call.isEmergency}
+                                                                resolvedByAI={isResolvedByAI}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-medium text-foreground">
+                                                                {call.callerName ?? call.callerPhone}
+                                                            </p>
+                                                            {call.callerName && (
+                                                                <p className="text-xs text-muted-foreground">{call.callerPhone}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {call.tag ? (
+                                                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TAG_COLOR[call.tag] ?? 'bg-muted text-muted-foreground'}`}>
+                                                            {TAG_LABEL[call.tag] ?? call.tag}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className="text-xs text-muted-foreground">{call.turnCount}</span>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span
+                                                        className={cn(
+                                                            'rounded-full px-2 py-0.5 text-xs font-semibold',
+                                                            isResolvedByAI
+                                                                ? 'bg-emerald-500/12 text-emerald-800'
+                                                                : 'bg-orange-500/12 text-orange-900',
+                                                        )}
+                                                    >
+                                                        {isResolvedByAI ? 'AI resolved' : 'Escalated'}
+                                                    </span>
+                                                </td>
+                                                <td className="hidden px-4 py-3 sm:table-cell">
+                                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                        <Clock className="h-3 w-3" />
+                                                        {formatDuration(call.duration)}
+                                                    </span>
+                                                </td>
+                                                <td className="hidden px-4 py-3 md:table-cell">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {formatDistanceToNow(new Date(call.startedAt), { addSuffix: true })}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <Link href={`/dashboard/calls/${call.id}`} className="text-xs text-primary hover:underline">
+                                                        View
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between border-t border-border/50 bg-[var(--background)] px-4 py-3 neo-inset">
+                                <span className="text-xs text-muted-foreground">
+                                    Page {page} of {totalPages}
+                                </span>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        className="h-8"
+                                        onClick={() => setPage((current) => Math.max(1, current - 1))}
+                                        disabled={page === 1}
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="h-8"
+                                        onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                                        disabled={page === totalPages}
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </Card>
         </div>

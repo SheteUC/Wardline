@@ -17,16 +17,16 @@ import {
     type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-    Save, Play, CheckCircle, AlertTriangle, ArrowLeft, 
-    Loader2, Download, Upload, Settings, Trash2, Rocket
+    Save, Play, CheckCircle, AlertTriangle,
+    Loader2, Download, Upload, Settings, Trash2, Rocket, Search,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useApiClient } from '@/lib/api-client';
+import { useBusiness } from '@/lib/business-context';
 
 // Import custom nodes
 import StartNode from './nodes/StartNode';
@@ -91,8 +91,8 @@ const nodeTypes: NodeTypes = {
 };
 
 const defaultEdgeOptions = {
-    animated: false,
-    style: { stroke: '#94a3b8', strokeWidth: 2 },
+    animated: true,
+    style: { stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '6 4' },
 };
 
 const getNodeColor = (node: Node) => {
@@ -133,6 +133,8 @@ export function EnhancedWorkflowEditor({
     initialEdges = [],
     onSave,
 }: EnhancedWorkflowEditorProps) {
+    const apiClient = useApiClient();
+    const { businessId } = useBusiness();
     // Ensure all nodes have required properties
     const sanitizedNodes = useMemo(() => 
         initialNodes.map((node, index) => ({
@@ -250,37 +252,35 @@ export function EnhancedWorkflowEditor({
     }, [nodes, edges, onSave]);
     
     const handleValidate = useCallback(async () => {
+        if (!workflowId || !businessId) {
+            setValidationResult({
+                valid: false,
+                errors: [{ message: 'Save this workflow before running server validation.' }],
+                warnings: [],
+            });
+            return;
+        }
+
         setIsValidating(true);
         
         try {
-            // Call validation API
-            const response = await fetch(`/api/workflows/${workflowId}/validate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    nodes: nodes.map(n => ({
-                        id: n.id,
-                        type: n.type,
-                        config: n.data,
-                        position: n.position,
-                    })),
-                    edges: edges.map(e => ({
-                        id: e.id,
-                        fromNodeId: e.source,
-                        toNodeId: e.target,
-                        condition: e.label,
-                    })),
-                }),
-            });
-            
-            const result = await response.json();
+            const result = await apiClient.post<{
+                valid: boolean;
+                errors?: Array<{ message: string }>;
+                warnings?: Array<{ message: string }>;
+            }>(`/businesses/${businessId}/workflows/${workflowId}/validate`, {});
             setValidationResult(result);
         } catch (error) {
             console.error('Validation error:', error);
+            setValidationResult({
+                valid: false,
+                errors: [{ message: 'Validation request failed.' }],
+                warnings: [],
+            });
         } finally {
             setIsValidating(false);
         }
-    }, [workflowId, nodes, edges]);
+    }, [apiClient, businessId, workflowId]);
     
     const exportWorkflow = useCallback(() => {
         const workflow = {
@@ -310,50 +310,74 @@ export function EnhancedWorkflowEditor({
     }, [workflowId, workflowName, nodes, edges]);
     
     return (
-        <div className="flex flex-col h-[calc(100vh-12rem)]">
-            {/* Minimal Top Bar */}
-            <div className="flex items-center justify-end gap-2 pb-3 mb-3">
-                {hasChanges && (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 mr-auto">
-                        Unsaved Changes
-                    </Badge>
-                )}
-                <Button variant="outline" size="sm" onClick={handleValidate} disabled={isValidating}>
-                    {isValidating ? (
-                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                    ) : (
-                        <CheckCircle className="h-4 w-4 mr-1.5" />
-                    )}
-                    Validate
-                </Button>
-                <Button
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={!hasChanges}
-                    className="bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-600/40 disabled:text-white/60"
-                >
-                    <Rocket className="h-4 w-4 mr-1.5" />
-                    Deploy
-                </Button>
+        <div className="flex flex-col h-[calc(100vh-10rem)] min-h-[520px]">
+            {/* Workflow chrome — Silk / Figma */}
+            <div className="flex flex-col gap-4 pb-4 shrink-0">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-3 min-w-0">
+                        <h2 className="text-lg font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">
+                            {workflowName}
+                        </h2>
+                        <span
+                            className="relative max-w-[11rem] truncate whitespace-nowrap rounded-full bg-[var(--background)] px-3 py-1 text-xs font-semibold text-muted-foreground neo-inset sm:max-w-none"
+                            title={workflowName}
+                        >
+                            {hasChanges ? 'Draft · unsaved' : 'Saved'}
+                        </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                        <div className="relative hidden sm:block w-56 lg:w-64">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <input
+                                type="search"
+                                placeholder="Search workflow nodes…"
+                                className="w-full rounded-full border-0 bg-[var(--background)] py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground neo-inset outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                                aria-label="Search workflow nodes"
+                            />
+                        </div>
+                        <Button variant="outline" size="sm" onClick={handleValidate} disabled={isValidating} className="rounded-2xl">
+                            {isValidating ? (
+                                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                            ) : (
+                                <CheckCircle className="h-4 w-4 mr-1.5" />
+                            )}
+                            Validate
+                        </Button>
+                        <Button
+                            variant="filled"
+                            size="sm"
+                            onClick={handleSave}
+                            disabled={!hasChanges}
+                            className="rounded-2xl disabled:opacity-40"
+                        >
+                            <Rocket className="h-4 w-4 mr-1.5" />
+                            Deploy workflow
+                        </Button>
+                    </div>
+                </div>
             </div>
             
             {/* Validation Results */}
             {validationResult && (
-                <div className={`mb-4 rounded-lg border p-3 ${validationResult.valid ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+                <div
+                    className={`mb-4 rounded-2xl p-4 neo-inset ${
+                        validationResult.valid ? 'bg-emerald-500/10' : 'bg-destructive/10'
+                    }`}
+                >
                     <div className="flex items-start gap-2">
                         {validationResult.valid ? (
-                            <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                         ) : (
-                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                         )}
-                        <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-foreground">
                                 {validationResult.valid ? 'Workflow is valid' : 'Validation failed'}
                             </p>
                             {validationResult.errors && validationResult.errors.length > 0 && (
-                                <ul className="text-xs mt-1 space-y-0.5">
+                                <ul className="mt-1 space-y-0.5 text-xs text-destructive">
                                     {validationResult.errors.map((error: any, i: number) => (
-                                        <li key={i} className="text-red-700">• {error.message}</li>
+                                        <li key={i}>• {error.message}</li>
                                     ))}
                                 </ul>
                             )}
@@ -363,16 +387,16 @@ export function EnhancedWorkflowEditor({
             )}
             
             {/* Main Editor Layout */}
-            <div className="flex gap-4 flex-1 min-h-0">
+            <div className="flex min-h-0 flex-1 gap-4">
                 {/* Node Palette - Left Sidebar */}
                 <div className="w-56 shrink-0">
                     <NodePalette onAddNode={addNodeToCanvas} />
                 </div>
                 
                 {/* Flow Canvas - Center */}
-                <div className="flex-1 min-w-0">
-                    <Card className="h-full">
-                        <CardContent className="p-0 h-full">
+                <div className="workflow-flow min-w-0 flex-1">
+                    <div className="flex h-full flex-col overflow-hidden rounded-3xl bg-[var(--background)] neo-raised">
+                        <div className="relative h-full min-h-[400px]">
                             <ReactFlow
                                 nodes={nodes}
                                 edges={edges}
@@ -386,40 +410,49 @@ export function EnhancedWorkflowEditor({
                                 maxZoom={2}
                                 defaultEdgeOptions={defaultEdgeOptions}
                             >
-                                <Controls position="bottom-left" />
+                                <Controls position="bottom-left" className="!m-3 !shadow-none" />
                                 <MiniMap
-                                    nodeStrokeColor="#e2e8f0"
+                                    nodeStrokeColor="rgba(99,102,241,0.35)"
                                     nodeColor={getNodeColor}
-                                    className="!bg-background border rounded-lg"
+                                    maskColor="rgba(232,234,240,0.85)"
+                                    className="!m-3 !overflow-hidden !rounded-2xl !border-0 !bg-[var(--background)] neo-raised"
                                     position="bottom-right"
                                 />
-                                <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-                                <Panel position="top-right" className="bg-background/95 backdrop-blur-sm rounded-lg p-2.5 shadow-lg border">
-                                    <div className="text-xs space-y-1">
-                                        <div className="font-semibold text-foreground">Workflow Info</div>
+                                <Background
+                                    variant={BackgroundVariant.Dots}
+                                    gap={18}
+                                    size={1.25}
+                                    color="#b4bac9"
+                                />
+                                <Panel
+                                    position="top-right"
+                                    className="!m-3 max-w-[200px] rounded-2xl border-0 bg-[var(--background)]/95 p-3 backdrop-blur-sm neo-raised"
+                                >
+                                    <div className="space-y-1 text-xs">
+                                        <div className="font-semibold text-foreground">Workflow</div>
                                         <div className="text-muted-foreground">
-                                            {nodes.length} nodes • {edges.length} edges
+                                            {nodes.length} nodes · {edges.length} connections
                                         </div>
                                         {validationResult?.valid && (
-                                            <div className="flex items-center gap-1 text-green-600">
-                                                <CheckCircle className="w-3 h-3" />
+                                            <div className="flex items-center gap-1 text-emerald-600">
+                                                <CheckCircle className="h-3 w-3" />
                                                 <span>Validated</span>
                                             </div>
                                         )}
                                     </div>
                                 </Panel>
                             </ReactFlow>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
                 
                 {/* Configuration Panel - Right Sidebar */}
                 <div className="w-80 shrink-0">
-                    <Card className="h-full flex flex-col">
-                        <CardContent className="p-4 flex-1 flex flex-col min-h-0">
+                    <div className="flex h-full flex-col overflow-hidden rounded-3xl bg-[var(--background)] neo-raised">
+                        <div className="flex min-h-0 flex-1 flex-col p-4">
                             {selectedNode ? (
                                 <>
-                                    <div className="pb-3 border-b mb-3 shrink-0">
+                                    <div className="mb-3 shrink-0 border-b border-transparent pb-3 neo-inset rounded-2xl px-3 py-2">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <h3 className="font-semibold text-sm">Node Configuration</h3>
@@ -546,20 +579,35 @@ export function EnhancedWorkflowEditor({
                                     </ScrollArea>
                                 </>
                             ) : (
-                                <div className="flex-1 flex items-center justify-center">
+                                <div className="flex flex-1 items-center justify-center">
                                     <div className="text-center">
-                                        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
-                                            <AlertTriangle className="w-6 h-6 text-muted-foreground" />
+                                        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                                            <Settings className="h-6 w-6 text-muted-foreground" />
                                         </div>
                                         <p className="text-sm text-muted-foreground">
-                                            Click on a node to configure it
+                                            Select a node on the canvas to edit its settings
                                         </p>
                                     </div>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            {/* Status strip — Figma workflow footer */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-4 rounded-2xl px-4 py-3 text-sm text-muted-foreground neo-inset sm:gap-8">
+                <span className="flex items-center gap-2 font-medium text-foreground">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                    System online
+                </span>
+                <span className="hidden text-muted-foreground/40 sm:inline">|</span>
+                <span>
+                    Nodes: <strong className="text-foreground">{nodes.length}</strong>
+                </span>
+                <span>
+                    Paths: <strong className="text-foreground">{edges.length}</strong>
+                </span>
             </div>
             
             {/* Workflow Settings Panel */}

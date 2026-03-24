@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface QuestionNodeData {
+export interface QuestionNodeData extends Record<string, unknown> {
     label: string;
     questionText?: string;
     fieldName?: string;

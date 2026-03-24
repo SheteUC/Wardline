@@ -98,6 +98,28 @@ export class BusinessesService {
         return business;
     }
 
+    async findByPhone(phoneNumber: string): Promise<any> {
+        const normalized = phoneNumber.replace(/\D/g, '');
+        const phoneNumbers = await this.prisma.phoneNumber.findMany({
+            include: {
+                business: {
+                    include: {
+                        settings: true,
+                        phoneNumbers: true,
+                    },
+                },
+            },
+        });
+
+        const match = phoneNumbers.find((entry) => {
+            const candidate = entry.twilioPhoneNumber.replace(/\D/g, '');
+            return candidate.endsWith(normalized) || normalized.endsWith(candidate);
+        });
+
+        if (!match) throw new NotFoundException(`Business with phone "${phoneNumber}" not found`);
+        return match.business;
+    }
+
     async update(id: string, dto: Partial<{ name: string; slug: string; timeZone: string }>): Promise<any> {
         await this.findOne(id);
 

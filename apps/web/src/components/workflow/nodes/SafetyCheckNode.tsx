@@ -5,12 +5,13 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Shield, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface SafetyCheckNodeData {
+export interface SafetyCheckNodeData extends Record<string, unknown> {
     label: string;
     keywordCategories?: string[];
     autoEscalate?: boolean;
     alertSeverity?: 'low' | 'medium' | 'high' | 'critical';
     confirmationRequired?: boolean;
+    confirmationPrompt?: string;
 }
 
 type SafetyCheckNodeType = Node<SafetyCheckNodeData, 'safety-check'>;

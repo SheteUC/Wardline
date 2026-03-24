@@ -30,32 +30,38 @@ export class RbacGuard implements CanActivate {
             throw new ForbiddenException('User not authenticated');
         }
 
-        // Extract hospital ID from request params or body
-        const hospitalId = request.params.hospitalId || request.body?.hospitalId || request.query?.hospitalId;
+        // Extract business ID from request params or body
+        const businessId =
+            request.params.businessId ||
+            request.body?.businessId ||
+            request.query?.businessId ||
+            request.params.hospitalId ||
+            request.body?.hospitalId ||
+            request.query?.hospitalId;
 
-        if (!hospitalId) {
-            this.logger.warn('RBAC check failed: No hospital context', {
+        if (!businessId) {
+            this.logger.warn('RBAC check failed: No business context', {
                 userId: user.id,
                 path: request.path,
             });
-            throw new ForbiddenException('Hospital context required');
+            throw new ForbiddenException('Business context required');
         }
 
-        // Find user's role in the specified hospital
-        const hospitalUser = user.hospitals.find(
-            (hu: any) => hu.hospitalId === hospitalId
+        // Find user's role in the specified business
+        const businessUser = user.businesses.find(
+            (membership: any) => membership.businessId === businessId
         );
 
-        if (!hospitalUser) {
-            this.logger.warn('User does not belong to hospital', {
+        if (!businessUser) {
+            this.logger.warn('User does not belong to business', {
                 userId: user.id,
-                hospitalId,
+                businessId,
             });
-            throw new ForbiddenException('User does not belong to this hospital');
+            throw new ForbiddenException('User does not belong to this business');
         }
 
         // Check if user has any of the required roles
-        const userRole = hospitalUser.role as UserRole;
+        const userRole = businessUser.role as UserRole;
         const hasAccess = hasAnyPermission(userRole, requiredRoles);
 
         if (!hasAccess) {
@@ -63,7 +69,7 @@ export class RbacGuard implements CanActivate {
                 userId: user.id,
                 userRole,
                 requiredRoles,
-                hospitalId,
+                businessId,
             });
             throw new ForbiddenException('Insufficient permissions');
         }
@@ -72,7 +78,7 @@ export class RbacGuard implements CanActivate {
             userId: user.id,
             userRole,
             requiredRoles,
-            hospitalId,
+            businessId,
         });
 
         return true;

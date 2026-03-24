@@ -1,141 +1,64 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import {
-    ChevronRight, User, AlertTriangle, Download, Activity, BrainCircuit, 
-    Play, Loader2, Phone, Clock, TrendingUp, TrendingDown, Minus, Shield
-} from 'lucide-react';
-import { Card, Badge, Button } from "@/components/dashboard/shared";
 import Link from 'next/link';
-import { useApiClient } from '@/lib/api-client';
-import { useHospital } from '@/lib/hospital-context';
+import {
+    AlertTriangle,
+    ChevronRight,
+    Clock,
+    Download,
+    Loader2,
+    Phone,
+    User,
+} from 'lucide-react';
+import { Button, Card, Badge } from "@/components/dashboard/shared";
+import { useCall } from '@/lib/hooks/query-hooks';
+import { CallStatus } from '@wardline/types';
 
-interface TranscriptSegment {
-    id: string;
-    speaker: 'CALLER' | 'AGENT' | 'SYSTEM';
-    text: string;
-    startTimeMs: number;
-    endTimeMs: number;
-    confidence?: number;
-}
-
-interface SentimentSnapshot {
-    id: string;
-    offsetMs: number;
-    score: number;
-    label: 'NEGATIVE' | 'NEUTRAL' | 'POSITIVE';
-}
-
-interface CallDetail {
-    id: string;
-    twilioCallSid: string;
-    direction: string;
-    status: string;
-    phoneNumber: {
-        twilioPhoneNumber: string;
-    };
-    patient?: {
-        id: string;
-        name: string;
-        externalId?: string;
-    };
-    intent?: {
-        displayName: string;
-    };
-    isEmergency: boolean;
-    startedAt: string;
-    endedAt?: string;
-    recordingUrl?: string;
-    sentimentOverallScore?: number;
-    aiConfidence?: number;
-    handoffTarget?: string;
-    handoffReason?: string;
-    transcriptSegments: TranscriptSegment[];
-    sentimentSnapshots: SentimentSnapshot[];
-    handoffs: any[];
-}
+const TAG_LABEL: Record<string, string> = {
+    SCHEDULING: 'Scheduling',
+    BILLING: 'Billing',
+    INSURANCE: 'Insurance',
+    FAQ: 'FAQ',
+    PRESCRIPTION_REFILL: 'Refill',
+    HUMAN_TRANSFER: 'Human transfer',
+    VOICEMAIL: 'Voicemail',
+    EMERGENCY: 'Emergency',
+};
 
 function formatDuration(startedAt: string, endedAt?: string): string {
     if (!endedAt) return '0:00';
-    const start = new Date(startedAt).getTime();
-    const end = new Date(endedAt).getTime();
-    const seconds = Math.floor((end - start) / 1000);
+    const seconds = Math.floor((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000);
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function formatTime(ms: number): string {
-    const seconds = Math.floor(ms / 1000);
+function formatTime(milliseconds: number): string {
+    const seconds = Math.floor(milliseconds / 1000);
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-function getSentimentColor(sentiment?: SentimentSnapshot): string {
-    if (!sentiment) return 'bg-gray-500';
-    if (sentiment.label === 'POSITIVE') return 'bg-green-500';
-    if (sentiment.label === 'NEGATIVE') return 'bg-red-500';
-    return 'bg-gray-400';
-}
-
-function getSentimentIcon(sentiment?: SentimentSnapshot) {
-    if (!sentiment) return Minus;
-    if (sentiment.label === 'POSITIVE') return TrendingUp;
-    if (sentiment.label === 'NEGATIVE') return TrendingDown;
-    return Minus;
 }
 
 export default function CallDetailPage({ params }: { params: { id: string } }) {
-    const { hospitalId } = useHospital();
-    const apiClient = useApiClient();
-    const [call, setCall] = useState<CallDetail | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const callQuery = useCall(params.id);
+    const call = callQuery.data;
 
-    useEffect(() => {
-        if (!hospitalId) return;
-
-        const fetchCall = async () => {
-            try {
-                setLoading(true);
-                const data = await apiClient.get<CallDetail>(`/hospitals/${hospitalId}/calls/${params.id}`);
-                setCall(data);
-            } catch (err) {
-                console.error('Failed to fetch call:', err);
-                setError('Failed to load call details.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCall();
-    }, [params.id, hospitalId, apiClient]);
-
-    // Helper to find sentiment for a given timestamp
-    const getSentimentAtTime = (timeMs: number): SentimentSnapshot | undefined => {
-        if (!call?.sentimentSnapshots || call.sentimentSnapshots.length === 0) return undefined;
-        
-        // Find the closest sentiment snapshot at or before this time
-        const filtered = call.sentimentSnapshots.filter(s => s.offsetMs <= timeMs);
-        return filtered.length > 0 ? filtered[filtered.length - 1] : call.sentimentSnapshots[0];
-    };
-
-    if (loading) {
+    if (callQuery.isLoading) {
         return (
-            <div className="flex items-center justify-center h-96">
+            <div className="flex h-96 items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
     }
 
-    if (error || !call) {
+    if (callQuery.isError || !call) {
         return (
-            <div className="flex items-center justify-center h-96">
+            <div className="flex h-96 items-center justify-center">
                 <div className="text-center">
-                    <AlertTriangle className="h-12 w-12 mx-auto text-red-500 mb-4" />
+                    <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
                     <p className="text-lg font-semibold">Error loading call</p>
-                    <p className="text-sm text-muted-foreground">{error || 'Call not found'}</p>
+                    <p className="text-sm text-muted-foreground">Call details could not be loaded.</p>
                 </div>
             </div>
         );
@@ -144,111 +67,86 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
     const duration = formatDuration(call.startedAt, call.endedAt);
 
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col lg:flex-row gap-6">
-            {/* Left Sidebar: Metadata */}
-            <div className="w-full lg:w-80 flex-shrink-0 space-y-6">
+        <div className="flex h-[calc(100vh-100px)] flex-col gap-6 lg:flex-row">
+            <div className="w-full flex-shrink-0 space-y-6 lg:w-80">
                 <Link href="/dashboard/calls">
-                    <Button variant="secondary" icon={ChevronRight} className="rotate-180 mb-2">
+                    <Button variant="secondary" icon={ChevronRight} className="mb-2 rotate-180">
                         Back to List
                     </Button>
                 </Link>
 
-                <Card className="bg-white">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                            <Phone className="w-6 h-6" />
+                <Card>
+                    <div className="mb-6 flex items-center justify-between">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--background)] text-primary neo-inset">
+                            <Phone className="h-6 w-6" />
                         </div>
                         <div className="text-right">
-                            <div className="text-xl font-bold text-slate-900">{duration}</div>
-                            <div className="text-sm text-slate-500">Duration</div>
+                            <div className="text-xl font-bold text-foreground">{duration}</div>
+                            <div className="text-sm text-muted-foreground">Duration</div>
                         </div>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <label className="text-xs font-medium text-slate-500 uppercase">Caller</label>
-                            <div className="font-medium text-slate-900">{call.patient?.name || 'Unknown'}</div>
-                            <div className="text-sm text-slate-600">{call.phoneNumber.twilioPhoneNumber}</div>
-                            {call.patient && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                    Patient ID: {call.patient.externalId || call.patient.id}
-                                </div>
-                            )}
+                            <label className="text-xs font-medium uppercase text-muted-foreground">Caller</label>
+                            <div className="font-medium text-foreground">{call.caller?.name || 'Unknown caller'}</div>
+                            <div className="text-sm text-muted-foreground">
+                                {call.caller?.phone || call.phoneNumber.twilioPhoneNumber}
+                            </div>
                         </div>
 
                         <div>
-                            <label className="text-xs font-medium text-slate-500 uppercase">Intent Detected</label>
+                            <label className="text-xs font-medium uppercase text-muted-foreground">Detected route</label>
                             <div className="mt-1 flex flex-wrap gap-2">
-                                <Badge 
-                                    type={call.isEmergency ? "danger" : "primary"} 
-                                    text={call.intent?.displayName || 'Unknown'} 
-                                />
-                                {call.isEmergency && (
-                                    <Badge type="danger" text="Emergency" />
+                                {call.tag && (
+                                    <Badge
+                                        type={call.isEmergency ? "danger" : "primary"}
+                                        text={TAG_LABEL[call.tag] || call.tag}
+                                    />
                                 )}
+                                {call.isEmergency && <Badge type="danger" text="Emergency" />}
                             </div>
                         </div>
 
-                        {call.aiConfidence !== undefined && (
-                            <div>
-                                <label className="text-xs font-medium text-slate-500 uppercase">AI Confidence</label>
-                                <div className="w-full bg-slate-100 rounded-full h-2 mt-1">
-                                    <div 
-                                        className="bg-emerald-500 h-2 rounded-full" 
-                                        style={{ width: `${(call.aiConfidence * 100)}%` }}
-                                    ></div>
-                                </div>
-                                <div className="text-xs text-right mt-1 text-slate-500">
-                                    {(call.aiConfidence * 100).toFixed(0)}% Match
-                                </div>
-                            </div>
-                        )}
-
                         <div>
-                            <label className="text-xs font-medium text-slate-500 uppercase">Call Status</label>
+                            <label className="text-xs font-medium uppercase text-muted-foreground">Call status</label>
                             <div className="mt-1">
-                                <Badge 
-                                    type={call.status === 'COMPLETED' ? 'success' : call.status === 'ABANDONED' ? 'warning' : 'neutral'}
+                                <Badge
+                                    type={
+                                        call.status === CallStatus.COMPLETED
+                                            ? 'success'
+                                            : call.status === CallStatus.FAILED
+                                              ? 'warning'
+                                              : 'neutral'
+                                    }
                                     text={call.status}
                                 />
                             </div>
                         </div>
 
-                        {call.sentimentOverallScore !== undefined && (
-                            <div>
-                                <label className="text-xs font-medium text-slate-500 uppercase">Overall Sentiment</label>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <div className="w-full bg-slate-100 rounded-full h-2">
-                                        <div 
-                                            className={`h-2 rounded-full ${
-                                                call.sentimentOverallScore >= 0.6 ? 'bg-green-500' :
-                                                call.sentimentOverallScore >= 0.4 ? 'bg-gray-400' : 'bg-red-500'
-                                            }`}
-                                            style={{ width: `${(call.sentimentOverallScore * 100)}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="text-sm font-medium">
-                                        {(call.sentimentOverallScore * 100).toFixed(0)}%
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                        <div>
+                            <label className="text-xs font-medium uppercase text-muted-foreground">Line</label>
+                            <div className="text-sm text-foreground">{call.phoneNumber.label}</div>
+                            <div className="text-xs text-muted-foreground">{call.phoneNumber.twilioPhoneNumber}</div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium uppercase text-muted-foreground">Turns captured</label>
+                            <div className="text-sm text-foreground">{call.turnCount}</div>
+                        </div>
                     </div>
                 </Card>
 
-                {call.handoffs && call.handoffs.length > 0 && (
-                    <Card title="Escalations">
+                {call.handoffs.length > 0 && (
+                    <Card title="Handoffs">
                         <div className="space-y-3">
-                            {call.handoffs.map((handoff, idx) => (
-                                <div key={idx} className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5" />
-                                    <div>
-                                        <div className="text-sm font-medium text-amber-800">
-                                            {handoff.targetType || 'Human Agent'}
-                                        </div>
-                                        <div className="text-xs text-amber-600">
-                                            {call.handoffReason || 'Escalated'}
-                                        </div>
+                            {call.handoffs.map((handoff) => (
+                                <div key={handoff.id} className="rounded-2xl bg-amber-500/10 p-3 neo-inset">
+                                    <div className="text-sm font-medium text-amber-950">Human escalation</div>
+                                    <div className="mt-1 text-xs text-amber-800">
+                                        {typeof handoff.payload?.summary === 'string'
+                                            ? String(handoff.payload.summary)
+                                            : 'Escalation summary recorded for follow-up.'}
                                     </div>
                                 </div>
                             ))}
@@ -256,70 +154,67 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                     </Card>
                 )}
 
-                {call.patient && (
-                    <Button variant="secondary" className="w-full">
-                        View Patient Call History
-                    </Button>
+                {call.voicemails.length > 0 && (
+                    <Card title="Voicemail">
+                        <div className="space-y-3">
+                            {call.voicemails.map((voicemail) => (
+                                <div key={voicemail.id} className="rounded-2xl bg-[var(--background)] p-3 neo-inset">
+                                    <div className="text-sm font-medium text-foreground">
+                                        {voicemail.callerName ?? voicemail.callerPhone}
+                                    </div>
+                                    <div className="mt-1 text-xs text-muted-foreground">{voicemail.context}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
                 )}
 
-                <Button variant="secondary" className="w-full" icon={Download}>
+                <Button variant="secondary" className="w-full" icon={Download} disabled>
                     Export Call Summary
                 </Button>
             </div>
 
-            {/* Center: Transcript */}
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-foreground" /> Call Transcript
-                    </h3>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-[var(--background)] neo-raised">
+                <div className="flex items-center justify-between border-b border-border/40 bg-[var(--background)] px-6 py-4 neo-inset">
+                    <h3 className="font-semibold text-foreground">Call transcript</h3>
                     <div className="flex gap-2">
-                        <Badge type="neutral" text={`ID: ${call.twilioCallSid?.substring(0, 8) || call.id.substring(0, 8)}`} />
-                        {call.isEmergency && (
-                            <Badge type="danger" text="Emergency Call" />
-                        )}
+                        <Badge type="neutral" text={`ID: ${(call.twilioCallSid || call.id).substring(0, 8)}`} />
+                        {call.recordingUrl && <Badge type="primary" text="Recording available" />}
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
-                    {call.transcriptSegments && call.transcriptSegments.length > 0 ? (
-                        call.transcriptSegments.map((segment, idx) => {
-                            const sentiment = getSentimentAtTime(segment.startTimeMs);
-                            const SentimentIcon = getSentimentIcon(sentiment);
-                            
+                <div className="flex-1 space-y-6 overflow-y-auto bg-background/30 p-6">
+                    {call.transcriptSegments.length > 0 ? (
+                        call.transcriptSegments.map((segment) => {
+                            const isAgentSide = segment.speaker === 'AGENT' || segment.speaker === 'SYSTEM';
                             return (
-                                <div 
-                                    key={segment.id} 
-                                    className={`flex gap-4 ${segment.speaker === 'AGENT' || segment.speaker === 'SYSTEM' ? '' : 'flex-row-reverse'}`}
+                                <div
+                                    key={segment.id}
+                                    className={`flex gap-4 ${isAgentSide ? '' : 'flex-row-reverse'}`}
                                 >
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 
-                                        ${segment.speaker === 'AGENT' || segment.speaker === 'SYSTEM' ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                        {segment.speaker === 'AGENT' || segment.speaker === 'SYSTEM' ? (
-                                            <BrainCircuit className="w-4 h-4" />
-                                        ) : (
-                                            <User className="w-4 h-4" />
-                                        )}
+                                    <div
+                                        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full neo-inset ${
+                                            isAgentSide
+                                                ? 'bg-primary/15 text-primary'
+                                                : 'bg-[var(--background)] text-muted-foreground'
+                                        }`}
+                                    >
+                                        {isAgentSide ? <Phone className="h-4 w-4" /> : <User className="h-4 w-4" />}
                                     </div>
-                                    <div className={`flex flex-col max-w-[70%] ${segment.speaker === 'CALLER' ? 'items-end' : 'items-start'}`}>
-                                        <div className={`px-4 py-3 rounded-2xl text-sm shadow-sm border relative
-                                            ${segment.speaker === 'AGENT' || segment.speaker === 'SYSTEM' 
-                                                ? 'bg-white border-slate-100 text-slate-700 rounded-tl-none' 
-                                                : 'bg-white border-slate-100 text-slate-800 rounded-tr-none'}
-                                        `}>
-                                            {/* Sentiment indicator */}
-                                            {segment.speaker === 'CALLER' && sentiment && (
-                                                <div className="absolute -left-2 top-3">
-                                                    <div className={`w-3 h-3 rounded-full ${getSentimentColor(sentiment)} flex items-center justify-center`}>
-                                                        <SentimentIcon className="w-2 h-2 text-white" />
-                                                    </div>
-                                                </div>
-                                            )}
+                                    <div className={`flex max-w-[70%] flex-col ${isAgentSide ? 'items-start' : 'items-end'}`}>
+                                        <div
+                                            className={`rounded-2xl px-4 py-3 text-sm neo-raised-sm ${
+                                                isAgentSide
+                                                    ? 'rounded-tl-none bg-[var(--background)] text-foreground'
+                                                    : 'rounded-tr-none bg-[var(--background)] text-foreground'
+                                            }`}
+                                        >
                                             {segment.text}
                                         </div>
-                                        <div className="flex items-center gap-2 mt-1 px-1">
-                                            <span className="text-xs text-slate-400">{formatTime(segment.startTimeMs)}</span>
-                                            {segment.confidence !== undefined && segment.confidence < 0.8 && (
-                                                <span className="text-xs text-amber-600">Low confidence</span>
+                                        <div className="mt-1 flex items-center gap-2 px-1 text-xs text-muted-foreground">
+                                            <span>{formatTime(segment.startTimeMs)}</span>
+                                            {segment.confidence !== undefined && (
+                                                <span>Confidence {Math.round(segment.confidence * 100)}%</span>
                                             )}
                                         </div>
                                     </div>
@@ -327,23 +222,23 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                             );
                         })
                     ) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">
-                            No transcript available for this call
+                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                            No transcript is available for this call yet.
                         </div>
                     )}
                 </div>
 
-                {call.recordingUrl && (
-                    <div className="p-4 border-t border-slate-100 bg-white flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-foreground flex items-center justify-center text-background">
-                            <Play className="w-4 h-4 ml-0.5" />
-                        </div>
-                        <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full w-0 bg-accent"></div>
-                        </div>
-                        <span className="text-xs font-mono text-slate-500">{duration}</span>
-                    </div>
-                )}
+                <div className="flex items-center gap-3 border-t border-border/40 bg-[var(--background)] p-4 neo-inset">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                        Started {new Date(call.startedAt).toLocaleString()}
+                    </span>
+                    {call.endedAt && (
+                        <span className="text-xs text-muted-foreground">
+                            • Ended {new Date(call.endedAt).toLocaleString()}
+                        </span>
+                    )}
+                </div>
             </div>
         </div>
     );

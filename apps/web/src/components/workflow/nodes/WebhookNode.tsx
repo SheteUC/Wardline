@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Webhook } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface WebhookNodeData {
+export interface WebhookNodeData extends Record<string, unknown> {
     label: string;
     url?: string;
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH';

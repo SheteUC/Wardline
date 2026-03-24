@@ -27,33 +27,30 @@ export type AggregateCallSession = {
 }
 
 export type CallSessionAvgAggregateOutputType = {
-  sentimentOverallScore: runtime.Decimal | null
-  aiConfidence: runtime.Decimal | null
+  turnCount: number | null
+  sentimentScore: runtime.Decimal | null
 }
 
 export type CallSessionSumAggregateOutputType = {
-  sentimentOverallScore: runtime.Decimal | null
-  aiConfidence: runtime.Decimal | null
+  turnCount: number | null
+  sentimentScore: runtime.Decimal | null
 }
 
 export type CallSessionMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   phoneNumberId: string | null
   twilioCallSid: string | null
   direction: $Enums.CallDirection | null
   status: $Enums.CallStatus | null
   recordingConsent: $Enums.RecordingConsent | null
-  intentId: string | null
   tag: $Enums.CallTag | null
-  patientId: string | null
+  callerId: string | null
   isEmergency: boolean | null
+  turnCount: number | null
   startedAt: Date | null
   endedAt: Date | null
-  sentimentOverallScore: runtime.Decimal | null
-  aiConfidence: runtime.Decimal | null
-  handoffTarget: string | null
-  handoffReason: string | null
+  sentimentScore: runtime.Decimal | null
   recordingUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -61,22 +58,19 @@ export type CallSessionMinAggregateOutputType = {
 
 export type CallSessionMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   phoneNumberId: string | null
   twilioCallSid: string | null
   direction: $Enums.CallDirection | null
   status: $Enums.CallStatus | null
   recordingConsent: $Enums.RecordingConsent | null
-  intentId: string | null
   tag: $Enums.CallTag | null
-  patientId: string | null
+  callerId: string | null
   isEmergency: boolean | null
+  turnCount: number | null
   startedAt: Date | null
   endedAt: Date | null
-  sentimentOverallScore: runtime.Decimal | null
-  aiConfidence: runtime.Decimal | null
-  handoffTarget: string | null
-  handoffReason: string | null
+  sentimentScore: runtime.Decimal | null
   recordingUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -84,22 +78,20 @@ export type CallSessionMaxAggregateOutputType = {
 
 export type CallSessionCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   phoneNumberId: number
   twilioCallSid: number
   direction: number
   status: number
   recordingConsent: number
-  intentId: number
   tag: number
-  patientId: number
+  callerId: number
   isEmergency: number
+  turnCount: number
+  turnsJson: number
   startedAt: number
   endedAt: number
-  sentimentOverallScore: number
-  aiConfidence: number
-  handoffTarget: number
-  handoffReason: number
+  sentimentScore: number
   recordingUrl: number
   createdAt: number
   updatedAt: number
@@ -108,33 +100,30 @@ export type CallSessionCountAggregateOutputType = {
 
 
 export type CallSessionAvgAggregateInputType = {
-  sentimentOverallScore?: true
-  aiConfidence?: true
+  turnCount?: true
+  sentimentScore?: true
 }
 
 export type CallSessionSumAggregateInputType = {
-  sentimentOverallScore?: true
-  aiConfidence?: true
+  turnCount?: true
+  sentimentScore?: true
 }
 
 export type CallSessionMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   phoneNumberId?: true
   twilioCallSid?: true
   direction?: true
   status?: true
   recordingConsent?: true
-  intentId?: true
   tag?: true
-  patientId?: true
+  callerId?: true
   isEmergency?: true
+  turnCount?: true
   startedAt?: true
   endedAt?: true
-  sentimentOverallScore?: true
-  aiConfidence?: true
-  handoffTarget?: true
-  handoffReason?: true
+  sentimentScore?: true
   recordingUrl?: true
   createdAt?: true
   updatedAt?: true
@@ -142,22 +131,19 @@ export type CallSessionMinAggregateInputType = {
 
 export type CallSessionMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   phoneNumberId?: true
   twilioCallSid?: true
   direction?: true
   status?: true
   recordingConsent?: true
-  intentId?: true
   tag?: true
-  patientId?: true
+  callerId?: true
   isEmergency?: true
+  turnCount?: true
   startedAt?: true
   endedAt?: true
-  sentimentOverallScore?: true
-  aiConfidence?: true
-  handoffTarget?: true
-  handoffReason?: true
+  sentimentScore?: true
   recordingUrl?: true
   createdAt?: true
   updatedAt?: true
@@ -165,22 +151,20 @@ export type CallSessionMaxAggregateInputType = {
 
 export type CallSessionCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   phoneNumberId?: true
   twilioCallSid?: true
   direction?: true
   status?: true
   recordingConsent?: true
-  intentId?: true
   tag?: true
-  patientId?: true
+  callerId?: true
   isEmergency?: true
+  turnCount?: true
+  turnsJson?: true
   startedAt?: true
   endedAt?: true
-  sentimentOverallScore?: true
-  aiConfidence?: true
-  handoffTarget?: true
-  handoffReason?: true
+  sentimentScore?: true
   recordingUrl?: true
   createdAt?: true
   updatedAt?: true
@@ -275,22 +259,20 @@ export type CallSessionGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 
 export type CallSessionGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status: $Enums.CallStatus
   recordingConsent: $Enums.RecordingConsent | null
-  intentId: string | null
   tag: $Enums.CallTag | null
-  patientId: string | null
+  callerId: string | null
   isEmergency: boolean
+  turnCount: number
+  turnsJson: runtime.JsonValue | null
   startedAt: Date
   endedAt: Date | null
-  sentimentOverallScore: runtime.Decimal | null
-  aiConfidence: runtime.Decimal | null
-  handoffTarget: string | null
-  handoffReason: string | null
+  sentimentScore: runtime.Decimal | null
   recordingUrl: string | null
   createdAt: Date
   updatedAt: Date
@@ -321,74 +303,62 @@ export type CallSessionWhereInput = {
   OR?: Prisma.CallSessionWhereInput[]
   NOT?: Prisma.CallSessionWhereInput | Prisma.CallSessionWhereInput[]
   id?: Prisma.StringFilter<"CallSession"> | string
-  hospitalId?: Prisma.StringFilter<"CallSession"> | string
+  businessId?: Prisma.StringFilter<"CallSession"> | string
   phoneNumberId?: Prisma.StringFilter<"CallSession"> | string
   twilioCallSid?: Prisma.StringFilter<"CallSession"> | string
   direction?: Prisma.EnumCallDirectionFilter<"CallSession"> | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFilter<"CallSession"> | $Enums.CallStatus
   recordingConsent?: Prisma.EnumRecordingConsentNullableFilter<"CallSession"> | $Enums.RecordingConsent | null
-  intentId?: Prisma.StringNullableFilter<"CallSession"> | string | null
   tag?: Prisma.EnumCallTagNullableFilter<"CallSession"> | $Enums.CallTag | null
-  patientId?: Prisma.StringNullableFilter<"CallSession"> | string | null
+  callerId?: Prisma.StringNullableFilter<"CallSession"> | string | null
   isEmergency?: Prisma.BoolFilter<"CallSession"> | boolean
+  turnCount?: Prisma.IntFilter<"CallSession"> | number
+  turnsJson?: Prisma.JsonNullableFilter<"CallSession">
   startedAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
   endedAt?: Prisma.DateTimeNullableFilter<"CallSession"> | Date | string | null
-  sentimentOverallScore?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.StringNullableFilter<"CallSession"> | string | null
-  handoffReason?: Prisma.StringNullableFilter<"CallSession"> | string | null
+  sentimentScore?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.StringNullableFilter<"CallSession"> | string | null
   createdAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   phoneNumber?: Prisma.XOR<Prisma.PhoneNumberScalarRelationFilter, Prisma.PhoneNumberWhereInput>
-  intent?: Prisma.XOR<Prisma.IntentNullableScalarRelationFilter, Prisma.IntentWhereInput> | null
-  patient?: Prisma.XOR<Prisma.PatientNullableScalarRelationFilter, Prisma.PatientWhereInput> | null
+  caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
   transcriptSegments?: Prisma.TranscriptSegmentListRelationFilter
-  sentimentSnapshots?: Prisma.SentimentSnapshotListRelationFilter
   handoffs?: Prisma.HandoffListRelationFilter
   appointments?: Prisma.AppointmentListRelationFilter
-  directoryInquiries?: Prisma.DirectoryInquiryListRelationFilter
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
   insuranceInquiries?: Prisma.InsuranceInquiryListRelationFilter
-  eventRegistrations?: Prisma.EventRegistrationListRelationFilter
-  assignments?: Prisma.CallAssignmentListRelationFilter
+  voicemails?: Prisma.VoicemailRecordListRelationFilter
 }
 
 export type CallSessionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   phoneNumberId?: Prisma.SortOrder
   twilioCallSid?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   status?: Prisma.SortOrder
   recordingConsent?: Prisma.SortOrderInput | Prisma.SortOrder
-  intentId?: Prisma.SortOrderInput | Prisma.SortOrder
   tag?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientId?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerId?: Prisma.SortOrderInput | Prisma.SortOrder
   isEmergency?: Prisma.SortOrder
+  turnCount?: Prisma.SortOrder
+  turnsJson?: Prisma.SortOrderInput | Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  sentimentOverallScore?: Prisma.SortOrderInput | Prisma.SortOrder
-  aiConfidence?: Prisma.SortOrderInput | Prisma.SortOrder
-  handoffTarget?: Prisma.SortOrderInput | Prisma.SortOrder
-  handoffReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  sentimentScore?: Prisma.SortOrderInput | Prisma.SortOrder
   recordingUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
   phoneNumber?: Prisma.PhoneNumberOrderByWithRelationInput
-  intent?: Prisma.IntentOrderByWithRelationInput
-  patient?: Prisma.PatientOrderByWithRelationInput
+  caller?: Prisma.CallerOrderByWithRelationInput
   transcriptSegments?: Prisma.TranscriptSegmentOrderByRelationAggregateInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotOrderByRelationAggregateInput
   handoffs?: Prisma.HandoffOrderByRelationAggregateInput
   appointments?: Prisma.AppointmentOrderByRelationAggregateInput
-  directoryInquiries?: Prisma.DirectoryInquiryOrderByRelationAggregateInput
   prescriptionRefills?: Prisma.PrescriptionRefillOrderByRelationAggregateInput
   insuranceInquiries?: Prisma.InsuranceInquiryOrderByRelationAggregateInput
-  eventRegistrations?: Prisma.EventRegistrationOrderByRelationAggregateInput
-  assignments?: Prisma.CallAssignmentOrderByRelationAggregateInput
+  voicemails?: Prisma.VoicemailRecordOrderByRelationAggregateInput
 }
 
 export type CallSessionWhereUniqueInput = Prisma.AtLeast<{
@@ -397,57 +367,49 @@ export type CallSessionWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.CallSessionWhereInput | Prisma.CallSessionWhereInput[]
   OR?: Prisma.CallSessionWhereInput[]
   NOT?: Prisma.CallSessionWhereInput | Prisma.CallSessionWhereInput[]
-  hospitalId?: Prisma.StringFilter<"CallSession"> | string
+  businessId?: Prisma.StringFilter<"CallSession"> | string
   phoneNumberId?: Prisma.StringFilter<"CallSession"> | string
   direction?: Prisma.EnumCallDirectionFilter<"CallSession"> | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFilter<"CallSession"> | $Enums.CallStatus
   recordingConsent?: Prisma.EnumRecordingConsentNullableFilter<"CallSession"> | $Enums.RecordingConsent | null
-  intentId?: Prisma.StringNullableFilter<"CallSession"> | string | null
   tag?: Prisma.EnumCallTagNullableFilter<"CallSession"> | $Enums.CallTag | null
-  patientId?: Prisma.StringNullableFilter<"CallSession"> | string | null
+  callerId?: Prisma.StringNullableFilter<"CallSession"> | string | null
   isEmergency?: Prisma.BoolFilter<"CallSession"> | boolean
+  turnCount?: Prisma.IntFilter<"CallSession"> | number
+  turnsJson?: Prisma.JsonNullableFilter<"CallSession">
   startedAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
   endedAt?: Prisma.DateTimeNullableFilter<"CallSession"> | Date | string | null
-  sentimentOverallScore?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.StringNullableFilter<"CallSession"> | string | null
-  handoffReason?: Prisma.StringNullableFilter<"CallSession"> | string | null
+  sentimentScore?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.StringNullableFilter<"CallSession"> | string | null
   createdAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   phoneNumber?: Prisma.XOR<Prisma.PhoneNumberScalarRelationFilter, Prisma.PhoneNumberWhereInput>
-  intent?: Prisma.XOR<Prisma.IntentNullableScalarRelationFilter, Prisma.IntentWhereInput> | null
-  patient?: Prisma.XOR<Prisma.PatientNullableScalarRelationFilter, Prisma.PatientWhereInput> | null
+  caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
   transcriptSegments?: Prisma.TranscriptSegmentListRelationFilter
-  sentimentSnapshots?: Prisma.SentimentSnapshotListRelationFilter
   handoffs?: Prisma.HandoffListRelationFilter
   appointments?: Prisma.AppointmentListRelationFilter
-  directoryInquiries?: Prisma.DirectoryInquiryListRelationFilter
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
   insuranceInquiries?: Prisma.InsuranceInquiryListRelationFilter
-  eventRegistrations?: Prisma.EventRegistrationListRelationFilter
-  assignments?: Prisma.CallAssignmentListRelationFilter
+  voicemails?: Prisma.VoicemailRecordListRelationFilter
 }, "id" | "twilioCallSid">
 
 export type CallSessionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   phoneNumberId?: Prisma.SortOrder
   twilioCallSid?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   status?: Prisma.SortOrder
   recordingConsent?: Prisma.SortOrderInput | Prisma.SortOrder
-  intentId?: Prisma.SortOrderInput | Prisma.SortOrder
   tag?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientId?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerId?: Prisma.SortOrderInput | Prisma.SortOrder
   isEmergency?: Prisma.SortOrder
+  turnCount?: Prisma.SortOrder
+  turnsJson?: Prisma.SortOrderInput | Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  sentimentOverallScore?: Prisma.SortOrderInput | Prisma.SortOrder
-  aiConfidence?: Prisma.SortOrderInput | Prisma.SortOrder
-  handoffTarget?: Prisma.SortOrderInput | Prisma.SortOrder
-  handoffReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  sentimentScore?: Prisma.SortOrderInput | Prisma.SortOrder
   recordingUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -463,22 +425,20 @@ export type CallSessionScalarWhereWithAggregatesInput = {
   OR?: Prisma.CallSessionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.CallSessionScalarWhereWithAggregatesInput | Prisma.CallSessionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"CallSession"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"CallSession"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"CallSession"> | string
   phoneNumberId?: Prisma.StringWithAggregatesFilter<"CallSession"> | string
   twilioCallSid?: Prisma.StringWithAggregatesFilter<"CallSession"> | string
   direction?: Prisma.EnumCallDirectionWithAggregatesFilter<"CallSession"> | $Enums.CallDirection
   status?: Prisma.EnumCallStatusWithAggregatesFilter<"CallSession"> | $Enums.CallStatus
   recordingConsent?: Prisma.EnumRecordingConsentNullableWithAggregatesFilter<"CallSession"> | $Enums.RecordingConsent | null
-  intentId?: Prisma.StringNullableWithAggregatesFilter<"CallSession"> | string | null
   tag?: Prisma.EnumCallTagNullableWithAggregatesFilter<"CallSession"> | $Enums.CallTag | null
-  patientId?: Prisma.StringNullableWithAggregatesFilter<"CallSession"> | string | null
+  callerId?: Prisma.StringNullableWithAggregatesFilter<"CallSession"> | string | null
   isEmergency?: Prisma.BoolWithAggregatesFilter<"CallSession"> | boolean
+  turnCount?: Prisma.IntWithAggregatesFilter<"CallSession"> | number
+  turnsJson?: Prisma.JsonNullableWithAggregatesFilter<"CallSession">
   startedAt?: Prisma.DateTimeWithAggregatesFilter<"CallSession"> | Date | string
   endedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"CallSession"> | Date | string | null
-  sentimentOverallScore?: Prisma.DecimalNullableWithAggregatesFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.DecimalNullableWithAggregatesFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.StringNullableWithAggregatesFilter<"CallSession"> | string | null
-  handoffReason?: Prisma.StringNullableWithAggregatesFilter<"CallSession"> | string | null
+  sentimentScore?: Prisma.DecimalNullableWithAggregatesFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.StringNullableWithAggregatesFilter<"CallSession"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"CallSession"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"CallSession"> | Date | string
@@ -492,60 +452,50 @@ export type CallSessionCreateInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUpdateInput = {
@@ -556,80 +506,68 @@ export type CallSessionUpdateInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -643,12 +581,11 @@ export type CallSessionUpdateManyMutationInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -656,22 +593,20 @@ export type CallSessionUpdateManyMutationInput = {
 
 export type CallSessionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -694,50 +629,45 @@ export type CallSessionNullableScalarRelationFilter = {
 
 export type CallSessionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   phoneNumberId?: Prisma.SortOrder
   twilioCallSid?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   status?: Prisma.SortOrder
   recordingConsent?: Prisma.SortOrder
-  intentId?: Prisma.SortOrder
   tag?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
   isEmergency?: Prisma.SortOrder
+  turnCount?: Prisma.SortOrder
+  turnsJson?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endedAt?: Prisma.SortOrder
-  sentimentOverallScore?: Prisma.SortOrder
-  aiConfidence?: Prisma.SortOrder
-  handoffTarget?: Prisma.SortOrder
-  handoffReason?: Prisma.SortOrder
+  sentimentScore?: Prisma.SortOrder
   recordingUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type CallSessionAvgOrderByAggregateInput = {
-  sentimentOverallScore?: Prisma.SortOrder
-  aiConfidence?: Prisma.SortOrder
+  turnCount?: Prisma.SortOrder
+  sentimentScore?: Prisma.SortOrder
 }
 
 export type CallSessionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   phoneNumberId?: Prisma.SortOrder
   twilioCallSid?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   status?: Prisma.SortOrder
   recordingConsent?: Prisma.SortOrder
-  intentId?: Prisma.SortOrder
   tag?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
   isEmergency?: Prisma.SortOrder
+  turnCount?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endedAt?: Prisma.SortOrder
-  sentimentOverallScore?: Prisma.SortOrder
-  aiConfidence?: Prisma.SortOrder
-  handoffTarget?: Prisma.SortOrder
-  handoffReason?: Prisma.SortOrder
+  sentimentScore?: Prisma.SortOrder
   recordingUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -745,30 +675,27 @@ export type CallSessionMaxOrderByAggregateInput = {
 
 export type CallSessionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   phoneNumberId?: Prisma.SortOrder
   twilioCallSid?: Prisma.SortOrder
   direction?: Prisma.SortOrder
   status?: Prisma.SortOrder
   recordingConsent?: Prisma.SortOrder
-  intentId?: Prisma.SortOrder
   tag?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
   isEmergency?: Prisma.SortOrder
+  turnCount?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endedAt?: Prisma.SortOrder
-  sentimentOverallScore?: Prisma.SortOrder
-  aiConfidence?: Prisma.SortOrder
-  handoffTarget?: Prisma.SortOrder
-  handoffReason?: Prisma.SortOrder
+  sentimentScore?: Prisma.SortOrder
   recordingUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type CallSessionSumOrderByAggregateInput = {
-  sentimentOverallScore?: Prisma.SortOrder
-  aiConfidence?: Prisma.SortOrder
+  turnCount?: Prisma.SortOrder
+  sentimentScore?: Prisma.SortOrder
 }
 
 export type CallSessionScalarRelationFilter = {
@@ -776,45 +703,45 @@ export type CallSessionScalarRelationFilter = {
   isNot?: Prisma.CallSessionWhereInput
 }
 
-export type CallSessionCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutHospitalInput, Prisma.CallSessionUncheckedCreateWithoutHospitalInput> | Prisma.CallSessionCreateWithoutHospitalInput[] | Prisma.CallSessionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutHospitalInput | Prisma.CallSessionCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.CallSessionCreateManyHospitalInputEnvelope
+export type CallSessionCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutBusinessInput, Prisma.CallSessionUncheckedCreateWithoutBusinessInput> | Prisma.CallSessionCreateWithoutBusinessInput[] | Prisma.CallSessionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutBusinessInput | Prisma.CallSessionCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.CallSessionCreateManyBusinessInputEnvelope
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
 }
 
-export type CallSessionUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutHospitalInput, Prisma.CallSessionUncheckedCreateWithoutHospitalInput> | Prisma.CallSessionCreateWithoutHospitalInput[] | Prisma.CallSessionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutHospitalInput | Prisma.CallSessionCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.CallSessionCreateManyHospitalInputEnvelope
+export type CallSessionUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutBusinessInput, Prisma.CallSessionUncheckedCreateWithoutBusinessInput> | Prisma.CallSessionCreateWithoutBusinessInput[] | Prisma.CallSessionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutBusinessInput | Prisma.CallSessionCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.CallSessionCreateManyBusinessInputEnvelope
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
 }
 
-export type CallSessionUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutHospitalInput, Prisma.CallSessionUncheckedCreateWithoutHospitalInput> | Prisma.CallSessionCreateWithoutHospitalInput[] | Prisma.CallSessionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutHospitalInput | Prisma.CallSessionCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutHospitalInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.CallSessionCreateManyHospitalInputEnvelope
+export type CallSessionUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutBusinessInput, Prisma.CallSessionUncheckedCreateWithoutBusinessInput> | Prisma.CallSessionCreateWithoutBusinessInput[] | Prisma.CallSessionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutBusinessInput | Prisma.CallSessionCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutBusinessInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.CallSessionCreateManyBusinessInputEnvelope
   set?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   disconnect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   delete?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutHospitalInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutHospitalInput | Prisma.CallSessionUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutBusinessInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutBusinessInput | Prisma.CallSessionUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
 }
 
-export type CallSessionUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutHospitalInput, Prisma.CallSessionUncheckedCreateWithoutHospitalInput> | Prisma.CallSessionCreateWithoutHospitalInput[] | Prisma.CallSessionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutHospitalInput | Prisma.CallSessionCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutHospitalInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.CallSessionCreateManyHospitalInputEnvelope
+export type CallSessionUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutBusinessInput, Prisma.CallSessionUncheckedCreateWithoutBusinessInput> | Prisma.CallSessionCreateWithoutBusinessInput[] | Prisma.CallSessionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutBusinessInput | Prisma.CallSessionCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutBusinessInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.CallSessionCreateManyBusinessInputEnvelope
   set?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   disconnect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   delete?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutHospitalInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutHospitalInput | Prisma.CallSessionUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutBusinessInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutBusinessInput | Prisma.CallSessionUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
 }
 
@@ -860,87 +787,45 @@ export type CallSessionUncheckedUpdateManyWithoutPhoneNumberNestedInput = {
   deleteMany?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
 }
 
-export type CallSessionCreateNestedManyWithoutIntentInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutIntentInput, Prisma.CallSessionUncheckedCreateWithoutIntentInput> | Prisma.CallSessionCreateWithoutIntentInput[] | Prisma.CallSessionUncheckedCreateWithoutIntentInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutIntentInput | Prisma.CallSessionCreateOrConnectWithoutIntentInput[]
-  createMany?: Prisma.CallSessionCreateManyIntentInputEnvelope
+export type CallSessionCreateNestedManyWithoutCallerInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutCallerInput, Prisma.CallSessionUncheckedCreateWithoutCallerInput> | Prisma.CallSessionCreateWithoutCallerInput[] | Prisma.CallSessionUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutCallerInput | Prisma.CallSessionCreateOrConnectWithoutCallerInput[]
+  createMany?: Prisma.CallSessionCreateManyCallerInputEnvelope
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
 }
 
-export type CallSessionUncheckedCreateNestedManyWithoutIntentInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutIntentInput, Prisma.CallSessionUncheckedCreateWithoutIntentInput> | Prisma.CallSessionCreateWithoutIntentInput[] | Prisma.CallSessionUncheckedCreateWithoutIntentInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutIntentInput | Prisma.CallSessionCreateOrConnectWithoutIntentInput[]
-  createMany?: Prisma.CallSessionCreateManyIntentInputEnvelope
+export type CallSessionUncheckedCreateNestedManyWithoutCallerInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutCallerInput, Prisma.CallSessionUncheckedCreateWithoutCallerInput> | Prisma.CallSessionCreateWithoutCallerInput[] | Prisma.CallSessionUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutCallerInput | Prisma.CallSessionCreateOrConnectWithoutCallerInput[]
+  createMany?: Prisma.CallSessionCreateManyCallerInputEnvelope
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
 }
 
-export type CallSessionUpdateManyWithoutIntentNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutIntentInput, Prisma.CallSessionUncheckedCreateWithoutIntentInput> | Prisma.CallSessionCreateWithoutIntentInput[] | Prisma.CallSessionUncheckedCreateWithoutIntentInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutIntentInput | Prisma.CallSessionCreateOrConnectWithoutIntentInput[]
-  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutIntentInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutIntentInput[]
-  createMany?: Prisma.CallSessionCreateManyIntentInputEnvelope
+export type CallSessionUpdateManyWithoutCallerNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutCallerInput, Prisma.CallSessionUncheckedCreateWithoutCallerInput> | Prisma.CallSessionCreateWithoutCallerInput[] | Prisma.CallSessionUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutCallerInput | Prisma.CallSessionCreateOrConnectWithoutCallerInput[]
+  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutCallerInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutCallerInput[]
+  createMany?: Prisma.CallSessionCreateManyCallerInputEnvelope
   set?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   disconnect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   delete?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutIntentInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutIntentInput[]
-  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutIntentInput | Prisma.CallSessionUpdateManyWithWhereWithoutIntentInput[]
+  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutCallerInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutCallerInput[]
+  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutCallerInput | Prisma.CallSessionUpdateManyWithWhereWithoutCallerInput[]
   deleteMany?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
 }
 
-export type CallSessionUncheckedUpdateManyWithoutIntentNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutIntentInput, Prisma.CallSessionUncheckedCreateWithoutIntentInput> | Prisma.CallSessionCreateWithoutIntentInput[] | Prisma.CallSessionUncheckedCreateWithoutIntentInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutIntentInput | Prisma.CallSessionCreateOrConnectWithoutIntentInput[]
-  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutIntentInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutIntentInput[]
-  createMany?: Prisma.CallSessionCreateManyIntentInputEnvelope
+export type CallSessionUncheckedUpdateManyWithoutCallerNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutCallerInput, Prisma.CallSessionUncheckedCreateWithoutCallerInput> | Prisma.CallSessionCreateWithoutCallerInput[] | Prisma.CallSessionUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutCallerInput | Prisma.CallSessionCreateOrConnectWithoutCallerInput[]
+  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutCallerInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutCallerInput[]
+  createMany?: Prisma.CallSessionCreateManyCallerInputEnvelope
   set?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   disconnect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   delete?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
   connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutIntentInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutIntentInput[]
-  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutIntentInput | Prisma.CallSessionUpdateManyWithWhereWithoutIntentInput[]
-  deleteMany?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
-}
-
-export type CallSessionCreateNestedManyWithoutPatientInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutPatientInput, Prisma.CallSessionUncheckedCreateWithoutPatientInput> | Prisma.CallSessionCreateWithoutPatientInput[] | Prisma.CallSessionUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutPatientInput | Prisma.CallSessionCreateOrConnectWithoutPatientInput[]
-  createMany?: Prisma.CallSessionCreateManyPatientInputEnvelope
-  connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-}
-
-export type CallSessionUncheckedCreateNestedManyWithoutPatientInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutPatientInput, Prisma.CallSessionUncheckedCreateWithoutPatientInput> | Prisma.CallSessionCreateWithoutPatientInput[] | Prisma.CallSessionUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutPatientInput | Prisma.CallSessionCreateOrConnectWithoutPatientInput[]
-  createMany?: Prisma.CallSessionCreateManyPatientInputEnvelope
-  connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-}
-
-export type CallSessionUpdateManyWithoutPatientNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutPatientInput, Prisma.CallSessionUncheckedCreateWithoutPatientInput> | Prisma.CallSessionCreateWithoutPatientInput[] | Prisma.CallSessionUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutPatientInput | Prisma.CallSessionCreateOrConnectWithoutPatientInput[]
-  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutPatientInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutPatientInput[]
-  createMany?: Prisma.CallSessionCreateManyPatientInputEnvelope
-  set?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  disconnect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  delete?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutPatientInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutPatientInput[]
-  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutPatientInput | Prisma.CallSessionUpdateManyWithWhereWithoutPatientInput[]
-  deleteMany?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
-}
-
-export type CallSessionUncheckedUpdateManyWithoutPatientNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutPatientInput, Prisma.CallSessionUncheckedCreateWithoutPatientInput> | Prisma.CallSessionCreateWithoutPatientInput[] | Prisma.CallSessionUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutPatientInput | Prisma.CallSessionCreateOrConnectWithoutPatientInput[]
-  upsert?: Prisma.CallSessionUpsertWithWhereUniqueWithoutPatientInput | Prisma.CallSessionUpsertWithWhereUniqueWithoutPatientInput[]
-  createMany?: Prisma.CallSessionCreateManyPatientInputEnvelope
-  set?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  disconnect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  delete?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  connect?: Prisma.CallSessionWhereUniqueInput | Prisma.CallSessionWhereUniqueInput[]
-  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutPatientInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutPatientInput[]
-  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutPatientInput | Prisma.CallSessionUpdateManyWithWhereWithoutPatientInput[]
+  update?: Prisma.CallSessionUpdateWithWhereUniqueWithoutCallerInput | Prisma.CallSessionUpdateWithWhereUniqueWithoutCallerInput[]
+  updateMany?: Prisma.CallSessionUpdateManyWithWhereWithoutCallerInput | Prisma.CallSessionUpdateManyWithWhereWithoutCallerInput[]
   deleteMany?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
 }
 
@@ -998,20 +883,6 @@ export type CallSessionUpdateOneRequiredWithoutTranscriptSegmentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutTranscriptSegmentsInput, Prisma.CallSessionUpdateWithoutTranscriptSegmentsInput>, Prisma.CallSessionUncheckedUpdateWithoutTranscriptSegmentsInput>
 }
 
-export type CallSessionCreateNestedOneWithoutSentimentSnapshotsInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutSentimentSnapshotsInput, Prisma.CallSessionUncheckedCreateWithoutSentimentSnapshotsInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutSentimentSnapshotsInput
-  connect?: Prisma.CallSessionWhereUniqueInput
-}
-
-export type CallSessionUpdateOneRequiredWithoutSentimentSnapshotsNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutSentimentSnapshotsInput, Prisma.CallSessionUncheckedCreateWithoutSentimentSnapshotsInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutSentimentSnapshotsInput
-  upsert?: Prisma.CallSessionUpsertWithoutSentimentSnapshotsInput
-  connect?: Prisma.CallSessionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutSentimentSnapshotsInput, Prisma.CallSessionUpdateWithoutSentimentSnapshotsInput>, Prisma.CallSessionUncheckedUpdateWithoutSentimentSnapshotsInput>
-}
-
 export type CallSessionCreateNestedOneWithoutHandoffsInput = {
   create?: Prisma.XOR<Prisma.CallSessionCreateWithoutHandoffsInput, Prisma.CallSessionUncheckedCreateWithoutHandoffsInput>
   connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutHandoffsInput
@@ -1026,20 +897,18 @@ export type CallSessionUpdateOneRequiredWithoutHandoffsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutHandoffsInput, Prisma.CallSessionUpdateWithoutHandoffsInput>, Prisma.CallSessionUncheckedUpdateWithoutHandoffsInput>
 }
 
-export type CallSessionCreateNestedOneWithoutDirectoryInquiriesInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutDirectoryInquiriesInput, Prisma.CallSessionUncheckedCreateWithoutDirectoryInquiriesInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutDirectoryInquiriesInput
+export type CallSessionCreateNestedOneWithoutVoicemailsInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutVoicemailsInput, Prisma.CallSessionUncheckedCreateWithoutVoicemailsInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutVoicemailsInput
   connect?: Prisma.CallSessionWhereUniqueInput
 }
 
-export type CallSessionUpdateOneWithoutDirectoryInquiriesNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutDirectoryInquiriesInput, Prisma.CallSessionUncheckedCreateWithoutDirectoryInquiriesInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutDirectoryInquiriesInput
-  upsert?: Prisma.CallSessionUpsertWithoutDirectoryInquiriesInput
-  disconnect?: Prisma.CallSessionWhereInput | boolean
-  delete?: Prisma.CallSessionWhereInput | boolean
+export type CallSessionUpdateOneRequiredWithoutVoicemailsNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutVoicemailsInput, Prisma.CallSessionUncheckedCreateWithoutVoicemailsInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutVoicemailsInput
+  upsert?: Prisma.CallSessionUpsertWithoutVoicemailsInput
   connect?: Prisma.CallSessionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutDirectoryInquiriesInput, Prisma.CallSessionUpdateWithoutDirectoryInquiriesInput>, Prisma.CallSessionUncheckedUpdateWithoutDirectoryInquiriesInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutVoicemailsInput, Prisma.CallSessionUpdateWithoutVoicemailsInput>, Prisma.CallSessionUncheckedUpdateWithoutVoicemailsInput>
 }
 
 export type CallSessionCreateNestedOneWithoutPrescriptionRefillsInput = {
@@ -1074,37 +943,7 @@ export type CallSessionUpdateOneWithoutInsuranceInquiriesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutInsuranceInquiriesInput, Prisma.CallSessionUpdateWithoutInsuranceInquiriesInput>, Prisma.CallSessionUncheckedUpdateWithoutInsuranceInquiriesInput>
 }
 
-export type CallSessionCreateNestedOneWithoutEventRegistrationsInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutEventRegistrationsInput, Prisma.CallSessionUncheckedCreateWithoutEventRegistrationsInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutEventRegistrationsInput
-  connect?: Prisma.CallSessionWhereUniqueInput
-}
-
-export type CallSessionUpdateOneWithoutEventRegistrationsNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutEventRegistrationsInput, Prisma.CallSessionUncheckedCreateWithoutEventRegistrationsInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutEventRegistrationsInput
-  upsert?: Prisma.CallSessionUpsertWithoutEventRegistrationsInput
-  disconnect?: Prisma.CallSessionWhereInput | boolean
-  delete?: Prisma.CallSessionWhereInput | boolean
-  connect?: Prisma.CallSessionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutEventRegistrationsInput, Prisma.CallSessionUpdateWithoutEventRegistrationsInput>, Prisma.CallSessionUncheckedUpdateWithoutEventRegistrationsInput>
-}
-
-export type CallSessionCreateNestedOneWithoutAssignmentsInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutAssignmentsInput, Prisma.CallSessionUncheckedCreateWithoutAssignmentsInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutAssignmentsInput
-  connect?: Prisma.CallSessionWhereUniqueInput
-}
-
-export type CallSessionUpdateOneRequiredWithoutAssignmentsNestedInput = {
-  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutAssignmentsInput, Prisma.CallSessionUncheckedCreateWithoutAssignmentsInput>
-  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutAssignmentsInput
-  upsert?: Prisma.CallSessionUpsertWithoutAssignmentsInput
-  connect?: Prisma.CallSessionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutAssignmentsInput, Prisma.CallSessionUpdateWithoutAssignmentsInput>, Prisma.CallSessionUncheckedUpdateWithoutAssignmentsInput>
-}
-
-export type CallSessionCreateWithoutHospitalInput = {
+export type CallSessionCreateWithoutBusinessInput = {
   id?: string
   twilioCallSid: string
   direction: $Enums.CallDirection
@@ -1112,84 +951,74 @@ export type CallSessionCreateWithoutHospitalInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
-export type CallSessionUncheckedCreateWithoutHospitalInput = {
+export type CallSessionUncheckedCreateWithoutBusinessInput = {
   id?: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
-export type CallSessionCreateOrConnectWithoutHospitalInput = {
+export type CallSessionCreateOrConnectWithoutBusinessInput = {
   where: Prisma.CallSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutHospitalInput, Prisma.CallSessionUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutBusinessInput, Prisma.CallSessionUncheckedCreateWithoutBusinessInput>
 }
 
-export type CallSessionCreateManyHospitalInputEnvelope = {
-  data: Prisma.CallSessionCreateManyHospitalInput | Prisma.CallSessionCreateManyHospitalInput[]
+export type CallSessionCreateManyBusinessInputEnvelope = {
+  data: Prisma.CallSessionCreateManyBusinessInput | Prisma.CallSessionCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type CallSessionUpsertWithWhereUniqueWithoutHospitalInput = {
+export type CallSessionUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.CallSessionWhereUniqueInput
-  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutHospitalInput, Prisma.CallSessionUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutHospitalInput, Prisma.CallSessionUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutBusinessInput, Prisma.CallSessionUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutBusinessInput, Prisma.CallSessionUncheckedCreateWithoutBusinessInput>
 }
 
-export type CallSessionUpdateWithWhereUniqueWithoutHospitalInput = {
+export type CallSessionUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.CallSessionWhereUniqueInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutHospitalInput, Prisma.CallSessionUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutBusinessInput, Prisma.CallSessionUncheckedUpdateWithoutBusinessInput>
 }
 
-export type CallSessionUpdateManyWithWhereWithoutHospitalInput = {
+export type CallSessionUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.CallSessionScalarWhereInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateManyMutationInput, Prisma.CallSessionUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.CallSessionUpdateManyMutationInput, Prisma.CallSessionUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type CallSessionScalarWhereInput = {
@@ -1197,22 +1026,20 @@ export type CallSessionScalarWhereInput = {
   OR?: Prisma.CallSessionScalarWhereInput[]
   NOT?: Prisma.CallSessionScalarWhereInput | Prisma.CallSessionScalarWhereInput[]
   id?: Prisma.StringFilter<"CallSession"> | string
-  hospitalId?: Prisma.StringFilter<"CallSession"> | string
+  businessId?: Prisma.StringFilter<"CallSession"> | string
   phoneNumberId?: Prisma.StringFilter<"CallSession"> | string
   twilioCallSid?: Prisma.StringFilter<"CallSession"> | string
   direction?: Prisma.EnumCallDirectionFilter<"CallSession"> | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFilter<"CallSession"> | $Enums.CallStatus
   recordingConsent?: Prisma.EnumRecordingConsentNullableFilter<"CallSession"> | $Enums.RecordingConsent | null
-  intentId?: Prisma.StringNullableFilter<"CallSession"> | string | null
   tag?: Prisma.EnumCallTagNullableFilter<"CallSession"> | $Enums.CallTag | null
-  patientId?: Prisma.StringNullableFilter<"CallSession"> | string | null
+  callerId?: Prisma.StringNullableFilter<"CallSession"> | string | null
   isEmergency?: Prisma.BoolFilter<"CallSession"> | boolean
+  turnCount?: Prisma.IntFilter<"CallSession"> | number
+  turnsJson?: Prisma.JsonNullableFilter<"CallSession">
   startedAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
   endedAt?: Prisma.DateTimeNullableFilter<"CallSession"> | Date | string | null
-  sentimentOverallScore?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.StringNullableFilter<"CallSession"> | string | null
-  handoffReason?: Prisma.StringNullableFilter<"CallSession"> | string | null
+  sentimentScore?: Prisma.DecimalNullableFilter<"CallSession"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.StringNullableFilter<"CallSession"> | string | null
   createdAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"CallSession"> | Date | string
@@ -1226,58 +1053,48 @@ export type CallSessionCreateWithoutPhoneNumberInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutPhoneNumberInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutPhoneNumberInput = {
@@ -1306,7 +1123,7 @@ export type CallSessionUpdateManyWithWhereWithoutPhoneNumberInput = {
   data: Prisma.XOR<Prisma.CallSessionUpdateManyMutationInput, Prisma.CallSessionUncheckedUpdateManyWithoutPhoneNumberInput>
 }
 
-export type CallSessionCreateWithoutIntentInput = {
+export type CallSessionCreateWithoutCallerInput = {
   id?: string
   twilioCallSid: string
   direction: $Enums.CallDirection
@@ -1314,172 +1131,74 @@ export type CallSessionCreateWithoutIntentInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
-export type CallSessionUncheckedCreateWithoutIntentInput = {
+export type CallSessionUncheckedCreateWithoutCallerInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
-export type CallSessionCreateOrConnectWithoutIntentInput = {
+export type CallSessionCreateOrConnectWithoutCallerInput = {
   where: Prisma.CallSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutIntentInput, Prisma.CallSessionUncheckedCreateWithoutIntentInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutCallerInput, Prisma.CallSessionUncheckedCreateWithoutCallerInput>
 }
 
-export type CallSessionCreateManyIntentInputEnvelope = {
-  data: Prisma.CallSessionCreateManyIntentInput | Prisma.CallSessionCreateManyIntentInput[]
+export type CallSessionCreateManyCallerInputEnvelope = {
+  data: Prisma.CallSessionCreateManyCallerInput | Prisma.CallSessionCreateManyCallerInput[]
   skipDuplicates?: boolean
 }
 
-export type CallSessionUpsertWithWhereUniqueWithoutIntentInput = {
+export type CallSessionUpsertWithWhereUniqueWithoutCallerInput = {
   where: Prisma.CallSessionWhereUniqueInput
-  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutIntentInput, Prisma.CallSessionUncheckedUpdateWithoutIntentInput>
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutIntentInput, Prisma.CallSessionUncheckedCreateWithoutIntentInput>
+  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutCallerInput, Prisma.CallSessionUncheckedUpdateWithoutCallerInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutCallerInput, Prisma.CallSessionUncheckedCreateWithoutCallerInput>
 }
 
-export type CallSessionUpdateWithWhereUniqueWithoutIntentInput = {
+export type CallSessionUpdateWithWhereUniqueWithoutCallerInput = {
   where: Prisma.CallSessionWhereUniqueInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutIntentInput, Prisma.CallSessionUncheckedUpdateWithoutIntentInput>
+  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutCallerInput, Prisma.CallSessionUncheckedUpdateWithoutCallerInput>
 }
 
-export type CallSessionUpdateManyWithWhereWithoutIntentInput = {
+export type CallSessionUpdateManyWithWhereWithoutCallerInput = {
   where: Prisma.CallSessionScalarWhereInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateManyMutationInput, Prisma.CallSessionUncheckedUpdateManyWithoutIntentInput>
-}
-
-export type CallSessionCreateWithoutPatientInput = {
-  id?: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  tag?: $Enums.CallTag | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
-  phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionUncheckedCreateWithoutPatientInput = {
-  id?: string
-  hospitalId: string
-  phoneNumberId: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
-  tag?: $Enums.CallTag | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionCreateOrConnectWithoutPatientInput = {
-  where: Prisma.CallSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutPatientInput, Prisma.CallSessionUncheckedCreateWithoutPatientInput>
-}
-
-export type CallSessionCreateManyPatientInputEnvelope = {
-  data: Prisma.CallSessionCreateManyPatientInput | Prisma.CallSessionCreateManyPatientInput[]
-  skipDuplicates?: boolean
-}
-
-export type CallSessionUpsertWithWhereUniqueWithoutPatientInput = {
-  where: Prisma.CallSessionWhereUniqueInput
-  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutPatientInput, Prisma.CallSessionUncheckedUpdateWithoutPatientInput>
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutPatientInput, Prisma.CallSessionUncheckedCreateWithoutPatientInput>
-}
-
-export type CallSessionUpdateWithWhereUniqueWithoutPatientInput = {
-  where: Prisma.CallSessionWhereUniqueInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutPatientInput, Prisma.CallSessionUncheckedUpdateWithoutPatientInput>
-}
-
-export type CallSessionUpdateManyWithWhereWithoutPatientInput = {
-  where: Prisma.CallSessionScalarWhereInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateManyMutationInput, Prisma.CallSessionUncheckedUpdateManyWithoutPatientInput>
+  data: Prisma.XOR<Prisma.CallSessionUpdateManyMutationInput, Prisma.CallSessionUncheckedUpdateManyWithoutCallerInput>
 }
 
 export type CallSessionCreateWithoutAppointmentsInput = {
@@ -1490,58 +1209,48 @@ export type CallSessionCreateWithoutAppointmentsInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutAppointmentsInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutAppointmentsInput = {
@@ -1568,58 +1277,48 @@ export type CallSessionUpdateWithoutAppointmentsInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutAppointmentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutTranscriptSegmentsInput = {
@@ -1630,58 +1329,48 @@ export type CallSessionCreateWithoutTranscriptSegmentsInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutTranscriptSegmentsInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutTranscriptSegmentsInput = {
@@ -1708,198 +1397,48 @@ export type CallSessionUpdateWithoutTranscriptSegmentsInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutTranscriptSegmentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionCreateWithoutSentimentSnapshotsInput = {
-  id?: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  tag?: $Enums.CallTag | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
-  phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
-  transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionUncheckedCreateWithoutSentimentSnapshotsInput = {
-  id?: string
-  hospitalId: string
-  phoneNumberId: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
-  tag?: $Enums.CallTag | null
-  patientId?: string | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionCreateOrConnectWithoutSentimentSnapshotsInput = {
-  where: Prisma.CallSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutSentimentSnapshotsInput, Prisma.CallSessionUncheckedCreateWithoutSentimentSnapshotsInput>
-}
-
-export type CallSessionUpsertWithoutSentimentSnapshotsInput = {
-  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutSentimentSnapshotsInput, Prisma.CallSessionUncheckedUpdateWithoutSentimentSnapshotsInput>
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutSentimentSnapshotsInput, Prisma.CallSessionUncheckedCreateWithoutSentimentSnapshotsInput>
-  where?: Prisma.CallSessionWhereInput
-}
-
-export type CallSessionUpdateToOneWithWhereWithoutSentimentSnapshotsInput = {
-  where?: Prisma.CallSessionWhereInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutSentimentSnapshotsInput, Prisma.CallSessionUncheckedUpdateWithoutSentimentSnapshotsInput>
-}
-
-export type CallSessionUpdateWithoutSentimentSnapshotsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
-  phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
-  transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionUncheckedUpdateWithoutSentimentSnapshotsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutHandoffsInput = {
@@ -1910,58 +1449,48 @@ export type CallSessionCreateWithoutHandoffsInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutHandoffsInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutHandoffsInput = {
@@ -1988,61 +1517,51 @@ export type CallSessionUpdateWithoutHandoffsInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutHandoffsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
-export type CallSessionCreateWithoutDirectoryInquiriesInput = {
+export type CallSessionCreateWithoutVoicemailsInput = {
   id?: string
   twilioCallSid: string
   direction: $Enums.CallDirection
@@ -2050,77 +1569,67 @@ export type CallSessionCreateWithoutDirectoryInquiriesInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
 }
 
-export type CallSessionUncheckedCreateWithoutDirectoryInquiriesInput = {
+export type CallSessionUncheckedCreateWithoutVoicemailsInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
 }
 
-export type CallSessionCreateOrConnectWithoutDirectoryInquiriesInput = {
+export type CallSessionCreateOrConnectWithoutVoicemailsInput = {
   where: Prisma.CallSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutDirectoryInquiriesInput, Prisma.CallSessionUncheckedCreateWithoutDirectoryInquiriesInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutVoicemailsInput, Prisma.CallSessionUncheckedCreateWithoutVoicemailsInput>
 }
 
-export type CallSessionUpsertWithoutDirectoryInquiriesInput = {
-  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutDirectoryInquiriesInput, Prisma.CallSessionUncheckedUpdateWithoutDirectoryInquiriesInput>
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutDirectoryInquiriesInput, Prisma.CallSessionUncheckedCreateWithoutDirectoryInquiriesInput>
+export type CallSessionUpsertWithoutVoicemailsInput = {
+  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutVoicemailsInput, Prisma.CallSessionUncheckedUpdateWithoutVoicemailsInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutVoicemailsInput, Prisma.CallSessionUncheckedCreateWithoutVoicemailsInput>
   where?: Prisma.CallSessionWhereInput
 }
 
-export type CallSessionUpdateToOneWithWhereWithoutDirectoryInquiriesInput = {
+export type CallSessionUpdateToOneWithWhereWithoutVoicemailsInput = {
   where?: Prisma.CallSessionWhereInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutDirectoryInquiriesInput, Prisma.CallSessionUncheckedUpdateWithoutDirectoryInquiriesInput>
+  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutVoicemailsInput, Prisma.CallSessionUncheckedUpdateWithoutVoicemailsInput>
 }
 
-export type CallSessionUpdateWithoutDirectoryInquiriesInput = {
+export type CallSessionUpdateWithoutVoicemailsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
@@ -2128,58 +1637,48 @@ export type CallSessionUpdateWithoutDirectoryInquiriesInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
 }
 
-export type CallSessionUncheckedUpdateWithoutDirectoryInquiriesInput = {
+export type CallSessionUncheckedUpdateWithoutVoicemailsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutPrescriptionRefillsInput = {
@@ -2190,58 +1689,48 @@ export type CallSessionCreateWithoutPrescriptionRefillsInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutPrescriptionRefillsInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutPrescriptionRefillsInput = {
@@ -2268,58 +1757,48 @@ export type CallSessionUpdateWithoutPrescriptionRefillsInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutPrescriptionRefillsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionCreateWithoutInsuranceInquiriesInput = {
@@ -2330,58 +1809,48 @@ export type CallSessionCreateWithoutInsuranceInquiriesInput = {
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionUncheckedCreateWithoutInsuranceInquiriesInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
 }
 
 export type CallSessionCreateOrConnectWithoutInsuranceInquiriesInput = {
@@ -2408,363 +1877,71 @@ export type CallSessionUpdateWithoutInsuranceInquiriesInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutInsuranceInquiriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
-export type CallSessionCreateWithoutEventRegistrationsInput = {
-  id?: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  tag?: $Enums.CallTag | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
-  phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
-  transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionUncheckedCreateWithoutEventRegistrationsInput = {
-  id?: string
-  hospitalId: string
-  phoneNumberId: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
-  tag?: $Enums.CallTag | null
-  patientId?: string | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  assignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionCreateOrConnectWithoutEventRegistrationsInput = {
-  where: Prisma.CallSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutEventRegistrationsInput, Prisma.CallSessionUncheckedCreateWithoutEventRegistrationsInput>
-}
-
-export type CallSessionUpsertWithoutEventRegistrationsInput = {
-  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutEventRegistrationsInput, Prisma.CallSessionUncheckedUpdateWithoutEventRegistrationsInput>
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutEventRegistrationsInput, Prisma.CallSessionUncheckedCreateWithoutEventRegistrationsInput>
-  where?: Prisma.CallSessionWhereInput
-}
-
-export type CallSessionUpdateToOneWithWhereWithoutEventRegistrationsInput = {
-  where?: Prisma.CallSessionWhereInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutEventRegistrationsInput, Prisma.CallSessionUncheckedUpdateWithoutEventRegistrationsInput>
-}
-
-export type CallSessionUpdateWithoutEventRegistrationsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
-  phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
-  transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionUncheckedUpdateWithoutEventRegistrationsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionCreateWithoutAssignmentsInput = {
-  id?: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  tag?: $Enums.CallTag | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutCallSessionsInput
-  phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
-  intent?: Prisma.IntentCreateNestedOneWithoutCallSessionsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutCallSessionsInput
-  transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionUncheckedCreateWithoutAssignmentsInput = {
-  id?: string
-  hospitalId: string
-  phoneNumberId: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
-  tag?: $Enums.CallTag | null
-  patientId?: string | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedCreateNestedManyWithoutCallInput
-  handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
-  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedCreateNestedManyWithoutCallInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedCreateNestedManyWithoutCallInput
-}
-
-export type CallSessionCreateOrConnectWithoutAssignmentsInput = {
-  where: Prisma.CallSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutAssignmentsInput, Prisma.CallSessionUncheckedCreateWithoutAssignmentsInput>
-}
-
-export type CallSessionUpsertWithoutAssignmentsInput = {
-  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutAssignmentsInput, Prisma.CallSessionUncheckedUpdateWithoutAssignmentsInput>
-  create: Prisma.XOR<Prisma.CallSessionCreateWithoutAssignmentsInput, Prisma.CallSessionUncheckedCreateWithoutAssignmentsInput>
-  where?: Prisma.CallSessionWhereInput
-}
-
-export type CallSessionUpdateToOneWithWhereWithoutAssignmentsInput = {
-  where?: Prisma.CallSessionWhereInput
-  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutAssignmentsInput, Prisma.CallSessionUncheckedUpdateWithoutAssignmentsInput>
-}
-
-export type CallSessionUpdateWithoutAssignmentsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
-  phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
-  transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionUncheckedUpdateWithoutAssignmentsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionCreateManyHospitalInput = {
+export type CallSessionCreateManyBusinessInput = {
   id?: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
-export type CallSessionUpdateWithoutHospitalInput = {
+export type CallSessionUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
@@ -2772,77 +1949,65 @@ export type CallSessionUpdateWithoutHospitalInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
-export type CallSessionUncheckedUpdateWithoutHospitalInput = {
+export type CallSessionUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
-export type CallSessionUncheckedUpdateManyWithoutHospitalInput = {
+export type CallSessionUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2850,21 +2015,19 @@ export type CallSessionUncheckedUpdateManyWithoutHospitalInput = {
 
 export type CallSessionCreateManyPhoneNumberInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
+  callerId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2878,105 +2041,91 @@ export type CallSessionUpdateWithoutPhoneNumberInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateWithoutPhoneNumberInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
 export type CallSessionUncheckedUpdateManyWithoutPhoneNumberInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type CallSessionCreateManyIntentInput = {
+export type CallSessionCreateManyCallerInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   phoneNumberId: string
   twilioCallSid: string
   direction: $Enums.CallDirection
   status?: $Enums.CallStatus
   recordingConsent?: $Enums.RecordingConsent | null
   tag?: $Enums.CallTag | null
-  patientId?: string | null
   isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string
   endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
-export type CallSessionUpdateWithoutIntentInput = {
+export type CallSessionUpdateWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
@@ -2984,183 +2133,65 @@ export type CallSessionUpdateWithoutIntentInput = {
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
 }
 
-export type CallSessionUncheckedUpdateWithoutIntentInput = {
+export type CallSessionUncheckedUpdateWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
 }
 
-export type CallSessionUncheckedUpdateManyWithoutIntentInput = {
+export type CallSessionUncheckedUpdateManyWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
   direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
   status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
   recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
   tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type CallSessionCreateManyPatientInput = {
-  id?: string
-  hospitalId: string
-  phoneNumberId: string
-  twilioCallSid: string
-  direction: $Enums.CallDirection
-  status?: $Enums.CallStatus
-  recordingConsent?: $Enums.RecordingConsent | null
-  intentId?: string | null
-  tag?: $Enums.CallTag | null
-  isEmergency?: boolean
-  startedAt?: Date | string
-  endedAt?: Date | string | null
-  sentimentOverallScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: string | null
-  handoffReason?: string | null
-  recordingUrl?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type CallSessionUpdateWithoutPatientInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutCallSessionsNestedInput
-  phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
-  intent?: Prisma.IntentUpdateOneWithoutCallSessionsNestedInput
-  transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionUncheckedUpdateWithoutPatientInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
-  sentimentSnapshots?: Prisma.SentimentSnapshotUncheckedUpdateManyWithoutCallNestedInput
-  handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
-  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
-  directoryInquiries?: Prisma.DirectoryInquiryUncheckedUpdateManyWithoutCallNestedInput
-  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
-  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
-  eventRegistrations?: Prisma.EventRegistrationUncheckedUpdateManyWithoutCallNestedInput
-  assignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutCallNestedInput
-}
-
-export type CallSessionUncheckedUpdateManyWithoutPatientInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
-  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
-  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
-  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
-  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
-  intentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
-  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sentimentOverallScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  aiConfidence?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  handoffTarget?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handoffReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3173,26 +2204,20 @@ export type CallSessionUncheckedUpdateManyWithoutPatientInput = {
 
 export type CallSessionCountOutputType = {
   transcriptSegments: number
-  sentimentSnapshots: number
   handoffs: number
   appointments: number
-  directoryInquiries: number
   prescriptionRefills: number
   insuranceInquiries: number
-  eventRegistrations: number
-  assignments: number
+  voicemails: number
 }
 
 export type CallSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transcriptSegments?: boolean | CallSessionCountOutputTypeCountTranscriptSegmentsArgs
-  sentimentSnapshots?: boolean | CallSessionCountOutputTypeCountSentimentSnapshotsArgs
   handoffs?: boolean | CallSessionCountOutputTypeCountHandoffsArgs
   appointments?: boolean | CallSessionCountOutputTypeCountAppointmentsArgs
-  directoryInquiries?: boolean | CallSessionCountOutputTypeCountDirectoryInquiriesArgs
   prescriptionRefills?: boolean | CallSessionCountOutputTypeCountPrescriptionRefillsArgs
   insuranceInquiries?: boolean | CallSessionCountOutputTypeCountInsuranceInquiriesArgs
-  eventRegistrations?: boolean | CallSessionCountOutputTypeCountEventRegistrationsArgs
-  assignments?: boolean | CallSessionCountOutputTypeCountAssignmentsArgs
+  voicemails?: boolean | CallSessionCountOutputTypeCountVoicemailsArgs
 }
 
 /**
@@ -3215,13 +2240,6 @@ export type CallSessionCountOutputTypeCountTranscriptSegmentsArgs<ExtArgs extend
 /**
  * CallSessionCountOutputType without action
  */
-export type CallSessionCountOutputTypeCountSentimentSnapshotsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.SentimentSnapshotWhereInput
-}
-
-/**
- * CallSessionCountOutputType without action
- */
 export type CallSessionCountOutputTypeCountHandoffsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.HandoffWhereInput
 }
@@ -3231,13 +2249,6 @@ export type CallSessionCountOutputTypeCountHandoffsArgs<ExtArgs extends runtime.
  */
 export type CallSessionCountOutputTypeCountAppointmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AppointmentWhereInput
-}
-
-/**
- * CallSessionCountOutputType without action
- */
-export type CallSessionCountOutputTypeCountDirectoryInquiriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DirectoryInquiryWhereInput
 }
 
 /**
@@ -3257,197 +2268,170 @@ export type CallSessionCountOutputTypeCountInsuranceInquiriesArgs<ExtArgs extend
 /**
  * CallSessionCountOutputType without action
  */
-export type CallSessionCountOutputTypeCountEventRegistrationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.EventRegistrationWhereInput
-}
-
-/**
- * CallSessionCountOutputType without action
- */
-export type CallSessionCountOutputTypeCountAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CallAssignmentWhereInput
+export type CallSessionCountOutputTypeCountVoicemailsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VoicemailRecordWhereInput
 }
 
 
 export type CallSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   phoneNumberId?: boolean
   twilioCallSid?: boolean
   direction?: boolean
   status?: boolean
   recordingConsent?: boolean
-  intentId?: boolean
   tag?: boolean
-  patientId?: boolean
+  callerId?: boolean
   isEmergency?: boolean
+  turnCount?: boolean
+  turnsJson?: boolean
   startedAt?: boolean
   endedAt?: boolean
-  sentimentOverallScore?: boolean
-  aiConfidence?: boolean
-  handoffTarget?: boolean
-  handoffReason?: boolean
+  sentimentScore?: boolean
   recordingUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
-  intent?: boolean | Prisma.CallSession$intentArgs<ExtArgs>
-  patient?: boolean | Prisma.CallSession$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
   transcriptSegments?: boolean | Prisma.CallSession$transcriptSegmentsArgs<ExtArgs>
-  sentimentSnapshots?: boolean | Prisma.CallSession$sentimentSnapshotsArgs<ExtArgs>
   handoffs?: boolean | Prisma.CallSession$handoffsArgs<ExtArgs>
   appointments?: boolean | Prisma.CallSession$appointmentsArgs<ExtArgs>
-  directoryInquiries?: boolean | Prisma.CallSession$directoryInquiriesArgs<ExtArgs>
   prescriptionRefills?: boolean | Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>
   insuranceInquiries?: boolean | Prisma.CallSession$insuranceInquiriesArgs<ExtArgs>
-  eventRegistrations?: boolean | Prisma.CallSession$eventRegistrationsArgs<ExtArgs>
-  assignments?: boolean | Prisma.CallSession$assignmentsArgs<ExtArgs>
+  voicemails?: boolean | Prisma.CallSession$voicemailsArgs<ExtArgs>
   _count?: boolean | Prisma.CallSessionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["callSession"]>
 
 export type CallSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   phoneNumberId?: boolean
   twilioCallSid?: boolean
   direction?: boolean
   status?: boolean
   recordingConsent?: boolean
-  intentId?: boolean
   tag?: boolean
-  patientId?: boolean
+  callerId?: boolean
   isEmergency?: boolean
+  turnCount?: boolean
+  turnsJson?: boolean
   startedAt?: boolean
   endedAt?: boolean
-  sentimentOverallScore?: boolean
-  aiConfidence?: boolean
-  handoffTarget?: boolean
-  handoffReason?: boolean
+  sentimentScore?: boolean
   recordingUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
-  intent?: boolean | Prisma.CallSession$intentArgs<ExtArgs>
-  patient?: boolean | Prisma.CallSession$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
 }, ExtArgs["result"]["callSession"]>
 
 export type CallSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   phoneNumberId?: boolean
   twilioCallSid?: boolean
   direction?: boolean
   status?: boolean
   recordingConsent?: boolean
-  intentId?: boolean
   tag?: boolean
-  patientId?: boolean
+  callerId?: boolean
   isEmergency?: boolean
+  turnCount?: boolean
+  turnsJson?: boolean
   startedAt?: boolean
   endedAt?: boolean
-  sentimentOverallScore?: boolean
-  aiConfidence?: boolean
-  handoffTarget?: boolean
-  handoffReason?: boolean
+  sentimentScore?: boolean
   recordingUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
-  intent?: boolean | Prisma.CallSession$intentArgs<ExtArgs>
-  patient?: boolean | Prisma.CallSession$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
 }, ExtArgs["result"]["callSession"]>
 
 export type CallSessionSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   phoneNumberId?: boolean
   twilioCallSid?: boolean
   direction?: boolean
   status?: boolean
   recordingConsent?: boolean
-  intentId?: boolean
   tag?: boolean
-  patientId?: boolean
+  callerId?: boolean
   isEmergency?: boolean
+  turnCount?: boolean
+  turnsJson?: boolean
   startedAt?: boolean
   endedAt?: boolean
-  sentimentOverallScore?: boolean
-  aiConfidence?: boolean
-  handoffTarget?: boolean
-  handoffReason?: boolean
+  sentimentScore?: boolean
   recordingUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type CallSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "phoneNumberId" | "twilioCallSid" | "direction" | "status" | "recordingConsent" | "intentId" | "tag" | "patientId" | "isEmergency" | "startedAt" | "endedAt" | "sentimentOverallScore" | "aiConfidence" | "handoffTarget" | "handoffReason" | "recordingUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["callSession"]>
+export type CallSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "phoneNumberId" | "twilioCallSid" | "direction" | "status" | "recordingConsent" | "tag" | "callerId" | "isEmergency" | "turnCount" | "turnsJson" | "startedAt" | "endedAt" | "sentimentScore" | "recordingUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["callSession"]>
 export type CallSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
-  intent?: boolean | Prisma.CallSession$intentArgs<ExtArgs>
-  patient?: boolean | Prisma.CallSession$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
   transcriptSegments?: boolean | Prisma.CallSession$transcriptSegmentsArgs<ExtArgs>
-  sentimentSnapshots?: boolean | Prisma.CallSession$sentimentSnapshotsArgs<ExtArgs>
   handoffs?: boolean | Prisma.CallSession$handoffsArgs<ExtArgs>
   appointments?: boolean | Prisma.CallSession$appointmentsArgs<ExtArgs>
-  directoryInquiries?: boolean | Prisma.CallSession$directoryInquiriesArgs<ExtArgs>
   prescriptionRefills?: boolean | Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>
   insuranceInquiries?: boolean | Prisma.CallSession$insuranceInquiriesArgs<ExtArgs>
-  eventRegistrations?: boolean | Prisma.CallSession$eventRegistrationsArgs<ExtArgs>
-  assignments?: boolean | Prisma.CallSession$assignmentsArgs<ExtArgs>
+  voicemails?: boolean | Prisma.CallSession$voicemailsArgs<ExtArgs>
   _count?: boolean | Prisma.CallSessionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CallSessionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
-  intent?: boolean | Prisma.CallSession$intentArgs<ExtArgs>
-  patient?: boolean | Prisma.CallSession$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
 }
 export type CallSessionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
-  intent?: boolean | Prisma.CallSession$intentArgs<ExtArgs>
-  patient?: boolean | Prisma.CallSession$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
 }
 
 export type $CallSessionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "CallSession"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
     phoneNumber: Prisma.$PhoneNumberPayload<ExtArgs>
-    intent: Prisma.$IntentPayload<ExtArgs> | null
-    patient: Prisma.$PatientPayload<ExtArgs> | null
+    caller: Prisma.$CallerPayload<ExtArgs> | null
     transcriptSegments: Prisma.$TranscriptSegmentPayload<ExtArgs>[]
-    sentimentSnapshots: Prisma.$SentimentSnapshotPayload<ExtArgs>[]
     handoffs: Prisma.$HandoffPayload<ExtArgs>[]
     appointments: Prisma.$AppointmentPayload<ExtArgs>[]
-    directoryInquiries: Prisma.$DirectoryInquiryPayload<ExtArgs>[]
     prescriptionRefills: Prisma.$PrescriptionRefillPayload<ExtArgs>[]
     insuranceInquiries: Prisma.$InsuranceInquiryPayload<ExtArgs>[]
-    eventRegistrations: Prisma.$EventRegistrationPayload<ExtArgs>[]
-    assignments: Prisma.$CallAssignmentPayload<ExtArgs>[]
+    voicemails: Prisma.$VoicemailRecordPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     phoneNumberId: string
     twilioCallSid: string
     direction: $Enums.CallDirection
     status: $Enums.CallStatus
     recordingConsent: $Enums.RecordingConsent | null
-    intentId: string | null
     tag: $Enums.CallTag | null
-    patientId: string | null
+    callerId: string | null
     isEmergency: boolean
+    /**
+     * * Number of problem-resolution turns completed
+     */
+    turnCount: number
+    /**
+     * * JSON array of CallTurn objects
+     */
+    turnsJson: runtime.JsonValue | null
     startedAt: Date
     endedAt: Date | null
-    sentimentOverallScore: runtime.Decimal | null
-    aiConfidence: runtime.Decimal | null
-    handoffTarget: string | null
-    handoffReason: string | null
+    sentimentScore: runtime.Decimal | null
     recordingUrl: string | null
     createdAt: Date
     updatedAt: Date
@@ -3845,19 +2829,15 @@ readonly fields: CallSessionFieldRefs;
  */
 export interface Prisma__CallSessionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   phoneNumber<T extends Prisma.PhoneNumberDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PhoneNumberDefaultArgs<ExtArgs>>): Prisma.Prisma__PhoneNumberClient<runtime.Types.Result.GetResult<Prisma.$PhoneNumberPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  intent<T extends Prisma.CallSession$intentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$intentArgs<ExtArgs>>): Prisma.Prisma__IntentClient<runtime.Types.Result.GetResult<Prisma.$IntentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  patient<T extends Prisma.CallSession$patientArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$patientArgs<ExtArgs>>): Prisma.Prisma__PatientClient<runtime.Types.Result.GetResult<Prisma.$PatientPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  caller<T extends Prisma.CallSession$callerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$callerArgs<ExtArgs>>): Prisma.Prisma__CallerClient<runtime.Types.Result.GetResult<Prisma.$CallerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   transcriptSegments<T extends Prisma.CallSession$transcriptSegmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$transcriptSegmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TranscriptSegmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  sentimentSnapshots<T extends Prisma.CallSession$sentimentSnapshotsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$sentimentSnapshotsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SentimentSnapshotPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   handoffs<T extends Prisma.CallSession$handoffsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$handoffsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$HandoffPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   appointments<T extends Prisma.CallSession$appointmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$appointmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AppointmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  directoryInquiries<T extends Prisma.CallSession$directoryInquiriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$directoryInquiriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DirectoryInquiryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   prescriptionRefills<T extends Prisma.CallSession$prescriptionRefillsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PrescriptionRefillPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   insuranceInquiries<T extends Prisma.CallSession$insuranceInquiriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$insuranceInquiriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InsuranceInquiryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  eventRegistrations<T extends Prisma.CallSession$eventRegistrationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$eventRegistrationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventRegistrationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  assignments<T extends Prisma.CallSession$assignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$assignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CallAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  voicemails<T extends Prisma.CallSession$voicemailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$voicemailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VoicemailRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3888,22 +2868,20 @@ export interface Prisma__CallSessionClient<T, Null = never, ExtArgs extends runt
  */
 export interface CallSessionFieldRefs {
   readonly id: Prisma.FieldRef<"CallSession", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"CallSession", 'String'>
+  readonly businessId: Prisma.FieldRef<"CallSession", 'String'>
   readonly phoneNumberId: Prisma.FieldRef<"CallSession", 'String'>
   readonly twilioCallSid: Prisma.FieldRef<"CallSession", 'String'>
   readonly direction: Prisma.FieldRef<"CallSession", 'CallDirection'>
   readonly status: Prisma.FieldRef<"CallSession", 'CallStatus'>
   readonly recordingConsent: Prisma.FieldRef<"CallSession", 'RecordingConsent'>
-  readonly intentId: Prisma.FieldRef<"CallSession", 'String'>
   readonly tag: Prisma.FieldRef<"CallSession", 'CallTag'>
-  readonly patientId: Prisma.FieldRef<"CallSession", 'String'>
+  readonly callerId: Prisma.FieldRef<"CallSession", 'String'>
   readonly isEmergency: Prisma.FieldRef<"CallSession", 'Boolean'>
+  readonly turnCount: Prisma.FieldRef<"CallSession", 'Int'>
+  readonly turnsJson: Prisma.FieldRef<"CallSession", 'Json'>
   readonly startedAt: Prisma.FieldRef<"CallSession", 'DateTime'>
   readonly endedAt: Prisma.FieldRef<"CallSession", 'DateTime'>
-  readonly sentimentOverallScore: Prisma.FieldRef<"CallSession", 'Decimal'>
-  readonly aiConfidence: Prisma.FieldRef<"CallSession", 'Decimal'>
-  readonly handoffTarget: Prisma.FieldRef<"CallSession", 'String'>
-  readonly handoffReason: Prisma.FieldRef<"CallSession", 'String'>
+  readonly sentimentScore: Prisma.FieldRef<"CallSession", 'Decimal'>
   readonly recordingUrl: Prisma.FieldRef<"CallSession", 'String'>
   readonly createdAt: Prisma.FieldRef<"CallSession", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"CallSession", 'DateTime'>
@@ -4303,41 +3281,22 @@ export type CallSessionDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
- * CallSession.intent
+ * CallSession.caller
  */
-export type CallSession$intentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type CallSession$callerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Intent
+   * Select specific fields to fetch from the Caller
    */
-  select?: Prisma.IntentSelect<ExtArgs> | null
+  select?: Prisma.CallerSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Intent
+   * Omit specific fields from the Caller
    */
-  omit?: Prisma.IntentOmit<ExtArgs> | null
+  omit?: Prisma.CallerOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.IntentInclude<ExtArgs> | null
-  where?: Prisma.IntentWhereInput
-}
-
-/**
- * CallSession.patient
- */
-export type CallSession$patientArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Patient
-   */
-  select?: Prisma.PatientSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Patient
-   */
-  omit?: Prisma.PatientOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.PatientInclude<ExtArgs> | null
-  where?: Prisma.PatientWhereInput
+  include?: Prisma.CallerInclude<ExtArgs> | null
+  where?: Prisma.CallerWhereInput
 }
 
 /**
@@ -4362,30 +3321,6 @@ export type CallSession$transcriptSegmentsArgs<ExtArgs extends runtime.Types.Ext
   take?: number
   skip?: number
   distinct?: Prisma.TranscriptSegmentScalarFieldEnum | Prisma.TranscriptSegmentScalarFieldEnum[]
-}
-
-/**
- * CallSession.sentimentSnapshots
- */
-export type CallSession$sentimentSnapshotsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the SentimentSnapshot
-   */
-  select?: Prisma.SentimentSnapshotSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the SentimentSnapshot
-   */
-  omit?: Prisma.SentimentSnapshotOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.SentimentSnapshotInclude<ExtArgs> | null
-  where?: Prisma.SentimentSnapshotWhereInput
-  orderBy?: Prisma.SentimentSnapshotOrderByWithRelationInput | Prisma.SentimentSnapshotOrderByWithRelationInput[]
-  cursor?: Prisma.SentimentSnapshotWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.SentimentSnapshotScalarFieldEnum | Prisma.SentimentSnapshotScalarFieldEnum[]
 }
 
 /**
@@ -4437,30 +3372,6 @@ export type CallSession$appointmentsArgs<ExtArgs extends runtime.Types.Extension
 }
 
 /**
- * CallSession.directoryInquiries
- */
-export type CallSession$directoryInquiriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DirectoryInquiry
-   */
-  select?: Prisma.DirectoryInquirySelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DirectoryInquiry
-   */
-  omit?: Prisma.DirectoryInquiryOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DirectoryInquiryInclude<ExtArgs> | null
-  where?: Prisma.DirectoryInquiryWhereInput
-  orderBy?: Prisma.DirectoryInquiryOrderByWithRelationInput | Prisma.DirectoryInquiryOrderByWithRelationInput[]
-  cursor?: Prisma.DirectoryInquiryWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DirectoryInquiryScalarFieldEnum | Prisma.DirectoryInquiryScalarFieldEnum[]
-}
-
-/**
  * CallSession.prescriptionRefills
  */
 export type CallSession$prescriptionRefillsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4509,51 +3420,27 @@ export type CallSession$insuranceInquiriesArgs<ExtArgs extends runtime.Types.Ext
 }
 
 /**
- * CallSession.eventRegistrations
+ * CallSession.voicemails
  */
-export type CallSession$eventRegistrationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type CallSession$voicemailsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the EventRegistration
+   * Select specific fields to fetch from the VoicemailRecord
    */
-  select?: Prisma.EventRegistrationSelect<ExtArgs> | null
+  select?: Prisma.VoicemailRecordSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the EventRegistration
+   * Omit specific fields from the VoicemailRecord
    */
-  omit?: Prisma.EventRegistrationOmit<ExtArgs> | null
+  omit?: Prisma.VoicemailRecordOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.EventRegistrationInclude<ExtArgs> | null
-  where?: Prisma.EventRegistrationWhereInput
-  orderBy?: Prisma.EventRegistrationOrderByWithRelationInput | Prisma.EventRegistrationOrderByWithRelationInput[]
-  cursor?: Prisma.EventRegistrationWhereUniqueInput
+  include?: Prisma.VoicemailRecordInclude<ExtArgs> | null
+  where?: Prisma.VoicemailRecordWhereInput
+  orderBy?: Prisma.VoicemailRecordOrderByWithRelationInput | Prisma.VoicemailRecordOrderByWithRelationInput[]
+  cursor?: Prisma.VoicemailRecordWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.EventRegistrationScalarFieldEnum | Prisma.EventRegistrationScalarFieldEnum[]
-}
-
-/**
- * CallSession.assignments
- */
-export type CallSession$assignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CallAssignment
-   */
-  select?: Prisma.CallAssignmentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CallAssignment
-   */
-  omit?: Prisma.CallAssignmentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CallAssignmentInclude<ExtArgs> | null
-  where?: Prisma.CallAssignmentWhereInput
-  orderBy?: Prisma.CallAssignmentOrderByWithRelationInput | Prisma.CallAssignmentOrderByWithRelationInput[]
-  cursor?: Prisma.CallAssignmentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CallAssignmentScalarFieldEnum | Prisma.CallAssignmentScalarFieldEnum[]
+  distinct?: Prisma.VoicemailRecordScalarFieldEnum | Prisma.VoicemailRecordScalarFieldEnum[]
 }
 
 /**

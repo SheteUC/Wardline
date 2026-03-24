@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import { workflowNodeTypeSchema, AgentCatalogId, ToolStatus } from './enums';
+import {
+    workflowNodeTypeSchema,
+    AgentCatalogId,
+    ToolStatus,
+    AgentType,
+    AgentStatus,
+    AgentSessionStatus,
+    IntegrationCategory,
+    IntegrationStatus,
+} from './enums';
 
 // ============================================================================
 // Workflow Node & Graph
@@ -11,6 +20,18 @@ import { workflowNodeTypeSchema, AgentCatalogId, ToolStatus } from './enums';
 export interface WorkflowNode {
     id: string;
     type:
+        | 'start'
+        | 'end'
+        | 'question'
+        | 'voice-prompt'
+        | 'webhook'
+        | 'ai-agent'
+        | 'human-agent-queue'
+        | 'human-agent-direct'
+        | 'conditional'
+        | 'safety-check'
+        | 'emergency-screen'
+        | 'integration'
         // Entry / Exit
         | 'greeting'
         | 'end-call'
@@ -106,16 +127,38 @@ export interface AgentConfigField {
     options?: string[];
 }
 
+export interface AIAgentConfig {
+    persona: string;
+    systemPrompt: string;
+    capabilities: string[];
+    knowledgeBase?: string;
+    maxInteractions?: number;
+    temperature?: number;
+}
+
+export interface HumanAgentProfile {
+    extension?: string;
+    phoneNumber?: string;
+    department?: string;
+    specialties?: string[];
+    availability?: {
+        status: AgentSessionStatus;
+        timezone?: string;
+        hours?: BusinessHours[];
+    };
+}
+
 /**
  * A deployed (live) agent instance — copy of a catalog item, per business
  */
 export interface DeployedAgent {
     id: string;
     businessId: string;
+    type?: AgentType;
     catalogId: AgentCatalogId;
     name: string;
     description?: string;
-    status: 'ACTIVE' | 'INACTIVE' | 'PAUSED';
+    status: AgentStatus | 'ACTIVE' | 'INACTIVE' | 'PAUSED';
     /** Business-specific overrides to the default node graph */
     nodeGraph: WorkflowGraph;
     /** Tool credentials configured by the business owner */
@@ -302,6 +345,8 @@ export interface CallEvent {
 export interface CallContext {
     callId: string;
     businessId: string;
+    /** @deprecated use businessId */
+    hospitalId?: string;
     phoneNumberId: string;
     direction: 'inbound' | 'outbound';
     caller?: {
@@ -324,7 +369,14 @@ export interface CallContext {
 // ============================================================================
 
 export interface ExecutionResult {
-    status: 'success' | 'waiting_for_input' | 'continuation_check' | 'error' | 'escalated' | 'voicemail';
+    status:
+        | 'success'
+        | 'waiting_for_input'
+        | 'continuation_check'
+        | 'waiting_for_agent'
+        | 'error'
+        | 'escalated'
+        | 'voicemail';
     nextNodeId?: string;
     data?: Record<string, unknown>;
     error?: string;
@@ -414,6 +466,26 @@ export interface ContinuationCheckNodeConfig {
     maxTurns: number;
 }
 
+export interface AssignmentOptions {
+    strategy?: 'round_robin' | 'least_busy' | 'priority';
+    preferredAgentId?: string;
+    priority?: number;
+}
+
+export interface BusinessIntegration {
+    id: string;
+    businessId: string;
+    category: IntegrationCategory;
+    vendor: string;
+    status: IntegrationStatus;
+    credentialsRef?: string;
+    settings?: Record<string, unknown>;
+    capabilities?: Record<string, unknown>;
+    lastHealthCheckAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 // ============================================================================
 // Zod Schemas
 // ============================================================================
@@ -476,6 +548,7 @@ export const intentDetectionResultSchema = z.object({
 export const callContextSchema = z.object({
     callId: z.string().uuid(),
     businessId: z.string().uuid(),
+    hospitalId: z.string().uuid().optional(),
     phoneNumberId: z.string().uuid(),
     direction: z.enum(['inbound', 'outbound']),
     caller: z.object({

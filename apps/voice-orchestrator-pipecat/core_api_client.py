@@ -79,6 +79,46 @@ class CoreAPIClient:
         except Exception as e:
             logger.error(f"Error fetching hospital {hospital_id}: {e}")
             return None
+
+    async def get_business_by_phone(self, phone_number: str) -> Optional[Dict[str, Any]]:
+        """Get business info by phone number."""
+        try:
+            formatted = ''.join(filter(str.isdigit, phone_number))
+            response = await self.client.get(
+                f"{self.base_url}/businesses/by-phone",
+                params={"phoneNumber": formatted},
+            )
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching business by phone: {e}")
+            return None
+
+    async def get_business(self, business_id: str) -> Optional[Dict[str, Any]]:
+        """Get business by ID."""
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/businesses/{business_id}",
+                params={"includeRelations": "true"},
+            )
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching business {business_id}: {e}")
+            return None
+
+    async def get_business_config(self, business_id: str) -> Optional[Dict[str, Any]]:
+        """Get business settings only."""
+        try:
+            business = await self.get_business(business_id)
+            if business:
+                return business.get("settings")
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching business config: {e}")
+            return None
     
     async def get_workflow(self, hospital_id: str, workflow_id: str) -> Optional[Dict[str, Any]]:
         """Get workflow configuration"""
@@ -319,7 +359,7 @@ class CoreAPIClient:
             if phone_number_id:
                 response = await self.client.get(
                     f"{self.base_url}/workflows/active",
-                    params={"hospitalId": hospital_id, "phoneNumberId": phone_number_id}
+                    params={"businessId": hospital_id, "phoneNumberId": phone_number_id}
                 )
                 
                 if response.status_code == 200:
@@ -328,7 +368,7 @@ class CoreAPIClient:
             # Fallback to hospital's default active workflow
             response = await self.client.get(
                 f"{self.base_url}/workflows/active",
-                params={"hospitalId": hospital_id}
+                params={"businessId": hospital_id}
             )
             
             if response.status_code == 200:

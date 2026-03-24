@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface VoicePromptNodeData {
+export interface VoicePromptNodeData extends Record<string, unknown> {
     label: string;
     message?: string;
 }

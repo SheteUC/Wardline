@@ -4,31 +4,32 @@ import React, { useState } from 'react';
 import {
     Search, Plus, MoreHorizontal, X
 } from 'lucide-react';
-import { Card, Button } from "@/components/dashboard/shared";
+import { Card, Button, neoFieldClass } from "@/components/dashboard/shared";
 import { useTeamMembers, useInviteUser } from '@/lib/hooks/query-hooks';
-import { useHospital } from '@/lib/hospital-context';
+import { useBusiness } from '@/lib/business-context';
 import { UserRole } from '@wardline/types';
 import { formatDistanceToNow } from 'date-fns';
 
 function getRoleBadgeStyles(role: UserRole): string {
     const styles: Record<UserRole, string> = {
-        [UserRole.OWNER]: "bg-purple-100 text-purple-700 border-purple-200",
-        [UserRole.ADMIN]: "bg-indigo-100 text-indigo-700 border-indigo-200",
-        [UserRole.SUPERVISOR]: "bg-teal-100 text-teal-700 border-teal-200",
-        [UserRole.AGENT]: "bg-blue-100 text-blue-700 border-blue-200",
-        [UserRole.READONLY]: "bg-muted text-muted-foreground border-border",
+        [UserRole.OWNER]: "bg-violet-500/12 text-violet-900",
+        [UserRole.ADMIN]: "bg-indigo-500/12 text-indigo-900",
+        [UserRole.SUPERVISOR]: "bg-teal-500/12 text-teal-900",
+        [UserRole.AGENT]: "bg-sky-500/12 text-sky-900",
+        [UserRole.READONLY]: "bg-muted/80 text-muted-foreground",
     };
     return styles[role] || styles[UserRole.READONLY];
 }
 
 export default function TeamPage() {
-    const { hospitalId, isLoading: hospitalLoading } = useHospital();
+    const { businessId, isLoading: businessLoading } = useBusiness();
     const { data: teamMembers, isLoading, error } = useTeamMembers();
     const inviteUserMutation = useInviteUser();
     const [isInviteOpen, setIsInviteOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState<UserRole>(UserRole.AGENT);
+    const [inviteError, setInviteError] = useState<string | null>(null);
 
     const filteredTeam = React.useMemo(() => {
         if (!teamMembers) return [];
@@ -42,6 +43,7 @@ export default function TeamPage() {
         if (!inviteEmail) return;
 
         try {
+            setInviteError(null);
             await inviteUserMutation.mutateAsync({
                 email: inviteEmail,
                 role: inviteRole,
@@ -51,12 +53,13 @@ export default function TeamPage() {
             setInviteRole(UserRole.AGENT);
         } catch (error) {
             console.error('Failed to invite user:', error);
+            setInviteError('Invites are not wired to the Business API yet. Add teammates from Clerk/admin tooling for now.');
         }
     };
 
     const RoleBadge = ({ role }: { role: UserRole }) => {
         return (
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeStyles(role)}`}>
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getRoleBadgeStyles(role)}`}>
                 {role}
             </span>
         );
@@ -74,7 +77,7 @@ export default function TeamPage() {
         );
     };
 
-    if (hospitalLoading || !hospitalId) {
+    if (businessLoading || !businessId) {
         return (
             <div className="space-y-6">
                 <div className="flex items-center justify-center h-96">
@@ -88,12 +91,12 @@ export default function TeamPage() {
         <div className="space-y-6 relative">
             {/* Header Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative max-w-md flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
-                        type="text"
-                        placeholder="Search by name or email..."
-                        className="pl-9 pr-4 py-2 w-full text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
+                        type="search"
+                        placeholder="Search by name or email…"
+                        className={`${neoFieldClass} pl-9`}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -102,7 +105,7 @@ export default function TeamPage() {
             </div>
 
             {/* Team Table */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden p-0">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-96">
                         <div className="text-center text-muted-foreground">Loading team members...</div>
@@ -119,7 +122,7 @@ export default function TeamPage() {
                     <>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
+                                <thead className="border-b border-border/40 bg-[var(--background)] text-xs uppercase text-muted-foreground neo-inset">
                                     <tr>
                                         <th className="px-6 py-4 font-medium">User</th>
                                         <th className="px-6 py-4 font-medium">Role</th>
@@ -133,7 +136,7 @@ export default function TeamPage() {
                                         <tr key={member.id} className="hover:bg-muted/50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-muted border border-border text-foreground flex items-center justify-center font-bold text-xs">
+                                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--background)] text-xs font-bold text-foreground neo-inset">
                                                         {member.avatarUrl ? (
                                                             <img src={member.avatarUrl} alt={member.name || 'User'} className="w-full h-full rounded-full object-cover" />
                                                         ) : (
@@ -150,7 +153,7 @@ export default function TeamPage() {
                                                 <RoleBadge role={member.role} />
                                             </td>
                                             <td className="px-6 py-4">
-                                                <StatusIndicator isActive={member.isActive} lastSeenAt={member.lastSeenAt} />
+                                                <StatusIndicator isActive={member.isActive ?? true} lastSeenAt={member.lastSeenAt} />
                                             </td>
                                             <td className="px-6 py-4 text-muted-foreground">
                                                 {member.lastSeenAt
@@ -158,7 +161,10 @@ export default function TeamPage() {
                                                     : 'Never'}
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted">
+                                                <button
+                                                    type="button"
+                                                    className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-[var(--background)] hover:text-foreground neo-inset"
+                                                >
                                                     <MoreHorizontal className="w-4 h-4" />
                                                 </button>
                                             </td>
@@ -176,54 +182,71 @@ export default function TeamPage() {
 
             {/* Invite Modal */}
             {isInviteOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-semibold text-slate-800">Invite Team Member</h3>
-                            <button onClick={() => setIsInviteOpen(false)} className="text-slate-400 hover:text-slate-600">
-                                <X className="w-5 h-5" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-3xl bg-[var(--background)] p-6 neo-raised">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-foreground">Invite team member</h3>
+                            <button
+                                type="button"
+                                onClick={() => setIsInviteOpen(false)}
+                                className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-[var(--background)] hover:text-foreground neo-inset"
+                            >
+                                <X className="h-5 w-5" />
                             </button>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                                <label className="mb-1 block text-sm font-medium text-foreground">Email address</label>
                                 <input
                                     type="email"
-                                    placeholder="colleague@hospital.org"
+                                    placeholder="colleague@practice.com"
                                     value={inviteEmail}
                                     onChange={(e) => setInviteEmail(e.target.value)}
-                                    className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
+                                    className={neoFieldClass}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                <label className="mb-2 block text-sm font-medium text-foreground">Role</label>
                                 <div className="grid grid-cols-1 gap-2">
                                     {[UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.AGENT, UserRole.READONLY].map((role) => (
-                                        <label key={role} className="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:border-accent hover:bg-accent/10 transition-all">
+                                        <label
+                                            key={role}
+                                            className={`flex cursor-pointer items-center rounded-2xl p-3 transition-all ${
+                                                inviteRole === role
+                                                    ? 'bg-[var(--background)] neo-raised ring-2 ring-primary/35'
+                                                    : 'bg-[var(--background)] neo-inset hover:opacity-95'
+                                            }`}
+                                        >
                                             <input
                                                 type="radio"
                                                 name="role"
                                                 checked={inviteRole === role}
                                                 onChange={() => setInviteRole(role)}
-                                                className="text-foreground focus:ring-ring"
+                                                className="text-primary focus:ring-primary"
                                             />
-                                            <span className="ml-3 text-sm font-medium text-slate-700 capitalize">{role}</span>
+                                            <span className="ml-3 text-sm font-medium capitalize text-foreground">{role}</span>
                                         </label>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-3 mt-8">
+                        {inviteError && (
+                            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                                {inviteError}
+                            </div>
+                        )}
+
+                        <div className="mt-8 flex justify-end gap-3">
                             <Button variant="ghost" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
                             <Button
-                                variant="primary"
+                                variant="filled"
                                 onClick={handleInvite}
                                 disabled={!inviteEmail || inviteUserMutation.isPending}
                             >
-                                {inviteUserMutation.isPending ? 'Sending...' : 'Send Invitation'}
+                                {inviteUserMutation.isPending ? 'Sending...' : 'Send invitation'}
                             </Button>
                         </div>
                     </div>

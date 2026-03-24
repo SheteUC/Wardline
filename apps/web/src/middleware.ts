@@ -9,6 +9,8 @@ const isPublicRoute = createRouteMatcher([
     "/privacy",
     "/terms",
     "/contact",
+    "/features(.*)",
+    "/pricing(.*)",
 ]);
 
 // Define role-specific route matchers

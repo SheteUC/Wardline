@@ -4,59 +4,80 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 
 /**
- * Hospital Context
- * Manages the currently selected hospital for API calls
+ * Business Context
+ * Manages the currently selected business for API calls.
+ * `Hospital*` names are kept as aliases while the active app surface finishes migrating.
  */
 
-interface HospitalContextType {
+interface BusinessContextType {
+    businessId: string | null;
+    setBusinessId: (id: string) => void;
     hospitalId: string | null;
     setHospitalId: (id: string) => void;
     isLoading: boolean;
 }
 
-const HospitalContext = createContext<HospitalContextType | undefined>(undefined);
+const HospitalContext = createContext<BusinessContextType | undefined>(undefined);
+const STORAGE_KEY = 'selectedBusinessId';
 
 export function HospitalProvider({ children }: { children: React.ReactNode }) {
     const { user } = useUser();
     const { isLoaded } = useAuth();
-    const [hospitalId, setHospitalId] = useState<string | null>(null);
+    const [businessId, setBusinessId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!isLoaded) return;
 
-        // Try to get hospital ID from user metadata
-        // In a real app, this would come from the user's hospital memberships
-        // For now, we'll use a default from localStorage or user metadata
-        const storedHospitalId = localStorage.getItem('selectedHospitalId');
+        const storedBusinessId =
+            localStorage.getItem(STORAGE_KEY) ||
+            localStorage.getItem('selectedHospitalId');
+        const defaultBusinessId =
+            (user?.publicMetadata?.defaultBusinessId as string | undefined) ||
+            (user?.publicMetadata?.defaultHospitalId as string | undefined);
 
-        if (storedHospitalId) {
-            setHospitalId(storedHospitalId);
-        } else if (user?.publicMetadata?.defaultHospitalId) {
-            const defaultId = user.publicMetadata.defaultHospitalId as string;
-            setHospitalId(defaultId);
-            localStorage.setItem('selectedHospitalId', defaultId);
+        if (storedBusinessId) {
+            setBusinessId(storedBusinessId);
+        } else if (defaultBusinessId) {
+            setBusinessId(defaultBusinessId);
+            localStorage.setItem(STORAGE_KEY, defaultBusinessId);
+            localStorage.setItem('selectedHospitalId', defaultBusinessId);
         }
 
         setIsLoading(false);
     }, [isLoaded, user]);
 
-    const handleSetHospitalId = (id: string) => {
-        setHospitalId(id);
+    const handleSetBusinessId = (id: string) => {
+        setBusinessId(id);
+        localStorage.setItem(STORAGE_KEY, id);
         localStorage.setItem('selectedHospitalId', id);
     };
 
     return (
-        <HospitalContext.Provider value={{ hospitalId, setHospitalId: handleSetHospitalId, isLoading }}>
+        <HospitalContext.Provider
+            value={{
+                businessId,
+                setBusinessId: handleSetBusinessId,
+                hospitalId: businessId,
+                setHospitalId: handleSetBusinessId,
+                isLoading,
+            }}
+        >
             {children}
         </HospitalContext.Provider>
     );
 }
 
-export function useHospital() {
+export function useBusiness() {
     const context = useContext(HospitalContext);
     if (context === undefined) {
-        throw new Error('useHospital must be used within a HospitalProvider');
+        throw new Error('useBusiness must be used within a HospitalProvider');
     }
     return context;
 }
+
+export function useHospital() {
+    return useBusiness();
+}
+
+export const BusinessProvider = HospitalProvider;

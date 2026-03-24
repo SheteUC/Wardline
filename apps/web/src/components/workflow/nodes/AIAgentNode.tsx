@@ -5,8 +5,10 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Bot, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface AIAgentNodeData {
+export interface AIAgentNodeData extends Record<string, unknown> {
     label: string;
+    agentPresetId?: string;
+    persona?: string;
     systemPrompt?: string;
     enabledTools?: string[];
     maxTurns?: number;

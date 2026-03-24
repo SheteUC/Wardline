@@ -1,11 +1,24 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@wardline/db';
+import { PrismaClient, type PrismaClient as PrismaClientInstance } from '@wardline/db';
 import { Logger } from '@wardline/utils';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(PrismaService.name);
+    declare readonly business: PrismaClientInstance['business'];
+    declare readonly businessSettings: PrismaClientInstance['businessSettings'];
+    declare readonly businessIntegration: PrismaClientInstance['businessIntegration'];
+    declare readonly user: PrismaClientInstance['user'];
+    declare readonly businessUser: PrismaClientInstance['businessUser'];
+    declare readonly phoneNumber: PrismaClientInstance['phoneNumber'];
+    declare readonly workflow: PrismaClientInstance['workflow'];
+    declare readonly workflowVersion: PrismaClientInstance['workflowVersion'];
+    declare readonly agent: PrismaClientInstance['agent'];
+    declare readonly callSession: PrismaClientInstance['callSession'];
+    declare readonly transcriptSegment: PrismaClientInstance['transcriptSegment'];
+    declare readonly voicemailRecord: PrismaClientInstance['voicemailRecord'];
+    declare readonly auditLog: PrismaClientInstance['auditLog'];
 
     constructor() {
         const adapter = new PrismaPg({

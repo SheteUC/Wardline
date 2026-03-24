@@ -40,7 +40,7 @@ export function WebhookConfigPanel({ data, onChange }: WebhookConfigPanelProps) 
                 <Label htmlFor="wh-method">HTTP Method</Label>
                 <Select
                     value={data.method ?? 'POST'}
-                    onValueChange={(v: WebhookNodeData['method']) => onChange({ method: v })}
+                    onValueChange={(value) => onChange({ method: value as WebhookNodeData['method'] })}
                 >
                     <SelectTrigger id="wh-method" className="mt-1">
                         <SelectValue />

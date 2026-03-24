@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { PhoneOff, MessageSquare, PhoneCall, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface EndNodeData {
+export interface EndNodeData extends Record<string, unknown> {
     label: string;
     endType?: 'hangup' | 'voicemail' | 'callback_request' | 'satisfaction_survey';
     closingMessage?: string;

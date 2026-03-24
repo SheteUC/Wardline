@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface StartNodeData {
+export interface StartNodeData extends Record<string, unknown> {
     label: string;
     greetingMessage?: string;
 }

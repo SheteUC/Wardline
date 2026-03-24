@@ -27,8 +27,8 @@ export * from "./enums"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Hospitals
- * const hospitals = await prisma.hospital.findMany()
+ * // Fetch zero or more Businesses
+ * const businesses = await prisma.business.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -38,35 +38,35 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
- * Model Hospital
+ * Model Business
  * 
  */
-export type Hospital = Prisma.HospitalModel
+export type Business = Prisma.BusinessModel
 /**
- * Model HospitalSettings
+ * Model BusinessSettings
  * 
  */
-export type HospitalSettings = Prisma.HospitalSettingsModel
+export type BusinessSettings = Prisma.BusinessSettingsModel
+/**
+ * Model BusinessIntegration
+ * 
+ */
+export type BusinessIntegration = Prisma.BusinessIntegrationModel
 /**
  * Model User
  * 
  */
 export type User = Prisma.UserModel
 /**
- * Model HospitalUser
+ * Model BusinessUser
  * 
  */
-export type HospitalUser = Prisma.HospitalUserModel
+export type BusinessUser = Prisma.BusinessUserModel
 /**
  * Model PhoneNumber
  * 
  */
 export type PhoneNumber = Prisma.PhoneNumberModel
-/**
- * Model Intent
- * 
- */
-export type Intent = Prisma.IntentModel
 /**
  * Model Workflow
  * 
@@ -78,10 +78,10 @@ export type Workflow = Prisma.WorkflowModel
  */
 export type WorkflowVersion = Prisma.WorkflowVersionModel
 /**
- * Model Patient
+ * Model Caller
  * 
  */
-export type Patient = Prisma.PatientModel
+export type Caller = Prisma.CallerModel
 /**
  * Model SchedulingIntegration
  * 
@@ -103,15 +103,16 @@ export type CallSession = Prisma.CallSessionModel
  */
 export type TranscriptSegment = Prisma.TranscriptSegmentModel
 /**
- * Model SentimentSnapshot
- * 
- */
-export type SentimentSnapshot = Prisma.SentimentSnapshotModel
-/**
  * Model Handoff
  * 
  */
 export type Handoff = Prisma.HandoffModel
+/**
+ * Model VoicemailRecord
+ * *
+ *  * Voicemail records created when no human is available during transfer
+ */
+export type VoicemailRecord = Prisma.VoicemailRecordModel
 /**
  * Model AuditLog
  * 
@@ -128,15 +129,11 @@ export type StripeSubscription = Prisma.StripeSubscriptionModel
  */
 export type UsageRecord = Prisma.UsageRecordModel
 /**
- * Model Department
- * 
+ * Model Agent
+ * *
+ *  * A deployed agent instance per business (copy of a catalog template)
  */
-export type Department = Prisma.DepartmentModel
-/**
- * Model DirectoryInquiry
- * 
- */
-export type DirectoryInquiry = Prisma.DirectoryInquiryModel
+export type Agent = Prisma.AgentModel
 /**
  * Model PrescriptionRefill
  * 
@@ -157,33 +154,3 @@ export type InsuranceInquiry = Prisma.InsuranceInquiryModel
  * 
  */
 export type InsuranceVerification = Prisma.InsuranceVerificationModel
-/**
- * Model MarketingEvent
- * 
- */
-export type MarketingEvent = Prisma.MarketingEventModel
-/**
- * Model EventRegistration
- * 
- */
-export type EventRegistration = Prisma.EventRegistrationModel
-/**
- * Model Agent
- * 
- */
-export type Agent = Prisma.AgentModel
-/**
- * Model CallQueue
- * 
- */
-export type CallQueue = Prisma.CallQueueModel
-/**
- * Model CallAssignment
- * 
- */
-export type CallAssignment = Prisma.CallAssignmentModel
-/**
- * Model AgentSession
- * 
- */
-export type AgentSession = Prisma.AgentSessionModel

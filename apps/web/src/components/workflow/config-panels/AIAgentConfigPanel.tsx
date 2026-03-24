@@ -22,7 +22,7 @@ const AGENT_PRESETS = [
         id: 'general-triage',
         name: 'General Triage Agent',
         description: 'Default AI agent for general patient intake and triage',
-        systemPrompt: 'You are a professional healthcare triage assistant at [Hospital Name]. Be empathetic, clear, and thorough in your assessments. Collect necessary information and route patients appropriately.',
+        systemPrompt: 'You are a professional healthcare triage assistant at [Practice Name]. Be empathetic, clear, and thorough in your assessments. Collect necessary information and route patients appropriately.',
         enabledTools: ['scheduling', 'insurance', 'departments'],
         temperature: 0.7,
         maxTurns: 15,
@@ -31,7 +31,7 @@ const AGENT_PRESETS = [
         id: 'appointment-scheduler',
         name: 'Appointment Scheduling Agent',
         description: 'Specialized in scheduling and managing appointments',
-        systemPrompt: 'You are an efficient and friendly scheduling coordinator at [Hospital Name]. Help patients book, reschedule, and manage appointments with clarity and care.',
+        systemPrompt: 'You are an efficient and friendly scheduling coordinator at [Practice Name]. Help patients book, reschedule, and manage appointments with clarity and care.',
         enabledTools: ['scheduling', 'departments'],
         temperature: 0.5,
         maxTurns: 10,
@@ -40,7 +40,7 @@ const AGENT_PRESETS = [
         id: 'insurance-verification',
         name: 'Insurance Verification Agent',
         description: 'Handles insurance verification and eligibility checks',
-        systemPrompt: 'You are a knowledgeable insurance specialist at [Hospital Name]. Verify coverage and explain benefits clearly to patients.',
+        systemPrompt: 'You are a knowledgeable insurance specialist at [Practice Name]. Verify coverage and explain benefits clearly to patients.',
         enabledTools: ['insurance'],
         temperature: 0.4,
         maxTurns: 8,
@@ -49,7 +49,7 @@ const AGENT_PRESETS = [
         id: 'prescription-refill',
         name: 'Prescription Refill Agent',
         description: 'Manages prescription refill requests',
-        systemPrompt: 'You are a careful and detail-oriented pharmacy liaison at [Hospital Name]. Safely process refill requests and coordinate with pharmacies.',
+        systemPrompt: 'You are a careful and detail-oriented pharmacy liaison at [Practice Name]. Safely process refill requests and coordinate with pharmacies.',
         enabledTools: ['prescriptions'],
         temperature: 0.3,
         maxTurns: 8,
@@ -166,7 +166,7 @@ export function AIAgentConfigPanel({ data, onChange }: AIAgentConfigPanelProps) 
                     id="ai-prompt"
                     value={data.systemPrompt || ''}
                     onChange={(e) => onChange({ systemPrompt: e.target.value })}
-                    placeholder="You are a helpful medical receptionist for [Hospital Name]..."
+                    placeholder="You are a helpful medical receptionist for [Practice Name]..."
                     className="mt-1 min-h-[120px] font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground mt-1">

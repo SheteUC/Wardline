@@ -18,6 +18,16 @@ interface RequestOptions extends RequestInit {
 export function useApiClient() {
     const { getToken } = useAuth();
 
+    const parseResponse = async <T,>(res: Response): Promise<T> => {
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        if (res.status === 204) {
+            return undefined as T;
+        }
+
+        const text = await res.text();
+        return (text ? JSON.parse(text) : undefined) as T;
+    };
+
     return {
         async get<T>(endpoint: string): Promise<T> {
             const token = await getToken();
@@ -26,10 +36,7 @@ export function useApiClient() {
                     "Content-Type": "application/json",
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-            }).then(async (res) => {
-                if (!res.ok) throw new Error(`API error: ${res.status}`);
-                return res.json();
-            });
+            }).then((res) => parseResponse<T>(res));
         },
 
         async post<T>(endpoint: string, data: unknown): Promise<T> {
@@ -41,10 +48,7 @@ export function useApiClient() {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(data),
-            }).then(async (res) => {
-                if (!res.ok) throw new Error(`API error: ${res.status}`);
-                return res.json();
-            });
+            }).then((res) => parseResponse<T>(res));
         },
 
         async put<T>(endpoint: string, data: unknown): Promise<T> {
@@ -56,10 +60,7 @@ export function useApiClient() {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(data),
-            }).then(async (res) => {
-                if (!res.ok) throw new Error(`API error: ${res.status}`);
-                return res.json();
-            });
+            }).then((res) => parseResponse<T>(res));
         },
 
         async patch<T>(endpoint: string, data: unknown): Promise<T> {
@@ -71,10 +72,7 @@ export function useApiClient() {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(data),
-            }).then(async (res) => {
-                if (!res.ok) throw new Error(`API error: ${res.status}`);
-                return res.json();
-            });
+            }).then((res) => parseResponse<T>(res));
         },
 
         async delete<T>(endpoint: string): Promise<T> {
@@ -85,10 +83,7 @@ export function useApiClient() {
                     "Content-Type": "application/json",
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-            }).then(async (res) => {
-                if (!res.ok) throw new Error(`API error: ${res.status}`);
-                return res.json();
-            });
+            }).then((res) => parseResponse<T>(res));
         },
     };
 }

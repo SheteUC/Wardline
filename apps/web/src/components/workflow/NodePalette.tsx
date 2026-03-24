@@ -1,11 +1,10 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
     Bot, Users, GitBranch, Shield, Plug, PhoneOff,
     Play, AlertCircle, Search, Sparkles,
@@ -14,31 +13,6 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-// Static color maps — Tailwind cannot resolve dynamic class names like `bg-${color}-100`
-const iconBgMap: Record<string, string> = {
-    blue: 'bg-blue-100',
-    gray: 'bg-gray-100',
-    purple: 'bg-purple-100',
-    amber: 'bg-amber-100',
-    orange: 'bg-orange-100',
-    teal: 'bg-teal-100',
-    red: 'bg-red-100',
-    green: 'bg-green-100',
-    indigo: 'bg-indigo-100',
-    cyan: 'bg-cyan-100',
-};
-const iconBgHoverMap: Record<string, string> = {
-    blue: 'group-hover:bg-blue-200',
-    gray: 'group-hover:bg-gray-200',
-    purple: 'group-hover:bg-purple-200',
-    amber: 'group-hover:bg-amber-200',
-    orange: 'group-hover:bg-orange-200',
-    teal: 'group-hover:bg-teal-200',
-    red: 'group-hover:bg-red-200',
-    green: 'group-hover:bg-green-200',
-    indigo: 'group-hover:bg-indigo-200',
-    cyan: 'group-hover:bg-cyan-200',
-};
 const iconTextMap: Record<string, string> = {
     blue: 'text-blue-600',
     gray: 'text-gray-600',
@@ -279,6 +253,32 @@ interface NodePaletteProps {
     onAddNode: (nodeType: NodeType) => void;
 }
 
+/** Figma-style groups (1:2 Workflow Builder) */
+const NODE_SECTIONS: { id: string; label: string; types: Set<string> }[] = [
+    {
+        id: 'trigger',
+        label: 'Trigger nodes',
+        types: new Set(['start', 'end', 'question', 'collect-info']),
+    },
+    {
+        id: 'ai',
+        label: 'AI & logic',
+        types: new Set(['ai-agent', 'conditional', 'intent-detect', 'route']),
+    },
+    {
+        id: 'actions',
+        label: 'Safety & actions',
+        types: new Set([
+            'safety-check',
+            'human-agent-queue',
+            'human-agent-direct',
+            'emergency-screen',
+            'integration',
+            'webhook',
+        ]),
+    },
+];
+
 export function NodePalette({ onAddNode }: NodePaletteProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -298,105 +298,126 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
     ];
     
     return (
-        <Card className="h-full flex flex-col">
-            <CardHeader className="pb-3 shrink-0">
-                <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded bg-primary/10 shrink-0">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                        <CardTitle className="text-base">Node Palette</CardTitle>
-                        <CardDescription className="text-xs">
-                            Drag nodes to canvas
-                        </CardDescription>
-                    </div>
+        <div className="flex h-full flex-col gap-3 rounded-3xl bg-[var(--background)] p-4 neo-raised">
+            {/* Header */}
+            <div className="flex shrink-0 items-center gap-2">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                    <Sparkles className="h-4 w-4 text-primary" />
                 </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col gap-3 min-h-0">
-                {/* Search */}
-                <div className="relative shrink-0">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search nodes..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 h-9"
-                    />
+                <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-foreground">Node palette</h3>
+                    <p className="text-xs text-muted-foreground">Add blocks to your flow</p>
                 </div>
-                
-                {/* Category Filters */}
-                <div className="flex flex-col gap-1 shrink-0">
+            </div>
+
+            {/* Search */}
+            <div className="relative shrink-0">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                    placeholder="Search nodes…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-10 rounded-2xl pl-9"
+                />
+            </div>
+
+            {/* Category filters — raised active / inset idle */}
+            <div className="flex shrink-0 flex-col gap-1.5">
+                <Button
+                    size="sm"
+                    variant={selectedCategory === null ? 'default' : 'ghost'}
+                    onClick={() => setSelectedCategory(null)}
+                    className={cn(
+                        'h-9 justify-between rounded-xl text-xs',
+                        selectedCategory === null ? 'neo-raised' : 'neo-inset shadow-none',
+                    )}
+                >
+                    <span>All</span>
+                    <Badge variant="secondary" className="h-5 text-[10px]">
+                        {NODE_TYPES.length}
+                    </Badge>
+                </Button>
+                {categories.map((cat) => (
                     <Button
+                        key={cat.id}
                         size="sm"
-                        variant={selectedCategory === null ? 'default' : 'outline'}
-                        onClick={() => setSelectedCategory(null)}
-                        className="h-7 text-xs justify-start"
-                    >
-                        All ({NODE_TYPES.length})
-                    </Button>
-                    {categories.map(cat => (
-                        <Button
-                            key={cat.id}
-                            size="sm"
-                            variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                            onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
-                            className="h-7 text-xs justify-between"
-                        >
-                            <span>{cat.label}</span>
-                            <Badge variant="secondary" className="text-[10px] h-4">
-                                {cat.count}
-                            </Badge>
-                        </Button>
-                    ))}
-                </div>
-                
-                <Separator className="shrink-0" />
-                
-                {/* Node List */}
-                <ScrollArea className="flex-1 min-h-0 -mx-4 px-4">
-                    <div className="space-y-2 pr-3">
-                        {filteredNodes.length === 0 ? (
-                            <div className="text-center py-8">
-                                <AlertCircle className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-                                <p className="text-sm text-muted-foreground">No nodes found</p>
-                            </div>
-                        ) : (
-                            filteredNodes.map(node => {
-                                const Icon = node.icon;
-                                const bg = iconBgMap[node.color] || 'bg-gray-100';
-                                const bgHover = iconBgHoverMap[node.color] || '';
-                                const text = iconTextMap[node.color] || 'text-gray-600';
-                                return (
-                                    <button
-                                        key={node.type}
-                                        type="button"
-                                        className="group w-full flex items-start gap-2.5 rounded-lg border border-border p-2.5 text-left transition-colors hover:bg-accent"
-                                        onClick={() => onAddNode(node)}
-                                    >
-                                        <div className={`p-1.5 rounded shrink-0 ${bg} ${bgHover} transition-colors`}>
-                                            <Icon className={`w-4 h-4 ${text}`} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-medium text-sm truncate">{node.label}</div>
-                                            <p className="text-xs text-muted-foreground line-clamp-2">
-                                                {node.description}
-                                            </p>
-                                        </div>
-                                    </button>
-                                );
-                            })
+                        variant={selectedCategory === cat.id ? 'default' : 'ghost'}
+                        onClick={() =>
+                            setSelectedCategory(cat.id === selectedCategory ? null : cat.id)
+                        }
+                        className={cn(
+                            'h-9 justify-between rounded-xl text-xs',
+                            selectedCategory === cat.id ? 'neo-raised' : 'neo-inset shadow-none',
                         )}
-                    </div>
-                </ScrollArea>
-                
-                {/* Help Text */}
-                <div className="bg-muted/50 rounded-lg p-2.5 shrink-0">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                        <strong>Tip:</strong> Click a node to add it to the canvas. 
-                        Connect nodes by dragging from one handle to another.
-                    </p>
+                    >
+                        <span>{cat.label}</span>
+                        <Badge variant="secondary" className="h-5 text-[10px]">
+                            {cat.count}
+                        </Badge>
+                    </Button>
+                ))}
+            </div>
+
+            {/* Grouped node list */}
+            <ScrollArea className="min-h-0 flex-1 pr-2">
+                <div className="space-y-5 pb-1">
+                    {filteredNodes.length === 0 ? (
+                        <div className="py-10 text-center">
+                            <AlertCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+                            <p className="text-sm text-muted-foreground">No nodes match</p>
+                        </div>
+                    ) : (
+                        NODE_SECTIONS.map((section) => {
+                            const inSection = filteredNodes.filter((n) =>
+                                section.types.has(n.type),
+                            );
+                            if (inSection.length === 0) return null;
+                            return (
+                                <div key={section.id}>
+                                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                                        {section.label}
+                                    </p>
+                                    <div className="space-y-2">
+                                        {inSection.map((node) => {
+                                            const Icon = node.icon;
+                                            const text = iconTextMap[node.color] || 'text-muted-foreground';
+                                            return (
+                                                <button
+                                                    key={node.type}
+                                                    type="button"
+                                                    className="group flex w-full items-start gap-2.5 rounded-2xl bg-[var(--background)] p-2.5 text-left transition-all neo-raised-sm hover:neo-raised active:neo-pressed"
+                                                    onClick={() => onAddNode(node)}
+                                                >
+                                                    <div
+                                                        className={cn(
+                                                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--background)] neo-inset',
+                                                        )}
+                                                    >
+                                                        <Icon className={cn('h-4 w-4', text)} />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="truncate text-sm font-medium text-foreground">
+                                                            {node.label}
+                                                        </div>
+                                                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                                                            {node.description}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
-            </CardContent>
-        </Card>
+            </ScrollArea>
+
+            <div className="shrink-0 rounded-2xl bg-[var(--background)] p-3 text-xs leading-relaxed text-muted-foreground neo-inset">
+                <strong className="text-foreground">Tip:</strong> Click to place a node. Drag
+                from a handle to connect steps.
+            </div>
+        </div>
     );
 }

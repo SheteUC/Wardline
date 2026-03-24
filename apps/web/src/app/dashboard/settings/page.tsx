@@ -1,31 +1,31 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button } from "@/components/dashboard/shared";
-import { useHospital } from '@/lib/hospital-context';
-import { useHospitals } from '@/lib/hooks/query-hooks';
+import { Card, Button, neoFieldClass } from "@/components/dashboard/shared";
+import { useBusiness } from '@/lib/business-context';
+import { useBusinesses } from '@/lib/hooks/query-hooks';
 import { useApiClient } from '@/lib/api-client';
 import { CheckCircle, Building2, Plus } from 'lucide-react';
 
 export default function GeneralSettingsPage() {
-    const { hospitalId, setHospitalId, isLoading: hospitalContextLoading } = useHospital();
-    const { data: hospitals, isLoading: hospitalsLoading, refetch } = useHospitals();
+    const { businessId, setBusinessId, isLoading: businessContextLoading } = useBusiness();
+    const { data: businesses, isLoading: businessesLoading, refetch } = useBusinesses();
     const api = useApiClient();
 
     const [isCreating, setIsCreating] = useState(false);
-    const [newHospitalName, setNewHospitalName] = useState('');
-    const [newHospitalSlug, setNewHospitalSlug] = useState('');
+    const [newBusinessName, setNewBusinessName] = useState('');
+    const [newBusinessSlug, setNewBusinessSlug] = useState('');
     const [createError, setCreateError] = useState('');
     const [createSuccess, setCreateSuccess] = useState(false);
 
     // Auto-generate slug from name
     useEffect(() => {
-        setNewHospitalSlug(newHospitalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
-    }, [newHospitalName]);
+        setNewBusinessSlug(newBusinessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
+    }, [newBusinessName]);
 
-    const handleCreateHospital = async () => {
-        if (!newHospitalName.trim()) {
-            setCreateError('Hospital name is required');
+    const handleCreateBusiness = async () => {
+        if (!newBusinessName.trim()) {
+            setCreateError('Practice name is required');
             return;
         }
 
@@ -33,97 +33,98 @@ export default function GeneralSettingsPage() {
         setIsCreating(true);
 
         try {
-            const result = await api.post<{ id: string }>('/hospitals', {
-                name: newHospitalName,
-                slug: newHospitalSlug || newHospitalName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                timezone: 'America/New_York',
+            const result = await api.post<{ id: string }>('/businesses', {
+                name: newBusinessName,
+                slug: newBusinessSlug || newBusinessName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                timeZone: 'America/New_York',
             });
 
-            setHospitalId(result.id);
+            setBusinessId(result.id);
             setCreateSuccess(true);
-            setNewHospitalName('');
-            setNewHospitalSlug('');
+            setNewBusinessName('');
+            setNewBusinessSlug('');
             refetch();
         } catch (error: any) {
-            setCreateError(error?.message || 'Failed to create hospital');
+            setCreateError(error?.message || 'Failed to create practice');
         } finally {
             setIsCreating(false);
         }
     };
 
-    const handleSelectHospital = (id: string) => {
-        setHospitalId(id);
+    const handleSelectBusiness = (id: string) => {
+        setBusinessId(id);
     };
 
-    const isLoading = hospitalContextLoading || hospitalsLoading;
+    const isLoading = businessContextLoading || businessesLoading;
 
     return (
         <div className="max-w-4xl mx-auto pb-10">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-foreground">General Settings</h1>
-                <p className="text-muted-foreground">Manage your hospital and organization settings.</p>
+                <h1 className="text-2xl font-semibold text-foreground">General Settings</h1>
+                <p className="text-muted-foreground">Manage your practice and organization settings.</p>
             </div>
 
             <div className="space-y-6">
-                {/* Hospital Selection Card */}
-                <Card title="Hospital Selection" className="relative">
+                <Card title="Practice Selection" className="relative">
                     {createSuccess && (
                         <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2 text-emerald-700">
                             <CheckCircle className="w-5 h-5" />
-                            Hospital created successfully!
+                            Practice created successfully!
                         </div>
                     )}
 
-                    {!hospitalId && !isLoading && (
+                    {!businessId && !isLoading && (
                         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700">
-                            No hospital selected. Please select or create a hospital to continue.
+                            No business selected. Please select or create a practice to continue.
                         </div>
                     )}
 
                     <div className="space-y-4">
                         <div>
                             <label className="block text-xs font-semibold text-muted-foreground uppercase mb-2">
-                                Your Hospitals
+                                Your Practices
                             </label>
                             
                             {isLoading ? (
-                                <div className="text-center py-4 text-muted-foreground">Loading hospitals...</div>
-                            ) : hospitals && hospitals.length > 0 ? (
+                                <div className="text-center py-4 text-muted-foreground">Loading practices...</div>
+                            ) : businesses && businesses.length > 0 ? (
                                 <div className="space-y-2">
-                                    {hospitals.map((hospital: any) => (
+                                    {businesses.map((business: any) => (
                                         <div
-                                            key={hospital.id}
-                                            onClick={() => handleSelectHospital(hospital.id)}
-                                            className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${
-                                                hospitalId === hospital.id
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                                            key={business.id}
+                                            onClick={() => handleSelectBusiness(business.id)}
+                                            className={`flex cursor-pointer items-center justify-between rounded-2xl p-4 transition-all ${
+                                                businessId === business.id
+                                                    ? 'bg-[var(--background)] text-foreground neo-raised'
+                                                    : 'bg-[var(--background)] neo-inset hover:opacity-95'
                                             }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <Building2 className="w-5 h-5 text-muted-foreground" />
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                                                    <Building2 className="h-5 w-5 text-primary" />
+                                                </div>
                                                 <div>
-                                                    <div className="font-medium text-foreground">{hospital.name}</div>
-                                                    <div className="text-xs text-muted-foreground">{hospital.slug}</div>
+                                                    <div className="font-medium text-foreground">{business.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{business.slug}</div>
                                                 </div>
                                             </div>
-                                            {hospitalId === hospital.id && (
+                                            {businessId === business.id && (
                                                 <CheckCircle className="w-5 h-5 text-primary" />
                                             )}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
-                                    <Building2 className="w-10 h-10 mx-auto mb-2 text-muted-foreground/50" />
-                                    <p>No hospitals found. Create one below.</p>
+                                <div className="rounded-2xl border-2 border-dashed border-transparent py-8 text-center text-muted-foreground neo-inset">
+                                    <Building2 className="mx-auto mb-2 h-10 w-10 text-muted-foreground/50" />
+                                    <p>No practices found. Create one below.</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="pt-4 border-t border-border">
+                        <div className="border-t border-border/40 pt-6">
                             <label className="block text-xs font-semibold text-muted-foreground uppercase mb-2">
-                                Create New Hospital
+                                Create New Practice
                             </label>
                             
                             {createError && (
@@ -136,18 +137,18 @@ export default function GeneralSettingsPage() {
                                 <div>
                                     <input
                                         type="text"
-                                        placeholder="Hospital Name"
-                                        value={newHospitalName}
-                                        onChange={(e) => setNewHospitalName(e.target.value)}
-                                        className="w-full p-2.5 border border-border rounded-lg text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                                        placeholder="Practice Name"
+                                        value={newBusinessName}
+                                        onChange={(e) => setNewBusinessName(e.target.value)}
+                                        className={neoFieldClass}
                                     />
                                 </div>
                                 <div>
                                     <input
                                         type="text"
                                         placeholder="Slug (auto-generated)"
-                                        value={newHospitalSlug}
-                                        onChange={(e) => setNewHospitalSlug(e.target.value)}
+                                        value={newBusinessSlug}
+                                        onChange={(e) => setNewBusinessSlug(e.target.value)}
                                         className="w-full p-2.5 border border-border rounded-lg text-sm focus:ring-2 focus:ring-ring focus:outline-none"
                                     />
                                 </div>
@@ -155,11 +156,11 @@ export default function GeneralSettingsPage() {
                             <div className="mt-3">
                                 <Button
                                     variant="primary"
-                                    onClick={handleCreateHospital}
-                                    disabled={isCreating || !newHospitalName.trim()}
+                                    onClick={handleCreateBusiness}
+                                    disabled={isCreating || !newBusinessName.trim()}
                                     icon={Plus}
                                 >
-                                    {isCreating ? 'Creating...' : 'Create Hospital'}
+                                    {isCreating ? 'Creating...' : 'Create Practice'}
                                 </Button>
                             </div>
                         </div>
@@ -168,25 +169,27 @@ export default function GeneralSettingsPage() {
 
                 {/* Profile Card */}
                 <Card title="Profile Information">
-                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                    <div className="flex flex-col items-start gap-6 md:flex-row">
                         <div className="flex-shrink-0">
-                            <div className="w-20 h-20 rounded-full bg-slate-200 border-4 border-white shadow-sm overflow-hidden flex items-center justify-center text-xl font-bold text-slate-500">
+                            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[var(--background)] text-xl font-bold text-muted-foreground neo-inset">
                                 JD
                             </div>
-                            <button className="mt-2 text-xs font-medium text-teal-600 hover:text-teal-700 w-full text-center">Change Avatar</button>
+                            <button type="button" className="mt-2 w-full text-center text-xs font-semibold text-primary hover:underline">
+                                Change avatar
+                            </button>
                         </div>
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                        <div className="grid w-full flex-1 grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Full Name</label>
-                                <input type="text" defaultValue="Jane Doe" className="w-full p-2.5 border border-border rounded-lg text-sm focus:ring-2 focus:ring-ring focus:outline-none bg-muted/50 focus:bg-card transition-colors" />
+                                <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">Full name</label>
+                                <input type="text" defaultValue="Jane Doe" className={neoFieldClass} />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Email Address</label>
-                                <input type="email" defaultValue="jane.doe@stmarys.org" className="w-full p-2.5 border border-border rounded-lg text-sm focus:ring-2 focus:ring-ring focus:outline-none bg-muted/50 focus:bg-card transition-colors" />
+                                <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">Email address</label>
+                                <input type="email" defaultValue="jane.doe@stmarys.org" className={neoFieldClass} />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Role</label>
-                                <input type="text" defaultValue="Operations Director" disabled className="w-full p-2.5 border border-border rounded-lg text-sm text-muted-foreground bg-muted cursor-not-allowed" />
+                                <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">Role</label>
+                                <input type="text" defaultValue="Operations Director" disabled className={`${neoFieldClass} cursor-not-allowed opacity-70`} />
                             </div>
                         </div>
                     </div>

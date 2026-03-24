@@ -9,12 +9,12 @@
 * 🟢 You can import this file directly.
 */
 
-export const HospitalStatus = {
+export const BusinessStatus = {
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED'
 } as const
 
-export type HospitalStatus = (typeof HospitalStatus)[keyof typeof HospitalStatus]
+export type BusinessStatus = (typeof BusinessStatus)[keyof typeof BusinessStatus]
 
 
 export const RecordingDefault = {
@@ -24,6 +24,26 @@ export const RecordingDefault = {
 } as const
 
 export type RecordingDefault = (typeof RecordingDefault)[keyof typeof RecordingDefault]
+
+
+export const IntegrationCategory = {
+  SCHEDULING: 'SCHEDULING',
+  EHR_REFILL: 'EHR_REFILL',
+  BILLING: 'BILLING',
+  INSURANCE: 'INSURANCE',
+  KNOWLEDGE: 'KNOWLEDGE'
+} as const
+
+export type IntegrationCategory = (typeof IntegrationCategory)[keyof typeof IntegrationCategory]
+
+
+export const IntegrationStatus = {
+  DISCONNECTED: 'DISCONNECTED',
+  CONNECTED: 'CONNECTED',
+  ERROR: 'ERROR'
+} as const
+
+export type IntegrationStatus = (typeof IntegrationStatus)[keyof typeof IntegrationStatus]
 
 
 export const UserRole = {
@@ -97,10 +117,13 @@ export type RecordingConsent = (typeof RecordingConsent)[keyof typeof RecordingC
 
 export const CallTag = {
   SCHEDULING: 'SCHEDULING',
-  BILLING_INSURANCE: 'BILLING_INSURANCE',
-  RECORDS_FORMS: 'RECORDS_FORMS',
-  REFILL_PRIOR_AUTH: 'REFILL_PRIOR_AUTH',
-  CLINICAL_ESCALATION: 'CLINICAL_ESCALATION'
+  BILLING: 'BILLING',
+  INSURANCE: 'INSURANCE',
+  FAQ: 'FAQ',
+  PRESCRIPTION_REFILL: 'PRESCRIPTION_REFILL',
+  HUMAN_TRANSFER: 'HUMAN_TRANSFER',
+  EMERGENCY: 'EMERGENCY',
+  VOICEMAIL: 'VOICEMAIL'
 } as const
 
 export type CallTag = (typeof CallTag)[keyof typeof CallTag]
@@ -115,13 +138,13 @@ export const Speaker = {
 export type Speaker = (typeof Speaker)[keyof typeof Speaker]
 
 
-export const SentimentLabel = {
-  NEGATIVE: 'NEGATIVE',
-  NEUTRAL: 'NEUTRAL',
-  POSITIVE: 'POSITIVE'
+export const AgentStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  PAUSED: 'PAUSED'
 } as const
 
-export type SentimentLabel = (typeof SentimentLabel)[keyof typeof SentimentLabel]
+export type AgentStatus = (typeof AgentStatus)[keyof typeof AgentStatus]
 
 
 export const RefillStatus = {
@@ -151,75 +174,3 @@ export const EligibilityStatus = {
 } as const
 
 export type EligibilityStatus = (typeof EligibilityStatus)[keyof typeof EligibilityStatus]
-
-
-export const EventType = {
-  SEMINAR: 'SEMINAR',
-  LECTURE: 'LECTURE',
-  CLASS: 'CLASS',
-  WORKSHOP: 'WORKSHOP',
-  HEALTH_FAIR: 'HEALTH_FAIR',
-  SCREENING: 'SCREENING'
-} as const
-
-export type EventType = (typeof EventType)[keyof typeof EventType]
-
-
-export const EventStatus = {
-  UPCOMING: 'UPCOMING',
-  IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED'
-} as const
-
-export type EventStatus = (typeof EventStatus)[keyof typeof EventStatus]
-
-
-export const RegistrationStatus = {
-  REGISTERED: 'REGISTERED',
-  WAITLISTED: 'WAITLISTED',
-  CANCELLED: 'CANCELLED',
-  NO_SHOW: 'NO_SHOW'
-} as const
-
-export type RegistrationStatus = (typeof RegistrationStatus)[keyof typeof RegistrationStatus]
-
-
-export const AgentType = {
-  AI: 'AI',
-  HUMAN: 'HUMAN'
-} as const
-
-export type AgentType = (typeof AgentType)[keyof typeof AgentType]
-
-
-export const AgentStatus = {
-  ACTIVE: 'ACTIVE',
-  INACTIVE: 'INACTIVE',
-  PAUSED: 'PAUSED'
-} as const
-
-export type AgentStatus = (typeof AgentStatus)[keyof typeof AgentStatus]
-
-
-export const CallAssignmentStatus = {
-  QUEUED: 'QUEUED',
-  ASSIGNED: 'ASSIGNED',
-  ACCEPTED: 'ACCEPTED',
-  COMPLETED: 'COMPLETED',
-  ABANDONED: 'ABANDONED',
-  FAILED: 'FAILED'
-} as const
-
-export type CallAssignmentStatus = (typeof CallAssignmentStatus)[keyof typeof CallAssignmentStatus]
-
-
-export const AgentSessionStatus = {
-  ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE',
-  BUSY: 'BUSY',
-  BREAK: 'BREAK',
-  AWAY: 'AWAY'
-} as const
-
-export type AgentSessionStatus = (typeof AgentSessionStatus)[keyof typeof AgentSessionStatus]

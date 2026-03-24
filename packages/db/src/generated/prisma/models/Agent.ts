@@ -14,7 +14,8 @@ import type * as Prisma from "../internal/prismaNamespace"
 
 /**
  * Model Agent
- * 
+ * *
+ *  * A deployed agent instance per business (copy of a catalog template)
  */
 export type AgentModel = runtime.Types.Result.DefaultSelection<Prisma.$AgentPayload>
 
@@ -26,8 +27,8 @@ export type AggregateAgent = {
 
 export type AgentMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
-  type: $Enums.AgentType | null
+  businessId: string | null
+  catalogId: string | null
   name: string | null
   description: string | null
   status: $Enums.AgentStatus | null
@@ -37,8 +38,8 @@ export type AgentMinAggregateOutputType = {
 
 export type AgentMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
-  type: $Enums.AgentType | null
+  businessId: string | null
+  catalogId: string | null
   name: string | null
   description: string | null
   status: $Enums.AgentStatus | null
@@ -48,23 +49,24 @@ export type AgentMaxAggregateOutputType = {
 
 export type AgentCountAggregateOutputType = {
   id: number
-  hospitalId: number
-  type: number
+  businessId: number
+  catalogId: number
   name: number
   description: number
   status: number
+  nodeGraph: number
+  toolConfig: number
+  agentConfig: number
   createdAt: number
   updatedAt: number
-  aiConfig: number
-  humanProfile: number
   _all: number
 }
 
 
 export type AgentMinAggregateInputType = {
   id?: true
-  hospitalId?: true
-  type?: true
+  businessId?: true
+  catalogId?: true
   name?: true
   description?: true
   status?: true
@@ -74,8 +76,8 @@ export type AgentMinAggregateInputType = {
 
 export type AgentMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
-  type?: true
+  businessId?: true
+  catalogId?: true
   name?: true
   description?: true
   status?: true
@@ -85,15 +87,16 @@ export type AgentMaxAggregateInputType = {
 
 export type AgentCountAggregateInputType = {
   id?: true
-  hospitalId?: true
-  type?: true
+  businessId?: true
+  catalogId?: true
   name?: true
   description?: true
   status?: true
+  nodeGraph?: true
+  toolConfig?: true
+  agentConfig?: true
   createdAt?: true
   updatedAt?: true
-  aiConfig?: true
-  humanProfile?: true
   _all?: true
 }
 
@@ -171,15 +174,16 @@ export type AgentGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 
 export type AgentGroupByOutputType = {
   id: string
-  hospitalId: string
-  type: $Enums.AgentType
+  businessId: string
+  catalogId: string
   name: string
   description: string | null
   status: $Enums.AgentStatus
+  nodeGraph: runtime.JsonValue | null
+  toolConfig: runtime.JsonValue | null
+  agentConfig: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
-  aiConfig: runtime.JsonValue | null
-  humanProfile: runtime.JsonValue | null
   _count: AgentCountAggregateOutputType | null
   _min: AgentMinAggregateOutputType | null
   _max: AgentMaxAggregateOutputType | null
@@ -205,34 +209,32 @@ export type AgentWhereInput = {
   OR?: Prisma.AgentWhereInput[]
   NOT?: Prisma.AgentWhereInput | Prisma.AgentWhereInput[]
   id?: Prisma.StringFilter<"Agent"> | string
-  hospitalId?: Prisma.StringFilter<"Agent"> | string
-  type?: Prisma.EnumAgentTypeFilter<"Agent"> | $Enums.AgentType
+  businessId?: Prisma.StringFilter<"Agent"> | string
+  catalogId?: Prisma.StringFilter<"Agent"> | string
   name?: Prisma.StringFilter<"Agent"> | string
   description?: Prisma.StringNullableFilter<"Agent"> | string | null
   status?: Prisma.EnumAgentStatusFilter<"Agent"> | $Enums.AgentStatus
+  nodeGraph?: Prisma.JsonNullableFilter<"Agent">
+  toolConfig?: Prisma.JsonNullableFilter<"Agent">
+  agentConfig?: Prisma.JsonNullableFilter<"Agent">
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
-  aiConfig?: Prisma.JsonNullableFilter<"Agent">
-  humanProfile?: Prisma.JsonNullableFilter<"Agent">
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
-  callAssignments?: Prisma.CallAssignmentListRelationFilter
-  agentSessions?: Prisma.AgentSessionListRelationFilter
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }
 
 export type AgentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
+  catalogId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
+  nodeGraph?: Prisma.SortOrderInput | Prisma.SortOrder
+  toolConfig?: Prisma.SortOrderInput | Prisma.SortOrder
+  agentConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  aiConfig?: Prisma.SortOrderInput | Prisma.SortOrder
-  humanProfile?: Prisma.SortOrderInput | Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
-  callAssignments?: Prisma.CallAssignmentOrderByRelationAggregateInput
-  agentSessions?: Prisma.AgentSessionOrderByRelationAggregateInput
+  business?: Prisma.BusinessOrderByWithRelationInput
 }
 
 export type AgentWhereUniqueInput = Prisma.AtLeast<{
@@ -240,31 +242,31 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.AgentWhereInput | Prisma.AgentWhereInput[]
   OR?: Prisma.AgentWhereInput[]
   NOT?: Prisma.AgentWhereInput | Prisma.AgentWhereInput[]
-  hospitalId?: Prisma.StringFilter<"Agent"> | string
-  type?: Prisma.EnumAgentTypeFilter<"Agent"> | $Enums.AgentType
+  businessId?: Prisma.StringFilter<"Agent"> | string
+  catalogId?: Prisma.StringFilter<"Agent"> | string
   name?: Prisma.StringFilter<"Agent"> | string
   description?: Prisma.StringNullableFilter<"Agent"> | string | null
   status?: Prisma.EnumAgentStatusFilter<"Agent"> | $Enums.AgentStatus
+  nodeGraph?: Prisma.JsonNullableFilter<"Agent">
+  toolConfig?: Prisma.JsonNullableFilter<"Agent">
+  agentConfig?: Prisma.JsonNullableFilter<"Agent">
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
-  aiConfig?: Prisma.JsonNullableFilter<"Agent">
-  humanProfile?: Prisma.JsonNullableFilter<"Agent">
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
-  callAssignments?: Prisma.CallAssignmentListRelationFilter
-  agentSessions?: Prisma.AgentSessionListRelationFilter
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }, "id">
 
 export type AgentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
+  catalogId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
+  nodeGraph?: Prisma.SortOrderInput | Prisma.SortOrder
+  toolConfig?: Prisma.SortOrderInput | Prisma.SortOrder
+  agentConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  aiConfig?: Prisma.SortOrderInput | Prisma.SortOrder
-  humanProfile?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.AgentCountOrderByAggregateInput
   _max?: Prisma.AgentMaxOrderByAggregateInput
   _min?: Prisma.AgentMinOrderByAggregateInput
@@ -275,113 +277,113 @@ export type AgentScalarWhereWithAggregatesInput = {
   OR?: Prisma.AgentScalarWhereWithAggregatesInput[]
   NOT?: Prisma.AgentScalarWhereWithAggregatesInput | Prisma.AgentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Agent"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"Agent"> | string
-  type?: Prisma.EnumAgentTypeWithAggregatesFilter<"Agent"> | $Enums.AgentType
+  businessId?: Prisma.StringWithAggregatesFilter<"Agent"> | string
+  catalogId?: Prisma.StringWithAggregatesFilter<"Agent"> | string
   name?: Prisma.StringWithAggregatesFilter<"Agent"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null
   status?: Prisma.EnumAgentStatusWithAggregatesFilter<"Agent"> | $Enums.AgentStatus
+  nodeGraph?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
+  toolConfig?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
+  agentConfig?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string
-  aiConfig?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
-  humanProfile?: Prisma.JsonNullableWithAggregatesFilter<"Agent">
 }
 
 export type AgentCreateInput = {
   id?: string
-  type: $Enums.AgentType
+  catalogId: string
   name: string
   description?: string | null
   status?: $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  hospital: Prisma.HospitalCreateNestedOneWithoutAgentsInput
-  callAssignments?: Prisma.CallAssignmentCreateNestedManyWithoutAgentInput
-  agentSessions?: Prisma.AgentSessionCreateNestedManyWithoutAgentInput
+  business: Prisma.BusinessCreateNestedOneWithoutAgentsInput
 }
 
 export type AgentUncheckedCreateInput = {
   id?: string
-  hospitalId: string
-  type: $Enums.AgentType
+  businessId: string
+  catalogId: string
   name: string
   description?: string | null
   status?: $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutAgentInput
-  agentSessions?: Prisma.AgentSessionUncheckedCreateNestedManyWithoutAgentInput
 }
 
 export type AgentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
+  catalogId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutAgentsNestedInput
-  callAssignments?: Prisma.CallAssignmentUpdateManyWithoutAgentNestedInput
-  agentSessions?: Prisma.AgentSessionUpdateManyWithoutAgentNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutAgentsNestedInput
 }
 
 export type AgentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  catalogId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutAgentNestedInput
-  agentSessions?: Prisma.AgentSessionUncheckedUpdateManyWithoutAgentNestedInput
 }
 
 export type AgentCreateManyInput = {
   id?: string
-  hospitalId: string
-  type: $Enums.AgentType
+  businessId: string
+  catalogId: string
   name: string
   description?: string | null
   status?: $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type AgentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
+  catalogId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type AgentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  catalogId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type AgentListRelationFilter = {
@@ -396,21 +398,22 @@ export type AgentOrderByRelationAggregateInput = {
 
 export type AgentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
+  catalogId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  nodeGraph?: Prisma.SortOrder
+  toolConfig?: Prisma.SortOrder
+  agentConfig?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  aiConfig?: Prisma.SortOrder
-  humanProfile?: Prisma.SortOrder
 }
 
 export type AgentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
+  catalogId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -420,8 +423,8 @@ export type AgentMaxOrderByAggregateInput = {
 
 export type AgentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
+  catalogId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -429,148 +432,102 @@ export type AgentMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
-export type AgentNullableScalarRelationFilter = {
-  is?: Prisma.AgentWhereInput | null
-  isNot?: Prisma.AgentWhereInput | null
-}
-
-export type AgentScalarRelationFilter = {
-  is?: Prisma.AgentWhereInput
-  isNot?: Prisma.AgentWhereInput
-}
-
-export type AgentCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutHospitalInput, Prisma.AgentUncheckedCreateWithoutHospitalInput> | Prisma.AgentCreateWithoutHospitalInput[] | Prisma.AgentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutHospitalInput | Prisma.AgentCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.AgentCreateManyHospitalInputEnvelope
+export type AgentCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutBusinessInput, Prisma.AgentUncheckedCreateWithoutBusinessInput> | Prisma.AgentCreateWithoutBusinessInput[] | Prisma.AgentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutBusinessInput | Prisma.AgentCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.AgentCreateManyBusinessInputEnvelope
   connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
 }
 
-export type AgentUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutHospitalInput, Prisma.AgentUncheckedCreateWithoutHospitalInput> | Prisma.AgentCreateWithoutHospitalInput[] | Prisma.AgentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutHospitalInput | Prisma.AgentCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.AgentCreateManyHospitalInputEnvelope
+export type AgentUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutBusinessInput, Prisma.AgentUncheckedCreateWithoutBusinessInput> | Prisma.AgentCreateWithoutBusinessInput[] | Prisma.AgentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutBusinessInput | Prisma.AgentCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.AgentCreateManyBusinessInputEnvelope
   connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
 }
 
-export type AgentUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutHospitalInput, Prisma.AgentUncheckedCreateWithoutHospitalInput> | Prisma.AgentCreateWithoutHospitalInput[] | Prisma.AgentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutHospitalInput | Prisma.AgentCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.AgentUpsertWithWhereUniqueWithoutHospitalInput | Prisma.AgentUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.AgentCreateManyHospitalInputEnvelope
+export type AgentUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutBusinessInput, Prisma.AgentUncheckedCreateWithoutBusinessInput> | Prisma.AgentCreateWithoutBusinessInput[] | Prisma.AgentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutBusinessInput | Prisma.AgentCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.AgentUpsertWithWhereUniqueWithoutBusinessInput | Prisma.AgentUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.AgentCreateManyBusinessInputEnvelope
   set?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
   disconnect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
   delete?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
   connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
-  update?: Prisma.AgentUpdateWithWhereUniqueWithoutHospitalInput | Prisma.AgentUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.AgentUpdateManyWithWhereWithoutHospitalInput | Prisma.AgentUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.AgentUpdateWithWhereUniqueWithoutBusinessInput | Prisma.AgentUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.AgentUpdateManyWithWhereWithoutBusinessInput | Prisma.AgentUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
 }
 
-export type AgentUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutHospitalInput, Prisma.AgentUncheckedCreateWithoutHospitalInput> | Prisma.AgentCreateWithoutHospitalInput[] | Prisma.AgentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutHospitalInput | Prisma.AgentCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.AgentUpsertWithWhereUniqueWithoutHospitalInput | Prisma.AgentUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.AgentCreateManyHospitalInputEnvelope
+export type AgentUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentCreateWithoutBusinessInput, Prisma.AgentUncheckedCreateWithoutBusinessInput> | Prisma.AgentCreateWithoutBusinessInput[] | Prisma.AgentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutBusinessInput | Prisma.AgentCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.AgentUpsertWithWhereUniqueWithoutBusinessInput | Prisma.AgentUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.AgentCreateManyBusinessInputEnvelope
   set?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
   disconnect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
   delete?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
   connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[]
-  update?: Prisma.AgentUpdateWithWhereUniqueWithoutHospitalInput | Prisma.AgentUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.AgentUpdateManyWithWhereWithoutHospitalInput | Prisma.AgentUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.AgentUpdateWithWhereUniqueWithoutBusinessInput | Prisma.AgentUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.AgentUpdateManyWithWhereWithoutBusinessInput | Prisma.AgentUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
-}
-
-export type EnumAgentTypeFieldUpdateOperationsInput = {
-  set?: $Enums.AgentType
 }
 
 export type EnumAgentStatusFieldUpdateOperationsInput = {
   set?: $Enums.AgentStatus
 }
 
-export type AgentCreateNestedOneWithoutCallAssignmentsInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutCallAssignmentsInput, Prisma.AgentUncheckedCreateWithoutCallAssignmentsInput>
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutCallAssignmentsInput
-  connect?: Prisma.AgentWhereUniqueInput
-}
-
-export type AgentUpdateOneWithoutCallAssignmentsNestedInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutCallAssignmentsInput, Prisma.AgentUncheckedCreateWithoutCallAssignmentsInput>
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutCallAssignmentsInput
-  upsert?: Prisma.AgentUpsertWithoutCallAssignmentsInput
-  disconnect?: Prisma.AgentWhereInput | boolean
-  delete?: Prisma.AgentWhereInput | boolean
-  connect?: Prisma.AgentWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentUpdateToOneWithWhereWithoutCallAssignmentsInput, Prisma.AgentUpdateWithoutCallAssignmentsInput>, Prisma.AgentUncheckedUpdateWithoutCallAssignmentsInput>
-}
-
-export type AgentCreateNestedOneWithoutAgentSessionsInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutAgentSessionsInput, Prisma.AgentUncheckedCreateWithoutAgentSessionsInput>
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutAgentSessionsInput
-  connect?: Prisma.AgentWhereUniqueInput
-}
-
-export type AgentUpdateOneRequiredWithoutAgentSessionsNestedInput = {
-  create?: Prisma.XOR<Prisma.AgentCreateWithoutAgentSessionsInput, Prisma.AgentUncheckedCreateWithoutAgentSessionsInput>
-  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutAgentSessionsInput
-  upsert?: Prisma.AgentUpsertWithoutAgentSessionsInput
-  connect?: Prisma.AgentWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentUpdateToOneWithWhereWithoutAgentSessionsInput, Prisma.AgentUpdateWithoutAgentSessionsInput>, Prisma.AgentUncheckedUpdateWithoutAgentSessionsInput>
-}
-
-export type AgentCreateWithoutHospitalInput = {
+export type AgentCreateWithoutBusinessInput = {
   id?: string
-  type: $Enums.AgentType
+  catalogId: string
   name: string
   description?: string | null
   status?: $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentCreateNestedManyWithoutAgentInput
-  agentSessions?: Prisma.AgentSessionCreateNestedManyWithoutAgentInput
 }
 
-export type AgentUncheckedCreateWithoutHospitalInput = {
+export type AgentUncheckedCreateWithoutBusinessInput = {
   id?: string
-  type: $Enums.AgentType
+  catalogId: string
   name: string
   description?: string | null
   status?: $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutAgentInput
-  agentSessions?: Prisma.AgentSessionUncheckedCreateNestedManyWithoutAgentInput
 }
 
-export type AgentCreateOrConnectWithoutHospitalInput = {
+export type AgentCreateOrConnectWithoutBusinessInput = {
   where: Prisma.AgentWhereUniqueInput
-  create: Prisma.XOR<Prisma.AgentCreateWithoutHospitalInput, Prisma.AgentUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.AgentCreateWithoutBusinessInput, Prisma.AgentUncheckedCreateWithoutBusinessInput>
 }
 
-export type AgentCreateManyHospitalInputEnvelope = {
-  data: Prisma.AgentCreateManyHospitalInput | Prisma.AgentCreateManyHospitalInput[]
+export type AgentCreateManyBusinessInputEnvelope = {
+  data: Prisma.AgentCreateManyBusinessInput | Prisma.AgentCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type AgentUpsertWithWhereUniqueWithoutHospitalInput = {
+export type AgentUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.AgentWhereUniqueInput
-  update: Prisma.XOR<Prisma.AgentUpdateWithoutHospitalInput, Prisma.AgentUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.AgentCreateWithoutHospitalInput, Prisma.AgentUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.AgentUpdateWithoutBusinessInput, Prisma.AgentUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.AgentCreateWithoutBusinessInput, Prisma.AgentUncheckedCreateWithoutBusinessInput>
 }
 
-export type AgentUpdateWithWhereUniqueWithoutHospitalInput = {
+export type AgentUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.AgentWhereUniqueInput
-  data: Prisma.XOR<Prisma.AgentUpdateWithoutHospitalInput, Prisma.AgentUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.AgentUpdateWithoutBusinessInput, Prisma.AgentUncheckedUpdateWithoutBusinessInput>
 }
 
-export type AgentUpdateManyWithWhereWithoutHospitalInput = {
+export type AgentUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.AgentScalarWhereInput
-  data: Prisma.XOR<Prisma.AgentUpdateManyMutationInput, Prisma.AgentUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.AgentUpdateManyMutationInput, Prisma.AgentUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type AgentScalarWhereInput = {
@@ -578,343 +535,171 @@ export type AgentScalarWhereInput = {
   OR?: Prisma.AgentScalarWhereInput[]
   NOT?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[]
   id?: Prisma.StringFilter<"Agent"> | string
-  hospitalId?: Prisma.StringFilter<"Agent"> | string
-  type?: Prisma.EnumAgentTypeFilter<"Agent"> | $Enums.AgentType
+  businessId?: Prisma.StringFilter<"Agent"> | string
+  catalogId?: Prisma.StringFilter<"Agent"> | string
   name?: Prisma.StringFilter<"Agent"> | string
   description?: Prisma.StringNullableFilter<"Agent"> | string | null
   status?: Prisma.EnumAgentStatusFilter<"Agent"> | $Enums.AgentStatus
+  nodeGraph?: Prisma.JsonNullableFilter<"Agent">
+  toolConfig?: Prisma.JsonNullableFilter<"Agent">
+  agentConfig?: Prisma.JsonNullableFilter<"Agent">
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string
-  aiConfig?: Prisma.JsonNullableFilter<"Agent">
-  humanProfile?: Prisma.JsonNullableFilter<"Agent">
 }
 
-export type AgentCreateWithoutCallAssignmentsInput = {
+export type AgentCreateManyBusinessInput = {
   id?: string
-  type: $Enums.AgentType
+  catalogId: string
   name: string
   description?: string | null
   status?: $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  hospital: Prisma.HospitalCreateNestedOneWithoutAgentsInput
-  agentSessions?: Prisma.AgentSessionCreateNestedManyWithoutAgentInput
 }
 
-export type AgentUncheckedCreateWithoutCallAssignmentsInput = {
-  id?: string
-  hospitalId: string
-  type: $Enums.AgentType
-  name: string
-  description?: string | null
-  status?: $Enums.AgentStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  agentSessions?: Prisma.AgentSessionUncheckedCreateNestedManyWithoutAgentInput
-}
-
-export type AgentCreateOrConnectWithoutCallAssignmentsInput = {
-  where: Prisma.AgentWhereUniqueInput
-  create: Prisma.XOR<Prisma.AgentCreateWithoutCallAssignmentsInput, Prisma.AgentUncheckedCreateWithoutCallAssignmentsInput>
-}
-
-export type AgentUpsertWithoutCallAssignmentsInput = {
-  update: Prisma.XOR<Prisma.AgentUpdateWithoutCallAssignmentsInput, Prisma.AgentUncheckedUpdateWithoutCallAssignmentsInput>
-  create: Prisma.XOR<Prisma.AgentCreateWithoutCallAssignmentsInput, Prisma.AgentUncheckedCreateWithoutCallAssignmentsInput>
-  where?: Prisma.AgentWhereInput
-}
-
-export type AgentUpdateToOneWithWhereWithoutCallAssignmentsInput = {
-  where?: Prisma.AgentWhereInput
-  data: Prisma.XOR<Prisma.AgentUpdateWithoutCallAssignmentsInput, Prisma.AgentUncheckedUpdateWithoutCallAssignmentsInput>
-}
-
-export type AgentUpdateWithoutCallAssignmentsInput = {
+export type AgentUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
+  catalogId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutAgentsNestedInput
-  agentSessions?: Prisma.AgentSessionUpdateManyWithoutAgentNestedInput
 }
 
-export type AgentUncheckedUpdateWithoutCallAssignmentsInput = {
+export type AgentUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
+  catalogId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  agentSessions?: Prisma.AgentSessionUncheckedUpdateManyWithoutAgentNestedInput
 }
 
-export type AgentCreateWithoutAgentSessionsInput = {
-  id?: string
-  type: $Enums.AgentType
-  name: string
-  description?: string | null
-  status?: $Enums.AgentStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  hospital: Prisma.HospitalCreateNestedOneWithoutAgentsInput
-  callAssignments?: Prisma.CallAssignmentCreateNestedManyWithoutAgentInput
-}
-
-export type AgentUncheckedCreateWithoutAgentSessionsInput = {
-  id?: string
-  hospitalId: string
-  type: $Enums.AgentType
-  name: string
-  description?: string | null
-  status?: $Enums.AgentStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentUncheckedCreateNestedManyWithoutAgentInput
-}
-
-export type AgentCreateOrConnectWithoutAgentSessionsInput = {
-  where: Prisma.AgentWhereUniqueInput
-  create: Prisma.XOR<Prisma.AgentCreateWithoutAgentSessionsInput, Prisma.AgentUncheckedCreateWithoutAgentSessionsInput>
-}
-
-export type AgentUpsertWithoutAgentSessionsInput = {
-  update: Prisma.XOR<Prisma.AgentUpdateWithoutAgentSessionsInput, Prisma.AgentUncheckedUpdateWithoutAgentSessionsInput>
-  create: Prisma.XOR<Prisma.AgentCreateWithoutAgentSessionsInput, Prisma.AgentUncheckedCreateWithoutAgentSessionsInput>
-  where?: Prisma.AgentWhereInput
-}
-
-export type AgentUpdateToOneWithWhereWithoutAgentSessionsInput = {
-  where?: Prisma.AgentWhereInput
-  data: Prisma.XOR<Prisma.AgentUpdateWithoutAgentSessionsInput, Prisma.AgentUncheckedUpdateWithoutAgentSessionsInput>
-}
-
-export type AgentUpdateWithoutAgentSessionsInput = {
+export type AgentUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
+  catalogId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
+  nodeGraph?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  toolConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  agentConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutAgentsNestedInput
-  callAssignments?: Prisma.CallAssignmentUpdateManyWithoutAgentNestedInput
 }
 
-export type AgentUncheckedUpdateWithoutAgentSessionsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutAgentNestedInput
-}
-
-export type AgentCreateManyHospitalInput = {
-  id?: string
-  type: $Enums.AgentType
-  name: string
-  description?: string | null
-  status?: $Enums.AgentStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-}
-
-export type AgentUpdateWithoutHospitalInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentUpdateManyWithoutAgentNestedInput
-  agentSessions?: Prisma.AgentSessionUpdateManyWithoutAgentNestedInput
-}
-
-export type AgentUncheckedUpdateWithoutHospitalInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  callAssignments?: Prisma.CallAssignmentUncheckedUpdateManyWithoutAgentNestedInput
-  agentSessions?: Prisma.AgentSessionUncheckedUpdateManyWithoutAgentNestedInput
-}
-
-export type AgentUncheckedUpdateManyWithoutHospitalInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumAgentTypeFieldUpdateOperationsInput | $Enums.AgentType
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumAgentStatusFieldUpdateOperationsInput | $Enums.AgentStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  aiConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  humanProfile?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-}
-
-
-/**
- * Count Type AgentCountOutputType
- */
-
-export type AgentCountOutputType = {
-  callAssignments: number
-  agentSessions: number
-}
-
-export type AgentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  callAssignments?: boolean | AgentCountOutputTypeCountCallAssignmentsArgs
-  agentSessions?: boolean | AgentCountOutputTypeCountAgentSessionsArgs
-}
-
-/**
- * AgentCountOutputType without action
- */
-export type AgentCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the AgentCountOutputType
-   */
-  select?: Prisma.AgentCountOutputTypeSelect<ExtArgs> | null
-}
-
-/**
- * AgentCountOutputType without action
- */
-export type AgentCountOutputTypeCountCallAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CallAssignmentWhereInput
-}
-
-/**
- * AgentCountOutputType without action
- */
-export type AgentCountOutputTypeCountAgentSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AgentSessionWhereInput
-}
 
 
 export type AgentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
-  type?: boolean
+  businessId?: boolean
+  catalogId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
+  nodeGraph?: boolean
+  toolConfig?: boolean
+  agentConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  aiConfig?: boolean
-  humanProfile?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
-  callAssignments?: boolean | Prisma.Agent$callAssignmentsArgs<ExtArgs>
-  agentSessions?: boolean | Prisma.Agent$agentSessionsArgs<ExtArgs>
-  _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agent"]>
 
 export type AgentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
-  type?: boolean
+  businessId?: boolean
+  catalogId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
+  nodeGraph?: boolean
+  toolConfig?: boolean
+  agentConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  aiConfig?: boolean
-  humanProfile?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agent"]>
 
 export type AgentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
-  type?: boolean
+  businessId?: boolean
+  catalogId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
+  nodeGraph?: boolean
+  toolConfig?: boolean
+  agentConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  aiConfig?: boolean
-  humanProfile?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agent"]>
 
 export type AgentSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
-  type?: boolean
+  businessId?: boolean
+  catalogId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
+  nodeGraph?: boolean
+  toolConfig?: boolean
+  agentConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  aiConfig?: boolean
-  humanProfile?: boolean
 }
 
-export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "type" | "name" | "description" | "status" | "createdAt" | "updatedAt" | "aiConfig" | "humanProfile", ExtArgs["result"]["agent"]>
+export type AgentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "catalogId" | "name" | "description" | "status" | "nodeGraph" | "toolConfig" | "agentConfig" | "createdAt" | "updatedAt", ExtArgs["result"]["agent"]>
 export type AgentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
-  callAssignments?: boolean | Prisma.Agent$callAssignmentsArgs<ExtArgs>
-  agentSessions?: boolean | Prisma.Agent$agentSessionsArgs<ExtArgs>
-  _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type AgentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type AgentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 
 export type $AgentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Agent"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
-    callAssignments: Prisma.$CallAssignmentPayload<ExtArgs>[]
-    agentSessions: Prisma.$AgentSessionPayload<ExtArgs>[]
+    business: Prisma.$BusinessPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
-    type: $Enums.AgentType
+    businessId: string
+    /**
+     * * References one of the 5 catalog agent IDs
+     */
+    catalogId: string
     name: string
     description: string | null
     status: $Enums.AgentStatus
+    /**
+     * * Business-specific node graph overrides (WorkflowGraph JSON)
+     */
+    nodeGraph: runtime.JsonValue | null
+    /**
+     * * Tool credentials (encrypted in app layer)
+     */
+    toolConfig: runtime.JsonValue | null
+    /**
+     * * Agent-level config (greeting scripts, thresholds, etc.)
+     */
+    agentConfig: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
-    aiConfig: runtime.JsonValue | null
-    humanProfile: runtime.JsonValue | null
   }, ExtArgs["result"]["agent"]>
   composites: {}
 }
@@ -1309,9 +1094,7 @@ readonly fields: AgentFieldRefs;
  */
 export interface Prisma__AgentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  callAssignments<T extends Prisma.Agent$callAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$callAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CallAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  agentSessions<T extends Prisma.Agent$agentSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Agent$agentSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1342,15 +1125,16 @@ export interface Prisma__AgentClient<T, Null = never, ExtArgs extends runtime.Ty
  */
 export interface AgentFieldRefs {
   readonly id: Prisma.FieldRef<"Agent", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"Agent", 'String'>
-  readonly type: Prisma.FieldRef<"Agent", 'AgentType'>
+  readonly businessId: Prisma.FieldRef<"Agent", 'String'>
+  readonly catalogId: Prisma.FieldRef<"Agent", 'String'>
   readonly name: Prisma.FieldRef<"Agent", 'String'>
   readonly description: Prisma.FieldRef<"Agent", 'String'>
   readonly status: Prisma.FieldRef<"Agent", 'AgentStatus'>
+  readonly nodeGraph: Prisma.FieldRef<"Agent", 'Json'>
+  readonly toolConfig: Prisma.FieldRef<"Agent", 'Json'>
+  readonly agentConfig: Prisma.FieldRef<"Agent", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Agent", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Agent", 'DateTime'>
-  readonly aiConfig: Prisma.FieldRef<"Agent", 'Json'>
-  readonly humanProfile: Prisma.FieldRef<"Agent", 'Json'>
 }
     
 
@@ -1744,54 +1528,6 @@ export type AgentDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Limit how many Agents to delete.
    */
   limit?: number
-}
-
-/**
- * Agent.callAssignments
- */
-export type Agent$callAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CallAssignment
-   */
-  select?: Prisma.CallAssignmentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CallAssignment
-   */
-  omit?: Prisma.CallAssignmentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CallAssignmentInclude<ExtArgs> | null
-  where?: Prisma.CallAssignmentWhereInput
-  orderBy?: Prisma.CallAssignmentOrderByWithRelationInput | Prisma.CallAssignmentOrderByWithRelationInput[]
-  cursor?: Prisma.CallAssignmentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CallAssignmentScalarFieldEnum | Prisma.CallAssignmentScalarFieldEnum[]
-}
-
-/**
- * Agent.agentSessions
- */
-export type Agent$agentSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the AgentSession
-   */
-  select?: Prisma.AgentSessionSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the AgentSession
-   */
-  omit?: Prisma.AgentSessionOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AgentSessionInclude<ExtArgs> | null
-  where?: Prisma.AgentSessionWhereInput
-  orderBy?: Prisma.AgentSessionOrderByWithRelationInput | Prisma.AgentSessionOrderByWithRelationInput[]
-  cursor?: Prisma.AgentSessionWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.AgentSessionScalarFieldEnum | Prisma.AgentSessionScalarFieldEnum[]
 }
 
 /**

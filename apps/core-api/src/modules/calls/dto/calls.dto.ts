@@ -24,10 +24,13 @@ export enum RecordingConsent {
 
 export enum CallTag {
     SCHEDULING = 'SCHEDULING',
-    BILLING_INSURANCE = 'BILLING_INSURANCE',
-    RECORDS_FORMS = 'RECORDS_FORMS',
-    REFILL_PRIOR_AUTH = 'REFILL_PRIOR_AUTH',
-    CLINICAL_ESCALATION = 'CLINICAL_ESCALATION',
+    BILLING = 'BILLING',
+    INSURANCE = 'INSURANCE',
+    FAQ = 'FAQ',
+    PRESCRIPTION_REFILL = 'PRESCRIPTION_REFILL',
+    HUMAN_TRANSFER = 'HUMAN_TRANSFER',
+    EMERGENCY = 'EMERGENCY',
+    VOICEMAIL = 'VOICEMAIL',
 }
 
 export enum Speaker {
@@ -38,10 +41,6 @@ export enum Speaker {
 
 // DTO for creating a new call session
 export class CreateCallDto {
-    @ApiProperty({ description: 'Hospital ID' })
-    @IsString()
-    hospitalId: string;
-
     @ApiProperty({ enum: CallDirection, description: 'Call direction' })
     @IsEnum(CallDirection)
     direction: CallDirection;
@@ -126,9 +125,9 @@ export class CreateHandoffDto {
     @IsString()
     callId: string;
 
-    @ApiProperty({ description: 'Hospital ID' })
+    @ApiProperty({ description: 'Business ID' })
     @IsString()
-    hospitalId: string;
+    businessId: string;
 
     @ApiProperty({ description: 'Intent key' })
     @IsString()

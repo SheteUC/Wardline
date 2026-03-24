@@ -114,6 +114,17 @@ export enum SentimentLabel {
  * Workflow node types — 13-node palette for the visual call flow editor
  */
 export enum WorkflowNodeType {
+    START = 'start',
+    END = 'end',
+    QUESTION = 'question',
+    VOICE_PROMPT = 'voice-prompt',
+    WEBHOOK = 'webhook',
+    AI_AGENT = 'ai-agent',
+    HUMAN_AGENT_QUEUE = 'human-agent-queue',
+    HUMAN_AGENT_DIRECT = 'human-agent-direct',
+    CONDITIONAL = 'conditional',
+    SAFETY_CHECK = 'safety-check',
+    EMERGENCY_SCREEN = 'emergency-screen',
     // Entry / Exit
     GREETING = 'greeting',
     END_CALL = 'end-call',
@@ -132,6 +143,11 @@ export enum WorkflowNodeType {
     HUMAN_TRANSFER = 'human-transfer',
     VOICEMAIL = 'voicemail',
     EMERGENCY_ESCALATE = 'emergency-escalate',
+}
+
+export enum AgentType {
+    AI = 'AI',
+    HUMAN = 'HUMAN',
 }
 
 /**
@@ -225,6 +241,36 @@ export enum ToolStatus {
     ERROR = 'error',
 }
 
+export enum AgentSessionStatus {
+    OFFLINE = 'OFFLINE',
+    AVAILABLE = 'AVAILABLE',
+    BUSY = 'BUSY',
+    AWAY = 'AWAY',
+}
+
+export enum CallAssignmentStatus {
+    PENDING = 'PENDING',
+    OFFERED = 'OFFERED',
+    ACCEPTED = 'ACCEPTED',
+    COMPLETED = 'COMPLETED',
+    ABANDONED = 'ABANDONED',
+    EXPIRED = 'EXPIRED',
+}
+
+export enum IntegrationCategory {
+    SCHEDULING = 'SCHEDULING',
+    EHR_REFILL = 'EHR_REFILL',
+    BILLING = 'BILLING',
+    INSURANCE = 'INSURANCE',
+    KNOWLEDGE = 'KNOWLEDGE',
+}
+
+export enum IntegrationStatus {
+    DISCONNECTED = 'DISCONNECTED',
+    CONNECTED = 'CONNECTED',
+    ERROR = 'ERROR',
+}
+
 // ============================================================================
 // Zod Schema Exports
 // ============================================================================
@@ -250,3 +296,8 @@ export const insurancePlanTypeSchema = z.nativeEnum(InsurancePlanType);
 export const agentCatalogIdSchema = z.nativeEnum(AgentCatalogId);
 export const agentStatusSchema = z.nativeEnum(AgentStatus);
 export const toolStatusSchema = z.nativeEnum(ToolStatus);
+export const agentTypeSchema = z.nativeEnum(AgentType);
+export const agentSessionStatusSchema = z.nativeEnum(AgentSessionStatus);
+export const callAssignmentStatusSchema = z.nativeEnum(CallAssignmentStatus);
+export const integrationCategorySchema = z.nativeEnum(IntegrationCategory);
+export const integrationStatusSchema = z.nativeEnum(IntegrationStatus);

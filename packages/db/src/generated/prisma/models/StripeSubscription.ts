@@ -26,7 +26,7 @@ export type AggregateStripeSubscription = {
 
 export type StripeSubscriptionMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   stripeSubscriptionId: string | null
   planKey: string | null
   status: string | null
@@ -38,7 +38,7 @@ export type StripeSubscriptionMinAggregateOutputType = {
 
 export type StripeSubscriptionMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   stripeSubscriptionId: string | null
   planKey: string | null
   status: string | null
@@ -50,7 +50,7 @@ export type StripeSubscriptionMaxAggregateOutputType = {
 
 export type StripeSubscriptionCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   stripeSubscriptionId: number
   planKey: number
   status: number
@@ -64,7 +64,7 @@ export type StripeSubscriptionCountAggregateOutputType = {
 
 export type StripeSubscriptionMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   stripeSubscriptionId?: true
   planKey?: true
   status?: true
@@ -76,7 +76,7 @@ export type StripeSubscriptionMinAggregateInputType = {
 
 export type StripeSubscriptionMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   stripeSubscriptionId?: true
   planKey?: true
   status?: true
@@ -88,7 +88,7 @@ export type StripeSubscriptionMaxAggregateInputType = {
 
 export type StripeSubscriptionCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   stripeSubscriptionId?: true
   planKey?: true
   status?: true
@@ -173,7 +173,7 @@ export type StripeSubscriptionGroupByArgs<ExtArgs extends runtime.Types.Extensio
 
 export type StripeSubscriptionGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   stripeSubscriptionId: string
   planKey: string
   status: string
@@ -206,7 +206,7 @@ export type StripeSubscriptionWhereInput = {
   OR?: Prisma.StripeSubscriptionWhereInput[]
   NOT?: Prisma.StripeSubscriptionWhereInput | Prisma.StripeSubscriptionWhereInput[]
   id?: Prisma.StringFilter<"StripeSubscription"> | string
-  hospitalId?: Prisma.StringFilter<"StripeSubscription"> | string
+  businessId?: Prisma.StringFilter<"StripeSubscription"> | string
   stripeSubscriptionId?: Prisma.StringFilter<"StripeSubscription"> | string
   planKey?: Prisma.StringFilter<"StripeSubscription"> | string
   status?: Prisma.StringFilter<"StripeSubscription"> | string
@@ -214,12 +214,12 @@ export type StripeSubscriptionWhereInput = {
   currentPeriodEnd?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }
 
 export type StripeSubscriptionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   stripeSubscriptionId?: Prisma.SortOrder
   planKey?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -227,7 +227,7 @@ export type StripeSubscriptionOrderByWithRelationInput = {
   currentPeriodEnd?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
 }
 
 export type StripeSubscriptionWhereUniqueInput = Prisma.AtLeast<{
@@ -236,19 +236,19 @@ export type StripeSubscriptionWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.StripeSubscriptionWhereInput | Prisma.StripeSubscriptionWhereInput[]
   OR?: Prisma.StripeSubscriptionWhereInput[]
   NOT?: Prisma.StripeSubscriptionWhereInput | Prisma.StripeSubscriptionWhereInput[]
-  hospitalId?: Prisma.StringFilter<"StripeSubscription"> | string
+  businessId?: Prisma.StringFilter<"StripeSubscription"> | string
   planKey?: Prisma.StringFilter<"StripeSubscription"> | string
   status?: Prisma.StringFilter<"StripeSubscription"> | string
   currentPeriodStart?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
   currentPeriodEnd?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }, "id" | "stripeSubscriptionId">
 
 export type StripeSubscriptionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   stripeSubscriptionId?: Prisma.SortOrder
   planKey?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -266,7 +266,7 @@ export type StripeSubscriptionScalarWhereWithAggregatesInput = {
   OR?: Prisma.StripeSubscriptionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.StripeSubscriptionScalarWhereWithAggregatesInput | Prisma.StripeSubscriptionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"StripeSubscription"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"StripeSubscription"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"StripeSubscription"> | string
   stripeSubscriptionId?: Prisma.StringWithAggregatesFilter<"StripeSubscription"> | string
   planKey?: Prisma.StringWithAggregatesFilter<"StripeSubscription"> | string
   status?: Prisma.StringWithAggregatesFilter<"StripeSubscription"> | string
@@ -285,12 +285,12 @@ export type StripeSubscriptionCreateInput = {
   currentPeriodEnd: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutSubscriptionsInput
+  business: Prisma.BusinessCreateNestedOneWithoutSubscriptionsInput
 }
 
 export type StripeSubscriptionUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   stripeSubscriptionId: string
   planKey: string
   status: string
@@ -309,12 +309,12 @@ export type StripeSubscriptionUpdateInput = {
   currentPeriodEnd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutSubscriptionsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutSubscriptionsNestedInput
 }
 
 export type StripeSubscriptionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   stripeSubscriptionId?: Prisma.StringFieldUpdateOperationsInput | string
   planKey?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
@@ -326,7 +326,7 @@ export type StripeSubscriptionUncheckedUpdateInput = {
 
 export type StripeSubscriptionCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   stripeSubscriptionId: string
   planKey: string
   status: string
@@ -349,7 +349,7 @@ export type StripeSubscriptionUpdateManyMutationInput = {
 
 export type StripeSubscriptionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   stripeSubscriptionId?: Prisma.StringFieldUpdateOperationsInput | string
   planKey?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
@@ -371,7 +371,7 @@ export type StripeSubscriptionOrderByRelationAggregateInput = {
 
 export type StripeSubscriptionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   stripeSubscriptionId?: Prisma.SortOrder
   planKey?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -383,7 +383,7 @@ export type StripeSubscriptionCountOrderByAggregateInput = {
 
 export type StripeSubscriptionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   stripeSubscriptionId?: Prisma.SortOrder
   planKey?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -395,7 +395,7 @@ export type StripeSubscriptionMaxOrderByAggregateInput = {
 
 export type StripeSubscriptionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   stripeSubscriptionId?: Prisma.SortOrder
   planKey?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -405,49 +405,49 @@ export type StripeSubscriptionMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
-export type StripeSubscriptionCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput> | Prisma.StripeSubscriptionCreateWithoutHospitalInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput | Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.StripeSubscriptionCreateManyHospitalInputEnvelope
+export type StripeSubscriptionCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput> | Prisma.StripeSubscriptionCreateWithoutBusinessInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput | Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.StripeSubscriptionCreateManyBusinessInputEnvelope
   connect?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
 }
 
-export type StripeSubscriptionUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput> | Prisma.StripeSubscriptionCreateWithoutHospitalInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput | Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.StripeSubscriptionCreateManyHospitalInputEnvelope
+export type StripeSubscriptionUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput> | Prisma.StripeSubscriptionCreateWithoutBusinessInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput | Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.StripeSubscriptionCreateManyBusinessInputEnvelope
   connect?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
 }
 
-export type StripeSubscriptionUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput> | Prisma.StripeSubscriptionCreateWithoutHospitalInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput | Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutHospitalInput | Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.StripeSubscriptionCreateManyHospitalInputEnvelope
+export type StripeSubscriptionUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput> | Prisma.StripeSubscriptionCreateWithoutBusinessInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput | Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutBusinessInput | Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.StripeSubscriptionCreateManyBusinessInputEnvelope
   set?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
   disconnect?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
   delete?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
   connect?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
-  update?: Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutHospitalInput | Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.StripeSubscriptionUpdateManyWithWhereWithoutHospitalInput | Prisma.StripeSubscriptionUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutBusinessInput | Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.StripeSubscriptionUpdateManyWithWhereWithoutBusinessInput | Prisma.StripeSubscriptionUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.StripeSubscriptionScalarWhereInput | Prisma.StripeSubscriptionScalarWhereInput[]
 }
 
-export type StripeSubscriptionUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput> | Prisma.StripeSubscriptionCreateWithoutHospitalInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput | Prisma.StripeSubscriptionCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutHospitalInput | Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.StripeSubscriptionCreateManyHospitalInputEnvelope
+export type StripeSubscriptionUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput> | Prisma.StripeSubscriptionCreateWithoutBusinessInput[] | Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput | Prisma.StripeSubscriptionCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutBusinessInput | Prisma.StripeSubscriptionUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.StripeSubscriptionCreateManyBusinessInputEnvelope
   set?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
   disconnect?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
   delete?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
   connect?: Prisma.StripeSubscriptionWhereUniqueInput | Prisma.StripeSubscriptionWhereUniqueInput[]
-  update?: Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutHospitalInput | Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.StripeSubscriptionUpdateManyWithWhereWithoutHospitalInput | Prisma.StripeSubscriptionUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutBusinessInput | Prisma.StripeSubscriptionUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.StripeSubscriptionUpdateManyWithWhereWithoutBusinessInput | Prisma.StripeSubscriptionUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.StripeSubscriptionScalarWhereInput | Prisma.StripeSubscriptionScalarWhereInput[]
 }
 
-export type StripeSubscriptionCreateWithoutHospitalInput = {
+export type StripeSubscriptionCreateWithoutBusinessInput = {
   id?: string
   stripeSubscriptionId: string
   planKey: string
@@ -458,7 +458,7 @@ export type StripeSubscriptionCreateWithoutHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type StripeSubscriptionUncheckedCreateWithoutHospitalInput = {
+export type StripeSubscriptionUncheckedCreateWithoutBusinessInput = {
   id?: string
   stripeSubscriptionId: string
   planKey: string
@@ -469,30 +469,30 @@ export type StripeSubscriptionUncheckedCreateWithoutHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type StripeSubscriptionCreateOrConnectWithoutHospitalInput = {
+export type StripeSubscriptionCreateOrConnectWithoutBusinessInput = {
   where: Prisma.StripeSubscriptionWhereUniqueInput
-  create: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput>
 }
 
-export type StripeSubscriptionCreateManyHospitalInputEnvelope = {
-  data: Prisma.StripeSubscriptionCreateManyHospitalInput | Prisma.StripeSubscriptionCreateManyHospitalInput[]
+export type StripeSubscriptionCreateManyBusinessInputEnvelope = {
+  data: Prisma.StripeSubscriptionCreateManyBusinessInput | Prisma.StripeSubscriptionCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type StripeSubscriptionUpsertWithWhereUniqueWithoutHospitalInput = {
+export type StripeSubscriptionUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.StripeSubscriptionWhereUniqueInput
-  update: Prisma.XOR<Prisma.StripeSubscriptionUpdateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.StripeSubscriptionUpdateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.StripeSubscriptionCreateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedCreateWithoutBusinessInput>
 }
 
-export type StripeSubscriptionUpdateWithWhereUniqueWithoutHospitalInput = {
+export type StripeSubscriptionUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.StripeSubscriptionWhereUniqueInput
-  data: Prisma.XOR<Prisma.StripeSubscriptionUpdateWithoutHospitalInput, Prisma.StripeSubscriptionUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.StripeSubscriptionUpdateWithoutBusinessInput, Prisma.StripeSubscriptionUncheckedUpdateWithoutBusinessInput>
 }
 
-export type StripeSubscriptionUpdateManyWithWhereWithoutHospitalInput = {
+export type StripeSubscriptionUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.StripeSubscriptionScalarWhereInput
-  data: Prisma.XOR<Prisma.StripeSubscriptionUpdateManyMutationInput, Prisma.StripeSubscriptionUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.StripeSubscriptionUpdateManyMutationInput, Prisma.StripeSubscriptionUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type StripeSubscriptionScalarWhereInput = {
@@ -500,7 +500,7 @@ export type StripeSubscriptionScalarWhereInput = {
   OR?: Prisma.StripeSubscriptionScalarWhereInput[]
   NOT?: Prisma.StripeSubscriptionScalarWhereInput | Prisma.StripeSubscriptionScalarWhereInput[]
   id?: Prisma.StringFilter<"StripeSubscription"> | string
-  hospitalId?: Prisma.StringFilter<"StripeSubscription"> | string
+  businessId?: Prisma.StringFilter<"StripeSubscription"> | string
   stripeSubscriptionId?: Prisma.StringFilter<"StripeSubscription"> | string
   planKey?: Prisma.StringFilter<"StripeSubscription"> | string
   status?: Prisma.StringFilter<"StripeSubscription"> | string
@@ -510,7 +510,7 @@ export type StripeSubscriptionScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"StripeSubscription"> | Date | string
 }
 
-export type StripeSubscriptionCreateManyHospitalInput = {
+export type StripeSubscriptionCreateManyBusinessInput = {
   id?: string
   stripeSubscriptionId: string
   planKey: string
@@ -521,7 +521,7 @@ export type StripeSubscriptionCreateManyHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type StripeSubscriptionUpdateWithoutHospitalInput = {
+export type StripeSubscriptionUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   stripeSubscriptionId?: Prisma.StringFieldUpdateOperationsInput | string
   planKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -532,7 +532,7 @@ export type StripeSubscriptionUpdateWithoutHospitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type StripeSubscriptionUncheckedUpdateWithoutHospitalInput = {
+export type StripeSubscriptionUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   stripeSubscriptionId?: Prisma.StringFieldUpdateOperationsInput | string
   planKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -543,7 +543,7 @@ export type StripeSubscriptionUncheckedUpdateWithoutHospitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type StripeSubscriptionUncheckedUpdateManyWithoutHospitalInput = {
+export type StripeSubscriptionUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   stripeSubscriptionId?: Prisma.StringFieldUpdateOperationsInput | string
   planKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -558,7 +558,7 @@ export type StripeSubscriptionUncheckedUpdateManyWithoutHospitalInput = {
 
 export type StripeSubscriptionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   stripeSubscriptionId?: boolean
   planKey?: boolean
   status?: boolean
@@ -566,12 +566,12 @@ export type StripeSubscriptionSelect<ExtArgs extends runtime.Types.Extensions.In
   currentPeriodEnd?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["stripeSubscription"]>
 
 export type StripeSubscriptionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   stripeSubscriptionId?: boolean
   planKey?: boolean
   status?: boolean
@@ -579,12 +579,12 @@ export type StripeSubscriptionSelectCreateManyAndReturn<ExtArgs extends runtime.
   currentPeriodEnd?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["stripeSubscription"]>
 
 export type StripeSubscriptionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   stripeSubscriptionId?: boolean
   planKey?: boolean
   status?: boolean
@@ -592,12 +592,12 @@ export type StripeSubscriptionSelectUpdateManyAndReturn<ExtArgs extends runtime.
   currentPeriodEnd?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["stripeSubscription"]>
 
 export type StripeSubscriptionSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   stripeSubscriptionId?: boolean
   planKey?: boolean
   status?: boolean
@@ -607,25 +607,25 @@ export type StripeSubscriptionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type StripeSubscriptionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "stripeSubscriptionId" | "planKey" | "status" | "currentPeriodStart" | "currentPeriodEnd" | "createdAt" | "updatedAt", ExtArgs["result"]["stripeSubscription"]>
+export type StripeSubscriptionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "stripeSubscriptionId" | "planKey" | "status" | "currentPeriodStart" | "currentPeriodEnd" | "createdAt" | "updatedAt", ExtArgs["result"]["stripeSubscription"]>
 export type StripeSubscriptionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type StripeSubscriptionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type StripeSubscriptionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 
 export type $StripeSubscriptionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "StripeSubscription"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     stripeSubscriptionId: string
     planKey: string
     status: string
@@ -1027,7 +1027,7 @@ readonly fields: StripeSubscriptionFieldRefs;
  */
 export interface Prisma__StripeSubscriptionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1058,7 +1058,7 @@ export interface Prisma__StripeSubscriptionClient<T, Null = never, ExtArgs exten
  */
 export interface StripeSubscriptionFieldRefs {
   readonly id: Prisma.FieldRef<"StripeSubscription", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"StripeSubscription", 'String'>
+  readonly businessId: Prisma.FieldRef<"StripeSubscription", 'String'>
   readonly stripeSubscriptionId: Prisma.FieldRef<"StripeSubscription", 'String'>
   readonly planKey: Prisma.FieldRef<"StripeSubscription", 'String'>
   readonly status: Prisma.FieldRef<"StripeSubscription", 'String'>

@@ -190,7 +190,7 @@ export type UserWhereInput = {
   fullName?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  hospitals?: Prisma.HospitalUserListRelationFilter
+  businesses?: Prisma.BusinessUserListRelationFilter
   createdWorkflowVersions?: Prisma.WorkflowVersionListRelationFilter
   approvedWorkflowVersions?: Prisma.WorkflowVersionListRelationFilter
 }
@@ -202,7 +202,7 @@ export type UserOrderByWithRelationInput = {
   fullName?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospitals?: Prisma.HospitalUserOrderByRelationAggregateInput
+  businesses?: Prisma.BusinessUserOrderByRelationAggregateInput
   createdWorkflowVersions?: Prisma.WorkflowVersionOrderByRelationAggregateInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionOrderByRelationAggregateInput
 }
@@ -217,7 +217,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   fullName?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  hospitals?: Prisma.HospitalUserListRelationFilter
+  businesses?: Prisma.BusinessUserListRelationFilter
   createdWorkflowVersions?: Prisma.WorkflowVersionListRelationFilter
   approvedWorkflowVersions?: Prisma.WorkflowVersionListRelationFilter
 }, "id" | "clerkUserId">
@@ -253,7 +253,7 @@ export type UserCreateInput = {
   fullName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospitals?: Prisma.HospitalUserCreateNestedManyWithoutUserInput
+  businesses?: Prisma.BusinessUserCreateNestedManyWithoutUserInput
   createdWorkflowVersions?: Prisma.WorkflowVersionCreateNestedManyWithoutCreatedByInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionCreateNestedManyWithoutApprovedByInput
 }
@@ -265,7 +265,7 @@ export type UserUncheckedCreateInput = {
   fullName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospitals?: Prisma.HospitalUserUncheckedCreateNestedManyWithoutUserInput
+  businesses?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutUserInput
   createdWorkflowVersions?: Prisma.WorkflowVersionUncheckedCreateNestedManyWithoutCreatedByInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionUncheckedCreateNestedManyWithoutApprovedByInput
 }
@@ -277,7 +277,7 @@ export type UserUpdateInput = {
   fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospitals?: Prisma.HospitalUserUpdateManyWithoutUserNestedInput
+  businesses?: Prisma.BusinessUserUpdateManyWithoutUserNestedInput
   createdWorkflowVersions?: Prisma.WorkflowVersionUpdateManyWithoutCreatedByNestedInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionUpdateManyWithoutApprovedByNestedInput
 }
@@ -289,7 +289,7 @@ export type UserUncheckedUpdateInput = {
   fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospitals?: Prisma.HospitalUserUncheckedUpdateManyWithoutUserNestedInput
+  businesses?: Prisma.BusinessUserUncheckedUpdateManyWithoutUserNestedInput
   createdWorkflowVersions?: Prisma.WorkflowVersionUncheckedUpdateManyWithoutCreatedByNestedInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionUncheckedUpdateManyWithoutApprovedByNestedInput
 }
@@ -358,18 +358,18 @@ export type UserNullableScalarRelationFilter = {
   isNot?: Prisma.UserWhereInput | null
 }
 
-export type UserCreateNestedOneWithoutHospitalsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutHospitalsInput, Prisma.UserUncheckedCreateWithoutHospitalsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutHospitalsInput
+export type UserCreateNestedOneWithoutBusinessesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBusinessesInput, Prisma.UserUncheckedCreateWithoutBusinessesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBusinessesInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutHospitalsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutHospitalsInput, Prisma.UserUncheckedCreateWithoutHospitalsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutHospitalsInput
-  upsert?: Prisma.UserUpsertWithoutHospitalsInput
+export type UserUpdateOneRequiredWithoutBusinessesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBusinessesInput, Prisma.UserUncheckedCreateWithoutBusinessesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBusinessesInput
+  upsert?: Prisma.UserUpsertWithoutBusinessesInput
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutHospitalsInput, Prisma.UserUpdateWithoutHospitalsInput>, Prisma.UserUncheckedUpdateWithoutHospitalsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBusinessesInput, Prisma.UserUpdateWithoutBusinessesInput>, Prisma.UserUncheckedUpdateWithoutBusinessesInput>
 }
 
 export type UserCreateNestedOneWithoutCreatedWorkflowVersionsInput = {
@@ -402,7 +402,7 @@ export type UserUpdateOneWithoutApprovedWorkflowVersionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutApprovedWorkflowVersionsInput, Prisma.UserUpdateWithoutApprovedWorkflowVersionsInput>, Prisma.UserUncheckedUpdateWithoutApprovedWorkflowVersionsInput>
 }
 
-export type UserCreateWithoutHospitalsInput = {
+export type UserCreateWithoutBusinessesInput = {
   id?: string
   clerkUserId: string
   email: string
@@ -413,7 +413,7 @@ export type UserCreateWithoutHospitalsInput = {
   approvedWorkflowVersions?: Prisma.WorkflowVersionCreateNestedManyWithoutApprovedByInput
 }
 
-export type UserUncheckedCreateWithoutHospitalsInput = {
+export type UserUncheckedCreateWithoutBusinessesInput = {
   id?: string
   clerkUserId: string
   email: string
@@ -424,23 +424,23 @@ export type UserUncheckedCreateWithoutHospitalsInput = {
   approvedWorkflowVersions?: Prisma.WorkflowVersionUncheckedCreateNestedManyWithoutApprovedByInput
 }
 
-export type UserCreateOrConnectWithoutHospitalsInput = {
+export type UserCreateOrConnectWithoutBusinessesInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutHospitalsInput, Prisma.UserUncheckedCreateWithoutHospitalsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutBusinessesInput, Prisma.UserUncheckedCreateWithoutBusinessesInput>
 }
 
-export type UserUpsertWithoutHospitalsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutHospitalsInput, Prisma.UserUncheckedUpdateWithoutHospitalsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutHospitalsInput, Prisma.UserUncheckedCreateWithoutHospitalsInput>
+export type UserUpsertWithoutBusinessesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutBusinessesInput, Prisma.UserUncheckedUpdateWithoutBusinessesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutBusinessesInput, Prisma.UserUncheckedCreateWithoutBusinessesInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutHospitalsInput = {
+export type UserUpdateToOneWithWhereWithoutBusinessesInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutHospitalsInput, Prisma.UserUncheckedUpdateWithoutHospitalsInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutBusinessesInput, Prisma.UserUncheckedUpdateWithoutBusinessesInput>
 }
 
-export type UserUpdateWithoutHospitalsInput = {
+export type UserUpdateWithoutBusinessesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
@@ -451,7 +451,7 @@ export type UserUpdateWithoutHospitalsInput = {
   approvedWorkflowVersions?: Prisma.WorkflowVersionUpdateManyWithoutApprovedByNestedInput
 }
 
-export type UserUncheckedUpdateWithoutHospitalsInput = {
+export type UserUncheckedUpdateWithoutBusinessesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
@@ -469,7 +469,7 @@ export type UserCreateWithoutCreatedWorkflowVersionsInput = {
   fullName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospitals?: Prisma.HospitalUserCreateNestedManyWithoutUserInput
+  businesses?: Prisma.BusinessUserCreateNestedManyWithoutUserInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionCreateNestedManyWithoutApprovedByInput
 }
 
@@ -480,7 +480,7 @@ export type UserUncheckedCreateWithoutCreatedWorkflowVersionsInput = {
   fullName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospitals?: Prisma.HospitalUserUncheckedCreateNestedManyWithoutUserInput
+  businesses?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutUserInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionUncheckedCreateNestedManyWithoutApprovedByInput
 }
 
@@ -496,7 +496,7 @@ export type UserCreateWithoutApprovedWorkflowVersionsInput = {
   fullName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospitals?: Prisma.HospitalUserCreateNestedManyWithoutUserInput
+  businesses?: Prisma.BusinessUserCreateNestedManyWithoutUserInput
   createdWorkflowVersions?: Prisma.WorkflowVersionCreateNestedManyWithoutCreatedByInput
 }
 
@@ -507,7 +507,7 @@ export type UserUncheckedCreateWithoutApprovedWorkflowVersionsInput = {
   fullName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospitals?: Prisma.HospitalUserUncheckedCreateNestedManyWithoutUserInput
+  businesses?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutUserInput
   createdWorkflowVersions?: Prisma.WorkflowVersionUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -534,7 +534,7 @@ export type UserUpdateWithoutCreatedWorkflowVersionsInput = {
   fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospitals?: Prisma.HospitalUserUpdateManyWithoutUserNestedInput
+  businesses?: Prisma.BusinessUserUpdateManyWithoutUserNestedInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionUpdateManyWithoutApprovedByNestedInput
 }
 
@@ -545,7 +545,7 @@ export type UserUncheckedUpdateWithoutCreatedWorkflowVersionsInput = {
   fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospitals?: Prisma.HospitalUserUncheckedUpdateManyWithoutUserNestedInput
+  businesses?: Prisma.BusinessUserUncheckedUpdateManyWithoutUserNestedInput
   approvedWorkflowVersions?: Prisma.WorkflowVersionUncheckedUpdateManyWithoutApprovedByNestedInput
 }
 
@@ -567,7 +567,7 @@ export type UserUpdateWithoutApprovedWorkflowVersionsInput = {
   fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospitals?: Prisma.HospitalUserUpdateManyWithoutUserNestedInput
+  businesses?: Prisma.BusinessUserUpdateManyWithoutUserNestedInput
   createdWorkflowVersions?: Prisma.WorkflowVersionUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -578,7 +578,7 @@ export type UserUncheckedUpdateWithoutApprovedWorkflowVersionsInput = {
   fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospitals?: Prisma.HospitalUserUncheckedUpdateManyWithoutUserNestedInput
+  businesses?: Prisma.BusinessUserUncheckedUpdateManyWithoutUserNestedInput
   createdWorkflowVersions?: Prisma.WorkflowVersionUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -588,13 +588,13 @@ export type UserUncheckedUpdateWithoutApprovedWorkflowVersionsInput = {
  */
 
 export type UserCountOutputType = {
-  hospitals: number
+  businesses: number
   createdWorkflowVersions: number
   approvedWorkflowVersions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospitals?: boolean | UserCountOutputTypeCountHospitalsArgs
+  businesses?: boolean | UserCountOutputTypeCountBusinessesArgs
   createdWorkflowVersions?: boolean | UserCountOutputTypeCountCreatedWorkflowVersionsArgs
   approvedWorkflowVersions?: boolean | UserCountOutputTypeCountApprovedWorkflowVersionsArgs
 }
@@ -612,8 +612,8 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountHospitalsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.HospitalUserWhereInput
+export type UserCountOutputTypeCountBusinessesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BusinessUserWhereInput
 }
 
 /**
@@ -638,7 +638,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   fullName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospitals?: boolean | Prisma.User$hospitalsArgs<ExtArgs>
+  businesses?: boolean | Prisma.User$businessesArgs<ExtArgs>
   createdWorkflowVersions?: boolean | Prisma.User$createdWorkflowVersionsArgs<ExtArgs>
   approvedWorkflowVersions?: boolean | Prisma.User$approvedWorkflowVersionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -673,7 +673,7 @@ export type UserSelectScalar = {
 
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "clerkUserId" | "email" | "fullName" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospitals?: boolean | Prisma.User$hospitalsArgs<ExtArgs>
+  businesses?: boolean | Prisma.User$businessesArgs<ExtArgs>
   createdWorkflowVersions?: boolean | Prisma.User$createdWorkflowVersionsArgs<ExtArgs>
   approvedWorkflowVersions?: boolean | Prisma.User$approvedWorkflowVersionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -684,7 +684,7 @@ export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
-    hospitals: Prisma.$HospitalUserPayload<ExtArgs>[]
+    businesses: Prisma.$BusinessUserPayload<ExtArgs>[]
     createdWorkflowVersions: Prisma.$WorkflowVersionPayload<ExtArgs>[]
     approvedWorkflowVersions: Prisma.$WorkflowVersionPayload<ExtArgs>[]
   }
@@ -1089,7 +1089,7 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospitals<T extends Prisma.User$hospitalsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$hospitalsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$HospitalUserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  businesses<T extends Prisma.User$businessesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$businessesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BusinessUserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdWorkflowVersions<T extends Prisma.User$createdWorkflowVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdWorkflowVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   approvedWorkflowVersions<T extends Prisma.User$approvedWorkflowVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$approvedWorkflowVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1515,27 +1515,27 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * User.hospitals
+ * User.businesses
  */
-export type User$hospitalsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$businessesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the HospitalUser
+   * Select specific fields to fetch from the BusinessUser
    */
-  select?: Prisma.HospitalUserSelect<ExtArgs> | null
+  select?: Prisma.BusinessUserSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the HospitalUser
+   * Omit specific fields from the BusinessUser
    */
-  omit?: Prisma.HospitalUserOmit<ExtArgs> | null
+  omit?: Prisma.BusinessUserOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.HospitalUserInclude<ExtArgs> | null
-  where?: Prisma.HospitalUserWhereInput
-  orderBy?: Prisma.HospitalUserOrderByWithRelationInput | Prisma.HospitalUserOrderByWithRelationInput[]
-  cursor?: Prisma.HospitalUserWhereUniqueInput
+  include?: Prisma.BusinessUserInclude<ExtArgs> | null
+  where?: Prisma.BusinessUserWhereInput
+  orderBy?: Prisma.BusinessUserOrderByWithRelationInput | Prisma.BusinessUserOrderByWithRelationInput[]
+  cursor?: Prisma.BusinessUserWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.HospitalUserScalarFieldEnum | Prisma.HospitalUserScalarFieldEnum[]
+  distinct?: Prisma.BusinessUserScalarFieldEnum | Prisma.BusinessUserScalarFieldEnum[]
 }
 
 /**

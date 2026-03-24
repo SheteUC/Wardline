@@ -67,8 +67,8 @@ export function QuestionConfigPanel({ data, onChange }: QuestionConfigPanelProps
                 <Label htmlFor="q-validation">Validation</Label>
                 <Select
                     value={data.validationType ?? 'none'}
-                    onValueChange={(v: QuestionNodeData['validationType']) =>
-                        onChange({ validationType: v })
+                    onValueChange={(value) =>
+                        onChange({ validationType: value as QuestionNodeData['validationType'] })
                     }
                 >
                     <SelectTrigger id="q-validation" className="mt-1">

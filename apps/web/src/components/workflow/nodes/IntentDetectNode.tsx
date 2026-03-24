@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface IntentDetectNodeData {
+export interface IntentDetectNodeData extends Record<string, unknown> {
     label: string;
     intents?: string[];
     confidenceThreshold?: number;

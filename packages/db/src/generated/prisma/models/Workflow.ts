@@ -26,7 +26,7 @@ export type AggregateWorkflow = {
 
 export type WorkflowMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   name: string | null
   description: string | null
   status: $Enums.WorkflowStatus | null
@@ -36,7 +36,7 @@ export type WorkflowMinAggregateOutputType = {
 
 export type WorkflowMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   name: string | null
   description: string | null
   status: $Enums.WorkflowStatus | null
@@ -46,7 +46,7 @@ export type WorkflowMaxAggregateOutputType = {
 
 export type WorkflowCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   name: number
   description: number
   status: number
@@ -58,7 +58,7 @@ export type WorkflowCountAggregateOutputType = {
 
 export type WorkflowMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   name?: true
   description?: true
   status?: true
@@ -68,7 +68,7 @@ export type WorkflowMinAggregateInputType = {
 
 export type WorkflowMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   name?: true
   description?: true
   status?: true
@@ -78,7 +78,7 @@ export type WorkflowMaxAggregateInputType = {
 
 export type WorkflowCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   name?: true
   description?: true
   status?: true
@@ -161,7 +161,7 @@ export type WorkflowGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 
 export type WorkflowGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   name: string
   description: string
   status: $Enums.WorkflowStatus
@@ -192,26 +192,26 @@ export type WorkflowWhereInput = {
   OR?: Prisma.WorkflowWhereInput[]
   NOT?: Prisma.WorkflowWhereInput | Prisma.WorkflowWhereInput[]
   id?: Prisma.StringFilter<"Workflow"> | string
-  hospitalId?: Prisma.StringFilter<"Workflow"> | string
+  businessId?: Prisma.StringFilter<"Workflow"> | string
   name?: Prisma.StringFilter<"Workflow"> | string
   description?: Prisma.StringFilter<"Workflow"> | string
   status?: Prisma.EnumWorkflowStatusFilter<"Workflow"> | $Enums.WorkflowStatus
   createdAt?: Prisma.DateTimeFilter<"Workflow"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Workflow"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   versions?: Prisma.WorkflowVersionListRelationFilter
   phoneNumbers?: Prisma.PhoneNumberListRelationFilter
 }
 
 export type WorkflowOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
   versions?: Prisma.WorkflowVersionOrderByRelationAggregateInput
   phoneNumbers?: Prisma.PhoneNumberOrderByRelationAggregateInput
 }
@@ -221,20 +221,20 @@ export type WorkflowWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.WorkflowWhereInput | Prisma.WorkflowWhereInput[]
   OR?: Prisma.WorkflowWhereInput[]
   NOT?: Prisma.WorkflowWhereInput | Prisma.WorkflowWhereInput[]
-  hospitalId?: Prisma.StringFilter<"Workflow"> | string
+  businessId?: Prisma.StringFilter<"Workflow"> | string
   name?: Prisma.StringFilter<"Workflow"> | string
   description?: Prisma.StringFilter<"Workflow"> | string
   status?: Prisma.EnumWorkflowStatusFilter<"Workflow"> | $Enums.WorkflowStatus
   createdAt?: Prisma.DateTimeFilter<"Workflow"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Workflow"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   versions?: Prisma.WorkflowVersionListRelationFilter
   phoneNumbers?: Prisma.PhoneNumberListRelationFilter
 }, "id">
 
 export type WorkflowOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -250,7 +250,7 @@ export type WorkflowScalarWhereWithAggregatesInput = {
   OR?: Prisma.WorkflowScalarWhereWithAggregatesInput[]
   NOT?: Prisma.WorkflowScalarWhereWithAggregatesInput | Prisma.WorkflowScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Workflow"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"Workflow"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"Workflow"> | string
   name?: Prisma.StringWithAggregatesFilter<"Workflow"> | string
   description?: Prisma.StringWithAggregatesFilter<"Workflow"> | string
   status?: Prisma.EnumWorkflowStatusWithAggregatesFilter<"Workflow"> | $Enums.WorkflowStatus
@@ -265,14 +265,14 @@ export type WorkflowCreateInput = {
   status?: $Enums.WorkflowStatus
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutWorkflowsInput
+  business: Prisma.BusinessCreateNestedOneWithoutWorkflowsInput
   versions?: Prisma.WorkflowVersionCreateNestedManyWithoutWorkflowInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutWorkflowInput
 }
 
 export type WorkflowUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   name: string
   description: string
   status?: $Enums.WorkflowStatus
@@ -289,14 +289,14 @@ export type WorkflowUpdateInput = {
   status?: Prisma.EnumWorkflowStatusFieldUpdateOperationsInput | $Enums.WorkflowStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutWorkflowsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutWorkflowsNestedInput
   versions?: Prisma.WorkflowVersionUpdateManyWithoutWorkflowNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutWorkflowNestedInput
 }
 
 export type WorkflowUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumWorkflowStatusFieldUpdateOperationsInput | $Enums.WorkflowStatus
@@ -308,7 +308,7 @@ export type WorkflowUncheckedUpdateInput = {
 
 export type WorkflowCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   name: string
   description: string
   status?: $Enums.WorkflowStatus
@@ -327,7 +327,7 @@ export type WorkflowUpdateManyMutationInput = {
 
 export type WorkflowUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumWorkflowStatusFieldUpdateOperationsInput | $Enums.WorkflowStatus
@@ -352,7 +352,7 @@ export type WorkflowNullableScalarRelationFilter = {
 
 export type WorkflowCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -362,7 +362,7 @@ export type WorkflowCountOrderByAggregateInput = {
 
 export type WorkflowMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -372,7 +372,7 @@ export type WorkflowMaxOrderByAggregateInput = {
 
 export type WorkflowMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -385,45 +385,45 @@ export type WorkflowScalarRelationFilter = {
   isNot?: Prisma.WorkflowWhereInput
 }
 
-export type WorkflowCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutHospitalInput, Prisma.WorkflowUncheckedCreateWithoutHospitalInput> | Prisma.WorkflowCreateWithoutHospitalInput[] | Prisma.WorkflowUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutHospitalInput | Prisma.WorkflowCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.WorkflowCreateManyHospitalInputEnvelope
+export type WorkflowCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutBusinessInput, Prisma.WorkflowUncheckedCreateWithoutBusinessInput> | Prisma.WorkflowCreateWithoutBusinessInput[] | Prisma.WorkflowUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutBusinessInput | Prisma.WorkflowCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.WorkflowCreateManyBusinessInputEnvelope
   connect?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
 }
 
-export type WorkflowUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutHospitalInput, Prisma.WorkflowUncheckedCreateWithoutHospitalInput> | Prisma.WorkflowCreateWithoutHospitalInput[] | Prisma.WorkflowUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutHospitalInput | Prisma.WorkflowCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.WorkflowCreateManyHospitalInputEnvelope
+export type WorkflowUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutBusinessInput, Prisma.WorkflowUncheckedCreateWithoutBusinessInput> | Prisma.WorkflowCreateWithoutBusinessInput[] | Prisma.WorkflowUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutBusinessInput | Prisma.WorkflowCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.WorkflowCreateManyBusinessInputEnvelope
   connect?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
 }
 
-export type WorkflowUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutHospitalInput, Prisma.WorkflowUncheckedCreateWithoutHospitalInput> | Prisma.WorkflowCreateWithoutHospitalInput[] | Prisma.WorkflowUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutHospitalInput | Prisma.WorkflowCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.WorkflowUpsertWithWhereUniqueWithoutHospitalInput | Prisma.WorkflowUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.WorkflowCreateManyHospitalInputEnvelope
+export type WorkflowUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutBusinessInput, Prisma.WorkflowUncheckedCreateWithoutBusinessInput> | Prisma.WorkflowCreateWithoutBusinessInput[] | Prisma.WorkflowUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutBusinessInput | Prisma.WorkflowCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.WorkflowUpsertWithWhereUniqueWithoutBusinessInput | Prisma.WorkflowUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.WorkflowCreateManyBusinessInputEnvelope
   set?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
   disconnect?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
   delete?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
   connect?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
-  update?: Prisma.WorkflowUpdateWithWhereUniqueWithoutHospitalInput | Prisma.WorkflowUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.WorkflowUpdateManyWithWhereWithoutHospitalInput | Prisma.WorkflowUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.WorkflowUpdateWithWhereUniqueWithoutBusinessInput | Prisma.WorkflowUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.WorkflowUpdateManyWithWhereWithoutBusinessInput | Prisma.WorkflowUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.WorkflowScalarWhereInput | Prisma.WorkflowScalarWhereInput[]
 }
 
-export type WorkflowUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutHospitalInput, Prisma.WorkflowUncheckedCreateWithoutHospitalInput> | Prisma.WorkflowCreateWithoutHospitalInput[] | Prisma.WorkflowUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutHospitalInput | Prisma.WorkflowCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.WorkflowUpsertWithWhereUniqueWithoutHospitalInput | Prisma.WorkflowUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.WorkflowCreateManyHospitalInputEnvelope
+export type WorkflowUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkflowCreateWithoutBusinessInput, Prisma.WorkflowUncheckedCreateWithoutBusinessInput> | Prisma.WorkflowCreateWithoutBusinessInput[] | Prisma.WorkflowUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.WorkflowCreateOrConnectWithoutBusinessInput | Prisma.WorkflowCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.WorkflowUpsertWithWhereUniqueWithoutBusinessInput | Prisma.WorkflowUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.WorkflowCreateManyBusinessInputEnvelope
   set?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
   disconnect?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
   delete?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
   connect?: Prisma.WorkflowWhereUniqueInput | Prisma.WorkflowWhereUniqueInput[]
-  update?: Prisma.WorkflowUpdateWithWhereUniqueWithoutHospitalInput | Prisma.WorkflowUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.WorkflowUpdateManyWithWhereWithoutHospitalInput | Prisma.WorkflowUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.WorkflowUpdateWithWhereUniqueWithoutBusinessInput | Prisma.WorkflowUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.WorkflowUpdateManyWithWhereWithoutBusinessInput | Prisma.WorkflowUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.WorkflowScalarWhereInput | Prisma.WorkflowScalarWhereInput[]
 }
 
@@ -461,7 +461,7 @@ export type WorkflowUpdateOneRequiredWithoutVersionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.WorkflowUpdateToOneWithWhereWithoutVersionsInput, Prisma.WorkflowUpdateWithoutVersionsInput>, Prisma.WorkflowUncheckedUpdateWithoutVersionsInput>
 }
 
-export type WorkflowCreateWithoutHospitalInput = {
+export type WorkflowCreateWithoutBusinessInput = {
   id?: string
   name: string
   description: string
@@ -472,7 +472,7 @@ export type WorkflowCreateWithoutHospitalInput = {
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutWorkflowInput
 }
 
-export type WorkflowUncheckedCreateWithoutHospitalInput = {
+export type WorkflowUncheckedCreateWithoutBusinessInput = {
   id?: string
   name: string
   description: string
@@ -483,30 +483,30 @@ export type WorkflowUncheckedCreateWithoutHospitalInput = {
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutWorkflowInput
 }
 
-export type WorkflowCreateOrConnectWithoutHospitalInput = {
+export type WorkflowCreateOrConnectWithoutBusinessInput = {
   where: Prisma.WorkflowWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkflowCreateWithoutHospitalInput, Prisma.WorkflowUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.WorkflowCreateWithoutBusinessInput, Prisma.WorkflowUncheckedCreateWithoutBusinessInput>
 }
 
-export type WorkflowCreateManyHospitalInputEnvelope = {
-  data: Prisma.WorkflowCreateManyHospitalInput | Prisma.WorkflowCreateManyHospitalInput[]
+export type WorkflowCreateManyBusinessInputEnvelope = {
+  data: Prisma.WorkflowCreateManyBusinessInput | Prisma.WorkflowCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type WorkflowUpsertWithWhereUniqueWithoutHospitalInput = {
+export type WorkflowUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.WorkflowWhereUniqueInput
-  update: Prisma.XOR<Prisma.WorkflowUpdateWithoutHospitalInput, Prisma.WorkflowUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.WorkflowCreateWithoutHospitalInput, Prisma.WorkflowUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.WorkflowUpdateWithoutBusinessInput, Prisma.WorkflowUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.WorkflowCreateWithoutBusinessInput, Prisma.WorkflowUncheckedCreateWithoutBusinessInput>
 }
 
-export type WorkflowUpdateWithWhereUniqueWithoutHospitalInput = {
+export type WorkflowUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.WorkflowWhereUniqueInput
-  data: Prisma.XOR<Prisma.WorkflowUpdateWithoutHospitalInput, Prisma.WorkflowUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.WorkflowUpdateWithoutBusinessInput, Prisma.WorkflowUncheckedUpdateWithoutBusinessInput>
 }
 
-export type WorkflowUpdateManyWithWhereWithoutHospitalInput = {
+export type WorkflowUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.WorkflowScalarWhereInput
-  data: Prisma.XOR<Prisma.WorkflowUpdateManyMutationInput, Prisma.WorkflowUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.WorkflowUpdateManyMutationInput, Prisma.WorkflowUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type WorkflowScalarWhereInput = {
@@ -514,7 +514,7 @@ export type WorkflowScalarWhereInput = {
   OR?: Prisma.WorkflowScalarWhereInput[]
   NOT?: Prisma.WorkflowScalarWhereInput | Prisma.WorkflowScalarWhereInput[]
   id?: Prisma.StringFilter<"Workflow"> | string
-  hospitalId?: Prisma.StringFilter<"Workflow"> | string
+  businessId?: Prisma.StringFilter<"Workflow"> | string
   name?: Prisma.StringFilter<"Workflow"> | string
   description?: Prisma.StringFilter<"Workflow"> | string
   status?: Prisma.EnumWorkflowStatusFilter<"Workflow"> | $Enums.WorkflowStatus
@@ -529,13 +529,13 @@ export type WorkflowCreateWithoutPhoneNumbersInput = {
   status?: $Enums.WorkflowStatus
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutWorkflowsInput
+  business: Prisma.BusinessCreateNestedOneWithoutWorkflowsInput
   versions?: Prisma.WorkflowVersionCreateNestedManyWithoutWorkflowInput
 }
 
 export type WorkflowUncheckedCreateWithoutPhoneNumbersInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   name: string
   description: string
   status?: $Enums.WorkflowStatus
@@ -567,13 +567,13 @@ export type WorkflowUpdateWithoutPhoneNumbersInput = {
   status?: Prisma.EnumWorkflowStatusFieldUpdateOperationsInput | $Enums.WorkflowStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutWorkflowsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutWorkflowsNestedInput
   versions?: Prisma.WorkflowVersionUpdateManyWithoutWorkflowNestedInput
 }
 
 export type WorkflowUncheckedUpdateWithoutPhoneNumbersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumWorkflowStatusFieldUpdateOperationsInput | $Enums.WorkflowStatus
@@ -589,13 +589,13 @@ export type WorkflowCreateWithoutVersionsInput = {
   status?: $Enums.WorkflowStatus
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutWorkflowsInput
+  business: Prisma.BusinessCreateNestedOneWithoutWorkflowsInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutWorkflowInput
 }
 
 export type WorkflowUncheckedCreateWithoutVersionsInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   name: string
   description: string
   status?: $Enums.WorkflowStatus
@@ -627,13 +627,13 @@ export type WorkflowUpdateWithoutVersionsInput = {
   status?: Prisma.EnumWorkflowStatusFieldUpdateOperationsInput | $Enums.WorkflowStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutWorkflowsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutWorkflowsNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutWorkflowNestedInput
 }
 
 export type WorkflowUncheckedUpdateWithoutVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumWorkflowStatusFieldUpdateOperationsInput | $Enums.WorkflowStatus
@@ -642,7 +642,7 @@ export type WorkflowUncheckedUpdateWithoutVersionsInput = {
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutWorkflowNestedInput
 }
 
-export type WorkflowCreateManyHospitalInput = {
+export type WorkflowCreateManyBusinessInput = {
   id?: string
   name: string
   description: string
@@ -651,7 +651,7 @@ export type WorkflowCreateManyHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type WorkflowUpdateWithoutHospitalInput = {
+export type WorkflowUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -662,7 +662,7 @@ export type WorkflowUpdateWithoutHospitalInput = {
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutWorkflowNestedInput
 }
 
-export type WorkflowUncheckedUpdateWithoutHospitalInput = {
+export type WorkflowUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -673,7 +673,7 @@ export type WorkflowUncheckedUpdateWithoutHospitalInput = {
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutWorkflowNestedInput
 }
 
-export type WorkflowUncheckedUpdateManyWithoutHospitalInput = {
+export type WorkflowUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -724,13 +724,13 @@ export type WorkflowCountOutputTypeCountPhoneNumbersArgs<ExtArgs extends runtime
 
 export type WorkflowSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   versions?: boolean | Prisma.Workflow$versionsArgs<ExtArgs>
   phoneNumbers?: boolean | Prisma.Workflow$phoneNumbersArgs<ExtArgs>
   _count?: boolean | Prisma.WorkflowCountOutputTypeDefaultArgs<ExtArgs>
@@ -738,29 +738,29 @@ export type WorkflowSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
 
 export type WorkflowSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow"]>
 
 export type WorkflowSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow"]>
 
 export type WorkflowSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   name?: boolean
   description?: boolean
   status?: boolean
@@ -768,30 +768,30 @@ export type WorkflowSelectScalar = {
   updatedAt?: boolean
 }
 
-export type WorkflowOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "name" | "description" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["workflow"]>
+export type WorkflowOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "name" | "description" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["workflow"]>
 export type WorkflowInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   versions?: boolean | Prisma.Workflow$versionsArgs<ExtArgs>
   phoneNumbers?: boolean | Prisma.Workflow$phoneNumbersArgs<ExtArgs>
   _count?: boolean | Prisma.WorkflowCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type WorkflowIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type WorkflowIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 
 export type $WorkflowPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Workflow"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
     versions: Prisma.$WorkflowVersionPayload<ExtArgs>[]
     phoneNumbers: Prisma.$PhoneNumberPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     name: string
     description: string
     status: $Enums.WorkflowStatus
@@ -1191,7 +1191,7 @@ readonly fields: WorkflowFieldRefs;
  */
 export interface Prisma__WorkflowClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   versions<T extends Prisma.Workflow$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workflow$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   phoneNumbers<T extends Prisma.Workflow$phoneNumbersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workflow$phoneNumbersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PhoneNumberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1224,7 +1224,7 @@ export interface Prisma__WorkflowClient<T, Null = never, ExtArgs extends runtime
  */
 export interface WorkflowFieldRefs {
   readonly id: Prisma.FieldRef<"Workflow", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"Workflow", 'String'>
+  readonly businessId: Prisma.FieldRef<"Workflow", 'String'>
   readonly name: Prisma.FieldRef<"Workflow", 'String'>
   readonly description: Prisma.FieldRef<"Workflow", 'String'>
   readonly status: Prisma.FieldRef<"Workflow", 'WorkflowStatus'>

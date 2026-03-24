@@ -40,10 +40,10 @@ export type InsuranceVerificationSumAggregateOutputType = {
 
 export type InsuranceVerificationMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   insurancePlanId: string | null
-  patientId: string | null
-  patientName: string | null
+  callerId: string | null
+  callerName: string | null
   memberNumber: string | null
   groupNumber: string | null
   verificationDate: Date | null
@@ -60,10 +60,10 @@ export type InsuranceVerificationMinAggregateOutputType = {
 
 export type InsuranceVerificationMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   insurancePlanId: string | null
-  patientId: string | null
-  patientName: string | null
+  callerId: string | null
+  callerName: string | null
   memberNumber: string | null
   groupNumber: string | null
   verificationDate: Date | null
@@ -80,10 +80,10 @@ export type InsuranceVerificationMaxAggregateOutputType = {
 
 export type InsuranceVerificationCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   insurancePlanId: number
-  patientId: number
-  patientName: number
+  callerId: number
+  callerName: number
   memberNumber: number
   groupNumber: number
   verificationDate: number
@@ -115,10 +115,10 @@ export type InsuranceVerificationSumAggregateInputType = {
 
 export type InsuranceVerificationMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   insurancePlanId?: true
-  patientId?: true
-  patientName?: true
+  callerId?: true
+  callerName?: true
   memberNumber?: true
   groupNumber?: true
   verificationDate?: true
@@ -135,10 +135,10 @@ export type InsuranceVerificationMinAggregateInputType = {
 
 export type InsuranceVerificationMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   insurancePlanId?: true
-  patientId?: true
-  patientName?: true
+  callerId?: true
+  callerName?: true
   memberNumber?: true
   groupNumber?: true
   verificationDate?: true
@@ -155,10 +155,10 @@ export type InsuranceVerificationMaxAggregateInputType = {
 
 export type InsuranceVerificationCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   insurancePlanId?: true
-  patientId?: true
-  patientName?: true
+  callerId?: true
+  callerName?: true
   memberNumber?: true
   groupNumber?: true
   verificationDate?: true
@@ -263,10 +263,10 @@ export type InsuranceVerificationGroupByArgs<ExtArgs extends runtime.Types.Exten
 
 export type InsuranceVerificationGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   insurancePlanId: string
-  patientId: string | null
-  patientName: string
+  callerId: string | null
+  callerName: string
   memberNumber: string
   groupNumber: string | null
   verificationDate: Date
@@ -307,10 +307,10 @@ export type InsuranceVerificationWhereInput = {
   OR?: Prisma.InsuranceVerificationWhereInput[]
   NOT?: Prisma.InsuranceVerificationWhereInput | Prisma.InsuranceVerificationWhereInput[]
   id?: Prisma.StringFilter<"InsuranceVerification"> | string
-  hospitalId?: Prisma.StringFilter<"InsuranceVerification"> | string
+  businessId?: Prisma.StringFilter<"InsuranceVerification"> | string
   insurancePlanId?: Prisma.StringFilter<"InsuranceVerification"> | string
-  patientId?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
-  patientName?: Prisma.StringFilter<"InsuranceVerification"> | string
+  callerId?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
+  callerName?: Prisma.StringFilter<"InsuranceVerification"> | string
   memberNumber?: Prisma.StringFilter<"InsuranceVerification"> | string
   groupNumber?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
   verificationDate?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
@@ -324,17 +324,17 @@ export type InsuranceVerificationWhereInput = {
   notes?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
   createdAt?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   insurancePlan?: Prisma.XOR<Prisma.InsurancePlanScalarRelationFilter, Prisma.InsurancePlanWhereInput>
-  patient?: Prisma.XOR<Prisma.PatientNullableScalarRelationFilter, Prisma.PatientWhereInput> | null
+  caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
 }
 
 export type InsuranceVerificationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   insurancePlanId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientName?: Prisma.SortOrder
+  callerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerName?: Prisma.SortOrder
   memberNumber?: Prisma.SortOrder
   groupNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   verificationDate?: Prisma.SortOrder
@@ -348,9 +348,9 @@ export type InsuranceVerificationOrderByWithRelationInput = {
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
   insurancePlan?: Prisma.InsurancePlanOrderByWithRelationInput
-  patient?: Prisma.PatientOrderByWithRelationInput
+  caller?: Prisma.CallerOrderByWithRelationInput
 }
 
 export type InsuranceVerificationWhereUniqueInput = Prisma.AtLeast<{
@@ -358,10 +358,10 @@ export type InsuranceVerificationWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.InsuranceVerificationWhereInput | Prisma.InsuranceVerificationWhereInput[]
   OR?: Prisma.InsuranceVerificationWhereInput[]
   NOT?: Prisma.InsuranceVerificationWhereInput | Prisma.InsuranceVerificationWhereInput[]
-  hospitalId?: Prisma.StringFilter<"InsuranceVerification"> | string
+  businessId?: Prisma.StringFilter<"InsuranceVerification"> | string
   insurancePlanId?: Prisma.StringFilter<"InsuranceVerification"> | string
-  patientId?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
-  patientName?: Prisma.StringFilter<"InsuranceVerification"> | string
+  callerId?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
+  callerName?: Prisma.StringFilter<"InsuranceVerification"> | string
   memberNumber?: Prisma.StringFilter<"InsuranceVerification"> | string
   groupNumber?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
   verificationDate?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
@@ -375,17 +375,17 @@ export type InsuranceVerificationWhereUniqueInput = Prisma.AtLeast<{
   notes?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
   createdAt?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   insurancePlan?: Prisma.XOR<Prisma.InsurancePlanScalarRelationFilter, Prisma.InsurancePlanWhereInput>
-  patient?: Prisma.XOR<Prisma.PatientNullableScalarRelationFilter, Prisma.PatientWhereInput> | null
+  caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
 }, "id">
 
 export type InsuranceVerificationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   insurancePlanId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientName?: Prisma.SortOrder
+  callerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerName?: Prisma.SortOrder
   memberNumber?: Prisma.SortOrder
   groupNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   verificationDate?: Prisma.SortOrder
@@ -411,10 +411,10 @@ export type InsuranceVerificationScalarWhereWithAggregatesInput = {
   OR?: Prisma.InsuranceVerificationScalarWhereWithAggregatesInput[]
   NOT?: Prisma.InsuranceVerificationScalarWhereWithAggregatesInput | Prisma.InsuranceVerificationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"InsuranceVerification"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"InsuranceVerification"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"InsuranceVerification"> | string
   insurancePlanId?: Prisma.StringWithAggregatesFilter<"InsuranceVerification"> | string
-  patientId?: Prisma.StringNullableWithAggregatesFilter<"InsuranceVerification"> | string | null
-  patientName?: Prisma.StringWithAggregatesFilter<"InsuranceVerification"> | string
+  callerId?: Prisma.StringNullableWithAggregatesFilter<"InsuranceVerification"> | string | null
+  callerName?: Prisma.StringWithAggregatesFilter<"InsuranceVerification"> | string
   memberNumber?: Prisma.StringWithAggregatesFilter<"InsuranceVerification"> | string
   groupNumber?: Prisma.StringNullableWithAggregatesFilter<"InsuranceVerification"> | string | null
   verificationDate?: Prisma.DateTimeWithAggregatesFilter<"InsuranceVerification"> | Date | string
@@ -432,7 +432,7 @@ export type InsuranceVerificationScalarWhereWithAggregatesInput = {
 
 export type InsuranceVerificationCreateInput = {
   id?: string
-  patientName: string
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -446,17 +446,17 @@ export type InsuranceVerificationCreateInput = {
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutInsuranceVerificationsInput
+  business: Prisma.BusinessCreateNestedOneWithoutInsuranceVerificationsInput
   insurancePlan: Prisma.InsurancePlanCreateNestedOneWithoutVerificationsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutInsuranceVerificationsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutInsuranceVerificationsInput
 }
 
 export type InsuranceVerificationUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   insurancePlanId: string
-  patientId?: string | null
-  patientName: string
+  callerId?: string | null
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -474,7 +474,7 @@ export type InsuranceVerificationUncheckedCreateInput = {
 
 export type InsuranceVerificationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -488,17 +488,17 @@ export type InsuranceVerificationUpdateInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutInsuranceVerificationsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutInsuranceVerificationsNestedInput
   insurancePlan?: Prisma.InsurancePlanUpdateOneRequiredWithoutVerificationsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutInsuranceVerificationsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutInsuranceVerificationsNestedInput
 }
 
 export type InsuranceVerificationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   insurancePlanId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -516,10 +516,10 @@ export type InsuranceVerificationUncheckedUpdateInput = {
 
 export type InsuranceVerificationCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   insurancePlanId: string
-  patientId?: string | null
-  patientName: string
+  callerId?: string | null
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -537,7 +537,7 @@ export type InsuranceVerificationCreateManyInput = {
 
 export type InsuranceVerificationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -555,10 +555,10 @@ export type InsuranceVerificationUpdateManyMutationInput = {
 
 export type InsuranceVerificationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   insurancePlanId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -586,10 +586,10 @@ export type InsuranceVerificationOrderByRelationAggregateInput = {
 
 export type InsuranceVerificationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   insurancePlanId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
   memberNumber?: Prisma.SortOrder
   groupNumber?: Prisma.SortOrder
   verificationDate?: Prisma.SortOrder
@@ -613,10 +613,10 @@ export type InsuranceVerificationAvgOrderByAggregateInput = {
 
 export type InsuranceVerificationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   insurancePlanId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
   memberNumber?: Prisma.SortOrder
   groupNumber?: Prisma.SortOrder
   verificationDate?: Prisma.SortOrder
@@ -633,10 +633,10 @@ export type InsuranceVerificationMaxOrderByAggregateInput = {
 
 export type InsuranceVerificationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   insurancePlanId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
   memberNumber?: Prisma.SortOrder
   groupNumber?: Prisma.SortOrder
   verificationDate?: Prisma.SortOrder
@@ -657,87 +657,87 @@ export type InsuranceVerificationSumOrderByAggregateInput = {
   deductibleMet?: Prisma.SortOrder
 }
 
-export type InsuranceVerificationCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput> | Prisma.InsuranceVerificationCreateWithoutHospitalInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput | Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyHospitalInputEnvelope
+export type InsuranceVerificationCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput> | Prisma.InsuranceVerificationCreateWithoutBusinessInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput | Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyBusinessInputEnvelope
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
 }
 
-export type InsuranceVerificationUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput> | Prisma.InsuranceVerificationCreateWithoutHospitalInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput | Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyHospitalInputEnvelope
+export type InsuranceVerificationUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput> | Prisma.InsuranceVerificationCreateWithoutBusinessInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput | Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyBusinessInputEnvelope
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
 }
 
-export type InsuranceVerificationUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput> | Prisma.InsuranceVerificationCreateWithoutHospitalInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput | Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutHospitalInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyHospitalInputEnvelope
+export type InsuranceVerificationUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput> | Prisma.InsuranceVerificationCreateWithoutBusinessInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput | Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutBusinessInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyBusinessInputEnvelope
   set?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   disconnect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   delete?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
-  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutHospitalInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutHospitalInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutBusinessInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutBusinessInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.InsuranceVerificationScalarWhereInput | Prisma.InsuranceVerificationScalarWhereInput[]
 }
 
-export type InsuranceVerificationUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput> | Prisma.InsuranceVerificationCreateWithoutHospitalInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput | Prisma.InsuranceVerificationCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutHospitalInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyHospitalInputEnvelope
+export type InsuranceVerificationUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput> | Prisma.InsuranceVerificationCreateWithoutBusinessInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput | Prisma.InsuranceVerificationCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutBusinessInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyBusinessInputEnvelope
   set?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   disconnect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   delete?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
-  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutHospitalInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutHospitalInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutBusinessInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutBusinessInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.InsuranceVerificationScalarWhereInput | Prisma.InsuranceVerificationScalarWhereInput[]
 }
 
-export type InsuranceVerificationCreateNestedManyWithoutPatientInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput> | Prisma.InsuranceVerificationCreateWithoutPatientInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput | Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyPatientInputEnvelope
+export type InsuranceVerificationCreateNestedManyWithoutCallerInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput> | Prisma.InsuranceVerificationCreateWithoutCallerInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput | Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyCallerInputEnvelope
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
 }
 
-export type InsuranceVerificationUncheckedCreateNestedManyWithoutPatientInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput> | Prisma.InsuranceVerificationCreateWithoutPatientInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput | Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyPatientInputEnvelope
+export type InsuranceVerificationUncheckedCreateNestedManyWithoutCallerInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput> | Prisma.InsuranceVerificationCreateWithoutCallerInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput | Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyCallerInputEnvelope
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
 }
 
-export type InsuranceVerificationUpdateManyWithoutPatientNestedInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput> | Prisma.InsuranceVerificationCreateWithoutPatientInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput | Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput[]
-  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutPatientInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutPatientInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyPatientInputEnvelope
+export type InsuranceVerificationUpdateManyWithoutCallerNestedInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput> | Prisma.InsuranceVerificationCreateWithoutCallerInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput | Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput[]
+  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutCallerInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutCallerInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyCallerInputEnvelope
   set?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   disconnect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   delete?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
-  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutPatientInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutPatientInput[]
-  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutPatientInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutPatientInput[]
+  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutCallerInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutCallerInput[]
+  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutCallerInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutCallerInput[]
   deleteMany?: Prisma.InsuranceVerificationScalarWhereInput | Prisma.InsuranceVerificationScalarWhereInput[]
 }
 
-export type InsuranceVerificationUncheckedUpdateManyWithoutPatientNestedInput = {
-  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput> | Prisma.InsuranceVerificationCreateWithoutPatientInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput | Prisma.InsuranceVerificationCreateOrConnectWithoutPatientInput[]
-  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutPatientInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutPatientInput[]
-  createMany?: Prisma.InsuranceVerificationCreateManyPatientInputEnvelope
+export type InsuranceVerificationUncheckedUpdateManyWithoutCallerNestedInput = {
+  create?: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput> | Prisma.InsuranceVerificationCreateWithoutCallerInput[] | Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput | Prisma.InsuranceVerificationCreateOrConnectWithoutCallerInput[]
+  upsert?: Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutCallerInput | Prisma.InsuranceVerificationUpsertWithWhereUniqueWithoutCallerInput[]
+  createMany?: Prisma.InsuranceVerificationCreateManyCallerInputEnvelope
   set?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   disconnect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   delete?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
   connect?: Prisma.InsuranceVerificationWhereUniqueInput | Prisma.InsuranceVerificationWhereUniqueInput[]
-  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutPatientInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutPatientInput[]
-  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutPatientInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutPatientInput[]
+  update?: Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutCallerInput | Prisma.InsuranceVerificationUpdateWithWhereUniqueWithoutCallerInput[]
+  updateMany?: Prisma.InsuranceVerificationUpdateManyWithWhereWithoutCallerInput | Prisma.InsuranceVerificationUpdateManyWithWhereWithoutCallerInput[]
   deleteMany?: Prisma.InsuranceVerificationScalarWhereInput | Prisma.InsuranceVerificationScalarWhereInput[]
 }
 
@@ -787,9 +787,9 @@ export type EnumEligibilityStatusFieldUpdateOperationsInput = {
   set?: $Enums.EligibilityStatus
 }
 
-export type InsuranceVerificationCreateWithoutHospitalInput = {
+export type InsuranceVerificationCreateWithoutBusinessInput = {
   id?: string
-  patientName: string
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -804,14 +804,14 @@ export type InsuranceVerificationCreateWithoutHospitalInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   insurancePlan: Prisma.InsurancePlanCreateNestedOneWithoutVerificationsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutInsuranceVerificationsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutInsuranceVerificationsInput
 }
 
-export type InsuranceVerificationUncheckedCreateWithoutHospitalInput = {
+export type InsuranceVerificationUncheckedCreateWithoutBusinessInput = {
   id?: string
   insurancePlanId: string
-  patientId?: string | null
-  patientName: string
+  callerId?: string | null
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -827,30 +827,30 @@ export type InsuranceVerificationUncheckedCreateWithoutHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type InsuranceVerificationCreateOrConnectWithoutHospitalInput = {
+export type InsuranceVerificationCreateOrConnectWithoutBusinessInput = {
   where: Prisma.InsuranceVerificationWhereUniqueInput
-  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput>
 }
 
-export type InsuranceVerificationCreateManyHospitalInputEnvelope = {
-  data: Prisma.InsuranceVerificationCreateManyHospitalInput | Prisma.InsuranceVerificationCreateManyHospitalInput[]
+export type InsuranceVerificationCreateManyBusinessInputEnvelope = {
+  data: Prisma.InsuranceVerificationCreateManyBusinessInput | Prisma.InsuranceVerificationCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type InsuranceVerificationUpsertWithWhereUniqueWithoutHospitalInput = {
+export type InsuranceVerificationUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.InsuranceVerificationWhereUniqueInput
-  update: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedCreateWithoutBusinessInput>
 }
 
-export type InsuranceVerificationUpdateWithWhereUniqueWithoutHospitalInput = {
+export type InsuranceVerificationUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.InsuranceVerificationWhereUniqueInput
-  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutHospitalInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutBusinessInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutBusinessInput>
 }
 
-export type InsuranceVerificationUpdateManyWithWhereWithoutHospitalInput = {
+export type InsuranceVerificationUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.InsuranceVerificationScalarWhereInput
-  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateManyMutationInput, Prisma.InsuranceVerificationUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateManyMutationInput, Prisma.InsuranceVerificationUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type InsuranceVerificationScalarWhereInput = {
@@ -858,10 +858,10 @@ export type InsuranceVerificationScalarWhereInput = {
   OR?: Prisma.InsuranceVerificationScalarWhereInput[]
   NOT?: Prisma.InsuranceVerificationScalarWhereInput | Prisma.InsuranceVerificationScalarWhereInput[]
   id?: Prisma.StringFilter<"InsuranceVerification"> | string
-  hospitalId?: Prisma.StringFilter<"InsuranceVerification"> | string
+  businessId?: Prisma.StringFilter<"InsuranceVerification"> | string
   insurancePlanId?: Prisma.StringFilter<"InsuranceVerification"> | string
-  patientId?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
-  patientName?: Prisma.StringFilter<"InsuranceVerification"> | string
+  callerId?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
+  callerName?: Prisma.StringFilter<"InsuranceVerification"> | string
   memberNumber?: Prisma.StringFilter<"InsuranceVerification"> | string
   groupNumber?: Prisma.StringNullableFilter<"InsuranceVerification"> | string | null
   verificationDate?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
@@ -877,9 +877,9 @@ export type InsuranceVerificationScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"InsuranceVerification"> | Date | string
 }
 
-export type InsuranceVerificationCreateWithoutPatientInput = {
+export type InsuranceVerificationCreateWithoutCallerInput = {
   id?: string
-  patientName: string
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -893,15 +893,15 @@ export type InsuranceVerificationCreateWithoutPatientInput = {
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutInsuranceVerificationsInput
+  business: Prisma.BusinessCreateNestedOneWithoutInsuranceVerificationsInput
   insurancePlan: Prisma.InsurancePlanCreateNestedOneWithoutVerificationsInput
 }
 
-export type InsuranceVerificationUncheckedCreateWithoutPatientInput = {
+export type InsuranceVerificationUncheckedCreateWithoutCallerInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   insurancePlanId: string
-  patientName: string
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -917,35 +917,35 @@ export type InsuranceVerificationUncheckedCreateWithoutPatientInput = {
   updatedAt?: Date | string
 }
 
-export type InsuranceVerificationCreateOrConnectWithoutPatientInput = {
+export type InsuranceVerificationCreateOrConnectWithoutCallerInput = {
   where: Prisma.InsuranceVerificationWhereUniqueInput
-  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput>
+  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput>
 }
 
-export type InsuranceVerificationCreateManyPatientInputEnvelope = {
-  data: Prisma.InsuranceVerificationCreateManyPatientInput | Prisma.InsuranceVerificationCreateManyPatientInput[]
+export type InsuranceVerificationCreateManyCallerInputEnvelope = {
+  data: Prisma.InsuranceVerificationCreateManyCallerInput | Prisma.InsuranceVerificationCreateManyCallerInput[]
   skipDuplicates?: boolean
 }
 
-export type InsuranceVerificationUpsertWithWhereUniqueWithoutPatientInput = {
+export type InsuranceVerificationUpsertWithWhereUniqueWithoutCallerInput = {
   where: Prisma.InsuranceVerificationWhereUniqueInput
-  update: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutPatientInput>
-  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedCreateWithoutPatientInput>
+  update: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutCallerInput>
+  create: Prisma.XOR<Prisma.InsuranceVerificationCreateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedCreateWithoutCallerInput>
 }
 
-export type InsuranceVerificationUpdateWithWhereUniqueWithoutPatientInput = {
+export type InsuranceVerificationUpdateWithWhereUniqueWithoutCallerInput = {
   where: Prisma.InsuranceVerificationWhereUniqueInput
-  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutPatientInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutPatientInput>
+  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateWithoutCallerInput, Prisma.InsuranceVerificationUncheckedUpdateWithoutCallerInput>
 }
 
-export type InsuranceVerificationUpdateManyWithWhereWithoutPatientInput = {
+export type InsuranceVerificationUpdateManyWithWhereWithoutCallerInput = {
   where: Prisma.InsuranceVerificationScalarWhereInput
-  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateManyMutationInput, Prisma.InsuranceVerificationUncheckedUpdateManyWithoutPatientInput>
+  data: Prisma.XOR<Prisma.InsuranceVerificationUpdateManyMutationInput, Prisma.InsuranceVerificationUncheckedUpdateManyWithoutCallerInput>
 }
 
 export type InsuranceVerificationCreateWithoutInsurancePlanInput = {
   id?: string
-  patientName: string
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -959,15 +959,15 @@ export type InsuranceVerificationCreateWithoutInsurancePlanInput = {
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutInsuranceVerificationsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutInsuranceVerificationsInput
+  business: Prisma.BusinessCreateNestedOneWithoutInsuranceVerificationsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutInsuranceVerificationsInput
 }
 
 export type InsuranceVerificationUncheckedCreateWithoutInsurancePlanInput = {
   id?: string
-  hospitalId: string
-  patientId?: string | null
-  patientName: string
+  businessId: string
+  callerId?: string | null
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -1009,11 +1009,11 @@ export type InsuranceVerificationUpdateManyWithWhereWithoutInsurancePlanInput = 
   data: Prisma.XOR<Prisma.InsuranceVerificationUpdateManyMutationInput, Prisma.InsuranceVerificationUncheckedUpdateManyWithoutInsurancePlanInput>
 }
 
-export type InsuranceVerificationCreateManyHospitalInput = {
+export type InsuranceVerificationCreateManyBusinessInput = {
   id?: string
   insurancePlanId: string
-  patientId?: string | null
-  patientName: string
+  callerId?: string | null
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -1029,9 +1029,9 @@ export type InsuranceVerificationCreateManyHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type InsuranceVerificationUpdateWithoutHospitalInput = {
+export type InsuranceVerificationUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1046,14 +1046,14 @@ export type InsuranceVerificationUpdateWithoutHospitalInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   insurancePlan?: Prisma.InsurancePlanUpdateOneRequiredWithoutVerificationsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutInsuranceVerificationsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutInsuranceVerificationsNestedInput
 }
 
-export type InsuranceVerificationUncheckedUpdateWithoutHospitalInput = {
+export type InsuranceVerificationUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   insurancePlanId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1069,11 +1069,11 @@ export type InsuranceVerificationUncheckedUpdateWithoutHospitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type InsuranceVerificationUncheckedUpdateManyWithoutHospitalInput = {
+export type InsuranceVerificationUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   insurancePlanId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1089,11 +1089,11 @@ export type InsuranceVerificationUncheckedUpdateManyWithoutHospitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type InsuranceVerificationCreateManyPatientInput = {
+export type InsuranceVerificationCreateManyCallerInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   insurancePlanId: string
-  patientName: string
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -1109,9 +1109,9 @@ export type InsuranceVerificationCreateManyPatientInput = {
   updatedAt?: Date | string
 }
 
-export type InsuranceVerificationUpdateWithoutPatientInput = {
+export type InsuranceVerificationUpdateWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1125,15 +1125,15 @@ export type InsuranceVerificationUpdateWithoutPatientInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutInsuranceVerificationsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutInsuranceVerificationsNestedInput
   insurancePlan?: Prisma.InsurancePlanUpdateOneRequiredWithoutVerificationsNestedInput
 }
 
-export type InsuranceVerificationUncheckedUpdateWithoutPatientInput = {
+export type InsuranceVerificationUncheckedUpdateWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   insurancePlanId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1149,11 +1149,11 @@ export type InsuranceVerificationUncheckedUpdateWithoutPatientInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type InsuranceVerificationUncheckedUpdateManyWithoutPatientInput = {
+export type InsuranceVerificationUncheckedUpdateManyWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   insurancePlanId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1171,9 +1171,9 @@ export type InsuranceVerificationUncheckedUpdateManyWithoutPatientInput = {
 
 export type InsuranceVerificationCreateManyInsurancePlanInput = {
   id?: string
-  hospitalId: string
-  patientId?: string | null
-  patientName: string
+  businessId: string
+  callerId?: string | null
+  callerName: string
   memberNumber: string
   groupNumber?: string | null
   verificationDate?: Date | string
@@ -1191,7 +1191,7 @@ export type InsuranceVerificationCreateManyInsurancePlanInput = {
 
 export type InsuranceVerificationUpdateWithoutInsurancePlanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1205,15 +1205,15 @@ export type InsuranceVerificationUpdateWithoutInsurancePlanInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutInsuranceVerificationsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutInsuranceVerificationsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutInsuranceVerificationsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutInsuranceVerificationsNestedInput
 }
 
 export type InsuranceVerificationUncheckedUpdateWithoutInsurancePlanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1231,9 +1231,9 @@ export type InsuranceVerificationUncheckedUpdateWithoutInsurancePlanInput = {
 
 export type InsuranceVerificationUncheckedUpdateManyWithoutInsurancePlanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
   memberNumber?: Prisma.StringFieldUpdateOperationsInput | string
   groupNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1253,10 +1253,10 @@ export type InsuranceVerificationUncheckedUpdateManyWithoutInsurancePlanInput = 
 
 export type InsuranceVerificationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   insurancePlanId?: boolean
-  patientId?: boolean
-  patientName?: boolean
+  callerId?: boolean
+  callerName?: boolean
   memberNumber?: boolean
   groupNumber?: boolean
   verificationDate?: boolean
@@ -1270,17 +1270,17 @@ export type InsuranceVerificationSelect<ExtArgs extends runtime.Types.Extensions
   notes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   insurancePlan?: boolean | Prisma.InsurancePlanDefaultArgs<ExtArgs>
-  patient?: boolean | Prisma.InsuranceVerification$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.InsuranceVerification$callerArgs<ExtArgs>
 }, ExtArgs["result"]["insuranceVerification"]>
 
 export type InsuranceVerificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   insurancePlanId?: boolean
-  patientId?: boolean
-  patientName?: boolean
+  callerId?: boolean
+  callerName?: boolean
   memberNumber?: boolean
   groupNumber?: boolean
   verificationDate?: boolean
@@ -1294,17 +1294,17 @@ export type InsuranceVerificationSelectCreateManyAndReturn<ExtArgs extends runti
   notes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   insurancePlan?: boolean | Prisma.InsurancePlanDefaultArgs<ExtArgs>
-  patient?: boolean | Prisma.InsuranceVerification$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.InsuranceVerification$callerArgs<ExtArgs>
 }, ExtArgs["result"]["insuranceVerification"]>
 
 export type InsuranceVerificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   insurancePlanId?: boolean
-  patientId?: boolean
-  patientName?: boolean
+  callerId?: boolean
+  callerName?: boolean
   memberNumber?: boolean
   groupNumber?: boolean
   verificationDate?: boolean
@@ -1318,17 +1318,17 @@ export type InsuranceVerificationSelectUpdateManyAndReturn<ExtArgs extends runti
   notes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   insurancePlan?: boolean | Prisma.InsurancePlanDefaultArgs<ExtArgs>
-  patient?: boolean | Prisma.InsuranceVerification$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.InsuranceVerification$callerArgs<ExtArgs>
 }, ExtArgs["result"]["insuranceVerification"]>
 
 export type InsuranceVerificationSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   insurancePlanId?: boolean
-  patientId?: boolean
-  patientName?: boolean
+  callerId?: boolean
+  callerName?: boolean
   memberNumber?: boolean
   groupNumber?: boolean
   verificationDate?: boolean
@@ -1344,36 +1344,36 @@ export type InsuranceVerificationSelectScalar = {
   updatedAt?: boolean
 }
 
-export type InsuranceVerificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "insurancePlanId" | "patientId" | "patientName" | "memberNumber" | "groupNumber" | "verificationDate" | "eligibilityStatus" | "authorizationRequired" | "authorizationNumber" | "coverageDetails" | "copay" | "deductible" | "deductibleMet" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["insuranceVerification"]>
+export type InsuranceVerificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "insurancePlanId" | "callerId" | "callerName" | "memberNumber" | "groupNumber" | "verificationDate" | "eligibilityStatus" | "authorizationRequired" | "authorizationNumber" | "coverageDetails" | "copay" | "deductible" | "deductibleMet" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["insuranceVerification"]>
 export type InsuranceVerificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   insurancePlan?: boolean | Prisma.InsurancePlanDefaultArgs<ExtArgs>
-  patient?: boolean | Prisma.InsuranceVerification$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.InsuranceVerification$callerArgs<ExtArgs>
 }
 export type InsuranceVerificationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   insurancePlan?: boolean | Prisma.InsurancePlanDefaultArgs<ExtArgs>
-  patient?: boolean | Prisma.InsuranceVerification$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.InsuranceVerification$callerArgs<ExtArgs>
 }
 export type InsuranceVerificationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   insurancePlan?: boolean | Prisma.InsurancePlanDefaultArgs<ExtArgs>
-  patient?: boolean | Prisma.InsuranceVerification$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.InsuranceVerification$callerArgs<ExtArgs>
 }
 
 export type $InsuranceVerificationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "InsuranceVerification"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
     insurancePlan: Prisma.$InsurancePlanPayload<ExtArgs>
-    patient: Prisma.$PatientPayload<ExtArgs> | null
+    caller: Prisma.$CallerPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     insurancePlanId: string
-    patientId: string | null
-    patientName: string
+    callerId: string | null
+    callerName: string
     memberNumber: string
     groupNumber: string | null
     verificationDate: Date
@@ -1781,9 +1781,9 @@ readonly fields: InsuranceVerificationFieldRefs;
  */
 export interface Prisma__InsuranceVerificationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   insurancePlan<T extends Prisma.InsurancePlanDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InsurancePlanDefaultArgs<ExtArgs>>): Prisma.Prisma__InsurancePlanClient<runtime.Types.Result.GetResult<Prisma.$InsurancePlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  patient<T extends Prisma.InsuranceVerification$patientArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InsuranceVerification$patientArgs<ExtArgs>>): Prisma.Prisma__PatientClient<runtime.Types.Result.GetResult<Prisma.$PatientPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  caller<T extends Prisma.InsuranceVerification$callerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InsuranceVerification$callerArgs<ExtArgs>>): Prisma.Prisma__CallerClient<runtime.Types.Result.GetResult<Prisma.$CallerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1814,10 +1814,10 @@ export interface Prisma__InsuranceVerificationClient<T, Null = never, ExtArgs ex
  */
 export interface InsuranceVerificationFieldRefs {
   readonly id: Prisma.FieldRef<"InsuranceVerification", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"InsuranceVerification", 'String'>
+  readonly businessId: Prisma.FieldRef<"InsuranceVerification", 'String'>
   readonly insurancePlanId: Prisma.FieldRef<"InsuranceVerification", 'String'>
-  readonly patientId: Prisma.FieldRef<"InsuranceVerification", 'String'>
-  readonly patientName: Prisma.FieldRef<"InsuranceVerification", 'String'>
+  readonly callerId: Prisma.FieldRef<"InsuranceVerification", 'String'>
+  readonly callerName: Prisma.FieldRef<"InsuranceVerification", 'String'>
   readonly memberNumber: Prisma.FieldRef<"InsuranceVerification", 'String'>
   readonly groupNumber: Prisma.FieldRef<"InsuranceVerification", 'String'>
   readonly verificationDate: Prisma.FieldRef<"InsuranceVerification", 'DateTime'>
@@ -2227,22 +2227,22 @@ export type InsuranceVerificationDeleteManyArgs<ExtArgs extends runtime.Types.Ex
 }
 
 /**
- * InsuranceVerification.patient
+ * InsuranceVerification.caller
  */
-export type InsuranceVerification$patientArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type InsuranceVerification$callerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Patient
+   * Select specific fields to fetch from the Caller
    */
-  select?: Prisma.PatientSelect<ExtArgs> | null
+  select?: Prisma.CallerSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Patient
+   * Omit specific fields from the Caller
    */
-  omit?: Prisma.PatientOmit<ExtArgs> | null
+  omit?: Prisma.CallerOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PatientInclude<ExtArgs> | null
-  where?: Prisma.PatientWhereInput
+  include?: Prisma.CallerInclude<ExtArgs> | null
+  where?: Prisma.CallerWhereInput
 }
 
 /**

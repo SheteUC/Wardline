@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Logger } from '@wardline/utils';
 
 export interface AuditLogParams {
-    hospitalId: string;
+    businessId: string;
     userId?: string;
     action: string;
     entityType: string;
@@ -25,7 +25,7 @@ export class AuditService {
         try {
             await this.prisma.auditLog.create({
                 data: {
-                    hospitalId: params.hospitalId,
+                    businessId: params.businessId,
                     userId: params.userId,
                     action: params.action,
                     entityType: params.entityType,
@@ -35,7 +35,7 @@ export class AuditService {
             });
 
             this.logger.debug('Audit log created', {
-                hospitalId: params.hospitalId,
+                businessId: params.businessId,
                 userId: params.userId,
                 action: params.action,
                 entityType: params.entityType,
@@ -57,7 +57,7 @@ export class AuditService {
         try {
             await this.prisma.auditLog.createMany({
                 data: entries.map(params => ({
-                    hospitalId: params.hospitalId,
+                    businessId: params.businessId,
                     userId: params.userId,
                     action: params.action,
                     entityType: params.entityType,
@@ -74,11 +74,11 @@ export class AuditService {
 
     /**
      * Query audit logs for a hospital
-     * @param hospitalId Hospital ID
+     * @param businessId Business ID
      * @param options Query options (limit, offset, filters)
      */
     async getAuditLogs(
-        hospitalId: string,
+        businessId: string,
         options?: {
             limit?: number;
             offset?: number;
@@ -88,7 +88,7 @@ export class AuditService {
             endDate?: Date;
         },
     ): Promise<any[]> {
-        const where: any = { hospitalId };
+        const where: any = { businessId };
 
         if (options?.userId) {
             where.userId = options.userId;

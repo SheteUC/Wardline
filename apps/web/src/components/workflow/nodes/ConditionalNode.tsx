@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { GitBranch } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface ConditionalNodeData {
+export interface ConditionalNodeData extends Record<string, unknown> {
     label: string;
     conditionType?: 'intent' | 'sentiment' | 'data_verification' | 'custom_expression';
     conditions?: Array<{

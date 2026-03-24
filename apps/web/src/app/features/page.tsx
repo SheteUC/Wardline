@@ -1,263 +1,224 @@
-import { Brain, Users, Workflow, Shield, Activity, Lock, Phone, Zap, Database, CheckCircle2, ArrowRight } from "lucide-react";
+import {
+  Brain,
+  Users,
+  Workflow,
+  Shield,
+  Activity,
+  Phone,
+  Zap,
+  Database,
+  Check,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
+const STARTER_AGENTS = [
+  "Appointment scheduling",
+  "Billing & payments",
+  "Insurance verification",
+  "General FAQ & info",
+  "Prescription refill requests",
+] as const;
+
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[var(--background)]">
       <SiteHeader />
 
-      {/* Hero */}
-      <section className="container mx-auto px-6 py-24 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-serif font-normal tracking-tight text-foreground mb-6 leading-tight">
-            Complete Hybrid Intelligence Platform
+      <main>
+        <section className="mx-auto max-w-4xl px-6 pt-20 pb-16 text-center lg:px-12">
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+            Everything in one platform
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            A unified system where AI efficiency meets human expertise, protected by medical-grade safety guardrails.
+          <p className="mt-6 text-lg text-muted-foreground">
+            Inbound calls go to the Pipecat voice orchestrator; your team manages agents,
+            workflows, and safety from the Wardline dashboard—no code required.
           </p>
-        </div>
-      </section>
+        </section>
 
-      {/* The Hybrid Model (From Platform Page) */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-tight text-foreground mb-4">
-              The Hybrid Model
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Seamless collaboration between automated agents and clinical staff
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
-                <Brain className="w-8 h-8 text-blue-500" />
+        <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-12">
+          <div className="grid gap-8 md:grid-cols-2">
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Brain className="h-7 w-7 text-primary" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4">AI Agents</h3>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                Pipecat-powered voice AI with Azure Speech and OpenAI GPT-4. Answer calls instantly with natural conversation, emergency detection, and intelligent routing.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">Ultra-low latency streaming (&lt;200ms response)</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">Configurable personas and system prompts</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">Real-time sentiment analysis and escalation</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6">
-                <Users className="w-8 h-8 text-purple-500" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-4">Human Agents</h3>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                Clinical staff and administrators with dedicated dashboards for handling escalated calls, accepting assignments, and monitoring performance in real-time.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">Skill-based routing and specialization matching</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">WebSocket real-time call notifications</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">Full conversation history and context handoff</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Safety & Compliance (From Safety Page) */}
-      <section className="container mx-auto px-6 py-16 bg-accent/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-tight text-foreground mb-4">
-              Safety & Compliance
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Clinical safety is enforced at multiple layers with zero tolerance for errors
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-6">
-                <Lock className="w-6 h-6 text-green-500" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">HIPAA Compliant</h3>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                Full compliance with BAAs for all vendors. TLS 1.3 encryption in transit, AES-256 at rest, and strict access controls.
+              <h2 className="text-2xl font-extrabold text-foreground">AI voice layer</h2>
+              <p className="mt-3 text-muted-foreground leading-relaxed">
+                Real-time speech (Azure), GPT-4 class models, natural TTS. One-problem-at-a-time
+                conversations with always-on emergency keyword detection before the LLM runs.
               </p>
             </div>
-
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-6">
-                <Shield className="w-6 h-6 text-red-500" />
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Users className="h-7 w-7 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Medical Guardrails</h3>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                60+ medical keywords monitored in real-time. Automatic escalation for emergency terms and zero medical advice policy.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6">
-                <Activity className="w-6 h-6 text-blue-500" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Audit Trails</h3>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                Every action, routing decision, and safety event is logged with full context for compliance reporting and QA.
+              <h2 className="text-2xl font-extrabold text-foreground">Human handoff</h2>
+              <p className="mt-3 text-muted-foreground leading-relaxed">
+                Warm transfer to staff when needed; if no one answers, callers can leave voicemail
+                in the same flow. Out-of-scope clinical questions are deflected per policy.
               </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Smart Orchestration (Consolidated) */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-12 items-center mb-24">
-            <div className="flex-1">
-              <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-6">
-                <Workflow className="w-8 h-8 text-green-500" />
-              </div>
-              <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-tight text-foreground mb-4">
-                Visual Workflow Editor
-              </h2>
-              <p className="text-lg text-muted-foreground mb-6">
-                Design custom call flows with our ReactFlow-based drag-and-drop editor. Build sophisticated routing logic without writing code.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">15+ node types including AI agents and human queues</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">Design-time validation blocks unsafe workflows</span>
-                </li>
-              </ul>
-            </div>
-            <div className="flex-1 bg-accent/30 rounded-2xl p-8 border border-border">
-              {/* Abstract representation of workflow */}
-              <div className="space-y-4">
-                 <div className="flex items-center gap-3 p-4 bg-background border border-border rounded-lg shadow-sm">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Start Call</span>
-                </div>
-                <div className="w-0.5 h-4 bg-border mx-auto"></div>
-                <div className="flex items-center gap-3 p-4 bg-background border border-border rounded-lg shadow-sm">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm font-medium">AI Triage</span>
-                </div>
-                <div className="w-0.5 h-4 bg-border mx-auto"></div>
-                <div className="flex items-center gap-3 p-4 bg-background border border-border rounded-lg shadow-sm">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Route to Nurse</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="col-span-full text-center mb-8">
-              <h3 className="text-2xl font-serif font-normal tracking-tight text-foreground">Intelligent Queue Management</h3>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h4 className="font-semibold mb-2">Skill-Based</h4>
-              <p className="text-sm text-muted-foreground">Match agent skills with call requirements</p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h4 className="font-semibold mb-2">Round Robin</h4>
-              <p className="text-sm text-muted-foreground">Distribute calls evenly across agents</p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h4 className="font-semibold mb-2">Least Busy</h4>
-              <p className="text-sm text-muted-foreground">Route to agents with fewest active calls</p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h4 className="font-semibold mb-2">Priority-Based</h4>
-              <p className="text-sm text-muted-foreground">Assign based on seniority and priority</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Technical Capabilities */}
-      <section className="container mx-auto px-6 py-16 bg-accent/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-tight text-foreground mb-4">
-              Enterprise Performance
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Built on a production-ready stack for scale and reliability
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6">
-                <Zap className="w-6 h-6 text-amber-500" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Real-Time Performance</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Redis caching and optimized queries ensure sub-second response times even at high volume.
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-6">
-                <Phone className="w-6 h-6 text-indigo-500" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Telephony Integration</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Seamless Twilio integration for programmable voice and media streams handling.
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-8">
-              <div className="w-12 h-12 bg-teal-500/10 rounded-xl flex items-center justify-center mb-6">
-                <Database className="w-6 h-6 text-teal-500" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">System Integrations</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Connects with TimeTap, NexHealth, and EHR systems for automated scheduling.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="max-w-4xl mx-auto text-center bg-foreground text-background rounded-3xl p-12">
-          <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-tight mb-4">
-            Ready to Transform Your Operations?
+        <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-12">
+          <h2 className="text-center text-2xl font-extrabold text-foreground sm:text-3xl">
+            Five starter agents
           </h2>
-          <p className="text-lg text-background/80 mb-8">
-            Experience the power of hybrid intelligence.
+          <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
+            Deploy from the catalog and configure tool credentials—each agent has clear scope boundaries.
           </p>
-          <Link href="/contact">
-            <button className="bg-background text-foreground px-8 py-4 rounded-full font-medium hover:bg-background/90 text-lg inline-flex items-center gap-2">
-              Schedule Demo <ArrowRight className="w-4 h-4" />
-            </button>
-          </Link>
-        </div>
-      </section>
+          <ul className="mx-auto mt-10 grid max-w-3xl gap-3 sm:grid-cols-2">
+            {STARTER_AGENTS.map((name) => (
+              <li
+                key={name}
+                className="flex items-center gap-3 rounded-2xl bg-[var(--background)] px-4 py-3 text-sm font-semibold text-foreground neo-raised"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Check className="h-4 w-4" />
+                </span>
+                {name}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-12">
+          <div className="rounded-3xl bg-[var(--background)] p-8 lg:p-12 neo-raised">
+            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+              <div>
+                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                  <Workflow className="h-7 w-7 text-primary" />
+                </div>
+                <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">
+                  Visual call flow editor
+                </h2>
+                <p className="mt-4 text-muted-foreground leading-relaxed">
+                  Build greet → intent → route → resolve loops with a drag-and-drop workflow
+                  editor (React Flow). Node types include greeting, intent detection, routing,
+                  collection, human transfer, voicemail, emergency escalation, and more.
+                </p>
+              </div>
+              <div className="space-y-3 rounded-2xl bg-[var(--background)] p-6 neo-inset">
+                <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
+                  <span className="h-2 w-2 rounded-full bg-primary" />
+                  Greet &amp; detect intent
+                </div>
+                <div className="mx-auto h-4 w-0.5 bg-border" />
+                <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
+                  <span className="h-2 w-2 rounded-full bg-accent" />
+                  Route to agent / human
+                </div>
+                <div className="mx-auto h-4 w-0.5 bg-border" />
+                <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Resolve or continue
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-12">
+          <h2 className="text-center text-2xl font-extrabold text-foreground sm:text-3xl">
+            Safety &amp; operations
+          </h2>
+          <div className="mt-10 grid gap-8 md:grid-cols-3">
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-extrabold text-foreground">Safety guard</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Emergency keywords trigger 911 advisory and escalation; clinical questions are
+                deflected with offer to transfer. Owners can add keywords, not remove system defaults.
+              </p>
+            </div>
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Activity className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-extrabold text-foreground">Call intelligence</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Call logs with turn-level detail, tags, and outcomes; voicemails with playback and
+                transcription in the dashboard.
+              </p>
+            </div>
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Phone className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-extrabold text-foreground">Telephony stack</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Twilio for inbound media streams; core API connects orchestrator, workflows, and
+                your business data.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-6 pb-24 lg:px-12">
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Zap className="h-6 w-6 text-amber-500" />
+              </div>
+              <h3 className="text-lg font-extrabold text-foreground">Performance</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Redis-backed core API for caching and scale; designed for production workloads.
+              </p>
+            </div>
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Database className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-extrabold text-foreground">Data layer</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                PostgreSQL for tenants, agents, calls, and voicemails—integrate scheduling and EHR
+                tools per agent.
+              </p>
+            </div>
+            <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-extrabold text-foreground">Compliance posture</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Build on HIPAA-aligned patterns: encrypt in transit, vendor BAAs where applicable,
+                and least-privilege access for your team.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-3xl px-6 pb-24 text-center lg:px-12">
+          <div className="rounded-3xl bg-[var(--background)] p-10 neo-raised">
+            <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">
+              See it on your stack
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Talk to us about pricing, rollout, and integrations.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--background)] px-8 py-4 text-base font-extrabold text-primary neo-raised active:neo-pressed"
+              >
+                Contact sales
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--background)] px-8 py-4 text-base font-bold text-muted-foreground neo-inset"
+              >
+                View pricing
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
 
       <SiteFooter />
     </div>

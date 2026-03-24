@@ -160,7 +160,7 @@ async def create_bot_pipeline(
     
     # Load hospital data
     if context.hospital_id:
-        hospital = await api_client.get_hospital(context.hospital_id)
+        hospital = await api_client.get_business(context.hospital_id)
         if hospital:
             context.hospital_name = hospital.get("name", context.hospital_name)
         

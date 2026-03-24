@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface HumanDirectNodeData {
+export interface HumanDirectNodeData extends Record<string, unknown> {
     label: string;
     agentId?: string;
     agentName?: string;

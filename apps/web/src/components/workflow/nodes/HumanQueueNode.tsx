@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Users, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface HumanQueueNodeData {
+export interface HumanQueueNodeData extends Record<string, unknown> {
     label: string;
     queueId?: string;
     priorityLevel?: number;

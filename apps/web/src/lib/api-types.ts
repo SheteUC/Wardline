@@ -5,20 +5,15 @@ import {
     UserRole,
     WorkflowStatus,
     WorkflowVersionStatus,
-    SentimentLabel,
+    IntegrationCategory,
+    IntegrationStatus,
 } from '@wardline/types';
 
-/**
- * API Response wrapper
- */
 export interface ApiResponse<T> {
     data: T;
     message?: string;
 }
 
-/**
- * Paginated response
- */
 export interface PaginatedResponse<T> {
     data: T[];
     total: number;
@@ -26,180 +21,245 @@ export interface PaginatedResponse<T> {
     pageSize: number;
 }
 
-/**
- * Call list item
- */
+export interface TranscriptSegment {
+    id: string;
+    speaker: 'CALLER' | 'AGENT' | 'SYSTEM';
+    text: string;
+    startTimeMs: number;
+    endTimeMs: number;
+    confidence?: number;
+    createdAt?: string;
+}
+
+export interface VoicemailRecord {
+    id: string;
+    callId: string;
+    businessId: string;
+    callerPhone: string;
+    callerName?: string;
+    recordingUrl: string;
+    transcription?: string;
+    context: string;
+    isListened: boolean;
+    createdAt: string;
+    updatedAt?: string;
+    call?: {
+        tag?: string;
+        startedAt?: string;
+        isEmergency?: boolean;
+    };
+}
+
 export interface CallListItem {
     id: string;
-    hospitalId: string;
+    businessId: string;
     twilioCallSid: string;
     direction: CallDirection;
     status: CallStatus;
+    recordingConsent?: RecordingConsent;
+    tag?: string;
     callerPhone: string;
     callerName?: string;
+    lineLabel?: string;
+    isEmergency: boolean;
+    turnCount: number;
+    hasVoicemail: boolean;
+    voicemailListened: boolean;
     duration: number;
-    recordingConsent: RecordingConsent;
-    wasEmergency: boolean;
-    detectedIntent?: string;
-    sentiment?: SentimentLabel;
     sentimentScore?: number;
-    createdAt: string;
-    updatedAt: string;
+    startedAt: string;
+    endedAt?: string;
 }
 
-/**
- * Call detail
- */
-export interface CallDetail extends CallListItem {
-    recordingUrl?: string;
-    transcriptUrl?: string;
-    summary?: string;
-    extractedFields?: Record<string, unknown>;
-    handoffData?: Record<string, unknown>;
-    metadata?: Record<string, unknown>;
-    transcript?: TranscriptSegment[];
-}
-
-/**
- * Transcript segment
- */
-export interface TranscriptSegment {
+export interface CallDetail {
     id: string;
-    speaker: 'caller' | 'agent' | 'system';
-    text: string;
-    timestamp: number;
-    sentiment?: SentimentLabel;
+    businessId: string;
+    twilioCallSid: string;
+    direction: CallDirection;
+    status: CallStatus;
+    tag?: string;
+    isEmergency: boolean;
+    turnCount: number;
+    startedAt: string;
+    endedAt?: string;
+    recordingUrl?: string;
     sentimentScore?: number;
+    phoneNumber: {
+        id: string;
+        twilioPhoneNumber: string;
+        label: string;
+    };
+    caller?: {
+        id: string;
+        name?: string;
+        phone?: string;
+    };
+    transcriptSegments: TranscriptSegment[];
+    handoffs: Array<{
+        id: string;
+        payload: Record<string, unknown>;
+        createdAt: string;
+    }>;
+    voicemails: VoicemailRecord[];
+    appointments?: Array<{
+        id: string;
+        callerName?: string;
+        scheduledAt?: string;
+        status?: string;
+    }>;
+    prescriptionRefills?: Array<{
+        id: string;
+        medicationName?: string;
+        status?: string;
+    }>;
+    insuranceInquiries?: Array<{
+        id: string;
+        inquiryType?: string;
+        resolved?: boolean;
+    }>;
 }
 
-/**
- * Call analytics data
- */
 export interface CallAnalytics {
     totalCalls: number;
     completedCalls: number;
     abandonedCalls: number;
-    averageDuration: number;
-    averageHoldTime: number;
-    abandonRate: number;
-    emergencyFlags: number;
-    activeEmergencies: number;
-    callVolumeByHour: Array<{
-        hour: string;
-        calls: number;
-        sentiment?: number;
-    }>;
-    intentBreakdown: Array<{
-        intent: string;
-        count: number;
-        percentage: number;
-    }>;
-    sentimentTrend: Array<{
-        date: string;
-        positive: number;
-        neutral: number;
-        negative: number;
-    }>;
+    emergencyCalls: number;
+    voicemailCount: number;
+    avgDurationSeconds: number;
+    callsByTag: Record<string, number>;
 }
 
-/**
- * Workflow list item
- */
+export interface WorkflowVersionListItem {
+    id: string;
+    workflowId: string;
+    versionNumber: number;
+    status: WorkflowVersionStatus;
+    graphJson: unknown;
+    createdByUserId: string;
+    approvedByUserId?: string;
+    publishedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
 export interface WorkflowListItem {
     id: string;
-    hospitalId: string;
+    businessId: string;
     name: string;
     description?: string;
     status: WorkflowStatus;
-    activeVersionId?: string;
-    activeVersion?: {
-        version: number;
-        publishedAt?: string;
-    };
+    versions?: WorkflowVersionListItem[];
     createdAt: string;
     updatedAt: string;
 }
 
-/**
- * Workflow detail
- */
 export interface WorkflowDetail extends WorkflowListItem {
     versions: WorkflowVersionListItem[];
 }
 
-/**
- * Workflow version list item
- */
-export interface WorkflowVersionListItem {
-    id: string;
-    workflowId: string;
-    version: number;
-    status: WorkflowVersionStatus;
-    graphJson: unknown;
-    createdBy: string;
-    approvedBy?: string;
-    publishedAt?: string;
-    createdAt: string;
-}
-
-/**
- * Team member
- */
 export interface TeamMember {
     id: string;
+    businessId: string;
     clerkUserId: string;
     email: string;
     name?: string;
+    fullName?: string;
     avatarUrl?: string;
     role: UserRole;
-    hospitalId: string;
-    isActive: boolean;
+    isActive?: boolean;
     lastSeenAt?: string;
     createdAt: string;
 }
 
-/**
- * Hospital settings
- */
-export interface HospitalSettings {
+export interface BusinessSettings {
     id: string;
     name: string;
-    timezone: string;
-    recordingDefault: 'on' | 'off' | 'ask';
-    maxCallDuration: number;
-    businessHours?: Array<{
-        dayOfWeek: number;
-        startTime: string;
-        endTime: string;
+    slug: string;
+    timeZone?: string;
+    status?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    settings?: {
+        recordingDefault: string;
+        transcriptRetentionDays: number;
+        outOfScopeKeywords: string[];
+        emergencyKeywords: string[];
+    };
+    phoneNumbers?: Array<{
+        id: string;
+        twilioPhoneNumber: string;
+        label: string;
     }>;
-    twilioPhoneNumbers?: string[];
-    integrations?: {
-        timetap?: {
-            enabled: boolean;
-            apiKey?: string;
-        };
-        ehr?: {
-            enabled: boolean;
-            provider?: string;
-        };
+    agents?: Array<{
+        id: string;
+        name: string;
+        status: string;
+        catalogId?: string;
+    }>;
+    _count?: {
+        users: number;
+        phoneNumbers: number;
+        callSessions: number;
+        agents: number;
     };
 }
 
-/**
- * Live call status
- */
-export interface LiveCallStatus {
-    callId: string;
-    status: 'ongoing' | 'waiting' | 'completed';
-    duration: number;
-    currentState?: string;
-    queuePosition?: number;
-    agentId?: string;
+export type HospitalSettings = BusinessSettings;
+
+export interface BusinessIntegration {
+    id: string;
+    businessId: string;
+    category: IntegrationCategory;
+    vendor: string;
+    status: IntegrationStatus;
+    credentialsRef?: string;
+    settings?: Record<string, unknown>;
+    capabilities?: Record<string, unknown>;
+    lastHealthCheckAt?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
-/**
- * System health
- */
+export interface AgentCatalogItem {
+    catalogId: string;
+    name: string;
+    description?: string;
+    scopeBoundary?: string;
+    icon?: string;
+    color?: string;
+    tags?: string[];
+    toolConfigSchema?: Array<{
+        key: string;
+        label: string;
+        type: string;
+        required: boolean;
+        options?: string[];
+        helpText?: string;
+    }>;
+}
+
+export interface AgentListItem {
+    id: string;
+    businessId: string;
+    catalogId: string;
+    name: string;
+    description?: string;
+    status: 'ACTIVE' | 'INACTIVE' | 'PAUSED';
+    toolConfig?: Record<string, unknown>;
+    agentConfig?: Record<string, unknown>;
+    nodeGraph?: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AgentStats {
+    totalCalls: number;
+    resolvedCalls: number;
+    escalatedCalls: number;
+    voicemailCalls: number;
+    resolutionRate: number;
+}
+
 export interface SystemHealth {
     status: 'healthy' | 'degraded' | 'down';
     services: {

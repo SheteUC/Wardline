@@ -26,7 +26,7 @@ export type AggregatePhoneNumber = {
 
 export type PhoneNumberMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   twilioPhoneNumber: string | null
   twilioSid: string | null
   workflowId: string | null
@@ -37,7 +37,7 @@ export type PhoneNumberMinAggregateOutputType = {
 
 export type PhoneNumberMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   twilioPhoneNumber: string | null
   twilioSid: string | null
   workflowId: string | null
@@ -48,7 +48,7 @@ export type PhoneNumberMaxAggregateOutputType = {
 
 export type PhoneNumberCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   twilioPhoneNumber: number
   twilioSid: number
   workflowId: number
@@ -61,7 +61,7 @@ export type PhoneNumberCountAggregateOutputType = {
 
 export type PhoneNumberMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   twilioPhoneNumber?: true
   twilioSid?: true
   workflowId?: true
@@ -72,7 +72,7 @@ export type PhoneNumberMinAggregateInputType = {
 
 export type PhoneNumberMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   twilioPhoneNumber?: true
   twilioSid?: true
   workflowId?: true
@@ -83,7 +83,7 @@ export type PhoneNumberMaxAggregateInputType = {
 
 export type PhoneNumberCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   twilioPhoneNumber?: true
   twilioSid?: true
   workflowId?: true
@@ -167,7 +167,7 @@ export type PhoneNumberGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 
 export type PhoneNumberGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   twilioPhoneNumber: string
   twilioSid: string
   workflowId: string | null
@@ -199,28 +199,28 @@ export type PhoneNumberWhereInput = {
   OR?: Prisma.PhoneNumberWhereInput[]
   NOT?: Prisma.PhoneNumberWhereInput | Prisma.PhoneNumberWhereInput[]
   id?: Prisma.StringFilter<"PhoneNumber"> | string
-  hospitalId?: Prisma.StringFilter<"PhoneNumber"> | string
+  businessId?: Prisma.StringFilter<"PhoneNumber"> | string
   twilioPhoneNumber?: Prisma.StringFilter<"PhoneNumber"> | string
   twilioSid?: Prisma.StringFilter<"PhoneNumber"> | string
   workflowId?: Prisma.StringNullableFilter<"PhoneNumber"> | string | null
   label?: Prisma.StringFilter<"PhoneNumber"> | string
   createdAt?: Prisma.DateTimeFilter<"PhoneNumber"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PhoneNumber"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   workflow?: Prisma.XOR<Prisma.WorkflowNullableScalarRelationFilter, Prisma.WorkflowWhereInput> | null
   callSessions?: Prisma.CallSessionListRelationFilter
 }
 
 export type PhoneNumberOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   twilioPhoneNumber?: Prisma.SortOrder
   twilioSid?: Prisma.SortOrder
   workflowId?: Prisma.SortOrderInput | Prisma.SortOrder
   label?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
   workflow?: Prisma.WorkflowOrderByWithRelationInput
   callSessions?: Prisma.CallSessionOrderByRelationAggregateInput
 }
@@ -232,19 +232,19 @@ export type PhoneNumberWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.PhoneNumberWhereInput | Prisma.PhoneNumberWhereInput[]
   OR?: Prisma.PhoneNumberWhereInput[]
   NOT?: Prisma.PhoneNumberWhereInput | Prisma.PhoneNumberWhereInput[]
-  hospitalId?: Prisma.StringFilter<"PhoneNumber"> | string
+  businessId?: Prisma.StringFilter<"PhoneNumber"> | string
   workflowId?: Prisma.StringNullableFilter<"PhoneNumber"> | string | null
   label?: Prisma.StringFilter<"PhoneNumber"> | string
   createdAt?: Prisma.DateTimeFilter<"PhoneNumber"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PhoneNumber"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   workflow?: Prisma.XOR<Prisma.WorkflowNullableScalarRelationFilter, Prisma.WorkflowWhereInput> | null
   callSessions?: Prisma.CallSessionListRelationFilter
 }, "id" | "twilioPhoneNumber" | "twilioSid">
 
 export type PhoneNumberOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   twilioPhoneNumber?: Prisma.SortOrder
   twilioSid?: Prisma.SortOrder
   workflowId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -261,7 +261,7 @@ export type PhoneNumberScalarWhereWithAggregatesInput = {
   OR?: Prisma.PhoneNumberScalarWhereWithAggregatesInput[]
   NOT?: Prisma.PhoneNumberScalarWhereWithAggregatesInput | Prisma.PhoneNumberScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"PhoneNumber"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"PhoneNumber"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"PhoneNumber"> | string
   twilioPhoneNumber?: Prisma.StringWithAggregatesFilter<"PhoneNumber"> | string
   twilioSid?: Prisma.StringWithAggregatesFilter<"PhoneNumber"> | string
   workflowId?: Prisma.StringNullableWithAggregatesFilter<"PhoneNumber"> | string | null
@@ -277,14 +277,14 @@ export type PhoneNumberCreateInput = {
   label: string
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutPhoneNumbersInput
+  business: Prisma.BusinessCreateNestedOneWithoutPhoneNumbersInput
   workflow?: Prisma.WorkflowCreateNestedOneWithoutPhoneNumbersInput
   callSessions?: Prisma.CallSessionCreateNestedManyWithoutPhoneNumberInput
 }
 
 export type PhoneNumberUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   twilioPhoneNumber: string
   twilioSid: string
   workflowId?: string | null
@@ -301,14 +301,14 @@ export type PhoneNumberUpdateInput = {
   label?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutPhoneNumbersNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutPhoneNumbersNestedInput
   workflow?: Prisma.WorkflowUpdateOneWithoutPhoneNumbersNestedInput
   callSessions?: Prisma.CallSessionUpdateManyWithoutPhoneNumberNestedInput
 }
 
 export type PhoneNumberUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
   workflowId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -320,7 +320,7 @@ export type PhoneNumberUncheckedUpdateInput = {
 
 export type PhoneNumberCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   twilioPhoneNumber: string
   twilioSid: string
   workflowId?: string | null
@@ -340,7 +340,7 @@ export type PhoneNumberUpdateManyMutationInput = {
 
 export type PhoneNumberUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
   workflowId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -361,7 +361,7 @@ export type PhoneNumberOrderByRelationAggregateInput = {
 
 export type PhoneNumberCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   twilioPhoneNumber?: Prisma.SortOrder
   twilioSid?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
@@ -372,7 +372,7 @@ export type PhoneNumberCountOrderByAggregateInput = {
 
 export type PhoneNumberMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   twilioPhoneNumber?: Prisma.SortOrder
   twilioSid?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
@@ -383,7 +383,7 @@ export type PhoneNumberMaxOrderByAggregateInput = {
 
 export type PhoneNumberMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   twilioPhoneNumber?: Prisma.SortOrder
   twilioSid?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
@@ -397,45 +397,45 @@ export type PhoneNumberScalarRelationFilter = {
   isNot?: Prisma.PhoneNumberWhereInput
 }
 
-export type PhoneNumberCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutHospitalInput, Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput> | Prisma.PhoneNumberCreateWithoutHospitalInput[] | Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput | Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.PhoneNumberCreateManyHospitalInputEnvelope
+export type PhoneNumberCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutBusinessInput, Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput> | Prisma.PhoneNumberCreateWithoutBusinessInput[] | Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput | Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.PhoneNumberCreateManyBusinessInputEnvelope
   connect?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
 }
 
-export type PhoneNumberUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutHospitalInput, Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput> | Prisma.PhoneNumberCreateWithoutHospitalInput[] | Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput | Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.PhoneNumberCreateManyHospitalInputEnvelope
+export type PhoneNumberUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutBusinessInput, Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput> | Prisma.PhoneNumberCreateWithoutBusinessInput[] | Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput | Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.PhoneNumberCreateManyBusinessInputEnvelope
   connect?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
 }
 
-export type PhoneNumberUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutHospitalInput, Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput> | Prisma.PhoneNumberCreateWithoutHospitalInput[] | Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput | Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.PhoneNumberUpsertWithWhereUniqueWithoutHospitalInput | Prisma.PhoneNumberUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.PhoneNumberCreateManyHospitalInputEnvelope
+export type PhoneNumberUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutBusinessInput, Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput> | Prisma.PhoneNumberCreateWithoutBusinessInput[] | Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput | Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.PhoneNumberUpsertWithWhereUniqueWithoutBusinessInput | Prisma.PhoneNumberUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.PhoneNumberCreateManyBusinessInputEnvelope
   set?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
   disconnect?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
   delete?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
   connect?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
-  update?: Prisma.PhoneNumberUpdateWithWhereUniqueWithoutHospitalInput | Prisma.PhoneNumberUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.PhoneNumberUpdateManyWithWhereWithoutHospitalInput | Prisma.PhoneNumberUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.PhoneNumberUpdateWithWhereUniqueWithoutBusinessInput | Prisma.PhoneNumberUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.PhoneNumberUpdateManyWithWhereWithoutBusinessInput | Prisma.PhoneNumberUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.PhoneNumberScalarWhereInput | Prisma.PhoneNumberScalarWhereInput[]
 }
 
-export type PhoneNumberUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutHospitalInput, Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput> | Prisma.PhoneNumberCreateWithoutHospitalInput[] | Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput | Prisma.PhoneNumberCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.PhoneNumberUpsertWithWhereUniqueWithoutHospitalInput | Prisma.PhoneNumberUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.PhoneNumberCreateManyHospitalInputEnvelope
+export type PhoneNumberUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.PhoneNumberCreateWithoutBusinessInput, Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput> | Prisma.PhoneNumberCreateWithoutBusinessInput[] | Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput | Prisma.PhoneNumberCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.PhoneNumberUpsertWithWhereUniqueWithoutBusinessInput | Prisma.PhoneNumberUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.PhoneNumberCreateManyBusinessInputEnvelope
   set?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
   disconnect?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
   delete?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
   connect?: Prisma.PhoneNumberWhereUniqueInput | Prisma.PhoneNumberWhereUniqueInput[]
-  update?: Prisma.PhoneNumberUpdateWithWhereUniqueWithoutHospitalInput | Prisma.PhoneNumberUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.PhoneNumberUpdateManyWithWhereWithoutHospitalInput | Prisma.PhoneNumberUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.PhoneNumberUpdateWithWhereUniqueWithoutBusinessInput | Prisma.PhoneNumberUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.PhoneNumberUpdateManyWithWhereWithoutBusinessInput | Prisma.PhoneNumberUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.PhoneNumberScalarWhereInput | Prisma.PhoneNumberScalarWhereInput[]
 }
 
@@ -495,7 +495,7 @@ export type PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PhoneNumberUpdateToOneWithWhereWithoutCallSessionsInput, Prisma.PhoneNumberUpdateWithoutCallSessionsInput>, Prisma.PhoneNumberUncheckedUpdateWithoutCallSessionsInput>
 }
 
-export type PhoneNumberCreateWithoutHospitalInput = {
+export type PhoneNumberCreateWithoutBusinessInput = {
   id?: string
   twilioPhoneNumber: string
   twilioSid: string
@@ -506,7 +506,7 @@ export type PhoneNumberCreateWithoutHospitalInput = {
   callSessions?: Prisma.CallSessionCreateNestedManyWithoutPhoneNumberInput
 }
 
-export type PhoneNumberUncheckedCreateWithoutHospitalInput = {
+export type PhoneNumberUncheckedCreateWithoutBusinessInput = {
   id?: string
   twilioPhoneNumber: string
   twilioSid: string
@@ -517,30 +517,30 @@ export type PhoneNumberUncheckedCreateWithoutHospitalInput = {
   callSessions?: Prisma.CallSessionUncheckedCreateNestedManyWithoutPhoneNumberInput
 }
 
-export type PhoneNumberCreateOrConnectWithoutHospitalInput = {
+export type PhoneNumberCreateOrConnectWithoutBusinessInput = {
   where: Prisma.PhoneNumberWhereUniqueInput
-  create: Prisma.XOR<Prisma.PhoneNumberCreateWithoutHospitalInput, Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.PhoneNumberCreateWithoutBusinessInput, Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput>
 }
 
-export type PhoneNumberCreateManyHospitalInputEnvelope = {
-  data: Prisma.PhoneNumberCreateManyHospitalInput | Prisma.PhoneNumberCreateManyHospitalInput[]
+export type PhoneNumberCreateManyBusinessInputEnvelope = {
+  data: Prisma.PhoneNumberCreateManyBusinessInput | Prisma.PhoneNumberCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type PhoneNumberUpsertWithWhereUniqueWithoutHospitalInput = {
+export type PhoneNumberUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.PhoneNumberWhereUniqueInput
-  update: Prisma.XOR<Prisma.PhoneNumberUpdateWithoutHospitalInput, Prisma.PhoneNumberUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.PhoneNumberCreateWithoutHospitalInput, Prisma.PhoneNumberUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.PhoneNumberUpdateWithoutBusinessInput, Prisma.PhoneNumberUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.PhoneNumberCreateWithoutBusinessInput, Prisma.PhoneNumberUncheckedCreateWithoutBusinessInput>
 }
 
-export type PhoneNumberUpdateWithWhereUniqueWithoutHospitalInput = {
+export type PhoneNumberUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.PhoneNumberWhereUniqueInput
-  data: Prisma.XOR<Prisma.PhoneNumberUpdateWithoutHospitalInput, Prisma.PhoneNumberUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.PhoneNumberUpdateWithoutBusinessInput, Prisma.PhoneNumberUncheckedUpdateWithoutBusinessInput>
 }
 
-export type PhoneNumberUpdateManyWithWhereWithoutHospitalInput = {
+export type PhoneNumberUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.PhoneNumberScalarWhereInput
-  data: Prisma.XOR<Prisma.PhoneNumberUpdateManyMutationInput, Prisma.PhoneNumberUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.PhoneNumberUpdateManyMutationInput, Prisma.PhoneNumberUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type PhoneNumberScalarWhereInput = {
@@ -548,7 +548,7 @@ export type PhoneNumberScalarWhereInput = {
   OR?: Prisma.PhoneNumberScalarWhereInput[]
   NOT?: Prisma.PhoneNumberScalarWhereInput | Prisma.PhoneNumberScalarWhereInput[]
   id?: Prisma.StringFilter<"PhoneNumber"> | string
-  hospitalId?: Prisma.StringFilter<"PhoneNumber"> | string
+  businessId?: Prisma.StringFilter<"PhoneNumber"> | string
   twilioPhoneNumber?: Prisma.StringFilter<"PhoneNumber"> | string
   twilioSid?: Prisma.StringFilter<"PhoneNumber"> | string
   workflowId?: Prisma.StringNullableFilter<"PhoneNumber"> | string | null
@@ -564,13 +564,13 @@ export type PhoneNumberCreateWithoutWorkflowInput = {
   label: string
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutPhoneNumbersInput
+  business: Prisma.BusinessCreateNestedOneWithoutPhoneNumbersInput
   callSessions?: Prisma.CallSessionCreateNestedManyWithoutPhoneNumberInput
 }
 
 export type PhoneNumberUncheckedCreateWithoutWorkflowInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   twilioPhoneNumber: string
   twilioSid: string
   label: string
@@ -612,13 +612,13 @@ export type PhoneNumberCreateWithoutCallSessionsInput = {
   label: string
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutPhoneNumbersInput
+  business: Prisma.BusinessCreateNestedOneWithoutPhoneNumbersInput
   workflow?: Prisma.WorkflowCreateNestedOneWithoutPhoneNumbersInput
 }
 
 export type PhoneNumberUncheckedCreateWithoutCallSessionsInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   twilioPhoneNumber: string
   twilioSid: string
   workflowId?: string | null
@@ -650,13 +650,13 @@ export type PhoneNumberUpdateWithoutCallSessionsInput = {
   label?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutPhoneNumbersNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutPhoneNumbersNestedInput
   workflow?: Prisma.WorkflowUpdateOneWithoutPhoneNumbersNestedInput
 }
 
 export type PhoneNumberUncheckedUpdateWithoutCallSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
   workflowId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -665,7 +665,7 @@ export type PhoneNumberUncheckedUpdateWithoutCallSessionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PhoneNumberCreateManyHospitalInput = {
+export type PhoneNumberCreateManyBusinessInput = {
   id?: string
   twilioPhoneNumber: string
   twilioSid: string
@@ -675,7 +675,7 @@ export type PhoneNumberCreateManyHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type PhoneNumberUpdateWithoutHospitalInput = {
+export type PhoneNumberUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
@@ -686,7 +686,7 @@ export type PhoneNumberUpdateWithoutHospitalInput = {
   callSessions?: Prisma.CallSessionUpdateManyWithoutPhoneNumberNestedInput
 }
 
-export type PhoneNumberUncheckedUpdateWithoutHospitalInput = {
+export type PhoneNumberUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
@@ -697,7 +697,7 @@ export type PhoneNumberUncheckedUpdateWithoutHospitalInput = {
   callSessions?: Prisma.CallSessionUncheckedUpdateManyWithoutPhoneNumberNestedInput
 }
 
-export type PhoneNumberUncheckedUpdateManyWithoutHospitalInput = {
+export type PhoneNumberUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
@@ -709,7 +709,7 @@ export type PhoneNumberUncheckedUpdateManyWithoutHospitalInput = {
 
 export type PhoneNumberCreateManyWorkflowInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   twilioPhoneNumber: string
   twilioSid: string
   label: string
@@ -724,13 +724,13 @@ export type PhoneNumberUpdateWithoutWorkflowInput = {
   label?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutPhoneNumbersNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutPhoneNumbersNestedInput
   callSessions?: Prisma.CallSessionUpdateManyWithoutPhoneNumberNestedInput
 }
 
 export type PhoneNumberUncheckedUpdateWithoutWorkflowInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
   label?: Prisma.StringFieldUpdateOperationsInput | string
@@ -741,7 +741,7 @@ export type PhoneNumberUncheckedUpdateWithoutWorkflowInput = {
 
 export type PhoneNumberUncheckedUpdateManyWithoutWorkflowInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   twilioPhoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
   twilioSid?: Prisma.StringFieldUpdateOperationsInput | string
   label?: Prisma.StringFieldUpdateOperationsInput | string
@@ -782,14 +782,14 @@ export type PhoneNumberCountOutputTypeCountCallSessionsArgs<ExtArgs extends runt
 
 export type PhoneNumberSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   twilioPhoneNumber?: boolean
   twilioSid?: boolean
   workflowId?: boolean
   label?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   workflow?: boolean | Prisma.PhoneNumber$workflowArgs<ExtArgs>
   callSessions?: boolean | Prisma.PhoneNumber$callSessionsArgs<ExtArgs>
   _count?: boolean | Prisma.PhoneNumberCountOutputTypeDefaultArgs<ExtArgs>
@@ -797,33 +797,33 @@ export type PhoneNumberSelect<ExtArgs extends runtime.Types.Extensions.InternalA
 
 export type PhoneNumberSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   twilioPhoneNumber?: boolean
   twilioSid?: boolean
   workflowId?: boolean
   label?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   workflow?: boolean | Prisma.PhoneNumber$workflowArgs<ExtArgs>
 }, ExtArgs["result"]["phoneNumber"]>
 
 export type PhoneNumberSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   twilioPhoneNumber?: boolean
   twilioSid?: boolean
   workflowId?: boolean
   label?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   workflow?: boolean | Prisma.PhoneNumber$workflowArgs<ExtArgs>
 }, ExtArgs["result"]["phoneNumber"]>
 
 export type PhoneNumberSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   twilioPhoneNumber?: boolean
   twilioSid?: boolean
   workflowId?: boolean
@@ -832,32 +832,32 @@ export type PhoneNumberSelectScalar = {
   updatedAt?: boolean
 }
 
-export type PhoneNumberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "twilioPhoneNumber" | "twilioSid" | "workflowId" | "label" | "createdAt" | "updatedAt", ExtArgs["result"]["phoneNumber"]>
+export type PhoneNumberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "twilioPhoneNumber" | "twilioSid" | "workflowId" | "label" | "createdAt" | "updatedAt", ExtArgs["result"]["phoneNumber"]>
 export type PhoneNumberInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   workflow?: boolean | Prisma.PhoneNumber$workflowArgs<ExtArgs>
   callSessions?: boolean | Prisma.PhoneNumber$callSessionsArgs<ExtArgs>
   _count?: boolean | Prisma.PhoneNumberCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PhoneNumberIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   workflow?: boolean | Prisma.PhoneNumber$workflowArgs<ExtArgs>
 }
 export type PhoneNumberIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   workflow?: boolean | Prisma.PhoneNumber$workflowArgs<ExtArgs>
 }
 
 export type $PhoneNumberPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PhoneNumber"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
     workflow: Prisma.$WorkflowPayload<ExtArgs> | null
     callSessions: Prisma.$CallSessionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     twilioPhoneNumber: string
     twilioSid: string
     workflowId: string | null
@@ -1258,7 +1258,7 @@ readonly fields: PhoneNumberFieldRefs;
  */
 export interface Prisma__PhoneNumberClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   workflow<T extends Prisma.PhoneNumber$workflowArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PhoneNumber$workflowArgs<ExtArgs>>): Prisma.Prisma__WorkflowClient<runtime.Types.Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   callSessions<T extends Prisma.PhoneNumber$callSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PhoneNumber$callSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CallSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1291,7 +1291,7 @@ export interface Prisma__PhoneNumberClient<T, Null = never, ExtArgs extends runt
  */
 export interface PhoneNumberFieldRefs {
   readonly id: Prisma.FieldRef<"PhoneNumber", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"PhoneNumber", 'String'>
+  readonly businessId: Prisma.FieldRef<"PhoneNumber", 'String'>
   readonly twilioPhoneNumber: Prisma.FieldRef<"PhoneNumber", 'String'>
   readonly twilioSid: Prisma.FieldRef<"PhoneNumber", 'String'>
   readonly workflowId: Prisma.FieldRef<"PhoneNumber", 'String'>

@@ -1,70 +1,28 @@
 'use client';
 
-import React from 'react';
-import { Card } from '@/components/dashboard/shared';
-import {
-    Phone, Bot, Voicemail, CheckCircle, AlertTriangle,
-    TrendingUp, Clock, PhoneForwarded, Calendar,
-    ChevronRight, Zap,
-} from 'lucide-react';
 import Link from 'next/link';
-
-// ─── Mock data (replace with API hooks) ──────────────────────────────────────
-
-const STATS = [
-    {
-        label: 'Calls Today',
-        value: '47',
-        delta: '+12% vs yesterday',
-        positive: true,
-        icon: Phone,
-        color: 'text-blue-600',
-        bg: 'bg-blue-50',
-    },
-    {
-        label: 'AI Resolved',
-        value: '41',
-        delta: '87% resolution rate',
-        positive: true,
-        icon: CheckCircle,
-        color: 'text-emerald-600',
-        bg: 'bg-emerald-50',
-    },
-    {
-        label: 'Escalated to Human',
-        value: '5',
-        delta: '11% of calls',
-        positive: null,
-        icon: PhoneForwarded,
-        color: 'text-orange-600',
-        bg: 'bg-orange-50',
-    },
-    {
-        label: 'Voicemails',
-        value: '1',
-        delta: '1 unlistened',
-        positive: false,
-        icon: Voicemail,
-        color: 'text-red-600',
-        bg: 'bg-red-50',
-    },
-];
-
-const RECENT_CALLS = [
-    { id: 'c1', callerName: 'Maria Torres', callerPhone: '(555) 203-1842', tag: 'SCHEDULING', status: 'COMPLETED', duration: 142, resolvedByAI: true, startedAt: '2026-03-19T14:22:00Z' },
-    { id: 'c2', callerPhone: '(555) 891-4403', tag: 'BILLING', status: 'COMPLETED', duration: 87, resolvedByAI: true, startedAt: '2026-03-19T13:58:00Z' },
-    { id: 'c3', callerName: 'James Okafor', callerPhone: '(555) 671-2201', tag: 'HUMAN_TRANSFER', status: 'COMPLETED', duration: 210, resolvedByAI: false, startedAt: '2026-03-19T13:44:00Z' },
-    { id: 'c4', callerPhone: '(555) 340-7798', tag: 'PRESCRIPTION_REFILL', status: 'COMPLETED', duration: 95, resolvedByAI: true, startedAt: '2026-03-19T13:31:00Z' },
-    { id: 'c5', callerName: 'Sophia Lin', callerPhone: '(555) 112-6634', tag: 'VOICEMAIL', status: 'COMPLETED', duration: 48, resolvedByAI: false, startedAt: '2026-03-19T13:15:00Z' },
-];
-
-const AGENT_PERFORMANCE = [
-    { catalogId: 'scheduling', name: 'Scheduling', totalCalls: 18, resolutionRate: 89, color: 'bg-green-500' },
-    { catalogId: 'faq', name: 'FAQ & Info', totalCalls: 14, resolutionRate: 96, color: 'bg-amber-500' },
-    { catalogId: 'billing', name: 'Billing', totalCalls: 9, resolutionRate: 78, color: 'bg-blue-500' },
-    { catalogId: 'insurance', name: 'Insurance', totalCalls: 4, resolutionRate: 75, color: 'bg-purple-500' },
-    { catalogId: 'prescription-refill', name: 'Prescriptions', totalCalls: 2, resolutionRate: 100, color: 'bg-rose-500' },
-];
+import { formatDistanceToNow } from 'date-fns';
+import {
+    AlertTriangle,
+    Bot,
+    ChevronRight,
+    Clock,
+    GitBranch,
+    Phone,
+    PhoneForwarded,
+    PlugZap,
+    Settings2,
+    Voicemail,
+} from 'lucide-react';
+import { Card } from '@/components/dashboard/shared';
+import { useBusiness } from '@/lib/business-context';
+import {
+    useAgents,
+    useCallAnalytics,
+    useCalls,
+    useIntegrations,
+    useVoicemails,
+} from '@/lib/hooks/query-hooks';
 
 const TAG_LABEL: Record<string, string> = {
     SCHEDULING: 'Scheduling',
@@ -72,198 +30,287 @@ const TAG_LABEL: Record<string, string> = {
     INSURANCE: 'Insurance',
     FAQ: 'FAQ',
     PRESCRIPTION_REFILL: 'Refill',
-    HUMAN_TRANSFER: 'Human Transfer',
+    HUMAN_TRANSFER: 'Human transfer',
     VOICEMAIL: 'Voicemail',
     EMERGENCY: 'Emergency',
 };
 
 const TAG_COLOR: Record<string, string> = {
-    SCHEDULING: 'bg-green-100 text-green-700',
-    BILLING: 'bg-blue-100 text-blue-700',
-    INSURANCE: 'bg-purple-100 text-purple-700',
-    FAQ: 'bg-amber-100 text-amber-700',
-    PRESCRIPTION_REFILL: 'bg-rose-100 text-rose-700',
-    HUMAN_TRANSFER: 'bg-orange-100 text-orange-700',
-    VOICEMAIL: 'bg-red-100 text-red-700',
-    EMERGENCY: 'bg-red-200 text-red-800',
+    SCHEDULING: 'bg-emerald-500/10 text-emerald-700',
+    BILLING: 'bg-sky-500/10 text-sky-700',
+    INSURANCE: 'bg-violet-500/10 text-violet-700',
+    FAQ: 'bg-amber-500/10 text-amber-800',
+    PRESCRIPTION_REFILL: 'bg-rose-500/10 text-rose-700',
+    HUMAN_TRANSFER: 'bg-orange-500/10 text-orange-700',
+    VOICEMAIL: 'bg-red-500/10 text-red-700',
+    EMERGENCY: 'bg-red-500/15 text-red-800',
 };
 
-function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatDuration(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
 }
-
-function formatDuration(secs: number) {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+    const { businessId, isLoading: businessLoading } = useBusiness();
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const callsQuery = useCalls({ page: 1, pageSize: 6 });
+    const analyticsQuery = useCallAnalytics(startOfToday, now);
+    const voicemailsQuery = useVoicemails(true);
+    const agentsQuery = useAgents();
+    const integrationsQuery = useIntegrations();
+
+    const recentCalls = callsQuery.data?.data ?? [];
+    const analytics = analyticsQuery.data;
+    const voicemails = voicemailsQuery.data ?? [];
+    const agents = agentsQuery.data ?? [];
+    const integrations = integrationsQuery.data ?? [];
+
+    const activeAgents = agents.filter((agent) => agent.status === 'ACTIVE').length;
+    const integrationFailures = integrations.filter((integration) => integration.status !== 'CONNECTED');
+    const escalatedCalls = (analytics?.callsByTag?.HUMAN_TRANSFER ?? 0) + (analytics?.callsByTag?.EMERGENCY ?? 0);
+    const aiResolved = Math.max((analytics?.completedCalls ?? 0) - escalatedCalls - (analytics?.voicemailCount ?? 0), 0);
+    const topReasons = Object.entries(analytics?.callsByTag ?? {})
+        .sort(([, left], [, right]) => right - left)
+        .slice(0, 4);
+
+    if (!businessLoading && !businessId) {
+        return (
+            <Card>
+                <div className="py-16 text-center">
+                    <h2 className="text-xl font-semibold text-foreground">Select a practice to get started</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Create or choose a business in settings before reviewing calls, workflows, and integrations.
+                    </p>
+                    <Link
+                        href="/dashboard/settings"
+                        className="mt-4 inline-flex rounded-2xl bg-[var(--background)] px-4 py-2.5 text-sm font-semibold text-primary neo-raised"
+                    >
+                        Open settings
+                    </Link>
+                </div>
+            </Card>
+        );
+    }
+
     return (
         <div className="space-y-6">
-
-            {/* Quick setup banner — shown until all agents configured */}
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Zap className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                        <p className="font-semibold text-foreground text-sm">2 agents need tool configuration</p>
-                        <p className="text-xs text-muted-foreground">Connect your scheduling and billing tools to activate them.</p>
+            {(integrationFailures.length > 0 || activeAgents === 0) && (
+                <div className="neo-raised rounded-[16px] bg-[var(--background)] p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[var(--background)] neo-raised-sm">
+                                <PlugZap className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">
+                                    {integrationFailures.length > 0
+                                        ? `${integrationFailures.length} integrations need attention`
+                                        : 'No agents are active yet'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Connect vendors and activate the right agents so the live phone workflow can complete actions during the call.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href="/dashboard/agents"
+                            className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline"
+                        >
+                            Review setup <ChevronRight className="h-4 w-4" />
+                        </Link>
                     </div>
                 </div>
-                <Link href="/dashboard/agents" className="shrink-0 text-sm font-medium text-primary hover:underline flex items-center gap-1">
-                    Configure <ChevronRight className="h-4 w-4" />
-                </Link>
-            </div>
+            )}
 
-            {/* Stat cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {STATS.map(stat => {
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {[
+                    {
+                        label: 'Calls Today',
+                        value: analytics?.totalCalls ?? 0,
+                        detail: `${analytics?.completedCalls ?? 0} completed`,
+                        icon: Phone,
+                    },
+                    {
+                        label: 'AI Resolved',
+                        value: aiResolved,
+                        detail: `${escalatedCalls} escalated`,
+                        icon: Bot,
+                    },
+                    {
+                        label: 'Urgent Calls',
+                        value: analytics?.emergencyCalls ?? 0,
+                        detail: 'Requires follow-up queue review',
+                        icon: AlertTriangle,
+                    },
+                    {
+                        label: 'New Voicemails',
+                        value: voicemails.length,
+                        detail: voicemails.length > 0 ? 'Unlistened messages' : 'Inbox is clear',
+                        icon: Voicemail,
+                    },
+                ].map((stat) => {
                     const Icon = stat.icon;
                     return (
-                        <Card key={stat.label} className="flex flex-col gap-2">
+                        <Card key={stat.label} className="flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">{stat.label}</p>
-                                <div className={`h-8 w-8 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--background)] neo-raised-sm">
+                                    <Icon className="h-4 w-4 text-primary" />
                                 </div>
                             </div>
-                            <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-                            <div className={`text-xs ${
-                                stat.positive === true ? 'text-emerald-600' :
-                                stat.positive === false ? 'text-red-500' :
-                                'text-muted-foreground'
-                            }`}>
-                                {stat.delta}
-                            </div>
+                            <div className="text-3xl font-semibold text-foreground">{stat.value}</div>
+                            <div className="text-xs font-medium text-muted-foreground">{stat.detail}</div>
                         </Card>
                     );
                 })}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-                {/* Recent Calls */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <div className="xl:col-span-2">
                     <Card>
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="mb-4 flex items-center justify-between">
                             <h2 className="font-semibold text-foreground">Recent Calls</h2>
-                            <Link href="/dashboard/calls" className="text-xs text-primary hover:underline flex items-center gap-1">
+                            <Link href="/dashboard/calls" className="flex items-center gap-1 text-xs text-primary hover:underline">
                                 View all <ChevronRight className="h-3 w-3" />
                             </Link>
                         </div>
-                        <div className="space-y-2">
-                            {RECENT_CALLS.map(call => (
-                                <div key={call.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                                            call.resolvedByAI ? 'bg-emerald-100' : 'bg-orange-100'
-                                        }`}>
-                                            {call.resolvedByAI
-                                                ? <Bot className="h-4 w-4 text-emerald-600" />
-                                                : <PhoneForwarded className="h-4 w-4 text-orange-600" />
-                                            }
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate">
-                                                {call.callerName ?? call.callerPhone}
-                                            </p>
-                                            {call.callerName && (
-                                                <p className="text-xs text-muted-foreground">{call.callerPhone}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 shrink-0">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TAG_COLOR[call.tag] ?? 'bg-muted text-muted-foreground'}`}>
-                                            {TAG_LABEL[call.tag] ?? call.tag}
-                                        </span>
-                                        <div className="text-right hidden sm:block">
-                                            <p className="text-xs text-muted-foreground">{formatTime(call.startedAt)}</p>
-                                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {formatDuration(call.duration)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+
+                        {callsQuery.isLoading ? (
+                            <div className="py-12 text-center text-sm text-muted-foreground">Loading recent calls...</div>
+                        ) : recentCalls.length === 0 ? (
+                            <div className="py-12 text-center text-sm text-muted-foreground">
+                                No calls have been recorded for this business yet.
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {recentCalls.map((call) => {
+                                    const isEscalated = call.isEmergency || call.tag === 'HUMAN_TRANSFER' || call.tag === 'VOICEMAIL';
+                                    return (
+                                        <Link
+                                            key={call.id}
+                                            href={`/dashboard/calls/${call.id}`}
+                                            className="flex items-center justify-between rounded-2xl py-2.5 pl-1 pr-2 transition-colors hover:bg-[var(--background)]/50"
+                                        >
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--background)] neo-raised-sm">
+                                                    {isEscalated ? (
+                                                        <PhoneForwarded className="h-4 w-4 text-orange-500" />
+                                                    ) : (
+                                                        <Bot className="h-4 w-4 text-emerald-600" />
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium text-foreground">
+                                                        {call.callerName ?? call.callerPhone}
+                                                    </p>
+                                                    {call.callerName && (
+                                                        <p className="text-xs text-muted-foreground">{call.callerPhone}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex shrink-0 items-center gap-3">
+                                                {call.tag && (
+                                                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TAG_COLOR[call.tag] ?? 'bg-muted text-muted-foreground'}`}>
+                                                        {TAG_LABEL[call.tag] ?? call.tag}
+                                                    </span>
+                                                )}
+                                                <div className="hidden text-right sm:block">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {formatDistanceToNow(new Date(call.startedAt), { addSuffix: true })}
+                                                    </p>
+                                                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                        <Clock className="h-3 w-3" />
+                                                        {formatDuration(call.duration)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </Card>
                 </div>
 
-                {/* Right column */}
                 <div className="space-y-4">
-
-                    {/* Agent Performance */}
                     <Card>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="font-semibold text-foreground">Agent Performance</h2>
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="font-semibold text-foreground">Top Call Reasons</h2>
+                            <Phone className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <div className="space-y-3">
-                            {AGENT_PERFORMANCE.map(agent => (
-                                <div key={agent.catalogId}>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-sm text-foreground">{agent.name}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {agent.resolutionRate}% · {agent.totalCalls} calls
-                                        </span>
+                        {topReasons.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Call reason analytics will appear once calls are processed.</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {topReasons.map(([tag, count]) => (
+                                    <div key={tag}>
+                                        <div className="mb-1 flex items-center justify-between">
+                                            <span className="text-sm text-foreground">{TAG_LABEL[tag] ?? tag}</span>
+                                            <span className="text-xs text-muted-foreground">{count} calls</span>
+                                        </div>
+                                        <div className="h-2 overflow-hidden rounded-full bg-[var(--background)] neo-inset">
+                                            <div
+                                                className="h-full rounded-full bg-primary"
+                                                style={{
+                                                    width: `${analytics?.totalCalls ? Math.max((count / analytics.totalCalls) * 100, 8) : 0}%`,
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full rounded-full ${agent.color}`}
-                                            style={{ width: `${agent.resolutionRate}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </Card>
 
-                    {/* Unlistened Voicemails */}
                     <Card>
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="font-semibold text-foreground">Voicemails</h2>
-                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full">1 new</span>
+                        <div className="mb-3 flex items-center justify-between">
+                            <h2 className="font-semibold text-foreground">Voicemail Queue</h2>
+                            {voicemails.length > 0 && (
+                                <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-700">
+                                    {voicemails.length} new
+                                </span>
+                            )}
                         </div>
-                        <div className="space-y-2">
-                            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm font-medium text-foreground">(555) 112-6634</span>
-                                    <span className="text-xs text-muted-foreground">1:15 PM</span>
+                        {voicemails.slice(0, 3).map((voicemail) => (
+                            <div key={voicemail.id} className="mb-2 rounded-2xl bg-[var(--background)] p-3 neo-inset last:mb-0">
+                                <div className="mb-1 flex items-center justify-between">
+                                    <span className="text-sm font-medium text-foreground">
+                                        {voicemail.callerName ?? voicemail.callerPhone}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {formatDistanceToNow(new Date(voicemail.createdAt), { addSuffix: true })}
+                                    </span>
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Scheduling · Left message about appointment
-                                </p>
+                                <p className="text-xs text-muted-foreground">{voicemail.context}</p>
                             </div>
-                        </div>
-                        <Link href="/dashboard/voicemails" className="mt-3 block text-xs text-primary hover:underline text-center">
-                            View all voicemails
+                        ))}
+                        <Link href="/dashboard/voicemails" className="mt-3 block text-center text-xs text-primary hover:underline">
+                            View voicemail inbox
                         </Link>
                     </Card>
 
-                    {/* Quick Links */}
                     <Card>
-                        <h2 className="font-semibold text-foreground mb-3">Quick Actions</h2>
+                        <h2 className="mb-3 font-semibold text-foreground">Quick Actions</h2>
                         <div className="space-y-2">
-                            <Link href="/dashboard/agents" className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
+                            <Link href="/dashboard/agents" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
                                 <Bot className="h-4 w-4 text-primary" />
-                                <span className="text-sm">Manage Agents</span>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                                <span className="text-sm font-medium text-foreground">Manage Agents</span>
+                                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                             </Link>
-                            <Link href="/dashboard/workflows" className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
-                                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                                <span className="text-sm">Edit Call Flow</span>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                            <Link href="/dashboard/workflows" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
+                                <GitBranch className="h-4 w-4 text-amber-500" />
+                                <span className="text-sm font-medium text-foreground">Edit Call Flow</span>
+                                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                             </Link>
-                            <Link href="/dashboard/calls" className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
-                                <Calendar className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm">View Call Logs</span>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                            <Link href="/dashboard/settings" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
+                                <Settings2 className="h-4 w-4 text-sky-600" />
+                                <span className="text-sm font-medium text-foreground">Review Practice Settings</span>
+                                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                             </Link>
                         </div>
                     </Card>

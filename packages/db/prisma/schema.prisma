@@ -24,6 +24,7 @@ model Business {
   updatedAt DateTime       @updatedAt @map("updated_at")
 
   settings               BusinessSettings?
+  integrations          BusinessIntegration[]
   users                  BusinessUser[]
   phoneNumbers           PhoneNumber[]
   callers                Caller[]
@@ -77,6 +78,40 @@ enum RecordingDefault {
   ON
   OFF
   ASK
+}
+
+model BusinessIntegration {
+  id                String                    @id @default(uuid())
+  businessId        String                    @map("business_id")
+  category          IntegrationCategory
+  vendor            String
+  status            IntegrationStatus         @default(DISCONNECTED)
+  credentialsRef    String?                   @map("credentials_ref")
+  settings          Json?
+  capabilities      Json?
+  lastHealthCheckAt DateTime?                 @map("last_health_check_at")
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, category])
+  @@index([businessId, status])
+  @@map("business_integrations")
+}
+
+enum IntegrationCategory {
+  SCHEDULING
+  EHR_REFILL
+  BILLING
+  INSURANCE
+  KNOWLEDGE
+}
+
+enum IntegrationStatus {
+  DISCONNECTED
+  CONNECTED
+  ERROR
 }
 
 // ============================================================================

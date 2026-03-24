@@ -232,9 +232,16 @@ export class AgentWebSocketGateway implements OnGatewayConnection, OnGatewayDisc
      * Get online agents
      */
     @SubscribeMessage('agents:online')
-    async getOnlineAgents(@MessageBody() data: { hospitalId: string }): Promise<any> {
+    async getOnlineAgents(
+        @MessageBody() data: { businessId?: string; hospitalId?: string },
+    ): Promise<any> {
         try {
-            const agents = await this.agentsService.getAvailableAgents(data.hospitalId);
+            const businessId = data.businessId || data.hospitalId;
+            if (!businessId) {
+                return { success: false, error: 'Missing businessId' };
+            }
+
+            const agents = await this.agentsService.getAvailableAgents(businessId);
             return { success: true, agents };
         } catch (error: any) {
             return { success: false, error: error.message };

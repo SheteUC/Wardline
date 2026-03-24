@@ -12,7 +12,7 @@ export interface CollectInfoField {
     prompt?: string;
 }
 
-export interface CollectInfoNodeData {
+export interface CollectInfoNodeData extends Record<string, unknown> {
     label: string;
     fields?: CollectInfoField[];
 }

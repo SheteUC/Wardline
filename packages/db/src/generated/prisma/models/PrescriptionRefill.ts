@@ -26,69 +26,57 @@ export type AggregatePrescriptionRefill = {
 
 export type PrescriptionRefillMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   callId: string | null
-  patientId: string | null
-  patientName: string | null
-  patientPhone: string | null
-  patientDOB: Date | null
+  callerId: string | null
+  callerName: string | null
+  callerPhone: string | null
+  callerDOB: Date | null
   medicationName: string | null
-  prescriberId: string | null
   prescriberName: string | null
   pharmacyName: string | null
   pharmacyPhone: string | null
   status: $Enums.RefillStatus | null
   verificationStatus: $Enums.VerificationStatus | null
-  isNewPatient: boolean | null
-  assignedProviderId: string | null
   notes: string | null
-  rejectionReason: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type PrescriptionRefillMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   callId: string | null
-  patientId: string | null
-  patientName: string | null
-  patientPhone: string | null
-  patientDOB: Date | null
+  callerId: string | null
+  callerName: string | null
+  callerPhone: string | null
+  callerDOB: Date | null
   medicationName: string | null
-  prescriberId: string | null
   prescriberName: string | null
   pharmacyName: string | null
   pharmacyPhone: string | null
   status: $Enums.RefillStatus | null
   verificationStatus: $Enums.VerificationStatus | null
-  isNewPatient: boolean | null
-  assignedProviderId: string | null
   notes: string | null
-  rejectionReason: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type PrescriptionRefillCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   callId: number
-  patientId: number
-  patientName: number
-  patientPhone: number
-  patientDOB: number
+  callerId: number
+  callerName: number
+  callerPhone: number
+  callerDOB: number
   medicationName: number
-  prescriberId: number
   prescriberName: number
   pharmacyName: number
   pharmacyPhone: number
   status: number
   verificationStatus: number
-  isNewPatient: number
-  assignedProviderId: number
   notes: number
-  rejectionReason: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -97,69 +85,57 @@ export type PrescriptionRefillCountAggregateOutputType = {
 
 export type PrescriptionRefillMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   callId?: true
-  patientId?: true
-  patientName?: true
-  patientPhone?: true
-  patientDOB?: true
+  callerId?: true
+  callerName?: true
+  callerPhone?: true
+  callerDOB?: true
   medicationName?: true
-  prescriberId?: true
   prescriberName?: true
   pharmacyName?: true
   pharmacyPhone?: true
   status?: true
   verificationStatus?: true
-  isNewPatient?: true
-  assignedProviderId?: true
   notes?: true
-  rejectionReason?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type PrescriptionRefillMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   callId?: true
-  patientId?: true
-  patientName?: true
-  patientPhone?: true
-  patientDOB?: true
+  callerId?: true
+  callerName?: true
+  callerPhone?: true
+  callerDOB?: true
   medicationName?: true
-  prescriberId?: true
   prescriberName?: true
   pharmacyName?: true
   pharmacyPhone?: true
   status?: true
   verificationStatus?: true
-  isNewPatient?: true
-  assignedProviderId?: true
   notes?: true
-  rejectionReason?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type PrescriptionRefillCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   callId?: true
-  patientId?: true
-  patientName?: true
-  patientPhone?: true
-  patientDOB?: true
+  callerId?: true
+  callerName?: true
+  callerPhone?: true
+  callerDOB?: true
   medicationName?: true
-  prescriberId?: true
   prescriberName?: true
   pharmacyName?: true
   pharmacyPhone?: true
   status?: true
   verificationStatus?: true
-  isNewPatient?: true
-  assignedProviderId?: true
   notes?: true
-  rejectionReason?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -239,23 +215,19 @@ export type PrescriptionRefillGroupByArgs<ExtArgs extends runtime.Types.Extensio
 
 export type PrescriptionRefillGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   callId: string | null
-  patientId: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB: Date | null
+  callerId: string | null
+  callerName: string
+  callerPhone: string
+  callerDOB: Date | null
   medicationName: string
-  prescriberId: string | null
   prescriberName: string | null
   pharmacyName: string | null
   pharmacyPhone: string | null
   status: $Enums.RefillStatus
   verificationStatus: $Enums.VerificationStatus
-  isNewPatient: boolean
-  assignedProviderId: string | null
   notes: string | null
-  rejectionReason: string | null
   createdAt: Date
   updatedAt: Date
   _count: PrescriptionRefillCountAggregateOutputType | null
@@ -283,54 +255,46 @@ export type PrescriptionRefillWhereInput = {
   OR?: Prisma.PrescriptionRefillWhereInput[]
   NOT?: Prisma.PrescriptionRefillWhereInput | Prisma.PrescriptionRefillWhereInput[]
   id?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  hospitalId?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  businessId?: Prisma.StringFilter<"PrescriptionRefill"> | string
   callId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  patientId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  patientName?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  patientPhone?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  patientDOB?: Prisma.DateTimeNullableFilter<"PrescriptionRefill"> | Date | string | null
+  callerId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
+  callerName?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  callerPhone?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  callerDOB?: Prisma.DateTimeNullableFilter<"PrescriptionRefill"> | Date | string | null
   medicationName?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  prescriberId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   prescriberName?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   pharmacyName?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   pharmacyPhone?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   status?: Prisma.EnumRefillStatusFilter<"PrescriptionRefill"> | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFilter<"PrescriptionRefill"> | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFilter<"PrescriptionRefill"> | boolean
-  assignedProviderId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   notes?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  rejectionReason?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   createdAt?: Prisma.DateTimeFilter<"PrescriptionRefill"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PrescriptionRefill"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   call?: Prisma.XOR<Prisma.CallSessionNullableScalarRelationFilter, Prisma.CallSessionWhereInput> | null
-  patient?: Prisma.XOR<Prisma.PatientNullableScalarRelationFilter, Prisma.PatientWhereInput> | null
+  caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
 }
 
 export type PrescriptionRefillOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   callId?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientId?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientDOB?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerDOB?: Prisma.SortOrderInput | Prisma.SortOrder
   medicationName?: Prisma.SortOrder
-  prescriberId?: Prisma.SortOrderInput | Prisma.SortOrder
   prescriberName?: Prisma.SortOrderInput | Prisma.SortOrder
   pharmacyName?: Prisma.SortOrderInput | Prisma.SortOrder
   pharmacyPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   verificationStatus?: Prisma.SortOrder
-  isNewPatient?: Prisma.SortOrder
-  assignedProviderId?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
-  rejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
   call?: Prisma.CallSessionOrderByWithRelationInput
-  patient?: Prisma.PatientOrderByWithRelationInput
+  caller?: Prisma.CallerOrderByWithRelationInput
 }
 
 export type PrescriptionRefillWhereUniqueInput = Prisma.AtLeast<{
@@ -338,49 +302,41 @@ export type PrescriptionRefillWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.PrescriptionRefillWhereInput | Prisma.PrescriptionRefillWhereInput[]
   OR?: Prisma.PrescriptionRefillWhereInput[]
   NOT?: Prisma.PrescriptionRefillWhereInput | Prisma.PrescriptionRefillWhereInput[]
-  hospitalId?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  businessId?: Prisma.StringFilter<"PrescriptionRefill"> | string
   callId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  patientId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  patientName?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  patientPhone?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  patientDOB?: Prisma.DateTimeNullableFilter<"PrescriptionRefill"> | Date | string | null
+  callerId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
+  callerName?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  callerPhone?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  callerDOB?: Prisma.DateTimeNullableFilter<"PrescriptionRefill"> | Date | string | null
   medicationName?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  prescriberId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   prescriberName?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   pharmacyName?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   pharmacyPhone?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   status?: Prisma.EnumRefillStatusFilter<"PrescriptionRefill"> | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFilter<"PrescriptionRefill"> | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFilter<"PrescriptionRefill"> | boolean
-  assignedProviderId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   notes?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  rejectionReason?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   createdAt?: Prisma.DateTimeFilter<"PrescriptionRefill"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PrescriptionRefill"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   call?: Prisma.XOR<Prisma.CallSessionNullableScalarRelationFilter, Prisma.CallSessionWhereInput> | null
-  patient?: Prisma.XOR<Prisma.PatientNullableScalarRelationFilter, Prisma.PatientWhereInput> | null
+  caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
 }, "id">
 
 export type PrescriptionRefillOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   callId?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientId?: Prisma.SortOrderInput | Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientDOB?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerDOB?: Prisma.SortOrderInput | Prisma.SortOrder
   medicationName?: Prisma.SortOrder
-  prescriberId?: Prisma.SortOrderInput | Prisma.SortOrder
   prescriberName?: Prisma.SortOrderInput | Prisma.SortOrder
   pharmacyName?: Prisma.SortOrderInput | Prisma.SortOrder
   pharmacyPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   verificationStatus?: Prisma.SortOrder
-  isNewPatient?: Prisma.SortOrder
-  assignedProviderId?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
-  rejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.PrescriptionRefillCountOrderByAggregateInput
@@ -393,181 +349,149 @@ export type PrescriptionRefillScalarWhereWithAggregatesInput = {
   OR?: Prisma.PrescriptionRefillScalarWhereWithAggregatesInput[]
   NOT?: Prisma.PrescriptionRefillScalarWhereWithAggregatesInput | Prisma.PrescriptionRefillScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
   callId?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
-  patientId?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
-  patientName?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
-  patientPhone?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
-  patientDOB?: Prisma.DateTimeNullableWithAggregatesFilter<"PrescriptionRefill"> | Date | string | null
+  callerId?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
+  callerName?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
+  callerPhone?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
+  callerDOB?: Prisma.DateTimeNullableWithAggregatesFilter<"PrescriptionRefill"> | Date | string | null
   medicationName?: Prisma.StringWithAggregatesFilter<"PrescriptionRefill"> | string
-  prescriberId?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
   prescriberName?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
   pharmacyName?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
   pharmacyPhone?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
   status?: Prisma.EnumRefillStatusWithAggregatesFilter<"PrescriptionRefill"> | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusWithAggregatesFilter<"PrescriptionRefill"> | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolWithAggregatesFilter<"PrescriptionRefill"> | boolean
-  assignedProviderId?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
   notes?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
-  rejectionReason?: Prisma.StringNullableWithAggregatesFilter<"PrescriptionRefill"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"PrescriptionRefill"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"PrescriptionRefill"> | Date | string
 }
 
 export type PrescriptionRefillCreateInput = {
   id?: string
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutPrescriptionRefillsInput
+  business: Prisma.BusinessCreateNestedOneWithoutPrescriptionRefillsInput
   call?: Prisma.CallSessionCreateNestedOneWithoutPrescriptionRefillsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutPrescriptionRefillsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutPrescriptionRefillsInput
 }
 
 export type PrescriptionRefillUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   callId?: string | null
-  patientId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerId?: string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type PrescriptionRefillUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutPrescriptionRefillsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutPrescriptionRefillsNestedInput
   call?: Prisma.CallSessionUpdateOneWithoutPrescriptionRefillsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutPrescriptionRefillsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutPrescriptionRefillsNestedInput
 }
 
 export type PrescriptionRefillUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PrescriptionRefillCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   callId?: string | null
-  patientId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerId?: string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type PrescriptionRefillUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PrescriptionRefillUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -584,154 +508,142 @@ export type PrescriptionRefillOrderByRelationAggregateInput = {
 
 export type PrescriptionRefillCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   callId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientDOB?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerDOB?: Prisma.SortOrder
   medicationName?: Prisma.SortOrder
-  prescriberId?: Prisma.SortOrder
   prescriberName?: Prisma.SortOrder
   pharmacyName?: Prisma.SortOrder
   pharmacyPhone?: Prisma.SortOrder
   status?: Prisma.SortOrder
   verificationStatus?: Prisma.SortOrder
-  isNewPatient?: Prisma.SortOrder
-  assignedProviderId?: Prisma.SortOrder
   notes?: Prisma.SortOrder
-  rejectionReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type PrescriptionRefillMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   callId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientDOB?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerDOB?: Prisma.SortOrder
   medicationName?: Prisma.SortOrder
-  prescriberId?: Prisma.SortOrder
   prescriberName?: Prisma.SortOrder
   pharmacyName?: Prisma.SortOrder
   pharmacyPhone?: Prisma.SortOrder
   status?: Prisma.SortOrder
   verificationStatus?: Prisma.SortOrder
-  isNewPatient?: Prisma.SortOrder
-  assignedProviderId?: Prisma.SortOrder
   notes?: Prisma.SortOrder
-  rejectionReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type PrescriptionRefillMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   callId?: Prisma.SortOrder
-  patientId?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientDOB?: Prisma.SortOrder
+  callerId?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerDOB?: Prisma.SortOrder
   medicationName?: Prisma.SortOrder
-  prescriberId?: Prisma.SortOrder
   prescriberName?: Prisma.SortOrder
   pharmacyName?: Prisma.SortOrder
   pharmacyPhone?: Prisma.SortOrder
   status?: Prisma.SortOrder
   verificationStatus?: Prisma.SortOrder
-  isNewPatient?: Prisma.SortOrder
-  assignedProviderId?: Prisma.SortOrder
   notes?: Prisma.SortOrder
-  rejectionReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
-export type PrescriptionRefillCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput> | Prisma.PrescriptionRefillCreateWithoutHospitalInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput | Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyHospitalInputEnvelope
+export type PrescriptionRefillCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput> | Prisma.PrescriptionRefillCreateWithoutBusinessInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput | Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyBusinessInputEnvelope
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
 }
 
-export type PrescriptionRefillUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput> | Prisma.PrescriptionRefillCreateWithoutHospitalInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput | Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyHospitalInputEnvelope
+export type PrescriptionRefillUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput> | Prisma.PrescriptionRefillCreateWithoutBusinessInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput | Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyBusinessInputEnvelope
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
 }
 
-export type PrescriptionRefillUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput> | Prisma.PrescriptionRefillCreateWithoutHospitalInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput | Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutHospitalInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyHospitalInputEnvelope
+export type PrescriptionRefillUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput> | Prisma.PrescriptionRefillCreateWithoutBusinessInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput | Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutBusinessInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyBusinessInputEnvelope
   set?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   disconnect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   delete?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
-  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutHospitalInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutHospitalInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutBusinessInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutBusinessInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.PrescriptionRefillScalarWhereInput | Prisma.PrescriptionRefillScalarWhereInput[]
 }
 
-export type PrescriptionRefillUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput> | Prisma.PrescriptionRefillCreateWithoutHospitalInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput | Prisma.PrescriptionRefillCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutHospitalInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyHospitalInputEnvelope
+export type PrescriptionRefillUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput> | Prisma.PrescriptionRefillCreateWithoutBusinessInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput | Prisma.PrescriptionRefillCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutBusinessInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyBusinessInputEnvelope
   set?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   disconnect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   delete?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
-  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutHospitalInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutHospitalInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutBusinessInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutBusinessInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.PrescriptionRefillScalarWhereInput | Prisma.PrescriptionRefillScalarWhereInput[]
 }
 
-export type PrescriptionRefillCreateNestedManyWithoutPatientInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput> | Prisma.PrescriptionRefillCreateWithoutPatientInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput | Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyPatientInputEnvelope
+export type PrescriptionRefillCreateNestedManyWithoutCallerInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput> | Prisma.PrescriptionRefillCreateWithoutCallerInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput | Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyCallerInputEnvelope
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
 }
 
-export type PrescriptionRefillUncheckedCreateNestedManyWithoutPatientInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput> | Prisma.PrescriptionRefillCreateWithoutPatientInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput | Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyPatientInputEnvelope
+export type PrescriptionRefillUncheckedCreateNestedManyWithoutCallerInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput> | Prisma.PrescriptionRefillCreateWithoutCallerInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput | Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyCallerInputEnvelope
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
 }
 
-export type PrescriptionRefillUpdateManyWithoutPatientNestedInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput> | Prisma.PrescriptionRefillCreateWithoutPatientInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput | Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput[]
-  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutPatientInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutPatientInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyPatientInputEnvelope
+export type PrescriptionRefillUpdateManyWithoutCallerNestedInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput> | Prisma.PrescriptionRefillCreateWithoutCallerInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput | Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput[]
+  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutCallerInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutCallerInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyCallerInputEnvelope
   set?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   disconnect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   delete?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
-  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutPatientInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutPatientInput[]
-  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutPatientInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutPatientInput[]
+  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutCallerInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutCallerInput[]
+  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutCallerInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutCallerInput[]
   deleteMany?: Prisma.PrescriptionRefillScalarWhereInput | Prisma.PrescriptionRefillScalarWhereInput[]
 }
 
-export type PrescriptionRefillUncheckedUpdateManyWithoutPatientNestedInput = {
-  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput> | Prisma.PrescriptionRefillCreateWithoutPatientInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput[]
-  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput | Prisma.PrescriptionRefillCreateOrConnectWithoutPatientInput[]
-  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutPatientInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutPatientInput[]
-  createMany?: Prisma.PrescriptionRefillCreateManyPatientInputEnvelope
+export type PrescriptionRefillUncheckedUpdateManyWithoutCallerNestedInput = {
+  create?: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput> | Prisma.PrescriptionRefillCreateWithoutCallerInput[] | Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput[]
+  connectOrCreate?: Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput | Prisma.PrescriptionRefillCreateOrConnectWithoutCallerInput[]
+  upsert?: Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutCallerInput | Prisma.PrescriptionRefillUpsertWithWhereUniqueWithoutCallerInput[]
+  createMany?: Prisma.PrescriptionRefillCreateManyCallerInputEnvelope
   set?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   disconnect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   delete?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
   connect?: Prisma.PrescriptionRefillWhereUniqueInput | Prisma.PrescriptionRefillWhereUniqueInput[]
-  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutPatientInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutPatientInput[]
-  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutPatientInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutPatientInput[]
+  update?: Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutCallerInput | Prisma.PrescriptionRefillUpdateWithWhereUniqueWithoutCallerInput[]
+  updateMany?: Prisma.PrescriptionRefillUpdateManyWithWhereWithoutCallerInput | Prisma.PrescriptionRefillUpdateManyWithWhereWithoutCallerInput[]
   deleteMany?: Prisma.PrescriptionRefillScalarWhereInput | Prisma.PrescriptionRefillScalarWhereInput[]
 }
 
@@ -785,74 +697,66 @@ export type EnumVerificationStatusFieldUpdateOperationsInput = {
   set?: $Enums.VerificationStatus
 }
 
-export type PrescriptionRefillCreateWithoutHospitalInput = {
+export type PrescriptionRefillCreateWithoutBusinessInput = {
   id?: string
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   call?: Prisma.CallSessionCreateNestedOneWithoutPrescriptionRefillsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutPrescriptionRefillsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutPrescriptionRefillsInput
 }
 
-export type PrescriptionRefillUncheckedCreateWithoutHospitalInput = {
+export type PrescriptionRefillUncheckedCreateWithoutBusinessInput = {
   id?: string
   callId?: string | null
-  patientId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerId?: string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
-export type PrescriptionRefillCreateOrConnectWithoutHospitalInput = {
+export type PrescriptionRefillCreateOrConnectWithoutBusinessInput = {
   where: Prisma.PrescriptionRefillWhereUniqueInput
-  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput>
 }
 
-export type PrescriptionRefillCreateManyHospitalInputEnvelope = {
-  data: Prisma.PrescriptionRefillCreateManyHospitalInput | Prisma.PrescriptionRefillCreateManyHospitalInput[]
+export type PrescriptionRefillCreateManyBusinessInputEnvelope = {
+  data: Prisma.PrescriptionRefillCreateManyBusinessInput | Prisma.PrescriptionRefillCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type PrescriptionRefillUpsertWithWhereUniqueWithoutHospitalInput = {
+export type PrescriptionRefillUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.PrescriptionRefillWhereUniqueInput
-  update: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedCreateWithoutBusinessInput>
 }
 
-export type PrescriptionRefillUpdateWithWhereUniqueWithoutHospitalInput = {
+export type PrescriptionRefillUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.PrescriptionRefillWhereUniqueInput
-  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutHospitalInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutBusinessInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutBusinessInput>
 }
 
-export type PrescriptionRefillUpdateManyWithWhereWithoutHospitalInput = {
+export type PrescriptionRefillUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.PrescriptionRefillScalarWhereInput
-  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateManyMutationInput, Prisma.PrescriptionRefillUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateManyMutationInput, Prisma.PrescriptionRefillUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type PrescriptionRefillScalarWhereInput = {
@@ -860,137 +764,117 @@ export type PrescriptionRefillScalarWhereInput = {
   OR?: Prisma.PrescriptionRefillScalarWhereInput[]
   NOT?: Prisma.PrescriptionRefillScalarWhereInput | Prisma.PrescriptionRefillScalarWhereInput[]
   id?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  hospitalId?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  businessId?: Prisma.StringFilter<"PrescriptionRefill"> | string
   callId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  patientId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  patientName?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  patientPhone?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  patientDOB?: Prisma.DateTimeNullableFilter<"PrescriptionRefill"> | Date | string | null
+  callerId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
+  callerName?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  callerPhone?: Prisma.StringFilter<"PrescriptionRefill"> | string
+  callerDOB?: Prisma.DateTimeNullableFilter<"PrescriptionRefill"> | Date | string | null
   medicationName?: Prisma.StringFilter<"PrescriptionRefill"> | string
-  prescriberId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   prescriberName?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   pharmacyName?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   pharmacyPhone?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   status?: Prisma.EnumRefillStatusFilter<"PrescriptionRefill"> | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFilter<"PrescriptionRefill"> | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFilter<"PrescriptionRefill"> | boolean
-  assignedProviderId?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   notes?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
-  rejectionReason?: Prisma.StringNullableFilter<"PrescriptionRefill"> | string | null
   createdAt?: Prisma.DateTimeFilter<"PrescriptionRefill"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"PrescriptionRefill"> | Date | string
 }
 
-export type PrescriptionRefillCreateWithoutPatientInput = {
+export type PrescriptionRefillCreateWithoutCallerInput = {
   id?: string
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutPrescriptionRefillsInput
+  business: Prisma.BusinessCreateNestedOneWithoutPrescriptionRefillsInput
   call?: Prisma.CallSessionCreateNestedOneWithoutPrescriptionRefillsInput
 }
 
-export type PrescriptionRefillUncheckedCreateWithoutPatientInput = {
+export type PrescriptionRefillUncheckedCreateWithoutCallerInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   callId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
-export type PrescriptionRefillCreateOrConnectWithoutPatientInput = {
+export type PrescriptionRefillCreateOrConnectWithoutCallerInput = {
   where: Prisma.PrescriptionRefillWhereUniqueInput
-  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput>
+  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput>
 }
 
-export type PrescriptionRefillCreateManyPatientInputEnvelope = {
-  data: Prisma.PrescriptionRefillCreateManyPatientInput | Prisma.PrescriptionRefillCreateManyPatientInput[]
+export type PrescriptionRefillCreateManyCallerInputEnvelope = {
+  data: Prisma.PrescriptionRefillCreateManyCallerInput | Prisma.PrescriptionRefillCreateManyCallerInput[]
   skipDuplicates?: boolean
 }
 
-export type PrescriptionRefillUpsertWithWhereUniqueWithoutPatientInput = {
+export type PrescriptionRefillUpsertWithWhereUniqueWithoutCallerInput = {
   where: Prisma.PrescriptionRefillWhereUniqueInput
-  update: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutPatientInput>
-  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedCreateWithoutPatientInput>
+  update: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutCallerInput>
+  create: Prisma.XOR<Prisma.PrescriptionRefillCreateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedCreateWithoutCallerInput>
 }
 
-export type PrescriptionRefillUpdateWithWhereUniqueWithoutPatientInput = {
+export type PrescriptionRefillUpdateWithWhereUniqueWithoutCallerInput = {
   where: Prisma.PrescriptionRefillWhereUniqueInput
-  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutPatientInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutPatientInput>
+  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateWithoutCallerInput, Prisma.PrescriptionRefillUncheckedUpdateWithoutCallerInput>
 }
 
-export type PrescriptionRefillUpdateManyWithWhereWithoutPatientInput = {
+export type PrescriptionRefillUpdateManyWithWhereWithoutCallerInput = {
   where: Prisma.PrescriptionRefillScalarWhereInput
-  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateManyMutationInput, Prisma.PrescriptionRefillUncheckedUpdateManyWithoutPatientInput>
+  data: Prisma.XOR<Prisma.PrescriptionRefillUpdateManyMutationInput, Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallerInput>
 }
 
 export type PrescriptionRefillCreateWithoutCallInput = {
   id?: string
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutPrescriptionRefillsInput
-  patient?: Prisma.PatientCreateNestedOneWithoutPrescriptionRefillsInput
+  business: Prisma.BusinessCreateNestedOneWithoutPrescriptionRefillsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutPrescriptionRefillsInput
 }
 
 export type PrescriptionRefillUncheckedCreateWithoutCallInput = {
   id?: string
-  hospitalId: string
-  patientId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  businessId: string
+  callerId?: string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1021,266 +905,218 @@ export type PrescriptionRefillUpdateManyWithWhereWithoutCallInput = {
   data: Prisma.XOR<Prisma.PrescriptionRefillUpdateManyMutationInput, Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallInput>
 }
 
-export type PrescriptionRefillCreateManyHospitalInput = {
+export type PrescriptionRefillCreateManyBusinessInput = {
   id?: string
   callId?: string | null
-  patientId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerId?: string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
-export type PrescriptionRefillUpdateWithoutHospitalInput = {
+export type PrescriptionRefillUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   call?: Prisma.CallSessionUpdateOneWithoutPrescriptionRefillsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutPrescriptionRefillsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutPrescriptionRefillsNestedInput
 }
 
-export type PrescriptionRefillUncheckedUpdateWithoutHospitalInput = {
+export type PrescriptionRefillUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PrescriptionRefillUncheckedUpdateManyWithoutHospitalInput = {
+export type PrescriptionRefillUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PrescriptionRefillCreateManyPatientInput = {
+export type PrescriptionRefillCreateManyCallerInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   callId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
-export type PrescriptionRefillUpdateWithoutPatientInput = {
+export type PrescriptionRefillUpdateWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutPrescriptionRefillsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutPrescriptionRefillsNestedInput
   call?: Prisma.CallSessionUpdateOneWithoutPrescriptionRefillsNestedInput
 }
 
-export type PrescriptionRefillUncheckedUpdateWithoutPatientInput = {
+export type PrescriptionRefillUncheckedUpdateWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PrescriptionRefillUncheckedUpdateManyWithoutPatientInput = {
+export type PrescriptionRefillUncheckedUpdateManyWithoutCallerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PrescriptionRefillCreateManyCallInput = {
   id?: string
-  hospitalId: string
-  patientId?: string | null
-  patientName: string
-  patientPhone: string
-  patientDOB?: Date | string | null
+  businessId: string
+  callerId?: string | null
+  callerName: string
+  callerPhone: string
+  callerDOB?: Date | string | null
   medicationName: string
-  prescriberId?: string | null
   prescriberName?: string | null
   pharmacyName?: string | null
   pharmacyPhone?: string | null
   status?: $Enums.RefillStatus
   verificationStatus?: $Enums.VerificationStatus
-  isNewPatient?: boolean
-  assignedProviderId?: string | null
   notes?: string | null
-  rejectionReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type PrescriptionRefillUpdateWithoutCallInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutPrescriptionRefillsNestedInput
-  patient?: Prisma.PatientUpdateOneWithoutPrescriptionRefillsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutPrescriptionRefillsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutPrescriptionRefillsNestedInput
 }
 
 export type PrescriptionRefillUncheckedUpdateWithoutCallInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PrescriptionRefillUncheckedUpdateManyWithoutCallInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
-  patientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerDOB?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   medicationName?: Prisma.StringFieldUpdateOperationsInput | string
-  prescriberId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pharmacyPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRefillStatusFieldUpdateOperationsInput | $Enums.RefillStatus
   verificationStatus?: Prisma.EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
-  isNewPatient?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignedProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1289,148 +1125,128 @@ export type PrescriptionRefillUncheckedUpdateManyWithoutCallInput = {
 
 export type PrescriptionRefillSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   callId?: boolean
-  patientId?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientDOB?: boolean
+  callerId?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerDOB?: boolean
   medicationName?: boolean
-  prescriberId?: boolean
   prescriberName?: boolean
   pharmacyName?: boolean
   pharmacyPhone?: boolean
   status?: boolean
   verificationStatus?: boolean
-  isNewPatient?: boolean
-  assignedProviderId?: boolean
   notes?: boolean
-  rejectionReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.PrescriptionRefill$callArgs<ExtArgs>
-  patient?: boolean | Prisma.PrescriptionRefill$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.PrescriptionRefill$callerArgs<ExtArgs>
 }, ExtArgs["result"]["prescriptionRefill"]>
 
 export type PrescriptionRefillSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   callId?: boolean
-  patientId?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientDOB?: boolean
+  callerId?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerDOB?: boolean
   medicationName?: boolean
-  prescriberId?: boolean
   prescriberName?: boolean
   pharmacyName?: boolean
   pharmacyPhone?: boolean
   status?: boolean
   verificationStatus?: boolean
-  isNewPatient?: boolean
-  assignedProviderId?: boolean
   notes?: boolean
-  rejectionReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.PrescriptionRefill$callArgs<ExtArgs>
-  patient?: boolean | Prisma.PrescriptionRefill$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.PrescriptionRefill$callerArgs<ExtArgs>
 }, ExtArgs["result"]["prescriptionRefill"]>
 
 export type PrescriptionRefillSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   callId?: boolean
-  patientId?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientDOB?: boolean
+  callerId?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerDOB?: boolean
   medicationName?: boolean
-  prescriberId?: boolean
   prescriberName?: boolean
   pharmacyName?: boolean
   pharmacyPhone?: boolean
   status?: boolean
   verificationStatus?: boolean
-  isNewPatient?: boolean
-  assignedProviderId?: boolean
   notes?: boolean
-  rejectionReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.PrescriptionRefill$callArgs<ExtArgs>
-  patient?: boolean | Prisma.PrescriptionRefill$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.PrescriptionRefill$callerArgs<ExtArgs>
 }, ExtArgs["result"]["prescriptionRefill"]>
 
 export type PrescriptionRefillSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   callId?: boolean
-  patientId?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientDOB?: boolean
+  callerId?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerDOB?: boolean
   medicationName?: boolean
-  prescriberId?: boolean
   prescriberName?: boolean
   pharmacyName?: boolean
   pharmacyPhone?: boolean
   status?: boolean
   verificationStatus?: boolean
-  isNewPatient?: boolean
-  assignedProviderId?: boolean
   notes?: boolean
-  rejectionReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PrescriptionRefillOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "callId" | "patientId" | "patientName" | "patientPhone" | "patientDOB" | "medicationName" | "prescriberId" | "prescriberName" | "pharmacyName" | "pharmacyPhone" | "status" | "verificationStatus" | "isNewPatient" | "assignedProviderId" | "notes" | "rejectionReason" | "createdAt" | "updatedAt", ExtArgs["result"]["prescriptionRefill"]>
+export type PrescriptionRefillOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "callId" | "callerId" | "callerName" | "callerPhone" | "callerDOB" | "medicationName" | "prescriberName" | "pharmacyName" | "pharmacyPhone" | "status" | "verificationStatus" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["prescriptionRefill"]>
 export type PrescriptionRefillInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.PrescriptionRefill$callArgs<ExtArgs>
-  patient?: boolean | Prisma.PrescriptionRefill$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.PrescriptionRefill$callerArgs<ExtArgs>
 }
 export type PrescriptionRefillIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.PrescriptionRefill$callArgs<ExtArgs>
-  patient?: boolean | Prisma.PrescriptionRefill$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.PrescriptionRefill$callerArgs<ExtArgs>
 }
 export type PrescriptionRefillIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.PrescriptionRefill$callArgs<ExtArgs>
-  patient?: boolean | Prisma.PrescriptionRefill$patientArgs<ExtArgs>
+  caller?: boolean | Prisma.PrescriptionRefill$callerArgs<ExtArgs>
 }
 
 export type $PrescriptionRefillPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PrescriptionRefill"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
     call: Prisma.$CallSessionPayload<ExtArgs> | null
-    patient: Prisma.$PatientPayload<ExtArgs> | null
+    caller: Prisma.$CallerPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     callId: string | null
-    patientId: string | null
-    patientName: string
-    patientPhone: string
-    patientDOB: Date | null
+    callerId: string | null
+    callerName: string
+    callerPhone: string
+    callerDOB: Date | null
     medicationName: string
-    prescriberId: string | null
     prescriberName: string | null
     pharmacyName: string | null
     pharmacyPhone: string | null
     status: $Enums.RefillStatus
     verificationStatus: $Enums.VerificationStatus
-    isNewPatient: boolean
-    assignedProviderId: string | null
     notes: string | null
-    rejectionReason: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["prescriptionRefill"]>
@@ -1827,9 +1643,9 @@ readonly fields: PrescriptionRefillFieldRefs;
  */
 export interface Prisma__PrescriptionRefillClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   call<T extends Prisma.PrescriptionRefill$callArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PrescriptionRefill$callArgs<ExtArgs>>): Prisma.Prisma__CallSessionClient<runtime.Types.Result.GetResult<Prisma.$CallSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  patient<T extends Prisma.PrescriptionRefill$patientArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PrescriptionRefill$patientArgs<ExtArgs>>): Prisma.Prisma__PatientClient<runtime.Types.Result.GetResult<Prisma.$PatientPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  caller<T extends Prisma.PrescriptionRefill$callerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PrescriptionRefill$callerArgs<ExtArgs>>): Prisma.Prisma__CallerClient<runtime.Types.Result.GetResult<Prisma.$CallerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1860,23 +1676,19 @@ export interface Prisma__PrescriptionRefillClient<T, Null = never, ExtArgs exten
  */
 export interface PrescriptionRefillFieldRefs {
   readonly id: Prisma.FieldRef<"PrescriptionRefill", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"PrescriptionRefill", 'String'>
+  readonly businessId: Prisma.FieldRef<"PrescriptionRefill", 'String'>
   readonly callId: Prisma.FieldRef<"PrescriptionRefill", 'String'>
-  readonly patientId: Prisma.FieldRef<"PrescriptionRefill", 'String'>
-  readonly patientName: Prisma.FieldRef<"PrescriptionRefill", 'String'>
-  readonly patientPhone: Prisma.FieldRef<"PrescriptionRefill", 'String'>
-  readonly patientDOB: Prisma.FieldRef<"PrescriptionRefill", 'DateTime'>
+  readonly callerId: Prisma.FieldRef<"PrescriptionRefill", 'String'>
+  readonly callerName: Prisma.FieldRef<"PrescriptionRefill", 'String'>
+  readonly callerPhone: Prisma.FieldRef<"PrescriptionRefill", 'String'>
+  readonly callerDOB: Prisma.FieldRef<"PrescriptionRefill", 'DateTime'>
   readonly medicationName: Prisma.FieldRef<"PrescriptionRefill", 'String'>
-  readonly prescriberId: Prisma.FieldRef<"PrescriptionRefill", 'String'>
   readonly prescriberName: Prisma.FieldRef<"PrescriptionRefill", 'String'>
   readonly pharmacyName: Prisma.FieldRef<"PrescriptionRefill", 'String'>
   readonly pharmacyPhone: Prisma.FieldRef<"PrescriptionRefill", 'String'>
   readonly status: Prisma.FieldRef<"PrescriptionRefill", 'RefillStatus'>
   readonly verificationStatus: Prisma.FieldRef<"PrescriptionRefill", 'VerificationStatus'>
-  readonly isNewPatient: Prisma.FieldRef<"PrescriptionRefill", 'Boolean'>
-  readonly assignedProviderId: Prisma.FieldRef<"PrescriptionRefill", 'String'>
   readonly notes: Prisma.FieldRef<"PrescriptionRefill", 'String'>
-  readonly rejectionReason: Prisma.FieldRef<"PrescriptionRefill", 'String'>
   readonly createdAt: Prisma.FieldRef<"PrescriptionRefill", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"PrescriptionRefill", 'DateTime'>
 }
@@ -2294,22 +2106,22 @@ export type PrescriptionRefill$callArgs<ExtArgs extends runtime.Types.Extensions
 }
 
 /**
- * PrescriptionRefill.patient
+ * PrescriptionRefill.caller
  */
-export type PrescriptionRefill$patientArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type PrescriptionRefill$callerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Patient
+   * Select specific fields to fetch from the Caller
    */
-  select?: Prisma.PatientSelect<ExtArgs> | null
+  select?: Prisma.CallerSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Patient
+   * Omit specific fields from the Caller
    */
-  omit?: Prisma.PatientOmit<ExtArgs> | null
+  omit?: Prisma.CallerOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PatientInclude<ExtArgs> | null
-  where?: Prisma.PatientWhereInput
+  include?: Prisma.CallerInclude<ExtArgs> | null
+  where?: Prisma.CallerWhereInput
 }
 
 /**

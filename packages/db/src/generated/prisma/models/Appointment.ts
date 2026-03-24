@@ -37,12 +37,12 @@ export type AppointmentSumAggregateOutputType = {
 export type AppointmentMinAggregateOutputType = {
   id: string | null
   callId: string | null
-  hospitalId: string | null
+  businessId: string | null
   externalId: string | null
   provider: string | null
-  patientName: string | null
-  patientPhone: string | null
-  patientEmail: string | null
+  callerName: string | null
+  callerPhone: string | null
+  callerEmail: string | null
   providerName: string | null
   serviceType: string | null
   scheduledAt: Date | null
@@ -57,12 +57,12 @@ export type AppointmentMinAggregateOutputType = {
 export type AppointmentMaxAggregateOutputType = {
   id: string | null
   callId: string | null
-  hospitalId: string | null
+  businessId: string | null
   externalId: string | null
   provider: string | null
-  patientName: string | null
-  patientPhone: string | null
-  patientEmail: string | null
+  callerName: string | null
+  callerPhone: string | null
+  callerEmail: string | null
   providerName: string | null
   serviceType: string | null
   scheduledAt: Date | null
@@ -77,12 +77,12 @@ export type AppointmentMaxAggregateOutputType = {
 export type AppointmentCountAggregateOutputType = {
   id: number
   callId: number
-  hospitalId: number
+  businessId: number
   externalId: number
   provider: number
-  patientName: number
-  patientPhone: number
-  patientEmail: number
+  callerName: number
+  callerPhone: number
+  callerEmail: number
   providerName: number
   serviceType: number
   scheduledAt: number
@@ -107,12 +107,12 @@ export type AppointmentSumAggregateInputType = {
 export type AppointmentMinAggregateInputType = {
   id?: true
   callId?: true
-  hospitalId?: true
+  businessId?: true
   externalId?: true
   provider?: true
-  patientName?: true
-  patientPhone?: true
-  patientEmail?: true
+  callerName?: true
+  callerPhone?: true
+  callerEmail?: true
   providerName?: true
   serviceType?: true
   scheduledAt?: true
@@ -127,12 +127,12 @@ export type AppointmentMinAggregateInputType = {
 export type AppointmentMaxAggregateInputType = {
   id?: true
   callId?: true
-  hospitalId?: true
+  businessId?: true
   externalId?: true
   provider?: true
-  patientName?: true
-  patientPhone?: true
-  patientEmail?: true
+  callerName?: true
+  callerPhone?: true
+  callerEmail?: true
   providerName?: true
   serviceType?: true
   scheduledAt?: true
@@ -147,12 +147,12 @@ export type AppointmentMaxAggregateInputType = {
 export type AppointmentCountAggregateInputType = {
   id?: true
   callId?: true
-  hospitalId?: true
+  businessId?: true
   externalId?: true
   provider?: true
-  patientName?: true
-  patientPhone?: true
-  patientEmail?: true
+  callerName?: true
+  callerPhone?: true
+  callerEmail?: true
   providerName?: true
   serviceType?: true
   scheduledAt?: true
@@ -254,12 +254,12 @@ export type AppointmentGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 export type AppointmentGroupByOutputType = {
   id: string
   callId: string | null
-  hospitalId: string
+  businessId: string
   externalId: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail: string | null
   providerName: string | null
   serviceType: string | null
   scheduledAt: Date
@@ -297,12 +297,12 @@ export type AppointmentWhereInput = {
   NOT?: Prisma.AppointmentWhereInput | Prisma.AppointmentWhereInput[]
   id?: Prisma.StringFilter<"Appointment"> | string
   callId?: Prisma.StringNullableFilter<"Appointment"> | string | null
-  hospitalId?: Prisma.StringFilter<"Appointment"> | string
+  businessId?: Prisma.StringFilter<"Appointment"> | string
   externalId?: Prisma.StringNullableFilter<"Appointment"> | string | null
   provider?: Prisma.StringFilter<"Appointment"> | string
-  patientName?: Prisma.StringFilter<"Appointment"> | string
-  patientPhone?: Prisma.StringFilter<"Appointment"> | string
-  patientEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  callerName?: Prisma.StringFilter<"Appointment"> | string
+  callerPhone?: Prisma.StringFilter<"Appointment"> | string
+  callerEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
   providerName?: Prisma.StringNullableFilter<"Appointment"> | string | null
   serviceType?: Prisma.StringNullableFilter<"Appointment"> | string | null
   scheduledAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
@@ -312,19 +312,19 @@ export type AppointmentWhereInput = {
   cancelReason?: Prisma.StringNullableFilter<"Appointment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   call?: Prisma.XOR<Prisma.CallSessionNullableScalarRelationFilter, Prisma.CallSessionWhereInput> | null
 }
 
 export type AppointmentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   callId?: Prisma.SortOrderInput | Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   externalId?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientEmail?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   providerName?: Prisma.SortOrderInput | Prisma.SortOrder
   serviceType?: Prisma.SortOrderInput | Prisma.SortOrder
   scheduledAt?: Prisma.SortOrder
@@ -334,7 +334,7 @@ export type AppointmentOrderByWithRelationInput = {
   cancelReason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
   call?: Prisma.CallSessionOrderByWithRelationInput
 }
 
@@ -344,12 +344,12 @@ export type AppointmentWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.AppointmentWhereInput[]
   NOT?: Prisma.AppointmentWhereInput | Prisma.AppointmentWhereInput[]
   callId?: Prisma.StringNullableFilter<"Appointment"> | string | null
-  hospitalId?: Prisma.StringFilter<"Appointment"> | string
+  businessId?: Prisma.StringFilter<"Appointment"> | string
   externalId?: Prisma.StringNullableFilter<"Appointment"> | string | null
   provider?: Prisma.StringFilter<"Appointment"> | string
-  patientName?: Prisma.StringFilter<"Appointment"> | string
-  patientPhone?: Prisma.StringFilter<"Appointment"> | string
-  patientEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  callerName?: Prisma.StringFilter<"Appointment"> | string
+  callerPhone?: Prisma.StringFilter<"Appointment"> | string
+  callerEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
   providerName?: Prisma.StringNullableFilter<"Appointment"> | string | null
   serviceType?: Prisma.StringNullableFilter<"Appointment"> | string | null
   scheduledAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
@@ -359,19 +359,19 @@ export type AppointmentWhereUniqueInput = Prisma.AtLeast<{
   cancelReason?: Prisma.StringNullableFilter<"Appointment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
   call?: Prisma.XOR<Prisma.CallSessionNullableScalarRelationFilter, Prisma.CallSessionWhereInput> | null
 }, "id">
 
 export type AppointmentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   callId?: Prisma.SortOrderInput | Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   externalId?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientEmail?: Prisma.SortOrderInput | Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   providerName?: Prisma.SortOrderInput | Prisma.SortOrder
   serviceType?: Prisma.SortOrderInput | Prisma.SortOrder
   scheduledAt?: Prisma.SortOrder
@@ -394,12 +394,12 @@ export type AppointmentScalarWhereWithAggregatesInput = {
   NOT?: Prisma.AppointmentScalarWhereWithAggregatesInput | Prisma.AppointmentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
   callId?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
-  hospitalId?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
   externalId?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
   provider?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
-  patientName?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
-  patientPhone?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
-  patientEmail?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
+  callerName?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
+  callerPhone?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
+  callerEmail?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
   providerName?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
   serviceType?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
   scheduledAt?: Prisma.DateTimeWithAggregatesFilter<"Appointment"> | Date | string
@@ -415,9 +415,9 @@ export type AppointmentCreateInput = {
   id?: string
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -427,19 +427,19 @@ export type AppointmentCreateInput = {
   cancelReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutAppointmentsInput
+  business: Prisma.BusinessCreateNestedOneWithoutAppointmentsInput
   call?: Prisma.CallSessionCreateNestedOneWithoutAppointmentsInput
 }
 
 export type AppointmentUncheckedCreateInput = {
   id?: string
   callId?: string | null
-  hospitalId: string
+  businessId: string
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -455,9 +455,9 @@ export type AppointmentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -467,19 +467,19 @@ export type AppointmentUpdateInput = {
   cancelReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutAppointmentsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutAppointmentsNestedInput
   call?: Prisma.CallSessionUpdateOneWithoutAppointmentsNestedInput
 }
 
 export type AppointmentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -494,12 +494,12 @@ export type AppointmentUncheckedUpdateInput = {
 export type AppointmentCreateManyInput = {
   id?: string
   callId?: string | null
-  hospitalId: string
+  businessId: string
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -515,9 +515,9 @@ export type AppointmentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -532,12 +532,12 @@ export type AppointmentUpdateManyMutationInput = {
 export type AppointmentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -562,12 +562,12 @@ export type AppointmentOrderByRelationAggregateInput = {
 export type AppointmentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   callId?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   externalId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientEmail?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerEmail?: Prisma.SortOrder
   providerName?: Prisma.SortOrder
   serviceType?: Prisma.SortOrder
   scheduledAt?: Prisma.SortOrder
@@ -586,12 +586,12 @@ export type AppointmentAvgOrderByAggregateInput = {
 export type AppointmentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   callId?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   externalId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientEmail?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerEmail?: Prisma.SortOrder
   providerName?: Prisma.SortOrder
   serviceType?: Prisma.SortOrder
   scheduledAt?: Prisma.SortOrder
@@ -606,12 +606,12 @@ export type AppointmentMaxOrderByAggregateInput = {
 export type AppointmentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   callId?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   externalId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
-  patientName?: Prisma.SortOrder
-  patientPhone?: Prisma.SortOrder
-  patientEmail?: Prisma.SortOrder
+  callerName?: Prisma.SortOrder
+  callerPhone?: Prisma.SortOrder
+  callerEmail?: Prisma.SortOrder
   providerName?: Prisma.SortOrder
   serviceType?: Prisma.SortOrder
   scheduledAt?: Prisma.SortOrder
@@ -627,45 +627,45 @@ export type AppointmentSumOrderByAggregateInput = {
   duration?: Prisma.SortOrder
 }
 
-export type AppointmentCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutHospitalInput, Prisma.AppointmentUncheckedCreateWithoutHospitalInput> | Prisma.AppointmentCreateWithoutHospitalInput[] | Prisma.AppointmentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutHospitalInput | Prisma.AppointmentCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.AppointmentCreateManyHospitalInputEnvelope
+export type AppointmentCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutBusinessInput, Prisma.AppointmentUncheckedCreateWithoutBusinessInput> | Prisma.AppointmentCreateWithoutBusinessInput[] | Prisma.AppointmentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutBusinessInput | Prisma.AppointmentCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.AppointmentCreateManyBusinessInputEnvelope
   connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
 }
 
-export type AppointmentUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutHospitalInput, Prisma.AppointmentUncheckedCreateWithoutHospitalInput> | Prisma.AppointmentCreateWithoutHospitalInput[] | Prisma.AppointmentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutHospitalInput | Prisma.AppointmentCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.AppointmentCreateManyHospitalInputEnvelope
+export type AppointmentUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutBusinessInput, Prisma.AppointmentUncheckedCreateWithoutBusinessInput> | Prisma.AppointmentCreateWithoutBusinessInput[] | Prisma.AppointmentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutBusinessInput | Prisma.AppointmentCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.AppointmentCreateManyBusinessInputEnvelope
   connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
 }
 
-export type AppointmentUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutHospitalInput, Prisma.AppointmentUncheckedCreateWithoutHospitalInput> | Prisma.AppointmentCreateWithoutHospitalInput[] | Prisma.AppointmentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutHospitalInput | Prisma.AppointmentCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.AppointmentUpsertWithWhereUniqueWithoutHospitalInput | Prisma.AppointmentUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.AppointmentCreateManyHospitalInputEnvelope
+export type AppointmentUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutBusinessInput, Prisma.AppointmentUncheckedCreateWithoutBusinessInput> | Prisma.AppointmentCreateWithoutBusinessInput[] | Prisma.AppointmentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutBusinessInput | Prisma.AppointmentCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.AppointmentUpsertWithWhereUniqueWithoutBusinessInput | Prisma.AppointmentUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.AppointmentCreateManyBusinessInputEnvelope
   set?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
   disconnect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
   delete?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
   connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
-  update?: Prisma.AppointmentUpdateWithWhereUniqueWithoutHospitalInput | Prisma.AppointmentUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.AppointmentUpdateManyWithWhereWithoutHospitalInput | Prisma.AppointmentUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.AppointmentUpdateWithWhereUniqueWithoutBusinessInput | Prisma.AppointmentUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.AppointmentUpdateManyWithWhereWithoutBusinessInput | Prisma.AppointmentUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
 }
 
-export type AppointmentUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutHospitalInput, Prisma.AppointmentUncheckedCreateWithoutHospitalInput> | Prisma.AppointmentCreateWithoutHospitalInput[] | Prisma.AppointmentUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutHospitalInput | Prisma.AppointmentCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.AppointmentUpsertWithWhereUniqueWithoutHospitalInput | Prisma.AppointmentUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.AppointmentCreateManyHospitalInputEnvelope
+export type AppointmentUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutBusinessInput, Prisma.AppointmentUncheckedCreateWithoutBusinessInput> | Prisma.AppointmentCreateWithoutBusinessInput[] | Prisma.AppointmentUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutBusinessInput | Prisma.AppointmentCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.AppointmentUpsertWithWhereUniqueWithoutBusinessInput | Prisma.AppointmentUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.AppointmentCreateManyBusinessInputEnvelope
   set?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
   disconnect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
   delete?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
   connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
-  update?: Prisma.AppointmentUpdateWithWhereUniqueWithoutHospitalInput | Prisma.AppointmentUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.AppointmentUpdateManyWithWhereWithoutHospitalInput | Prisma.AppointmentUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.AppointmentUpdateWithWhereUniqueWithoutBusinessInput | Prisma.AppointmentUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.AppointmentUpdateManyWithWhereWithoutBusinessInput | Prisma.AppointmentUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
 }
 
@@ -715,13 +715,13 @@ export type AppointmentUncheckedUpdateManyWithoutCallNestedInput = {
   deleteMany?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
 }
 
-export type AppointmentCreateWithoutHospitalInput = {
+export type AppointmentCreateWithoutBusinessInput = {
   id?: string
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -734,14 +734,14 @@ export type AppointmentCreateWithoutHospitalInput = {
   call?: Prisma.CallSessionCreateNestedOneWithoutAppointmentsInput
 }
 
-export type AppointmentUncheckedCreateWithoutHospitalInput = {
+export type AppointmentUncheckedCreateWithoutBusinessInput = {
   id?: string
   callId?: string | null
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -753,30 +753,30 @@ export type AppointmentUncheckedCreateWithoutHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type AppointmentCreateOrConnectWithoutHospitalInput = {
+export type AppointmentCreateOrConnectWithoutBusinessInput = {
   where: Prisma.AppointmentWhereUniqueInput
-  create: Prisma.XOR<Prisma.AppointmentCreateWithoutHospitalInput, Prisma.AppointmentUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.AppointmentCreateWithoutBusinessInput, Prisma.AppointmentUncheckedCreateWithoutBusinessInput>
 }
 
-export type AppointmentCreateManyHospitalInputEnvelope = {
-  data: Prisma.AppointmentCreateManyHospitalInput | Prisma.AppointmentCreateManyHospitalInput[]
+export type AppointmentCreateManyBusinessInputEnvelope = {
+  data: Prisma.AppointmentCreateManyBusinessInput | Prisma.AppointmentCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type AppointmentUpsertWithWhereUniqueWithoutHospitalInput = {
+export type AppointmentUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.AppointmentWhereUniqueInput
-  update: Prisma.XOR<Prisma.AppointmentUpdateWithoutHospitalInput, Prisma.AppointmentUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.AppointmentCreateWithoutHospitalInput, Prisma.AppointmentUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.AppointmentUpdateWithoutBusinessInput, Prisma.AppointmentUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.AppointmentCreateWithoutBusinessInput, Prisma.AppointmentUncheckedCreateWithoutBusinessInput>
 }
 
-export type AppointmentUpdateWithWhereUniqueWithoutHospitalInput = {
+export type AppointmentUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.AppointmentWhereUniqueInput
-  data: Prisma.XOR<Prisma.AppointmentUpdateWithoutHospitalInput, Prisma.AppointmentUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.AppointmentUpdateWithoutBusinessInput, Prisma.AppointmentUncheckedUpdateWithoutBusinessInput>
 }
 
-export type AppointmentUpdateManyWithWhereWithoutHospitalInput = {
+export type AppointmentUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.AppointmentScalarWhereInput
-  data: Prisma.XOR<Prisma.AppointmentUpdateManyMutationInput, Prisma.AppointmentUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.AppointmentUpdateManyMutationInput, Prisma.AppointmentUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type AppointmentScalarWhereInput = {
@@ -785,12 +785,12 @@ export type AppointmentScalarWhereInput = {
   NOT?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
   id?: Prisma.StringFilter<"Appointment"> | string
   callId?: Prisma.StringNullableFilter<"Appointment"> | string | null
-  hospitalId?: Prisma.StringFilter<"Appointment"> | string
+  businessId?: Prisma.StringFilter<"Appointment"> | string
   externalId?: Prisma.StringNullableFilter<"Appointment"> | string | null
   provider?: Prisma.StringFilter<"Appointment"> | string
-  patientName?: Prisma.StringFilter<"Appointment"> | string
-  patientPhone?: Prisma.StringFilter<"Appointment"> | string
-  patientEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  callerName?: Prisma.StringFilter<"Appointment"> | string
+  callerPhone?: Prisma.StringFilter<"Appointment"> | string
+  callerEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
   providerName?: Prisma.StringNullableFilter<"Appointment"> | string | null
   serviceType?: Prisma.StringNullableFilter<"Appointment"> | string | null
   scheduledAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
@@ -806,9 +806,9 @@ export type AppointmentCreateWithoutCallInput = {
   id?: string
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -818,17 +818,17 @@ export type AppointmentCreateWithoutCallInput = {
   cancelReason?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutAppointmentsInput
+  business: Prisma.BusinessCreateNestedOneWithoutAppointmentsInput
 }
 
 export type AppointmentUncheckedCreateWithoutCallInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -866,14 +866,14 @@ export type AppointmentUpdateManyWithWhereWithoutCallInput = {
   data: Prisma.XOR<Prisma.AppointmentUpdateManyMutationInput, Prisma.AppointmentUncheckedUpdateManyWithoutCallInput>
 }
 
-export type AppointmentCreateManyHospitalInput = {
+export type AppointmentCreateManyBusinessInput = {
   id?: string
   callId?: string | null
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -885,13 +885,13 @@ export type AppointmentCreateManyHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type AppointmentUpdateWithoutHospitalInput = {
+export type AppointmentUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -904,14 +904,14 @@ export type AppointmentUpdateWithoutHospitalInput = {
   call?: Prisma.CallSessionUpdateOneWithoutAppointmentsNestedInput
 }
 
-export type AppointmentUncheckedUpdateWithoutHospitalInput = {
+export type AppointmentUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -923,14 +923,14 @@ export type AppointmentUncheckedUpdateWithoutHospitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type AppointmentUncheckedUpdateManyWithoutHospitalInput = {
+export type AppointmentUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   callId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -944,12 +944,12 @@ export type AppointmentUncheckedUpdateManyWithoutHospitalInput = {
 
 export type AppointmentCreateManyCallInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   externalId?: string | null
   provider: string
-  patientName: string
-  patientPhone: string
-  patientEmail?: string | null
+  callerName: string
+  callerPhone: string
+  callerEmail?: string | null
   providerName?: string | null
   serviceType?: string | null
   scheduledAt: Date | string
@@ -965,9 +965,9 @@ export type AppointmentUpdateWithoutCallInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -977,17 +977,17 @@ export type AppointmentUpdateWithoutCallInput = {
   cancelReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutAppointmentsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutAppointmentsNestedInput
 }
 
 export type AppointmentUncheckedUpdateWithoutCallInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1001,12 +1001,12 @@ export type AppointmentUncheckedUpdateWithoutCallInput = {
 
 export type AppointmentUncheckedUpdateManyWithoutCallInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
-  patientName?: Prisma.StringFieldUpdateOperationsInput | string
-  patientPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  patientEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  callerName?: Prisma.StringFieldUpdateOperationsInput | string
+  callerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  callerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   providerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serviceType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   scheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1023,12 +1023,12 @@ export type AppointmentUncheckedUpdateManyWithoutCallInput = {
 export type AppointmentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   callId?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   externalId?: boolean
   provider?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientEmail?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerEmail?: boolean
   providerName?: boolean
   serviceType?: boolean
   scheduledAt?: boolean
@@ -1038,19 +1038,19 @@ export type AppointmentSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   cancelReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.Appointment$callArgs<ExtArgs>
 }, ExtArgs["result"]["appointment"]>
 
 export type AppointmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   callId?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   externalId?: boolean
   provider?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientEmail?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerEmail?: boolean
   providerName?: boolean
   serviceType?: boolean
   scheduledAt?: boolean
@@ -1060,19 +1060,19 @@ export type AppointmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   cancelReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.Appointment$callArgs<ExtArgs>
 }, ExtArgs["result"]["appointment"]>
 
 export type AppointmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   callId?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   externalId?: boolean
   provider?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientEmail?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerEmail?: boolean
   providerName?: boolean
   serviceType?: boolean
   scheduledAt?: boolean
@@ -1082,19 +1082,19 @@ export type AppointmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   cancelReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.Appointment$callArgs<ExtArgs>
 }, ExtArgs["result"]["appointment"]>
 
 export type AppointmentSelectScalar = {
   id?: boolean
   callId?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   externalId?: boolean
   provider?: boolean
-  patientName?: boolean
-  patientPhone?: boolean
-  patientEmail?: boolean
+  callerName?: boolean
+  callerPhone?: boolean
+  callerEmail?: boolean
   providerName?: boolean
   serviceType?: boolean
   scheduledAt?: boolean
@@ -1106,35 +1106,35 @@ export type AppointmentSelectScalar = {
   updatedAt?: boolean
 }
 
-export type AppointmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "callId" | "hospitalId" | "externalId" | "provider" | "patientName" | "patientPhone" | "patientEmail" | "providerName" | "serviceType" | "scheduledAt" | "duration" | "status" | "notes" | "cancelReason" | "createdAt" | "updatedAt", ExtArgs["result"]["appointment"]>
+export type AppointmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "callId" | "businessId" | "externalId" | "provider" | "callerName" | "callerPhone" | "callerEmail" | "providerName" | "serviceType" | "scheduledAt" | "duration" | "status" | "notes" | "cancelReason" | "createdAt" | "updatedAt", ExtArgs["result"]["appointment"]>
 export type AppointmentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.Appointment$callArgs<ExtArgs>
 }
 export type AppointmentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.Appointment$callArgs<ExtArgs>
 }
 export type AppointmentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
   call?: boolean | Prisma.Appointment$callArgs<ExtArgs>
 }
 
 export type $AppointmentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Appointment"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
     call: Prisma.$CallSessionPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     callId: string | null
-    hospitalId: string
+    businessId: string
     externalId: string | null
     provider: string
-    patientName: string
-    patientPhone: string
-    patientEmail: string | null
+    callerName: string
+    callerPhone: string
+    callerEmail: string | null
     providerName: string | null
     serviceType: string | null
     scheduledAt: Date
@@ -1538,7 +1538,7 @@ readonly fields: AppointmentFieldRefs;
  */
 export interface Prisma__AppointmentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   call<T extends Prisma.Appointment$callArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Appointment$callArgs<ExtArgs>>): Prisma.Prisma__CallSessionClient<runtime.Types.Result.GetResult<Prisma.$CallSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1571,12 +1571,12 @@ export interface Prisma__AppointmentClient<T, Null = never, ExtArgs extends runt
 export interface AppointmentFieldRefs {
   readonly id: Prisma.FieldRef<"Appointment", 'String'>
   readonly callId: Prisma.FieldRef<"Appointment", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"Appointment", 'String'>
+  readonly businessId: Prisma.FieldRef<"Appointment", 'String'>
   readonly externalId: Prisma.FieldRef<"Appointment", 'String'>
   readonly provider: Prisma.FieldRef<"Appointment", 'String'>
-  readonly patientName: Prisma.FieldRef<"Appointment", 'String'>
-  readonly patientPhone: Prisma.FieldRef<"Appointment", 'String'>
-  readonly patientEmail: Prisma.FieldRef<"Appointment", 'String'>
+  readonly callerName: Prisma.FieldRef<"Appointment", 'String'>
+  readonly callerPhone: Prisma.FieldRef<"Appointment", 'String'>
+  readonly callerEmail: Prisma.FieldRef<"Appointment", 'String'>
   readonly providerName: Prisma.FieldRef<"Appointment", 'String'>
   readonly serviceType: Prisma.FieldRef<"Appointment", 'String'>
   readonly scheduledAt: Prisma.FieldRef<"Appointment", 'DateTime'>

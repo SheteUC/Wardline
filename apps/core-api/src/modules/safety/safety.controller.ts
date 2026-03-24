@@ -38,6 +38,7 @@ export class SafetyController {
         const systemEmergency = this.safetyGuard.getSystemEmergencyKeywords();
         const defaultOutOfScope = this.safetyGuard.getDefaultOutOfScopeKeywords();
         return {
+            businessId,
             systemEmergency,
             defaultOutOfScope,
             note: 'Custom keywords are configurable in Business Settings.',

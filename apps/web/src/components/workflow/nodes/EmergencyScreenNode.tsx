@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Siren } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface EmergencyScreenNodeData {
+export interface EmergencyScreenNodeData extends Record<string, unknown> {
     label: string;
     keywords?: string[];
     autoEscalate?: boolean;

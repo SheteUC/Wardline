@@ -11,6 +11,8 @@ import {
     Play, StopCircle, Send, Bot, User, AlertTriangle,
     CheckCircle, ArrowRight, Clock, Loader2
 } from 'lucide-react';
+import { useApiClient } from '@/lib/api-client';
+import { useBusiness } from '@/lib/business-context';
 
 interface SimulationMessage {
     role: 'user' | 'assistant' | 'system';
@@ -36,6 +38,8 @@ interface WorkflowSimulatorProps {
 }
 
 export function WorkflowSimulator({ workflowId, nodes, edges }: WorkflowSimulatorProps) {
+    const apiClient = useApiClient();
+    const { businessId } = useBusiness();
     const [isRunning, setIsRunning] = useState(false);
     const [messages, setMessages] = useState<SimulationMessage[]>([]);
     const [executionPath, setExecutionPath] = useState<ExecutionStep[]>([]);
@@ -44,23 +48,28 @@ export function WorkflowSimulator({ workflowId, nodes, edges }: WorkflowSimulato
     const [testScenario, setTestScenario] = useState('custom');
     
     const startSimulation = async () => {
+        if (!workflowId || !businessId) {
+            setMessages([{
+                role: 'system',
+                content: 'Save the workflow before running simulation.',
+                timestamp: new Date().toISOString(),
+            }]);
+            return;
+        }
+
         setIsRunning(true);
         setMessages([]);
         setExecutionPath([]);
         setCurrentNodeId(null);
         
         try {
-            // Call simulation API
-            const response = await fetch(`/api/workflows/${workflowId}/simulate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    scenario: testScenario,
-                    userInputs: messages.filter(m => m.role === 'user').map(m => m.content),
-                }),
+            const result = await apiClient.post<{
+                executionPath?: string[];
+                nodeResults?: Record<string, unknown>;
+            }>(`/businesses/${businessId}/workflows/${workflowId}/simulate`, {
+                scenario: testScenario,
+                userInputs: messages.filter(m => m.role === 'user').map(m => m.content),
             });
-            
-            const result = await response.json();
             
             // Process simulation results
             if (result.executionPath) {

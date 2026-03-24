@@ -26,7 +26,7 @@ export type AggregateSchedulingIntegration = {
 
 export type SchedulingIntegrationMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   provider: string | null
   apiKey: string | null
   locationId: string | null
@@ -37,7 +37,7 @@ export type SchedulingIntegrationMinAggregateOutputType = {
 
 export type SchedulingIntegrationMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   provider: string | null
   apiKey: string | null
   locationId: string | null
@@ -48,7 +48,7 @@ export type SchedulingIntegrationMaxAggregateOutputType = {
 
 export type SchedulingIntegrationCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   provider: number
   apiKey: number
   locationId: number
@@ -62,7 +62,7 @@ export type SchedulingIntegrationCountAggregateOutputType = {
 
 export type SchedulingIntegrationMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   provider?: true
   apiKey?: true
   locationId?: true
@@ -73,7 +73,7 @@ export type SchedulingIntegrationMinAggregateInputType = {
 
 export type SchedulingIntegrationMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   provider?: true
   apiKey?: true
   locationId?: true
@@ -84,7 +84,7 @@ export type SchedulingIntegrationMaxAggregateInputType = {
 
 export type SchedulingIntegrationCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   provider?: true
   apiKey?: true
   locationId?: true
@@ -169,7 +169,7 @@ export type SchedulingIntegrationGroupByArgs<ExtArgs extends runtime.Types.Exten
 
 export type SchedulingIntegrationGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   provider: string
   apiKey: string
   locationId: string | null
@@ -202,7 +202,7 @@ export type SchedulingIntegrationWhereInput = {
   OR?: Prisma.SchedulingIntegrationWhereInput[]
   NOT?: Prisma.SchedulingIntegrationWhereInput | Prisma.SchedulingIntegrationWhereInput[]
   id?: Prisma.StringFilter<"SchedulingIntegration"> | string
-  hospitalId?: Prisma.StringFilter<"SchedulingIntegration"> | string
+  businessId?: Prisma.StringFilter<"SchedulingIntegration"> | string
   provider?: Prisma.StringFilter<"SchedulingIntegration"> | string
   apiKey?: Prisma.StringFilter<"SchedulingIntegration"> | string
   locationId?: Prisma.StringNullableFilter<"SchedulingIntegration"> | string | null
@@ -210,12 +210,12 @@ export type SchedulingIntegrationWhereInput = {
   config?: Prisma.JsonNullableFilter<"SchedulingIntegration">
   createdAt?: Prisma.DateTimeFilter<"SchedulingIntegration"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SchedulingIntegration"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }
 
 export type SchedulingIntegrationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   apiKey?: Prisma.SortOrder
   locationId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -223,7 +223,7 @@ export type SchedulingIntegrationOrderByWithRelationInput = {
   config?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
 }
 
 export type SchedulingIntegrationWhereUniqueInput = Prisma.AtLeast<{
@@ -231,7 +231,7 @@ export type SchedulingIntegrationWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.SchedulingIntegrationWhereInput | Prisma.SchedulingIntegrationWhereInput[]
   OR?: Prisma.SchedulingIntegrationWhereInput[]
   NOT?: Prisma.SchedulingIntegrationWhereInput | Prisma.SchedulingIntegrationWhereInput[]
-  hospitalId?: Prisma.StringFilter<"SchedulingIntegration"> | string
+  businessId?: Prisma.StringFilter<"SchedulingIntegration"> | string
   provider?: Prisma.StringFilter<"SchedulingIntegration"> | string
   apiKey?: Prisma.StringFilter<"SchedulingIntegration"> | string
   locationId?: Prisma.StringNullableFilter<"SchedulingIntegration"> | string | null
@@ -239,12 +239,12 @@ export type SchedulingIntegrationWhereUniqueInput = Prisma.AtLeast<{
   config?: Prisma.JsonNullableFilter<"SchedulingIntegration">
   createdAt?: Prisma.DateTimeFilter<"SchedulingIntegration"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SchedulingIntegration"> | Date | string
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }, "id">
 
 export type SchedulingIntegrationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   apiKey?: Prisma.SortOrder
   locationId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -262,7 +262,7 @@ export type SchedulingIntegrationScalarWhereWithAggregatesInput = {
   OR?: Prisma.SchedulingIntegrationScalarWhereWithAggregatesInput[]
   NOT?: Prisma.SchedulingIntegrationScalarWhereWithAggregatesInput | Prisma.SchedulingIntegrationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"SchedulingIntegration"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"SchedulingIntegration"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"SchedulingIntegration"> | string
   provider?: Prisma.StringWithAggregatesFilter<"SchedulingIntegration"> | string
   apiKey?: Prisma.StringWithAggregatesFilter<"SchedulingIntegration"> | string
   locationId?: Prisma.StringNullableWithAggregatesFilter<"SchedulingIntegration"> | string | null
@@ -281,12 +281,12 @@ export type SchedulingIntegrationCreateInput = {
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  hospital: Prisma.HospitalCreateNestedOneWithoutSchedulingIntegrationsInput
+  business: Prisma.BusinessCreateNestedOneWithoutSchedulingIntegrationsInput
 }
 
 export type SchedulingIntegrationUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   provider: string
   apiKey: string
   locationId?: string | null
@@ -305,12 +305,12 @@ export type SchedulingIntegrationUpdateInput = {
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutSchedulingIntegrationsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutSchedulingIntegrationsNestedInput
 }
 
 export type SchedulingIntegrationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   apiKey?: Prisma.StringFieldUpdateOperationsInput | string
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -322,7 +322,7 @@ export type SchedulingIntegrationUncheckedUpdateInput = {
 
 export type SchedulingIntegrationCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   provider: string
   apiKey: string
   locationId?: string | null
@@ -345,7 +345,7 @@ export type SchedulingIntegrationUpdateManyMutationInput = {
 
 export type SchedulingIntegrationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   apiKey?: Prisma.StringFieldUpdateOperationsInput | string
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -367,7 +367,7 @@ export type SchedulingIntegrationOrderByRelationAggregateInput = {
 
 export type SchedulingIntegrationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   apiKey?: Prisma.SortOrder
   locationId?: Prisma.SortOrder
@@ -379,7 +379,7 @@ export type SchedulingIntegrationCountOrderByAggregateInput = {
 
 export type SchedulingIntegrationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   apiKey?: Prisma.SortOrder
   locationId?: Prisma.SortOrder
@@ -390,7 +390,7 @@ export type SchedulingIntegrationMaxOrderByAggregateInput = {
 
 export type SchedulingIntegrationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   apiKey?: Prisma.SortOrder
   locationId?: Prisma.SortOrder
@@ -399,49 +399,53 @@ export type SchedulingIntegrationMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
-export type SchedulingIntegrationCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput> | Prisma.SchedulingIntegrationCreateWithoutHospitalInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.SchedulingIntegrationCreateManyHospitalInputEnvelope
+export type SchedulingIntegrationCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput> | Prisma.SchedulingIntegrationCreateWithoutBusinessInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.SchedulingIntegrationCreateManyBusinessInputEnvelope
   connect?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
 }
 
-export type SchedulingIntegrationUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput> | Prisma.SchedulingIntegrationCreateWithoutHospitalInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.SchedulingIntegrationCreateManyHospitalInputEnvelope
+export type SchedulingIntegrationUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput> | Prisma.SchedulingIntegrationCreateWithoutBusinessInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.SchedulingIntegrationCreateManyBusinessInputEnvelope
   connect?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
 }
 
-export type SchedulingIntegrationUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput> | Prisma.SchedulingIntegrationCreateWithoutHospitalInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutHospitalInput | Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.SchedulingIntegrationCreateManyHospitalInputEnvelope
+export type SchedulingIntegrationUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput> | Prisma.SchedulingIntegrationCreateWithoutBusinessInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutBusinessInput | Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.SchedulingIntegrationCreateManyBusinessInputEnvelope
   set?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
   disconnect?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
   delete?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
   connect?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
-  update?: Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutHospitalInput | Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutHospitalInput | Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutBusinessInput | Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutBusinessInput | Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.SchedulingIntegrationScalarWhereInput | Prisma.SchedulingIntegrationScalarWhereInput[]
 }
 
-export type SchedulingIntegrationUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput> | Prisma.SchedulingIntegrationCreateWithoutHospitalInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutHospitalInput | Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.SchedulingIntegrationCreateManyHospitalInputEnvelope
+export type SchedulingIntegrationUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput> | Prisma.SchedulingIntegrationCreateWithoutBusinessInput[] | Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput | Prisma.SchedulingIntegrationCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutBusinessInput | Prisma.SchedulingIntegrationUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.SchedulingIntegrationCreateManyBusinessInputEnvelope
   set?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
   disconnect?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
   delete?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
   connect?: Prisma.SchedulingIntegrationWhereUniqueInput | Prisma.SchedulingIntegrationWhereUniqueInput[]
-  update?: Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutHospitalInput | Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutHospitalInput | Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutBusinessInput | Prisma.SchedulingIntegrationUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutBusinessInput | Prisma.SchedulingIntegrationUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.SchedulingIntegrationScalarWhereInput | Prisma.SchedulingIntegrationScalarWhereInput[]
 }
 
-export type SchedulingIntegrationCreateWithoutHospitalInput = {
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type SchedulingIntegrationCreateWithoutBusinessInput = {
   id?: string
   provider: string
   apiKey: string
@@ -452,7 +456,7 @@ export type SchedulingIntegrationCreateWithoutHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type SchedulingIntegrationUncheckedCreateWithoutHospitalInput = {
+export type SchedulingIntegrationUncheckedCreateWithoutBusinessInput = {
   id?: string
   provider: string
   apiKey: string
@@ -463,30 +467,30 @@ export type SchedulingIntegrationUncheckedCreateWithoutHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type SchedulingIntegrationCreateOrConnectWithoutHospitalInput = {
+export type SchedulingIntegrationCreateOrConnectWithoutBusinessInput = {
   where: Prisma.SchedulingIntegrationWhereUniqueInput
-  create: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput>
 }
 
-export type SchedulingIntegrationCreateManyHospitalInputEnvelope = {
-  data: Prisma.SchedulingIntegrationCreateManyHospitalInput | Prisma.SchedulingIntegrationCreateManyHospitalInput[]
+export type SchedulingIntegrationCreateManyBusinessInputEnvelope = {
+  data: Prisma.SchedulingIntegrationCreateManyBusinessInput | Prisma.SchedulingIntegrationCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type SchedulingIntegrationUpsertWithWhereUniqueWithoutHospitalInput = {
+export type SchedulingIntegrationUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.SchedulingIntegrationWhereUniqueInput
-  update: Prisma.XOR<Prisma.SchedulingIntegrationUpdateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.SchedulingIntegrationUpdateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.SchedulingIntegrationCreateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedCreateWithoutBusinessInput>
 }
 
-export type SchedulingIntegrationUpdateWithWhereUniqueWithoutHospitalInput = {
+export type SchedulingIntegrationUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.SchedulingIntegrationWhereUniqueInput
-  data: Prisma.XOR<Prisma.SchedulingIntegrationUpdateWithoutHospitalInput, Prisma.SchedulingIntegrationUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.SchedulingIntegrationUpdateWithoutBusinessInput, Prisma.SchedulingIntegrationUncheckedUpdateWithoutBusinessInput>
 }
 
-export type SchedulingIntegrationUpdateManyWithWhereWithoutHospitalInput = {
+export type SchedulingIntegrationUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.SchedulingIntegrationScalarWhereInput
-  data: Prisma.XOR<Prisma.SchedulingIntegrationUpdateManyMutationInput, Prisma.SchedulingIntegrationUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.SchedulingIntegrationUpdateManyMutationInput, Prisma.SchedulingIntegrationUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type SchedulingIntegrationScalarWhereInput = {
@@ -494,7 +498,7 @@ export type SchedulingIntegrationScalarWhereInput = {
   OR?: Prisma.SchedulingIntegrationScalarWhereInput[]
   NOT?: Prisma.SchedulingIntegrationScalarWhereInput | Prisma.SchedulingIntegrationScalarWhereInput[]
   id?: Prisma.StringFilter<"SchedulingIntegration"> | string
-  hospitalId?: Prisma.StringFilter<"SchedulingIntegration"> | string
+  businessId?: Prisma.StringFilter<"SchedulingIntegration"> | string
   provider?: Prisma.StringFilter<"SchedulingIntegration"> | string
   apiKey?: Prisma.StringFilter<"SchedulingIntegration"> | string
   locationId?: Prisma.StringNullableFilter<"SchedulingIntegration"> | string | null
@@ -504,7 +508,7 @@ export type SchedulingIntegrationScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"SchedulingIntegration"> | Date | string
 }
 
-export type SchedulingIntegrationCreateManyHospitalInput = {
+export type SchedulingIntegrationCreateManyBusinessInput = {
   id?: string
   provider: string
   apiKey: string
@@ -515,7 +519,7 @@ export type SchedulingIntegrationCreateManyHospitalInput = {
   updatedAt?: Date | string
 }
 
-export type SchedulingIntegrationUpdateWithoutHospitalInput = {
+export type SchedulingIntegrationUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   apiKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -526,7 +530,7 @@ export type SchedulingIntegrationUpdateWithoutHospitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type SchedulingIntegrationUncheckedUpdateWithoutHospitalInput = {
+export type SchedulingIntegrationUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   apiKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -537,7 +541,7 @@ export type SchedulingIntegrationUncheckedUpdateWithoutHospitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type SchedulingIntegrationUncheckedUpdateManyWithoutHospitalInput = {
+export type SchedulingIntegrationUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   apiKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -552,7 +556,7 @@ export type SchedulingIntegrationUncheckedUpdateManyWithoutHospitalInput = {
 
 export type SchedulingIntegrationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   provider?: boolean
   apiKey?: boolean
   locationId?: boolean
@@ -560,12 +564,12 @@ export type SchedulingIntegrationSelect<ExtArgs extends runtime.Types.Extensions
   config?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["schedulingIntegration"]>
 
 export type SchedulingIntegrationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   provider?: boolean
   apiKey?: boolean
   locationId?: boolean
@@ -573,12 +577,12 @@ export type SchedulingIntegrationSelectCreateManyAndReturn<ExtArgs extends runti
   config?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["schedulingIntegration"]>
 
 export type SchedulingIntegrationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   provider?: boolean
   apiKey?: boolean
   locationId?: boolean
@@ -586,12 +590,12 @@ export type SchedulingIntegrationSelectUpdateManyAndReturn<ExtArgs extends runti
   config?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["schedulingIntegration"]>
 
 export type SchedulingIntegrationSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   provider?: boolean
   apiKey?: boolean
   locationId?: boolean
@@ -601,25 +605,25 @@ export type SchedulingIntegrationSelectScalar = {
   updatedAt?: boolean
 }
 
-export type SchedulingIntegrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "provider" | "apiKey" | "locationId" | "isActive" | "config" | "createdAt" | "updatedAt", ExtArgs["result"]["schedulingIntegration"]>
+export type SchedulingIntegrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "provider" | "apiKey" | "locationId" | "isActive" | "config" | "createdAt" | "updatedAt", ExtArgs["result"]["schedulingIntegration"]>
 export type SchedulingIntegrationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type SchedulingIntegrationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type SchedulingIntegrationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 
 export type $SchedulingIntegrationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SchedulingIntegration"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     provider: string
     apiKey: string
     locationId: string | null
@@ -1021,7 +1025,7 @@ readonly fields: SchedulingIntegrationFieldRefs;
  */
 export interface Prisma__SchedulingIntegrationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1052,7 +1056,7 @@ export interface Prisma__SchedulingIntegrationClient<T, Null = never, ExtArgs ex
  */
 export interface SchedulingIntegrationFieldRefs {
   readonly id: Prisma.FieldRef<"SchedulingIntegration", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"SchedulingIntegration", 'String'>
+  readonly businessId: Prisma.FieldRef<"SchedulingIntegration", 'String'>
   readonly provider: Prisma.FieldRef<"SchedulingIntegration", 'String'>
   readonly apiKey: Prisma.FieldRef<"SchedulingIntegration", 'String'>
   readonly locationId: Prisma.FieldRef<"SchedulingIntegration", 'String'>

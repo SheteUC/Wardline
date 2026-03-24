@@ -94,7 +94,7 @@ async def handle_incoming_call(request: Request):
     
     # Look up hospital by phone number
     try:
-        hospital = await api_client.get_hospital_by_phone(to_number)
+        hospital = await api_client.get_business_by_phone(to_number)
         if hospital:
             context.hospital_id = hospital.get("id", "")
             context.hospital_name = hospital.get("name", "Wardline Medical Center")
@@ -691,4 +691,3 @@ if __name__ == "__main__":
         reload=settings.debug,
         log_level="info",
     )
-

@@ -13,7 +13,7 @@ interface WebSocketOptions {
 }
 
 export function useWebSocket(options: WebSocketOptions = {}) {
-  const socketRef = useRef<Socket>();
+  const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -85,9 +85,9 @@ export function useWebSocket(options: WebSocketOptions = {}) {
     socketRef.current?.emit('assignment:reject', { assignmentId, agentId, reason });
   };
 
-  const getOnlineAgents = async (hospitalId: string) => {
+  const getOnlineAgents = async (businessId: string) => {
     return new Promise((resolve) => {
-      socketRef.current?.emit('agents:online', { hospitalId }, (response: any) => {
+      socketRef.current?.emit('agents:online', { businessId }, (response: any) => {
         resolve(response);
       });
     });

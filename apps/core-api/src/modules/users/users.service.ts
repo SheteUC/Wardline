@@ -31,9 +31,9 @@ export class UsersService {
     async findAll(): Promise<any[]> {
         return this.prisma.user.findMany({
             include: {
-                hospitals: {
+                businesses: {
                     include: {
-                        hospital: {
+                        business: {
                             select: {
                                 id: true,
                                 name: true,
@@ -50,9 +50,9 @@ export class UsersService {
         const user = await this.prisma.user.findUnique({
             where: { id },
             include: {
-                hospitals: {
+                businesses: {
                     include: {
-                        hospital: true,
+                        business: true,
                     },
                 },
             },
@@ -65,29 +65,29 @@ export class UsersService {
         return user;
     }
 
-    async addUserToHospital(userId: string, hospitalId: string, role: UserRole): Promise<any> {
-        this.logger.info('Adding user to hospital', { userId, hospitalId, role });
+    async addUserToBusiness(userId: string, businessId: string, role: UserRole): Promise<any> {
+        this.logger.info('Adding user to business', { userId, businessId, role });
 
-        return this.prisma.hospitalUser.create({
+        return this.prisma.businessUser.create({
             data: {
                 userId,
-                hospitalId,
+                businessId,
                 role: role as any,
             },
             include: {
                 user: true,
-                hospital: true,
+                business: true,
             },
         });
     }
 
-    async updateUserRole(userId: string, hospitalId: string, role: UserRole): Promise<any> {
-        this.logger.info('Updating user role', { userId, hospitalId, role });
+    async updateUserRole(userId: string, businessId: string, role: UserRole): Promise<any> {
+        this.logger.info('Updating user role', { userId, businessId, role });
 
-        return this.prisma.hospitalUser.update({
+        return this.prisma.businessUser.update({
             where: {
-                hospitalId_userId: {
-                    hospitalId,
+                businessId_userId: {
+                    businessId,
                     userId,
                 },
             },
@@ -95,22 +95,22 @@ export class UsersService {
         });
     }
 
-    async removeUserFromHospital(userId: string, hospitalId: string): Promise<any> {
-        this.logger.warn('Removing user from hospital', { userId, hospitalId });
+    async removeUserFromBusiness(userId: string, businessId: string): Promise<any> {
+        this.logger.warn('Removing user from business', { userId, businessId });
 
-        return this.prisma.hospitalUser.delete({
+        return this.prisma.businessUser.delete({
             where: {
-                hospitalId_userId: {
-                    hospitalId,
+                businessId_userId: {
+                    businessId,
                     userId,
                 },
             },
         });
     }
 
-    async getUsersByHospital(hospitalId: string): Promise<any[]> {
-        return this.prisma.hospitalUser.findMany({
-            where: { hospitalId },
+    async getUsersByBusiness(businessId: string): Promise<any[]> {
+        return this.prisma.businessUser.findMany({
+            where: { businessId },
             include: {
                 user: true,
             },

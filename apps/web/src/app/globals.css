@@ -1,13 +1,10 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-plus-jakarta-sans);
+  --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -44,122 +41,148 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ─── Silk — Light Neomorphic ────────────────────────────────────────────────
+   Exact values extracted from Figma design (file: 2OLw2tVaJh5Zn9y0dkBb2N)
+   ─────────────────────────────────────────────────────────────────────────── */
+
 :root {
-  /* Warm Beige Theme inspired by 'Moment' */
-  --background: oklch(0.96 0.01 90);
-  /* Warm beige/off-white #F5F3F0 */
-  --foreground: oklch(0.25 0.02 35);
-  /* Dark warm charcoal */
+  /* ── Surface — every neomorphic element MUST share this color ────────────── */
+  --neo-bg: #e8eaf0;
 
-  --card: oklch(0.98 0.005 95);
-  /* Slightly lighter beige for cards */
-  --card-foreground: oklch(0.25 0.02 35);
+  /* ── Neomorphic shadow pair (extracted directly from Figma) ─────────────── */
+  /* Raised:  6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.6) */
+  /* Inset:   inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.5) */
 
-  --popover: oklch(0.98 0.005 95);
-  --popover-foreground: oklch(0.25 0.02 35);
+  /* ── Color tokens ─────────────────────────────────────────────────────────── */
+  --background: #e8eaf0;
+  --foreground: #2e3040;
 
-  --primary: oklch(0.25 0.02 35);
-  /* Dark charcoal for primary actions */
-  --primary-foreground: oklch(0.98 0.005 95);
+  /* card MUST equal background for the neomorphic illusion */
+  --card: #e8eaf0;
+  --card-foreground: #2e3040;
 
-  --secondary: oklch(0.9 0.02 95);
-  /* Darker beige for secondary elements */
-  --secondary-foreground: oklch(0.25 0.02 35);
+  --popover: #e8eaf0;
+  --popover-foreground: #2e3040;
 
-  --muted: oklch(0.92 0.01 90);
-  --muted-foreground: oklch(0.45 0.02 35);
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
 
-  --accent: oklch(0.88 0.03 90);
-  --accent-foreground: oklch(0.25 0.02 35);
+  --secondary: #e2e4ea;
+  --secondary-foreground: #2e3040;
 
-  --destructive: oklch(0.65 0.18 25);
-  --destructive-foreground: oklch(0.98 0.005 95);
+  --muted: #e2e4ea;
+  --muted-foreground: #6c6e7e;
 
-  --border: oklch(0.88 0.01 90);
-  --input: oklch(0.88 0.01 90);
-  --ring: oklch(0.25 0.02 35);
+  --accent: #7c3aed;
+  --accent-foreground: #ffffff;
 
-  --radius: 0.75rem;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 
-  --chart-1: oklch(0.25 0.02 35);
-  /* Charcoal */
-  --chart-2: oklch(0.55 0.15 45);
-  /* Muted burnt orange */
-  --chart-3: oklch(0.45 0.08 200);
-  /* Muted teal */
-  --chart-4: oklch(0.75 0.12 70);
-  /* Warm gold */
-  --chart-5: oklch(0.65 0.15 30);
-  /* Rust */
+  --border: #d8dae4;
+  --input: #e8eaf0;
+  --ring: #6366f1;
 
-  --sidebar: oklch(0.94 0.01 90);
-  --sidebar-foreground: oklch(0.25 0.02 35);
-  --sidebar-primary: oklch(0.25 0.02 35);
-  --sidebar-primary-foreground: oklch(0.98 0.005 95);
-  --sidebar-accent: oklch(0.9 0.02 95);
-  --sidebar-accent-foreground: oklch(0.25 0.02 35);
-  --sidebar-border: oklch(0.85 0.01 90);
-  --sidebar-ring: oklch(0.25 0.02 35);
+  /* 16px radius as base; cards use 24px via utility override */
+  --radius: 1rem;
+
+  --chart-1: #6366f1;
+  --chart-2: #7c3aed;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+
+  /* Sidebar — same surface as background */
+  --sidebar: #e8eaf0;
+  --sidebar-foreground: #2e3040;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2e4ea;
+  --sidebar-accent-foreground: #2e3040;
+  --sidebar-border: #d8dae4;
+  --sidebar-ring: #6366f1;
 }
 
-.dark {
-  /* Dark mode adjustment - Deep charcoal/warm slate */
-  --background: oklch(0.15 0.02 35);
-  --foreground: oklch(0.95 0.01 90);
-
-  --card: oklch(0.18 0.02 35);
-  --card-foreground: oklch(0.95 0.01 90);
-
-  --popover: oklch(0.18 0.02 35);
-  --popover-foreground: oklch(0.95 0.01 90);
-
-  --primary: oklch(0.95 0.01 90);
-  --primary-foreground: oklch(0.15 0.02 35);
-
-  --secondary: oklch(0.25 0.02 35);
-  --secondary-foreground: oklch(0.95 0.01 90);
-
-  --muted: oklch(0.25 0.02 35);
-  --muted-foreground: oklch(0.7 0.02 35);
-
-  --accent: oklch(0.25 0.02 35);
-  --accent-foreground: oklch(0.95 0.01 90);
-
-  --destructive: oklch(0.45 0.15 25);
-  --destructive-foreground: oklch(0.95 0.01 90);
-
-  --border: oklch(0.25 0.02 35);
-  --input: oklch(0.25 0.02 35);
-  --ring: oklch(0.85 0.01 90);
-
-  --sidebar: oklch(0.12 0.02 35);
-  --sidebar-foreground: oklch(0.95 0.01 90);
-  --sidebar-primary: oklch(0.95 0.01 90);
-  --sidebar-primary-foreground: oklch(0.15 0.02 35);
-  --sidebar-accent: oklch(0.2 0.02 35);
-  --sidebar-accent-foreground: oklch(0.95 0.01 90);
-  --sidebar-border: oklch(0.2 0.02 35);
-  --sidebar-ring: oklch(0.85 0.01 90);
-}
+/* ─── Base ────────────────────────────────────────────────────────────────── */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply outline-ring/50;
+    border-color: var(--border);
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-plus-jakarta-sans), system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-foreground;
   }
 }
 
-/* Skeleton loading shimmer animation */
+/* ─── Neomorphic utilities ────────────────────────────────────────────────── */
+
+/* Raised — element extrudes from surface (Figma exact values) */
+.neo-raised {
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.08),
+    -6px -6px 12px rgba(255, 255, 255, 0.6);
+}
+
+/* Raised small — for icon containers and small elements */
+.neo-raised-sm {
+  box-shadow:
+    3px 3px 7px rgba(0, 0, 0, 0.07),
+    -3px -3px 7px rgba(255, 255, 255, 0.55);
+}
+
+/* Inset — carved into surface (Figma exact values) */
+.neo-inset {
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.06),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.5);
+}
+
+/* Pressed — active/clicked state */
+.neo-pressed {
+  box-shadow:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.06),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.5);
+}
+
+/* Flat — no depth */
+.neo-flat {
+  box-shadow: none;
+}
+
+/* React Flow — Silk controls (Workflow Builder) */
+.workflow-flow .react-flow__controls {
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 0 !important;
+  background: var(--background);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.08),
+    -6px -6px 12px rgba(255, 255, 255, 0.6);
+}
+.workflow-flow .react-flow__controls-button {
+  border: 0 !important;
+  background: var(--background) !important;
+  box-shadow: none !important;
+}
+.workflow-flow .react-flow__controls-button:hover {
+  background: color-mix(in oklab, var(--muted) 45%, var(--background)) !important;
+}
+.workflow-flow .react-flow__controls-button svg {
+  fill: var(--foreground);
+}
+
+/* ─── Skeleton shimmer ────────────────────────────────────────────────────── */
+
 @keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .animate-shimmer {
@@ -167,7 +190,7 @@
   background: linear-gradient(
     90deg,
     var(--muted) 0%,
-    oklch(0.95 0.01 90) 50%,
+    rgba(255, 255, 255, 0.6) 50%,
     var(--muted) 100%
   );
   background-size: 200% 100%;

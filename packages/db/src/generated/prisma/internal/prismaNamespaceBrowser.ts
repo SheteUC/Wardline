@@ -51,36 +51,29 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  Hospital: 'Hospital',
-  HospitalSettings: 'HospitalSettings',
+  Business: 'Business',
+  BusinessSettings: 'BusinessSettings',
+  BusinessIntegration: 'BusinessIntegration',
   User: 'User',
-  HospitalUser: 'HospitalUser',
+  BusinessUser: 'BusinessUser',
   PhoneNumber: 'PhoneNumber',
-  Intent: 'Intent',
   Workflow: 'Workflow',
   WorkflowVersion: 'WorkflowVersion',
-  Patient: 'Patient',
+  Caller: 'Caller',
   SchedulingIntegration: 'SchedulingIntegration',
   Appointment: 'Appointment',
   CallSession: 'CallSession',
   TranscriptSegment: 'TranscriptSegment',
-  SentimentSnapshot: 'SentimentSnapshot',
   Handoff: 'Handoff',
+  VoicemailRecord: 'VoicemailRecord',
   AuditLog: 'AuditLog',
   StripeSubscription: 'StripeSubscription',
   UsageRecord: 'UsageRecord',
-  Department: 'Department',
-  DirectoryInquiry: 'DirectoryInquiry',
+  Agent: 'Agent',
   PrescriptionRefill: 'PrescriptionRefill',
   InsurancePlan: 'InsurancePlan',
   InsuranceInquiry: 'InsuranceInquiry',
-  InsuranceVerification: 'InsuranceVerification',
-  MarketingEvent: 'MarketingEvent',
-  EventRegistration: 'EventRegistration',
-  Agent: 'Agent',
-  CallQueue: 'CallQueue',
-  CallAssignment: 'CallAssignment',
-  AgentSession: 'AgentSession'
+  InsuranceVerification: 'InsuranceVerification'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -99,7 +92,7 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const HospitalScalarFieldEnum = {
+export const BusinessScalarFieldEnum = {
   id: 'id',
   name: 'name',
   slug: 'slug',
@@ -109,15 +102,16 @@ export const HospitalScalarFieldEnum = {
   updatedAt: 'updatedAt'
 } as const
 
-export type HospitalScalarFieldEnum = (typeof HospitalScalarFieldEnum)[keyof typeof HospitalScalarFieldEnum]
+export type BusinessScalarFieldEnum = (typeof BusinessScalarFieldEnum)[keyof typeof BusinessScalarFieldEnum]
 
 
-export const HospitalSettingsScalarFieldEnum = {
+export const BusinessSettingsScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   recordingDefault: 'recordingDefault',
   transcriptRetentionDays: 'transcriptRetentionDays',
-  e911Enabled: 'e911Enabled',
+  outOfScopeKeywords: 'outOfScopeKeywords',
+  emergencyKeywords: 'emergencyKeywords',
   timetapBaseUrl: 'timetapBaseUrl',
   timetapApiKey: 'timetapApiKey',
   nexhealthBaseUrl: 'nexhealthBaseUrl',
@@ -128,7 +122,24 @@ export const HospitalSettingsScalarFieldEnum = {
   updatedAt: 'updatedAt'
 } as const
 
-export type HospitalSettingsScalarFieldEnum = (typeof HospitalSettingsScalarFieldEnum)[keyof typeof HospitalSettingsScalarFieldEnum]
+export type BusinessSettingsScalarFieldEnum = (typeof BusinessSettingsScalarFieldEnum)[keyof typeof BusinessSettingsScalarFieldEnum]
+
+
+export const BusinessIntegrationScalarFieldEnum = {
+  id: 'id',
+  businessId: 'businessId',
+  category: 'category',
+  vendor: 'vendor',
+  status: 'status',
+  credentialsRef: 'credentialsRef',
+  settings: 'settings',
+  capabilities: 'capabilities',
+  lastHealthCheckAt: 'lastHealthCheckAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BusinessIntegrationScalarFieldEnum = (typeof BusinessIntegrationScalarFieldEnum)[keyof typeof BusinessIntegrationScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {
@@ -143,20 +154,20 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-export const HospitalUserScalarFieldEnum = {
+export const BusinessUserScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   userId: 'userId',
   role: 'role',
   createdAt: 'createdAt'
 } as const
 
-export type HospitalUserScalarFieldEnum = (typeof HospitalUserScalarFieldEnum)[keyof typeof HospitalUserScalarFieldEnum]
+export type BusinessUserScalarFieldEnum = (typeof BusinessUserScalarFieldEnum)[keyof typeof BusinessUserScalarFieldEnum]
 
 
 export const PhoneNumberScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   twilioPhoneNumber: 'twilioPhoneNumber',
   twilioSid: 'twilioSid',
   workflowId: 'workflowId',
@@ -168,25 +179,9 @@ export const PhoneNumberScalarFieldEnum = {
 export type PhoneNumberScalarFieldEnum = (typeof PhoneNumberScalarFieldEnum)[keyof typeof PhoneNumberScalarFieldEnum]
 
 
-export const IntentScalarFieldEnum = {
-  id: 'id',
-  hospitalId: 'hospitalId',
-  key: 'key',
-  displayName: 'displayName',
-  description: 'description',
-  enabled: 'enabled',
-  requiredFields: 'requiredFields',
-  routingRules: 'routingRules',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type IntentScalarFieldEnum = (typeof IntentScalarFieldEnum)[keyof typeof IntentScalarFieldEnum]
-
-
 export const WorkflowScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   name: 'name',
   description: 'description',
   status: 'status',
@@ -213,23 +208,22 @@ export const WorkflowVersionScalarFieldEnum = {
 export type WorkflowVersionScalarFieldEnum = (typeof WorkflowVersionScalarFieldEnum)[keyof typeof WorkflowVersionScalarFieldEnum]
 
 
-export const PatientScalarFieldEnum = {
+export const CallerScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
-  externalId: 'externalId',
+  businessId: 'businessId',
   name: 'name',
+  phone: 'phone',
   dob: 'dob',
-  primaryPhone: 'primaryPhone',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
-export type PatientScalarFieldEnum = (typeof PatientScalarFieldEnum)[keyof typeof PatientScalarFieldEnum]
+export type CallerScalarFieldEnum = (typeof CallerScalarFieldEnum)[keyof typeof CallerScalarFieldEnum]
 
 
 export const SchedulingIntegrationScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   provider: 'provider',
   apiKey: 'apiKey',
   locationId: 'locationId',
@@ -245,12 +239,12 @@ export type SchedulingIntegrationScalarFieldEnum = (typeof SchedulingIntegration
 export const AppointmentScalarFieldEnum = {
   id: 'id',
   callId: 'callId',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   externalId: 'externalId',
   provider: 'provider',
-  patientName: 'patientName',
-  patientPhone: 'patientPhone',
-  patientEmail: 'patientEmail',
+  callerName: 'callerName',
+  callerPhone: 'callerPhone',
+  callerEmail: 'callerEmail',
   providerName: 'providerName',
   serviceType: 'serviceType',
   scheduledAt: 'scheduledAt',
@@ -267,22 +261,20 @@ export type AppointmentScalarFieldEnum = (typeof AppointmentScalarFieldEnum)[key
 
 export const CallSessionScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   phoneNumberId: 'phoneNumberId',
   twilioCallSid: 'twilioCallSid',
   direction: 'direction',
   status: 'status',
   recordingConsent: 'recordingConsent',
-  intentId: 'intentId',
   tag: 'tag',
-  patientId: 'patientId',
+  callerId: 'callerId',
   isEmergency: 'isEmergency',
+  turnCount: 'turnCount',
+  turnsJson: 'turnsJson',
   startedAt: 'startedAt',
   endedAt: 'endedAt',
-  sentimentOverallScore: 'sentimentOverallScore',
-  aiConfidence: 'aiConfidence',
-  handoffTarget: 'handoffTarget',
-  handoffReason: 'handoffReason',
+  sentimentScore: 'sentimentScore',
   recordingUrl: 'recordingUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -305,18 +297,6 @@ export const TranscriptSegmentScalarFieldEnum = {
 export type TranscriptSegmentScalarFieldEnum = (typeof TranscriptSegmentScalarFieldEnum)[keyof typeof TranscriptSegmentScalarFieldEnum]
 
 
-export const SentimentSnapshotScalarFieldEnum = {
-  id: 'id',
-  callId: 'callId',
-  offsetMs: 'offsetMs',
-  score: 'score',
-  label: 'label',
-  createdAt: 'createdAt'
-} as const
-
-export type SentimentSnapshotScalarFieldEnum = (typeof SentimentSnapshotScalarFieldEnum)[keyof typeof SentimentSnapshotScalarFieldEnum]
-
-
 export const HandoffScalarFieldEnum = {
   id: 'id',
   callId: 'callId',
@@ -327,9 +307,26 @@ export const HandoffScalarFieldEnum = {
 export type HandoffScalarFieldEnum = (typeof HandoffScalarFieldEnum)[keyof typeof HandoffScalarFieldEnum]
 
 
+export const VoicemailRecordScalarFieldEnum = {
+  id: 'id',
+  callId: 'callId',
+  businessId: 'businessId',
+  callerPhone: 'callerPhone',
+  callerName: 'callerName',
+  recordingUrl: 'recordingUrl',
+  transcription: 'transcription',
+  context: 'context',
+  isListened: 'isListened',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VoicemailRecordScalarFieldEnum = (typeof VoicemailRecordScalarFieldEnum)[keyof typeof VoicemailRecordScalarFieldEnum]
+
+
 export const AuditLogScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   userId: 'userId',
   action: 'action',
   entityType: 'entityType',
@@ -343,7 +340,7 @@ export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typ
 
 export const StripeSubscriptionScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   stripeSubscriptionId: 'stripeSubscriptionId',
   planKey: 'planKey',
   status: 'status',
@@ -358,7 +355,7 @@ export type StripeSubscriptionScalarFieldEnum = (typeof StripeSubscriptionScalar
 
 export const UsageRecordScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   metric: 'metric',
   quantity: 'quantity',
   timestamp: 'timestamp',
@@ -368,60 +365,38 @@ export const UsageRecordScalarFieldEnum = {
 export type UsageRecordScalarFieldEnum = (typeof UsageRecordScalarFieldEnum)[keyof typeof UsageRecordScalarFieldEnum]
 
 
-export const DepartmentScalarFieldEnum = {
+export const AgentScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
+  catalogId: 'catalogId',
   name: 'name',
   description: 'description',
-  serviceTypes: 'serviceTypes',
-  phoneNumber: 'phoneNumber',
-  extension: 'extension',
-  emailAddress: 'emailAddress',
-  location: 'location',
-  hoursOfOperation: 'hoursOfOperation',
-  isActive: 'isActive',
+  status: 'status',
+  nodeGraph: 'nodeGraph',
+  toolConfig: 'toolConfig',
+  agentConfig: 'agentConfig',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
-export type DepartmentScalarFieldEnum = (typeof DepartmentScalarFieldEnum)[keyof typeof DepartmentScalarFieldEnum]
-
-
-export const DirectoryInquiryScalarFieldEnum = {
-  id: 'id',
-  hospitalId: 'hospitalId',
-  callId: 'callId',
-  departmentId: 'departmentId',
-  serviceType: 'serviceType',
-  patientName: 'patientName',
-  patientPhone: 'patientPhone',
-  resolved: 'resolved',
-  notes: 'notes',
-  createdAt: 'createdAt'
-} as const
-
-export type DirectoryInquiryScalarFieldEnum = (typeof DirectoryInquiryScalarFieldEnum)[keyof typeof DirectoryInquiryScalarFieldEnum]
+export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
 
 
 export const PrescriptionRefillScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   callId: 'callId',
-  patientId: 'patientId',
-  patientName: 'patientName',
-  patientPhone: 'patientPhone',
-  patientDOB: 'patientDOB',
+  callerId: 'callerId',
+  callerName: 'callerName',
+  callerPhone: 'callerPhone',
+  callerDOB: 'callerDOB',
   medicationName: 'medicationName',
-  prescriberId: 'prescriberId',
   prescriberName: 'prescriberName',
   pharmacyName: 'pharmacyName',
   pharmacyPhone: 'pharmacyPhone',
   status: 'status',
   verificationStatus: 'verificationStatus',
-  isNewPatient: 'isNewPatient',
-  assignedProviderId: 'assignedProviderId',
   notes: 'notes',
-  rejectionReason: 'rejectionReason',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -431,7 +406,7 @@ export type PrescriptionRefillScalarFieldEnum = (typeof PrescriptionRefillScalar
 
 export const InsurancePlanScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   planName: 'planName',
   carrierId: 'carrierId',
   carrierName: 'carrierName',
@@ -449,11 +424,11 @@ export type InsurancePlanScalarFieldEnum = (typeof InsurancePlanScalarFieldEnum)
 
 export const InsuranceInquiryScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   callId: 'callId',
   insurancePlanId: 'insurancePlanId',
-  patientName: 'patientName',
-  patientPhone: 'patientPhone',
+  callerName: 'callerName',
+  callerPhone: 'callerPhone',
   carrierName: 'carrierName',
   planName: 'planName',
   inquiryType: 'inquiryType',
@@ -467,10 +442,10 @@ export type InsuranceInquiryScalarFieldEnum = (typeof InsuranceInquiryScalarFiel
 
 export const InsuranceVerificationScalarFieldEnum = {
   id: 'id',
-  hospitalId: 'hospitalId',
+  businessId: 'businessId',
   insurancePlanId: 'insurancePlanId',
-  patientId: 'patientId',
-  patientName: 'patientName',
+  callerId: 'callerId',
+  callerName: 'callerName',
   memberNumber: 'memberNumber',
   groupNumber: 'groupNumber',
   verificationDate: 'verificationDate',
@@ -489,110 +464,6 @@ export const InsuranceVerificationScalarFieldEnum = {
 export type InsuranceVerificationScalarFieldEnum = (typeof InsuranceVerificationScalarFieldEnum)[keyof typeof InsuranceVerificationScalarFieldEnum]
 
 
-export const MarketingEventScalarFieldEnum = {
-  id: 'id',
-  hospitalId: 'hospitalId',
-  title: 'title',
-  description: 'description',
-  eventType: 'eventType',
-  specialty: 'specialty',
-  presenter: 'presenter',
-  location: 'location',
-  isVirtual: 'isVirtual',
-  virtualLink: 'virtualLink',
-  scheduledAt: 'scheduledAt',
-  duration: 'duration',
-  capacity: 'capacity',
-  registrationDeadline: 'registrationDeadline',
-  status: 'status',
-  marketingChannel: 'marketingChannel',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type MarketingEventScalarFieldEnum = (typeof MarketingEventScalarFieldEnum)[keyof typeof MarketingEventScalarFieldEnum]
-
-
-export const EventRegistrationScalarFieldEnum = {
-  id: 'id',
-  eventId: 'eventId',
-  callId: 'callId',
-  patientId: 'patientId',
-  attendeeName: 'attendeeName',
-  attendeePhone: 'attendeePhone',
-  attendeeEmail: 'attendeeEmail',
-  status: 'status',
-  attended: 'attended',
-  becamePatient: 'becamePatient',
-  firstAppointmentDate: 'firstAppointmentDate',
-  notes: 'notes',
-  registeredAt: 'registeredAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type EventRegistrationScalarFieldEnum = (typeof EventRegistrationScalarFieldEnum)[keyof typeof EventRegistrationScalarFieldEnum]
-
-
-export const AgentScalarFieldEnum = {
-  id: 'id',
-  hospitalId: 'hospitalId',
-  type: 'type',
-  name: 'name',
-  description: 'description',
-  status: 'status',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  aiConfig: 'aiConfig',
-  humanProfile: 'humanProfile'
-} as const
-
-export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
-
-
-export const CallQueueScalarFieldEnum = {
-  id: 'id',
-  hospitalId: 'hospitalId',
-  name: 'name',
-  specialization: 'specialization',
-  priority: 'priority',
-  maxWaitTime: 'maxWaitTime',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type CallQueueScalarFieldEnum = (typeof CallQueueScalarFieldEnum)[keyof typeof CallQueueScalarFieldEnum]
-
-
-export const CallAssignmentScalarFieldEnum = {
-  id: 'id',
-  callId: 'callId',
-  queueId: 'queueId',
-  agentId: 'agentId',
-  status: 'status',
-  assignedAt: 'assignedAt',
-  acceptedAt: 'acceptedAt',
-  completedAt: 'completedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type CallAssignmentScalarFieldEnum = (typeof CallAssignmentScalarFieldEnum)[keyof typeof CallAssignmentScalarFieldEnum]
-
-
-export const AgentSessionScalarFieldEnum = {
-  id: 'id',
-  agentId: 'agentId',
-  status: 'status',
-  startedAt: 'startedAt',
-  endedAt: 'endedAt',
-  totalCallsHandled: 'totalCallsHandled',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type AgentSessionScalarFieldEnum = (typeof AgentSessionScalarFieldEnum)[keyof typeof AgentSessionScalarFieldEnum]
-
-
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -601,19 +472,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
   JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

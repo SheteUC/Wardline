@@ -4,11 +4,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 
 /**
- * Nightly task that deletes TranscriptSegment records beyond each hospital's
- * configured retention window (HospitalSettings.transcriptRetentionDays).
+ * Nightly task that deletes TranscriptSegment records beyond each business's
+ * configured retention window (BusinessSettings.transcriptRetentionDays).
  *
  * HIPAA requires that PHI not be retained longer than necessary.
- * Default retention is 30 days; hospitals can configure this in their settings.
+ * Default retention is 30 days; businesses can configure this in their settings.
  */
 @Injectable()
 export class TranscriptRetentionTask {
@@ -25,7 +25,7 @@ export class TranscriptRetentionTask {
         let totalDeleted = 0;
 
         try {
-            const hospitals = await this.prisma.hospital.findMany({
+            const businesses = await this.prisma.business.findMany({
                 where: { status: 'ACTIVE' },
                 include: {
                     settings: {
@@ -34,15 +34,15 @@ export class TranscriptRetentionTask {
                 },
             });
 
-            for (const hospital of hospitals) {
-                const retentionDays = hospital.settings?.transcriptRetentionDays ?? 30;
+            for (const business of businesses) {
+                const retentionDays = business.settings?.transcriptRetentionDays ?? 30;
                 const cutoff = new Date();
                 cutoff.setDate(cutoff.getDate() - retentionDays);
 
-                // Find calls for this hospital older than the retention cutoff
+                // Find calls for this business older than the retention cutoff
                 const oldCalls = await this.prisma.callSession.findMany({
                     where: {
-                        hospitalId: hospital.id,
+                        businessId: business.id,
                         startedAt: { lt: cutoff },
                     },
                     select: { id: true },
@@ -59,12 +59,12 @@ export class TranscriptRetentionTask {
                 if (count > 0) {
                     totalDeleted += count;
                     this.logger.log(
-                        `Deleted ${count} transcript segments for hospital ${hospital.id} ` +
+                        `Deleted ${count} transcript segments for business ${business.id} ` +
                         `(retention: ${retentionDays} days, cutoff: ${cutoff.toISOString()})`,
                     );
 
                     await this.auditService.logAction({
-                        hospitalId: hospital.id,
+                        businessId: business.id,
                         action: 'TRANSCRIPT_RETENTION_CLEANUP',
                         entityType: 'TranscriptSegment',
                         metadata: {

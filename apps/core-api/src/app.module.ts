@@ -13,16 +13,12 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CallsModule } from './modules/calls/calls.module';
-import { SchedulingModule } from './scheduling/scheduling.module';
 import { TranscriptRetentionTask } from './tasks/transcript-retention.task';
-// Feature Modules
-import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
-import { InsuranceModule } from './modules/insurance/insurance.module';
 // Agent Platform Modules
 import { AgentsModule } from './modules/agents/agents.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { EscalationsModule } from './modules/escalations/escalations.module';
-import { WebSocketModule } from './websocket/websocket.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
 
 @Module({
     imports: [
@@ -35,19 +31,15 @@ import { WebSocketModule } from './websocket/websocket.module';
         CacheModule, // Global in-memory cache for improved performance
         ClerkModule,
         AuditModule,
-        WebSocketModule, // WebSocket for real-time updates
         BusinessesModule,
         UsersModule,
         WorkflowsModule,
         CallsModule,
-        SchedulingModule,
-        // Feature Modules
-        PrescriptionsModule,
-        InsuranceModule,
         // Agent Platform Modules
         AgentsModule,
         SafetyModule,
         EscalationsModule,
+        IntegrationsModule,
     ],
     providers: [
         // Global authentication guard - validates JWT tokens

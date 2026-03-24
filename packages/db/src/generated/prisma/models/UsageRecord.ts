@@ -36,7 +36,7 @@ export type UsageRecordSumAggregateOutputType = {
 
 export type UsageRecordMinAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   metric: string | null
   quantity: number | null
   timestamp: Date | null
@@ -45,7 +45,7 @@ export type UsageRecordMinAggregateOutputType = {
 
 export type UsageRecordMaxAggregateOutputType = {
   id: string | null
-  hospitalId: string | null
+  businessId: string | null
   metric: string | null
   quantity: number | null
   timestamp: Date | null
@@ -54,7 +54,7 @@ export type UsageRecordMaxAggregateOutputType = {
 
 export type UsageRecordCountAggregateOutputType = {
   id: number
-  hospitalId: number
+  businessId: number
   metric: number
   quantity: number
   timestamp: number
@@ -73,7 +73,7 @@ export type UsageRecordSumAggregateInputType = {
 
 export type UsageRecordMinAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   metric?: true
   quantity?: true
   timestamp?: true
@@ -82,7 +82,7 @@ export type UsageRecordMinAggregateInputType = {
 
 export type UsageRecordMaxAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   metric?: true
   quantity?: true
   timestamp?: true
@@ -91,7 +91,7 @@ export type UsageRecordMaxAggregateInputType = {
 
 export type UsageRecordCountAggregateInputType = {
   id?: true
-  hospitalId?: true
+  businessId?: true
   metric?: true
   quantity?: true
   timestamp?: true
@@ -187,7 +187,7 @@ export type UsageRecordGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 
 export type UsageRecordGroupByOutputType = {
   id: string
-  hospitalId: string
+  businessId: string
   metric: string
   quantity: number
   timestamp: Date
@@ -219,22 +219,22 @@ export type UsageRecordWhereInput = {
   OR?: Prisma.UsageRecordWhereInput[]
   NOT?: Prisma.UsageRecordWhereInput | Prisma.UsageRecordWhereInput[]
   id?: Prisma.StringFilter<"UsageRecord"> | string
-  hospitalId?: Prisma.StringFilter<"UsageRecord"> | string
+  businessId?: Prisma.StringFilter<"UsageRecord"> | string
   metric?: Prisma.StringFilter<"UsageRecord"> | string
   quantity?: Prisma.IntFilter<"UsageRecord"> | number
   timestamp?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   stripeUsageRecordId?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }
 
 export type UsageRecordOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   metric?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
   stripeUsageRecordId?: Prisma.SortOrderInput | Prisma.SortOrder
-  hospital?: Prisma.HospitalOrderByWithRelationInput
+  business?: Prisma.BusinessOrderByWithRelationInput
 }
 
 export type UsageRecordWhereUniqueInput = Prisma.AtLeast<{
@@ -242,17 +242,17 @@ export type UsageRecordWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.UsageRecordWhereInput | Prisma.UsageRecordWhereInput[]
   OR?: Prisma.UsageRecordWhereInput[]
   NOT?: Prisma.UsageRecordWhereInput | Prisma.UsageRecordWhereInput[]
-  hospitalId?: Prisma.StringFilter<"UsageRecord"> | string
+  businessId?: Prisma.StringFilter<"UsageRecord"> | string
   metric?: Prisma.StringFilter<"UsageRecord"> | string
   quantity?: Prisma.IntFilter<"UsageRecord"> | number
   timestamp?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   stripeUsageRecordId?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
-  hospital?: Prisma.XOR<Prisma.HospitalScalarRelationFilter, Prisma.HospitalWhereInput>
+  business?: Prisma.XOR<Prisma.BusinessScalarRelationFilter, Prisma.BusinessWhereInput>
 }, "id">
 
 export type UsageRecordOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   metric?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
@@ -269,7 +269,7 @@ export type UsageRecordScalarWhereWithAggregatesInput = {
   OR?: Prisma.UsageRecordScalarWhereWithAggregatesInput[]
   NOT?: Prisma.UsageRecordScalarWhereWithAggregatesInput | Prisma.UsageRecordScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"UsageRecord"> | string
-  hospitalId?: Prisma.StringWithAggregatesFilter<"UsageRecord"> | string
+  businessId?: Prisma.StringWithAggregatesFilter<"UsageRecord"> | string
   metric?: Prisma.StringWithAggregatesFilter<"UsageRecord"> | string
   quantity?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
   timestamp?: Prisma.DateTimeWithAggregatesFilter<"UsageRecord"> | Date | string
@@ -282,12 +282,12 @@ export type UsageRecordCreateInput = {
   quantity: number
   timestamp: Date | string
   stripeUsageRecordId?: string | null
-  hospital: Prisma.HospitalCreateNestedOneWithoutUsageRecordsInput
+  business: Prisma.BusinessCreateNestedOneWithoutUsageRecordsInput
 }
 
 export type UsageRecordUncheckedCreateInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   metric: string
   quantity: number
   timestamp: Date | string
@@ -300,12 +300,12 @@ export type UsageRecordUpdateInput = {
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stripeUsageRecordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hospital?: Prisma.HospitalUpdateOneRequiredWithoutUsageRecordsNestedInput
+  business?: Prisma.BusinessUpdateOneRequiredWithoutUsageRecordsNestedInput
 }
 
 export type UsageRecordUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   metric?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -314,7 +314,7 @@ export type UsageRecordUncheckedUpdateInput = {
 
 export type UsageRecordCreateManyInput = {
   id?: string
-  hospitalId: string
+  businessId: string
   metric: string
   quantity: number
   timestamp: Date | string
@@ -331,7 +331,7 @@ export type UsageRecordUpdateManyMutationInput = {
 
 export type UsageRecordUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  hospitalId?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
   metric?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -350,7 +350,7 @@ export type UsageRecordOrderByRelationAggregateInput = {
 
 export type UsageRecordCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   metric?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
@@ -363,7 +363,7 @@ export type UsageRecordAvgOrderByAggregateInput = {
 
 export type UsageRecordMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   metric?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
@@ -372,7 +372,7 @@ export type UsageRecordMaxOrderByAggregateInput = {
 
 export type UsageRecordMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  hospitalId?: Prisma.SortOrder
+  businessId?: Prisma.SortOrder
   metric?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
@@ -383,49 +383,49 @@ export type UsageRecordSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
 }
 
-export type UsageRecordCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutHospitalInput, Prisma.UsageRecordUncheckedCreateWithoutHospitalInput> | Prisma.UsageRecordCreateWithoutHospitalInput[] | Prisma.UsageRecordUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutHospitalInput | Prisma.UsageRecordCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.UsageRecordCreateManyHospitalInputEnvelope
+export type UsageRecordCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutBusinessInput, Prisma.UsageRecordUncheckedCreateWithoutBusinessInput> | Prisma.UsageRecordCreateWithoutBusinessInput[] | Prisma.UsageRecordUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutBusinessInput | Prisma.UsageRecordCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.UsageRecordCreateManyBusinessInputEnvelope
   connect?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
 }
 
-export type UsageRecordUncheckedCreateNestedManyWithoutHospitalInput = {
-  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutHospitalInput, Prisma.UsageRecordUncheckedCreateWithoutHospitalInput> | Prisma.UsageRecordCreateWithoutHospitalInput[] | Prisma.UsageRecordUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutHospitalInput | Prisma.UsageRecordCreateOrConnectWithoutHospitalInput[]
-  createMany?: Prisma.UsageRecordCreateManyHospitalInputEnvelope
+export type UsageRecordUncheckedCreateNestedManyWithoutBusinessInput = {
+  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutBusinessInput, Prisma.UsageRecordUncheckedCreateWithoutBusinessInput> | Prisma.UsageRecordCreateWithoutBusinessInput[] | Prisma.UsageRecordUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutBusinessInput | Prisma.UsageRecordCreateOrConnectWithoutBusinessInput[]
+  createMany?: Prisma.UsageRecordCreateManyBusinessInputEnvelope
   connect?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
 }
 
-export type UsageRecordUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutHospitalInput, Prisma.UsageRecordUncheckedCreateWithoutHospitalInput> | Prisma.UsageRecordCreateWithoutHospitalInput[] | Prisma.UsageRecordUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutHospitalInput | Prisma.UsageRecordCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.UsageRecordUpsertWithWhereUniqueWithoutHospitalInput | Prisma.UsageRecordUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.UsageRecordCreateManyHospitalInputEnvelope
+export type UsageRecordUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutBusinessInput, Prisma.UsageRecordUncheckedCreateWithoutBusinessInput> | Prisma.UsageRecordCreateWithoutBusinessInput[] | Prisma.UsageRecordUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutBusinessInput | Prisma.UsageRecordCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.UsageRecordUpsertWithWhereUniqueWithoutBusinessInput | Prisma.UsageRecordUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.UsageRecordCreateManyBusinessInputEnvelope
   set?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
   disconnect?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
   delete?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
   connect?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
-  update?: Prisma.UsageRecordUpdateWithWhereUniqueWithoutHospitalInput | Prisma.UsageRecordUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.UsageRecordUpdateManyWithWhereWithoutHospitalInput | Prisma.UsageRecordUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.UsageRecordUpdateWithWhereUniqueWithoutBusinessInput | Prisma.UsageRecordUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.UsageRecordUpdateManyWithWhereWithoutBusinessInput | Prisma.UsageRecordUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.UsageRecordScalarWhereInput | Prisma.UsageRecordScalarWhereInput[]
 }
 
-export type UsageRecordUncheckedUpdateManyWithoutHospitalNestedInput = {
-  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutHospitalInput, Prisma.UsageRecordUncheckedCreateWithoutHospitalInput> | Prisma.UsageRecordCreateWithoutHospitalInput[] | Prisma.UsageRecordUncheckedCreateWithoutHospitalInput[]
-  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutHospitalInput | Prisma.UsageRecordCreateOrConnectWithoutHospitalInput[]
-  upsert?: Prisma.UsageRecordUpsertWithWhereUniqueWithoutHospitalInput | Prisma.UsageRecordUpsertWithWhereUniqueWithoutHospitalInput[]
-  createMany?: Prisma.UsageRecordCreateManyHospitalInputEnvelope
+export type UsageRecordUncheckedUpdateManyWithoutBusinessNestedInput = {
+  create?: Prisma.XOR<Prisma.UsageRecordCreateWithoutBusinessInput, Prisma.UsageRecordUncheckedCreateWithoutBusinessInput> | Prisma.UsageRecordCreateWithoutBusinessInput[] | Prisma.UsageRecordUncheckedCreateWithoutBusinessInput[]
+  connectOrCreate?: Prisma.UsageRecordCreateOrConnectWithoutBusinessInput | Prisma.UsageRecordCreateOrConnectWithoutBusinessInput[]
+  upsert?: Prisma.UsageRecordUpsertWithWhereUniqueWithoutBusinessInput | Prisma.UsageRecordUpsertWithWhereUniqueWithoutBusinessInput[]
+  createMany?: Prisma.UsageRecordCreateManyBusinessInputEnvelope
   set?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
   disconnect?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
   delete?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
   connect?: Prisma.UsageRecordWhereUniqueInput | Prisma.UsageRecordWhereUniqueInput[]
-  update?: Prisma.UsageRecordUpdateWithWhereUniqueWithoutHospitalInput | Prisma.UsageRecordUpdateWithWhereUniqueWithoutHospitalInput[]
-  updateMany?: Prisma.UsageRecordUpdateManyWithWhereWithoutHospitalInput | Prisma.UsageRecordUpdateManyWithWhereWithoutHospitalInput[]
+  update?: Prisma.UsageRecordUpdateWithWhereUniqueWithoutBusinessInput | Prisma.UsageRecordUpdateWithWhereUniqueWithoutBusinessInput[]
+  updateMany?: Prisma.UsageRecordUpdateManyWithWhereWithoutBusinessInput | Prisma.UsageRecordUpdateManyWithWhereWithoutBusinessInput[]
   deleteMany?: Prisma.UsageRecordScalarWhereInput | Prisma.UsageRecordScalarWhereInput[]
 }
 
-export type UsageRecordCreateWithoutHospitalInput = {
+export type UsageRecordCreateWithoutBusinessInput = {
   id?: string
   metric: string
   quantity: number
@@ -433,7 +433,7 @@ export type UsageRecordCreateWithoutHospitalInput = {
   stripeUsageRecordId?: string | null
 }
 
-export type UsageRecordUncheckedCreateWithoutHospitalInput = {
+export type UsageRecordUncheckedCreateWithoutBusinessInput = {
   id?: string
   metric: string
   quantity: number
@@ -441,30 +441,30 @@ export type UsageRecordUncheckedCreateWithoutHospitalInput = {
   stripeUsageRecordId?: string | null
 }
 
-export type UsageRecordCreateOrConnectWithoutHospitalInput = {
+export type UsageRecordCreateOrConnectWithoutBusinessInput = {
   where: Prisma.UsageRecordWhereUniqueInput
-  create: Prisma.XOR<Prisma.UsageRecordCreateWithoutHospitalInput, Prisma.UsageRecordUncheckedCreateWithoutHospitalInput>
+  create: Prisma.XOR<Prisma.UsageRecordCreateWithoutBusinessInput, Prisma.UsageRecordUncheckedCreateWithoutBusinessInput>
 }
 
-export type UsageRecordCreateManyHospitalInputEnvelope = {
-  data: Prisma.UsageRecordCreateManyHospitalInput | Prisma.UsageRecordCreateManyHospitalInput[]
+export type UsageRecordCreateManyBusinessInputEnvelope = {
+  data: Prisma.UsageRecordCreateManyBusinessInput | Prisma.UsageRecordCreateManyBusinessInput[]
   skipDuplicates?: boolean
 }
 
-export type UsageRecordUpsertWithWhereUniqueWithoutHospitalInput = {
+export type UsageRecordUpsertWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.UsageRecordWhereUniqueInput
-  update: Prisma.XOR<Prisma.UsageRecordUpdateWithoutHospitalInput, Prisma.UsageRecordUncheckedUpdateWithoutHospitalInput>
-  create: Prisma.XOR<Prisma.UsageRecordCreateWithoutHospitalInput, Prisma.UsageRecordUncheckedCreateWithoutHospitalInput>
+  update: Prisma.XOR<Prisma.UsageRecordUpdateWithoutBusinessInput, Prisma.UsageRecordUncheckedUpdateWithoutBusinessInput>
+  create: Prisma.XOR<Prisma.UsageRecordCreateWithoutBusinessInput, Prisma.UsageRecordUncheckedCreateWithoutBusinessInput>
 }
 
-export type UsageRecordUpdateWithWhereUniqueWithoutHospitalInput = {
+export type UsageRecordUpdateWithWhereUniqueWithoutBusinessInput = {
   where: Prisma.UsageRecordWhereUniqueInput
-  data: Prisma.XOR<Prisma.UsageRecordUpdateWithoutHospitalInput, Prisma.UsageRecordUncheckedUpdateWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.UsageRecordUpdateWithoutBusinessInput, Prisma.UsageRecordUncheckedUpdateWithoutBusinessInput>
 }
 
-export type UsageRecordUpdateManyWithWhereWithoutHospitalInput = {
+export type UsageRecordUpdateManyWithWhereWithoutBusinessInput = {
   where: Prisma.UsageRecordScalarWhereInput
-  data: Prisma.XOR<Prisma.UsageRecordUpdateManyMutationInput, Prisma.UsageRecordUncheckedUpdateManyWithoutHospitalInput>
+  data: Prisma.XOR<Prisma.UsageRecordUpdateManyMutationInput, Prisma.UsageRecordUncheckedUpdateManyWithoutBusinessInput>
 }
 
 export type UsageRecordScalarWhereInput = {
@@ -472,14 +472,14 @@ export type UsageRecordScalarWhereInput = {
   OR?: Prisma.UsageRecordScalarWhereInput[]
   NOT?: Prisma.UsageRecordScalarWhereInput | Prisma.UsageRecordScalarWhereInput[]
   id?: Prisma.StringFilter<"UsageRecord"> | string
-  hospitalId?: Prisma.StringFilter<"UsageRecord"> | string
+  businessId?: Prisma.StringFilter<"UsageRecord"> | string
   metric?: Prisma.StringFilter<"UsageRecord"> | string
   quantity?: Prisma.IntFilter<"UsageRecord"> | number
   timestamp?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   stripeUsageRecordId?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
 }
 
-export type UsageRecordCreateManyHospitalInput = {
+export type UsageRecordCreateManyBusinessInput = {
   id?: string
   metric: string
   quantity: number
@@ -487,7 +487,7 @@ export type UsageRecordCreateManyHospitalInput = {
   stripeUsageRecordId?: string | null
 }
 
-export type UsageRecordUpdateWithoutHospitalInput = {
+export type UsageRecordUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   metric?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
@@ -495,7 +495,7 @@ export type UsageRecordUpdateWithoutHospitalInput = {
   stripeUsageRecordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
-export type UsageRecordUncheckedUpdateWithoutHospitalInput = {
+export type UsageRecordUncheckedUpdateWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   metric?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
@@ -503,7 +503,7 @@ export type UsageRecordUncheckedUpdateWithoutHospitalInput = {
   stripeUsageRecordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
-export type UsageRecordUncheckedUpdateManyWithoutHospitalInput = {
+export type UsageRecordUncheckedUpdateManyWithoutBusinessInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   metric?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
@@ -515,62 +515,62 @@ export type UsageRecordUncheckedUpdateManyWithoutHospitalInput = {
 
 export type UsageRecordSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   metric?: boolean
   quantity?: boolean
   timestamp?: boolean
   stripeUsageRecordId?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["usageRecord"]>
 
 export type UsageRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   metric?: boolean
   quantity?: boolean
   timestamp?: boolean
   stripeUsageRecordId?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["usageRecord"]>
 
 export type UsageRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   metric?: boolean
   quantity?: boolean
   timestamp?: boolean
   stripeUsageRecordId?: boolean
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["usageRecord"]>
 
 export type UsageRecordSelectScalar = {
   id?: boolean
-  hospitalId?: boolean
+  businessId?: boolean
   metric?: boolean
   quantity?: boolean
   timestamp?: boolean
   stripeUsageRecordId?: boolean
 }
 
-export type UsageRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hospitalId" | "metric" | "quantity" | "timestamp" | "stripeUsageRecordId", ExtArgs["result"]["usageRecord"]>
+export type UsageRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "metric" | "quantity" | "timestamp" | "stripeUsageRecordId", ExtArgs["result"]["usageRecord"]>
 export type UsageRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type UsageRecordIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 export type UsageRecordIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  hospital?: boolean | Prisma.HospitalDefaultArgs<ExtArgs>
+  business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
 
 export type $UsageRecordPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "UsageRecord"
   objects: {
-    hospital: Prisma.$HospitalPayload<ExtArgs>
+    business: Prisma.$BusinessPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    hospitalId: string
+    businessId: string
     metric: string
     quantity: number
     timestamp: Date
@@ -969,7 +969,7 @@ readonly fields: UsageRecordFieldRefs;
  */
 export interface Prisma__UsageRecordClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  hospital<T extends Prisma.HospitalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.HospitalDefaultArgs<ExtArgs>>): Prisma.Prisma__HospitalClient<runtime.Types.Result.GetResult<Prisma.$HospitalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  business<T extends Prisma.BusinessDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BusinessDefaultArgs<ExtArgs>>): Prisma.Prisma__BusinessClient<runtime.Types.Result.GetResult<Prisma.$BusinessPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1000,7 +1000,7 @@ export interface Prisma__UsageRecordClient<T, Null = never, ExtArgs extends runt
  */
 export interface UsageRecordFieldRefs {
   readonly id: Prisma.FieldRef<"UsageRecord", 'String'>
-  readonly hospitalId: Prisma.FieldRef<"UsageRecord", 'String'>
+  readonly businessId: Prisma.FieldRef<"UsageRecord", 'String'>
   readonly metric: Prisma.FieldRef<"UsageRecord", 'String'>
   readonly quantity: Prisma.FieldRef<"UsageRecord", 'Int'>
   readonly timestamp: Prisma.FieldRef<"UsageRecord", 'DateTime'>

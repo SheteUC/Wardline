@@ -1,6 +1,6 @@
 import {
     Controller, Get, Post, Patch, Delete,
-    Param, Body, Query, HttpCode, HttpStatus,
+    Param, Body, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { AgentsService } from './agents.service';
 

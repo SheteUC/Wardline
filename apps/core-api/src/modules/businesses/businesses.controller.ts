@@ -22,6 +22,11 @@ export class BusinessesController {
         return this.businessesService.findBySlug(slug);
     }
 
+    @Get('by-phone')
+    findByPhone(@Query('phoneNumber') phoneNumber: string) {
+        return this.businessesService.findByPhone(phoneNumber);
+    }
+
     @Get(':id')
     findOne(
         @Param('id') id: string,

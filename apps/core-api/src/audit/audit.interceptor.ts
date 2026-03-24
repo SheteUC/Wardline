@@ -29,11 +29,17 @@ export class AuditInterceptor implements NestInterceptor {
         const user = request.user;
         const { entityType, action } = auditMetadata;
 
-        // Extract hospital ID from request
-        const hospitalId = request.params.hospitalId || request.body?.hospitalId || request.query?.hospitalId;
+        // Extract business ID from request, while tolerating legacy hospital fields during migration
+        const businessId =
+            request.params.businessId ||
+            request.body?.businessId ||
+            request.query?.businessId ||
+            request.params.hospitalId ||
+            request.body?.hospitalId ||
+            request.query?.hospitalId;
 
-        if (!hospitalId) {
-            this.logger.warn('Cannot create audit log: No hospital context', {
+        if (!businessId) {
+            this.logger.warn('Cannot create audit log: No business context', {
                 entityType,
                 action,
                 path: request.path,
@@ -49,7 +55,7 @@ export class AuditInterceptor implements NestInterceptor {
                 next: (response) => {
                     // Log successful operations
                     this.auditService.logAction({
-                        hospitalId,
+                        businessId,
                         userId: user?.id,
                         action,
                         entityType,
@@ -66,7 +72,7 @@ export class AuditInterceptor implements NestInterceptor {
                 error: (error) => {
                     // Log failed operations as well for compliance
                     this.auditService.logAction({
-                        hospitalId,
+                        businessId,
                         userId: user?.id,
                         action: `${action}_FAILED`,
                         entityType,

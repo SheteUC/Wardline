@@ -5,11 +5,16 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Plug, Database, Cloud } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface IntegrationNodeData {
+export interface IntegrationNodeData extends Record<string, unknown> {
     label: string;
-    integrationType?: 'ehr_lookup' | 'scheduling' | 'external_api';
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    preset?: string;
+    integrationType?: string;
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     endpointUrl?: string;
+    authType?: string;
+    bodyTemplate?: string;
+    timeoutSeconds?: number;
+    responseMapping?: string;
     errorHandling?: 'continue' | 'escalate' | 'end';
     retryCount?: number;
 }

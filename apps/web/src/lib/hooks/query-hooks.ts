@@ -1,91 +1,84 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '../api-client';
-import { useHospital } from '../hospital-context';
+import { useBusiness } from '../business-context';
 import {
-    createCallsService,
-    createWorkflowsService,
-    createTeamService,
-    createHospitalService,
     createAgentsService,
+    createBusinessService,
+    createCallsService,
+    createHospitalService,
+    createIntegrationsService,
     createQueuesService,
+    createTeamService,
+    createWorkflowsService,
 } from '../api-services';
 import type {
-    CallListItem,
-    CallDetail,
+    AgentCatalogItem,
+    AgentListItem,
+    AgentStats,
+    BusinessIntegration,
+    BusinessSettings,
     CallAnalytics,
-    WorkflowListItem,
-    WorkflowDetail,
-    TeamMember,
+    CallDetail,
+    CallListItem,
     HospitalSettings,
     PaginatedResponse,
+    TeamMember,
+    VoicemailRecord,
+    WorkflowDetail,
+    WorkflowListItem,
 } from '../api-types';
 
-/**
- * React Query hooks for data fetching with performance optimizations:
- * - Automatic caching and deduplication
- * - Background refetching for fresh data
- * - Optimistic updates for mutations
- * - Prefetching support for instant navigation
- */
-
-// ============ Query Key Factories ============
-// Centralized query keys for consistent cache management
-
 export const queryKeys = {
-    // Calls
-    calls: (hospitalId: string) => ['calls', hospitalId] as const,
-    callsList: (hospitalId: string, filters?: Record<string, unknown>) =>
-        [...queryKeys.calls(hospitalId), 'list', filters] as const,
-    callDetail: (hospitalId: string, callId: string) =>
-        [...queryKeys.calls(hospitalId), 'detail', callId] as const,
-    callAnalytics: (hospitalId: string, startDate: string, endDate: string) =>
-        [...queryKeys.calls(hospitalId), 'analytics', startDate, endDate] as const,
+    calls: (businessId: string) => ['calls', businessId] as const,
+    callsList: (businessId: string, filters?: Record<string, unknown>) =>
+        [...queryKeys.calls(businessId), 'list', filters] as const,
+    callDetail: (businessId: string, callId: string) =>
+        [...queryKeys.calls(businessId), 'detail', callId] as const,
+    callAnalytics: (businessId: string, startDate: string, endDate: string) =>
+        [...queryKeys.calls(businessId), 'analytics', startDate, endDate] as const,
+    voicemails: (businessId: string, unlistenedOnly?: boolean) =>
+        ['voicemails', businessId, unlistenedOnly] as const,
 
-    // Workflows
-    workflows: (hospitalId: string) => ['workflows', hospitalId] as const,
-    workflowsList: (hospitalId: string) => [...queryKeys.workflows(hospitalId), 'list'] as const,
-    workflowDetail: (hospitalId: string, workflowId: string) =>
-        [...queryKeys.workflows(hospitalId), 'detail', workflowId] as const,
+    workflows: (businessId: string) => ['workflows', businessId] as const,
+    workflowsList: (businessId: string) => [...queryKeys.workflows(businessId), 'list'] as const,
+    workflowDetail: (businessId: string, workflowId: string) =>
+        [...queryKeys.workflows(businessId), 'detail', workflowId] as const,
 
-    // Team
-    team: (hospitalId: string) => ['team', hospitalId] as const,
-    teamMembers: (hospitalId: string) => [...queryKeys.team(hospitalId), 'members'] as const,
+    team: (businessId: string) => ['team', businessId] as const,
+    teamMembers: (businessId: string) => [...queryKeys.team(businessId), 'members'] as const,
 
-    // Hospitals
-    hospitals: () => ['hospitals'] as const,
-    hospitalDetail: (hospitalId: string) => ['hospital', hospitalId] as const,
+    businesses: () => ['businesses'] as const,
+    businessDetail: (businessId: string) => ['business', businessId] as const,
 
-    // Agents (Multi-Agent Platform)
-    agents: (hospitalId: string) => ['agents', hospitalId] as const,
-    agentsList: (hospitalId: string, filters?: Record<string, unknown>) =>
-        [...queryKeys.agents(hospitalId), 'list', filters] as const,
-    agentDetail: (hospitalId: string, agentId: string) =>
-        [...queryKeys.agents(hospitalId), 'detail', agentId] as const,
-    agentMetrics: (hospitalId: string, agentId: string, startDate?: string, endDate?: string) =>
-        [...queryKeys.agents(hospitalId), 'metrics', agentId, startDate, endDate] as const,
-    agentCalls: (hospitalId: string, agentId: string, page: number) =>
-        [...queryKeys.agents(hospitalId), 'calls', agentId, page] as const,
-    agentSession: (hospitalId: string, agentId: string) =>
-        [...queryKeys.agents(hospitalId), 'session', agentId] as const,
+    agents: (businessId: string) => ['agents', businessId] as const,
+    agentsList: (businessId: string) => [...queryKeys.agents(businessId), 'list'] as const,
+    agentDetail: (businessId: string, agentId: string) =>
+        [...queryKeys.agents(businessId), 'detail', agentId] as const,
+    agentCatalog: (businessId: string) => [...queryKeys.agents(businessId), 'catalog'] as const,
+    agentStats: (businessId: string, agentId: string) =>
+        [...queryKeys.agents(businessId), 'stats', agentId] as const,
 
-    // Queues (Multi-Agent Platform)
-    queues: (hospitalId: string) => ['queues', hospitalId] as const,
-    queuesList: (hospitalId: string, filters?: Record<string, unknown>) =>
-        [...queryKeys.queues(hospitalId), 'list', filters] as const,
-    queueDetail: (hospitalId: string, queueId: string) =>
-        [...queryKeys.queues(hospitalId), 'detail', queueId] as const,
-    queueMetrics: (hospitalId: string, queueId: string, startDate?: string, endDate?: string) =>
-        [...queryKeys.queues(hospitalId), 'metrics', queueId, startDate, endDate] as const,
-    assignments: (hospitalId: string, filters?: Record<string, unknown>) =>
-        ['assignments', hospitalId, filters] as const,
+    integrations: (businessId: string) => ['integrations', businessId] as const,
+    integrationDetail: (businessId: string, category: string) =>
+        [...queryKeys.integrations(businessId), category] as const,
+
+    queues: (businessId: string) => ['queues', businessId] as const,
+    queuesList: (businessId: string, filters?: Record<string, unknown>) =>
+        [...queryKeys.queues(businessId), 'list', filters] as const,
+    queueDetail: (businessId: string, queueId: string) =>
+        [...queryKeys.queues(businessId), 'detail', queueId] as const,
+    queueMetrics: (businessId: string, queueId: string, startDate?: string, endDate?: string) =>
+        [...queryKeys.queues(businessId), 'metrics', queueId, startDate, endDate] as const,
+    assignments: (businessId: string, filters?: Record<string, unknown>) =>
+        ['assignments', businessId, filters] as const,
 };
-
-// ============ Calls Hooks ============
 
 export function useCalls(filters?: {
     status?: string;
+    tag?: string;
+    isEmergency?: boolean;
     startDate?: Date;
     endDate?: Date;
     search?: string;
@@ -93,327 +86,478 @@ export function useCalls(filters?: {
     pageSize?: number;
 }) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.callsList(hospitalId || '', filters),
+        queryKey: queryKeys.callsList(businessId || '', filters),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createCallsService(client, hospitalId);
-            return service.getCalls(filters);
+            if (!businessId) throw new Error('No business selected');
+            return createCallsService(client, businessId).getCalls(filters);
         },
-        enabled: !!hospitalId,
-        // Keep previous data while loading new page for smoother pagination
+        enabled: !!businessId,
         placeholderData: (prev) => prev,
     });
 }
 
 export function useCall(callId: string | null) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.callDetail(hospitalId || '', callId || ''),
+        queryKey: queryKeys.callDetail(businessId || '', callId || ''),
         queryFn: async () => {
-            if (!hospitalId || !callId) throw new Error('Missing hospital or call ID');
-            const service = createCallsService(client, hospitalId);
-            return service.getCallById(callId);
+            if (!businessId || !callId) throw new Error('Missing business or call ID');
+            return createCallsService(client, businessId).getCallById(callId);
         },
-        enabled: !!hospitalId && !!callId,
-        // Call details don't change often, can be stale longer
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        enabled: !!businessId && !!callId,
+        staleTime: 1000 * 60 * 5,
     });
 }
 
 export function useCallAnalytics(startDate: Date, endDate: Date) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
         queryKey: queryKeys.callAnalytics(
-            hospitalId || '',
+            businessId || '',
             startDate.toISOString(),
-            endDate.toISOString()
+            endDate.toISOString(),
         ),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createCallsService(client, hospitalId);
-            return service.getAnalytics(startDate, endDate);
+            if (!businessId) throw new Error('No business selected');
+            return createCallsService(client, businessId).getAnalytics(startDate, endDate);
         },
-        enabled: !!hospitalId,
-        // Analytics change frequently during business hours
-        staleTime: 1000 * 60 * 1, // 1 minute
-        // Refetch in background every 2 minutes for live dashboards
+        enabled: !!businessId,
+        staleTime: 1000 * 60,
         refetchInterval: 1000 * 60 * 2,
     });
 }
 
-// ============ Prefetching Hooks ============
+export function useVoicemails(unlistenedOnly = false) {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
 
-/**
- * Hook to prefetch call details when hovering over a call row
- * This makes navigation feel instant
- */
+    return useQuery({
+        queryKey: queryKeys.voicemails(businessId || '', unlistenedOnly),
+        queryFn: async () => {
+            if (!businessId) throw new Error('No business selected');
+            return createCallsService(client, businessId).getVoicemails(unlistenedOnly);
+        },
+        enabled: !!businessId,
+        staleTime: 1000 * 30,
+    });
+}
+
+export function useMarkVoicemailListened() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (voicemailId: string) => {
+            if (!businessId) throw new Error('No business selected');
+            return createCallsService(client, businessId).markVoicemailListened(voicemailId);
+        },
+        onSuccess: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: ['voicemails', businessId] });
+                queryClient.invalidateQueries({ queryKey: queryKeys.calls(businessId) });
+            }
+        },
+    });
+}
+
 export function usePrefetchCall() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
     const queryClient = useQueryClient();
 
     return (callId: string) => {
-        if (!hospitalId || !callId) return;
+        if (!businessId || !callId) return;
 
         queryClient.prefetchQuery({
-            queryKey: queryKeys.callDetail(hospitalId, callId),
-            queryFn: async () => {
-                const service = createCallsService(client, hospitalId);
-                return service.getCallById(callId);
-            },
+            queryKey: queryKeys.callDetail(businessId, callId),
+            queryFn: async () => createCallsService(client, businessId).getCallById(callId),
             staleTime: 1000 * 60 * 5,
         });
     };
 }
 
-/**
- * Hook to prefetch the next page of calls for smoother pagination
- */
 export function usePrefetchCallsPage() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
     const queryClient = useQueryClient();
 
     return (filters: {
         status?: string;
+        tag?: string;
         search?: string;
         page: number;
         pageSize?: number;
     }) => {
-        if (!hospitalId) return;
+        if (!businessId) return;
 
         queryClient.prefetchQuery({
-            queryKey: queryKeys.callsList(hospitalId, filters),
-            queryFn: async () => {
-                const service = createCallsService(client, hospitalId);
-                return service.getCalls(filters);
-            },
+            queryKey: queryKeys.callsList(businessId, filters),
+            queryFn: async () => createCallsService(client, businessId).getCalls(filters),
             staleTime: 1000 * 60 * 2,
         });
     };
 }
 
-// ============ Workflows Hooks ============
-
 export function useWorkflows() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.workflowsList(hospitalId || ''),
+        queryKey: queryKeys.workflowsList(businessId || ''),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createWorkflowsService(client, hospitalId);
-            return service.getWorkflows();
+            if (!businessId) throw new Error('No business selected');
+            return createWorkflowsService(client, businessId).getWorkflows();
         },
-        enabled: !!hospitalId,
+        enabled: !!businessId,
     });
 }
 
 export function useWorkflow(workflowId: string | null) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.workflowDetail(hospitalId || '', workflowId || ''),
+        queryKey: queryKeys.workflowDetail(businessId || '', workflowId || ''),
         queryFn: async () => {
-            if (!hospitalId || !workflowId) throw new Error('Missing hospital or workflow ID');
-            const service = createWorkflowsService(client, hospitalId);
-            return service.getWorkflowById(workflowId);
+            if (!businessId || !workflowId) throw new Error('Missing business or workflow ID');
+            return createWorkflowsService(client, businessId).getWorkflowById(workflowId);
         },
-        enabled: !!hospitalId && !!workflowId,
+        enabled: !!businessId && !!workflowId,
     });
 }
 
 export function useCreateWorkflow() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (data: { name: string; description?: string; userId: string }) => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createWorkflowsService(client, hospitalId);
-            return service.createWorkflow(data);
+        mutationFn: async (data: { name: string; description?: string; userId?: string; graphJson?: unknown }) => {
+            if (!businessId) throw new Error('No business selected');
+            return createWorkflowsService(client, businessId).createWorkflow(data);
         },
         onSuccess: () => {
-            // Invalidate workflows list to refetch
-            queryClient.invalidateQueries({ queryKey: queryKeys.workflowsList(hospitalId || '') });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.workflowsList(businessId) });
+            }
         },
     });
 }
 
-// ============ Team Hooks ============
-
 export function useTeamMembers() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.teamMembers(hospitalId || ''),
+        queryKey: queryKeys.teamMembers(businessId || ''),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createTeamService(client, hospitalId);
-            return service.getTeamMembers();
+            if (!businessId) throw new Error('No business selected');
+            return createTeamService(client, businessId).getTeamMembers();
         },
-        enabled: !!hospitalId,
-        // Team members don't change often
+        enabled: !!businessId,
         staleTime: 1000 * 60 * 5,
     });
 }
 
 export function useInviteUser() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
-    const queryClient = useQueryClient();
+    const { businessId } = useBusiness();
 
     return useMutation({
         mutationFn: async (data: { email: string; role: string }) => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createTeamService(client, hospitalId);
-            return service.inviteUser(data);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.teamMembers(hospitalId || '') });
+            if (!businessId) throw new Error('No business selected');
+            return createTeamService(client, businessId).inviteUser(data);
         },
     });
 }
 
-// ============ Hospital/Settings Hooks ============
-
-export function useHospitalSettings(hospitalIdOverride?: string) {
+export function useBusinessSettings(businessIdOverride?: string) {
     const client = useApiClient();
-    const { hospitalId: contextHospitalId } = useHospital();
-    const hospitalId = hospitalIdOverride || contextHospitalId;
+    const { businessId: contextBusinessId } = useBusiness();
+    const businessId = businessIdOverride || contextBusinessId;
 
     return useQuery({
-        queryKey: queryKeys.hospitalDetail(hospitalId || ''),
+        queryKey: queryKeys.businessDetail(businessId || ''),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createHospitalService(client);
-            return service.getHospitalById(hospitalId);
+            if (!businessId) throw new Error('No business selected');
+            return createBusinessService(client).getBusinessById(businessId);
         },
-        enabled: !!hospitalId,
-        // Hospital settings rarely change
+        enabled: !!businessId,
         staleTime: 1000 * 60 * 10,
     });
 }
 
-export function useHospitals() {
+export function useBusinesses() {
     const client = useApiClient();
 
     return useQuery({
-        queryKey: queryKeys.hospitals(),
-        queryFn: async () => {
-            const service = createHospitalService(client);
-            return service.getHospitals();
-        },
-        // Hospital list is fairly static
+        queryKey: queryKeys.businesses(),
+        queryFn: async () => createBusinessService(client).getBusinesses(),
         staleTime: 1000 * 60 * 5,
     });
 }
 
-export function useUpdateHospital() {
+export function useUpdateBusiness() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (data: Partial<HospitalSettings>) => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createHospitalService(client);
-            return service.updateHospital(hospitalId, data);
+        mutationFn: async (data: Partial<BusinessSettings>) => {
+            if (!businessId) throw new Error('No business selected');
+            return createBusinessService(client).updateBusiness(businessId, data);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.hospitalDetail(hospitalId || '') });
-            queryClient.invalidateQueries({ queryKey: queryKeys.hospitals() });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.businessDetail(businessId) });
+            }
+            queryClient.invalidateQueries({ queryKey: queryKeys.businesses() });
         },
     });
 }
 
-// ============ Agents Hooks (Multi-Agent Platform) ============
-
-export function useAgents(filters?: {
-    type?: 'AI' | 'HUMAN';
-    status?: string;
-    page?: number;
-    limit?: number;
-}) {
+export function useUpdateBusinessSettings() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (data: Partial<NonNullable<BusinessSettings['settings']>>) => {
+            if (!businessId) throw new Error('No business selected');
+            return createBusinessService(client).updateBusinessSettings(businessId, data);
+        },
+        onSuccess: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.businessDetail(businessId) });
+            }
+        },
+    });
+}
+
+export const useHospitalSettings = useBusinessSettings;
+export const useHospitals = useBusinesses;
+export const useUpdateHospital = useUpdateBusiness;
+
+export function useAgents() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.agentsList(hospitalId || '', filters),
+        queryKey: queryKeys.agentsList(businessId || ''),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createAgentsService(client, hospitalId);
-            return service.getAgents(filters);
+            if (!businessId) throw new Error('No business selected');
+            return createAgentsService(client, businessId).getAgents();
         },
-        enabled: !!hospitalId,
-        placeholderData: (prev) => prev,
+        enabled: !!businessId,
     });
 }
 
 export function useAgent(agentId: string | null) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.agentDetail(hospitalId || '', agentId || ''),
+        queryKey: queryKeys.agentDetail(businessId || '', agentId || ''),
         queryFn: async () => {
-            if (!hospitalId || !agentId) throw new Error('Missing hospital or agent ID');
-            const service = createAgentsService(client, hospitalId);
-            return service.getAgentById(agentId);
+            if (!businessId || !agentId) throw new Error('Missing business or agent ID');
+            return createAgentsService(client, businessId).getAgentById(agentId);
         },
-        enabled: !!hospitalId && !!agentId,
-        staleTime: 1000 * 60 * 2, // 2 minutes
+        enabled: !!businessId && !!agentId,
+        staleTime: 1000 * 60 * 2,
     });
 }
 
-export function useAgentMetrics(agentId: string | null, startDate?: Date, endDate?: Date) {
+export function useAgentCatalog() {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.agentMetrics(
-            hospitalId || '',
-            agentId || '',
-            startDate?.toISOString(),
-            endDate?.toISOString()
-        ),
+        queryKey: queryKeys.agentCatalog(businessId || ''),
         queryFn: async () => {
-            if (!hospitalId || !agentId) throw new Error('Missing hospital or agent ID');
-            const service = createAgentsService(client, hospitalId);
-            return service.getAgentMetrics(agentId, startDate, endDate);
+            if (!businessId) throw new Error('No business selected');
+            return createAgentsService(client, businessId).getCatalog();
         },
-        enabled: !!hospitalId && !!agentId,
+        enabled: !!businessId,
+        staleTime: 1000 * 60 * 10,
     });
 }
 
-export function useAgentSession(agentId: string | null) {
+export function useAgentStats(agentId: string | null) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.agentSession(hospitalId || '', agentId || ''),
+        queryKey: queryKeys.agentStats(businessId || '', agentId || ''),
         queryFn: async () => {
-            if (!hospitalId || !agentId) throw new Error('Missing hospital or agent ID');
-            const service = createAgentsService(client, hospitalId);
-            return service.getAgentSession(agentId);
+            if (!businessId || !agentId) throw new Error('Missing business or agent ID');
+            return createAgentsService(client, businessId).getAgentStats(agentId);
         },
-        enabled: !!hospitalId && !!agentId,
-        refetchInterval: 5000, // Refetch every 5 seconds for real-time status
+        enabled: !!businessId && !!agentId,
+        staleTime: 1000 * 30,
     });
 }
 
-// ============ Queues Hooks (Multi-Agent Platform) ============
+export function useDeployAgent() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (catalogId: string) => {
+            if (!businessId) throw new Error('No business selected');
+            return createAgentsService(client, businessId).deployAgent(catalogId);
+        },
+        onSuccess: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
+            }
+        },
+    });
+}
+
+export function useUpdateAgentStatus() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ agentId, status }: { agentId: string; status: AgentListItem['status'] }) => {
+            if (!businessId) throw new Error('No business selected');
+            return createAgentsService(client, businessId).updateAgentStatus(agentId, status);
+        },
+        onSuccess: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
+            }
+        },
+    });
+}
+
+export function useUpdateAgentToolConfig() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ agentId, toolConfig }: { agentId: string; toolConfig: Record<string, unknown> }) => {
+            if (!businessId) throw new Error('No business selected');
+            return createAgentsService(client, businessId).updateAgentToolConfig(agentId, toolConfig);
+        },
+        onSuccess: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
+            }
+        },
+    });
+}
+
+export function useUndeployAgent() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (agentId: string) => {
+            if (!businessId) throw new Error('No business selected');
+            return createAgentsService(client, businessId).deleteAgent(agentId);
+        },
+        onSuccess: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
+            }
+        },
+    });
+}
+
+export function useIntegrations() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+
+    return useQuery({
+        queryKey: queryKeys.integrations(businessId || ''),
+        queryFn: async () => {
+            if (!businessId) throw new Error('No business selected');
+            return createIntegrationsService(client, businessId).getIntegrations();
+        },
+        enabled: !!businessId,
+        staleTime: 1000 * 60,
+    });
+}
+
+export function useIntegration(category: string | null) {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+
+    return useQuery({
+        queryKey: queryKeys.integrationDetail(businessId || '', category || ''),
+        queryFn: async () => {
+            if (!businessId || !category) throw new Error('Missing business or integration category');
+            return createIntegrationsService(client, businessId).getIntegration(category);
+        },
+        enabled: !!businessId && !!category,
+        staleTime: 1000 * 60,
+    });
+}
+
+export function useUpsertIntegration() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            category,
+            data,
+        }: {
+            category: string;
+            data: {
+                vendor: string;
+                status?: string;
+                credentialsRef?: string;
+                settings?: Record<string, unknown>;
+                capabilities?: Record<string, unknown>;
+            };
+        }) => {
+            if (!businessId) throw new Error('No business selected');
+            return createIntegrationsService(client, businessId).upsertIntegration(category, data);
+        },
+        onSuccess: (_result, variables) => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.integrations(businessId) });
+                queryClient.invalidateQueries({
+                    queryKey: queryKeys.integrationDetail(businessId, variables.category),
+                });
+            }
+        },
+    });
+}
+
+export function useTestIntegration() {
+    const client = useApiClient();
+    const { businessId } = useBusiness();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (category: string) => {
+            if (!businessId) throw new Error('No business selected');
+            return createIntegrationsService(client, businessId).testIntegration(category);
+        },
+        onSuccess: (_result, category) => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.integrations(businessId) });
+                queryClient.invalidateQueries({ queryKey: queryKeys.integrationDetail(businessId, category) });
+            }
+        },
+    });
+}
 
 export function useQueues(filters?: {
     specialization?: string;
@@ -421,54 +565,53 @@ export function useQueues(filters?: {
     limit?: number;
 }) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.queuesList(hospitalId || '', filters),
+        queryKey: queryKeys.queuesList(businessId || '', filters),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createQueuesService(client, hospitalId);
-            return service.getQueues(filters);
+            if (!businessId) throw new Error('No business selected');
+            return createQueuesService(client, businessId).getQueues(filters);
         },
-        enabled: !!hospitalId,
+        enabled: !!businessId,
         placeholderData: (prev) => prev,
     });
 }
 
 export function useQueue(queueId: string | null) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.queueDetail(hospitalId || '', queueId || ''),
+        queryKey: queryKeys.queueDetail(businessId || '', queueId || ''),
         queryFn: async () => {
-            if (!hospitalId || !queueId) throw new Error('Missing hospital or queue ID');
-            const service = createQueuesService(client, hospitalId);
-            return service.getQueueById(queueId);
+            if (!businessId || !queueId) throw new Error('Missing business or queue ID');
+            return createQueuesService(client, businessId).getQueueById(queueId);
         },
-        enabled: !!hospitalId && !!queueId,
-        staleTime: 1000 * 30, // 30 seconds
+        enabled: !!businessId && !!queueId,
     });
 }
 
 export function useQueueMetrics(queueId: string | null, startDate?: Date, endDate?: Date) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
         queryKey: queryKeys.queueMetrics(
-            hospitalId || '',
+            businessId || '',
             queueId || '',
             startDate?.toISOString(),
-            endDate?.toISOString()
+            endDate?.toISOString(),
         ),
         queryFn: async () => {
-            if (!hospitalId || !queueId) throw new Error('Missing hospital or queue ID');
-            const service = createQueuesService(client, hospitalId);
-            return service.getQueueMetrics(queueId, startDate, endDate);
+            if (!businessId || !queueId) throw new Error('Missing business or queue ID');
+            return createQueuesService(client, businessId).getQueueMetrics(
+                queueId,
+                startDate,
+                endDate,
+            );
         },
-        enabled: !!hospitalId && !!queueId,
-        refetchInterval: 10000, // Refetch every 10 seconds for real-time metrics
+        enabled: !!businessId && !!queueId,
     });
 }
 
@@ -480,60 +623,57 @@ export function useAssignments(filters?: {
     limit?: number;
 }) {
     const client = useApiClient();
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
 
     return useQuery({
-        queryKey: queryKeys.assignments(hospitalId || '', filters),
+        queryKey: queryKeys.assignments(businessId || '', filters),
         queryFn: async () => {
-            if (!hospitalId) throw new Error('No hospital selected');
-            const service = createQueuesService(client, hospitalId);
-            return service.getAssignments(filters);
+            if (!businessId) throw new Error('No business selected');
+            return createQueuesService(client, businessId).getAssignments(filters);
         },
-        enabled: !!hospitalId,
-        refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+        enabled: !!businessId,
         placeholderData: (prev) => prev,
     });
 }
 
-// ============ Cache Invalidation Helpers ============
-
-/**
- * Hook to get cache invalidation functions
- * Useful for manual cache updates after actions
- */
 export function useCacheInvalidation() {
-    const { hospitalId } = useHospital();
+    const { businessId } = useBusiness();
     const queryClient = useQueryClient();
 
     return {
         invalidateCalls: () => {
-            if (hospitalId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.calls(hospitalId) });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.calls(businessId) });
             }
         },
         invalidateWorkflows: () => {
-            if (hospitalId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.workflows(hospitalId) });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.workflows(businessId) });
             }
         },
         invalidateTeam: () => {
-            if (hospitalId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.team(hospitalId) });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.team(businessId) });
             }
         },
         invalidateAgents: () => {
-            if (hospitalId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.agents(hospitalId) });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
+            }
+        },
+        invalidateIntegrations: () => {
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.integrations(businessId) });
             }
         },
         invalidateQueues: () => {
-            if (hospitalId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.queues(hospitalId) });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.queues(businessId) });
             }
         },
         invalidateAssignments: () => {
-            if (hospitalId) {
-                queryClient.invalidateQueries({ queryKey: ['assignments', hospitalId] });
+            if (businessId) {
+                queryClient.invalidateQueries({ queryKey: ['assignments', businessId] });
             }
         },
         invalidateAll: () => {
@@ -541,3 +681,20 @@ export function useCacheInvalidation() {
         },
     };
 }
+
+export type {
+    AgentCatalogItem,
+    AgentListItem,
+    AgentStats,
+    BusinessIntegration,
+    BusinessSettings,
+    CallAnalytics,
+    CallDetail,
+    CallListItem,
+    HospitalSettings,
+    PaginatedResponse,
+    TeamMember,
+    VoicemailRecord,
+    WorkflowDetail,
+    WorkflowListItem,
+};

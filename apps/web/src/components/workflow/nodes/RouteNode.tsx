@@ -5,7 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Route } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-export interface RouteNodeData {
+export interface RouteNodeData extends Record<string, unknown> {
     label: string;
     routingRules?: Array<{ condition: string; target: string }>;
     fallbackTarget?: string;

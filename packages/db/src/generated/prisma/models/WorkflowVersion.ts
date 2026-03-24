@@ -605,10 +605,6 @@ export type EnumWorkflowVersionStatusFieldUpdateOperationsInput = {
   set?: $Enums.WorkflowVersionStatus
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type WorkflowVersionCreateWithoutCreatedByInput = {
   id?: string
   versionNumber: number

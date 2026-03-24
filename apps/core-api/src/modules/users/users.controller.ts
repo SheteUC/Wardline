@@ -25,38 +25,38 @@ export class UsersController {
         return this.usersService.findOne(id);
     }
 
-    @Post(':userId/hospitals/:hospitalId')
-    @ApiOperation({ summary: 'Add user to hospital' })
+    @Post(':userId/businesses/:businessId')
+    @ApiOperation({ summary: 'Add user to business' })
     @Permissions(UserRole.ADMIN)
-    @Auditable('user', 'ADD_TO_HOSPITAL')
-    addUserToHospital(
+    @Auditable('user', 'ADD_TO_BUSINESS')
+    addUserToBusiness(
         @Param('userId') userId: string,
-        @Param('hospitalId') hospitalId: string,
+        @Param('businessId') businessId: string,
         @Body('role') role: UserRole,
     ) {
-        return this.usersService.addUserToHospital(userId, hospitalId, role);
+        return this.usersService.addUserToBusiness(userId, businessId, role);
     }
 
-    @Patch(':userId/hospitals/:hospitalId/role')
-    @ApiOperation({ summary: 'Update user role in hospital' })
+    @Patch(':userId/businesses/:businessId/role')
+    @ApiOperation({ summary: 'Update user role in business' })
     @Permissions(UserRole.ADMIN)
     @Auditable('user', 'UPDATE_ROLE')
     updateUserRole(
         @Param('userId') userId: string,
-        @Param('hospitalId') hospitalId: string,
+        @Param('businessId') businessId: string,
         @Body('role') role: UserRole,
     ) {
-        return this.usersService.updateUserRole(userId, hospitalId, role);
+        return this.usersService.updateUserRole(userId, businessId, role);
     }
 
-    @Delete(':userId/hospitals/:hospitalId')
-    @ApiOperation({ summary: 'Remove user from hospital' })
+    @Delete(':userId/businesses/:businessId')
+    @ApiOperation({ summary: 'Remove user from business' })
     @Permissions(UserRole.ADMIN)
-    @Auditable('user', 'REMOVE_FROM_HOSPITAL')
-    removeUserFromHospital(
+    @Auditable('user', 'REMOVE_FROM_BUSINESS')
+    removeUserFromBusiness(
         @Param('userId') userId: string,
-        @Param('hospitalId') hospitalId: string,
+        @Param('businessId') businessId: string,
     ) {
-        return this.usersService.removeUserFromHospital(userId, hospitalId);
+        return this.usersService.removeUserFromBusiness(userId, businessId);
     }
 }
