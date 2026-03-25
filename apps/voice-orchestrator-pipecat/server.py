@@ -4,10 +4,11 @@ Handles Twilio webhooks and manages voice bot instances
 """
 import asyncio
 import json
-from datetime import datetime
+import os
+from datetime import datetime, timezone
 from typing import Optional
 from contextlib import asynccontextmanager
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
@@ -84,7 +85,14 @@ def _is_business_open(context: CallContext) -> bool:
     if not operating_hours:
         return True
 
-    now_local = datetime.now(ZoneInfo(_get_business_timezone(context)))
+    try:
+        now_local = datetime.now(ZoneInfo(_get_business_timezone(context)))
+    except ZoneInfoNotFoundError:
+        logger.warning(
+            "Time zone data unavailable for {}; falling back to UTC for after-hours checks",
+            _get_business_timezone(context),
+        )
+        now_local = datetime.now(timezone.utc)
     day_of_week = int(now_local.strftime("%w"))
     current_time = now_local.strftime("%H:%M")
 
@@ -169,16 +177,32 @@ async def _execute_pending_action(context: CallContext) -> str:
     context.clear_pending_action()
     return "I wasn't able to submit that right now, but the office can follow up on it."
 
-# Configure logging
-# Use enqueue=True to avoid file locking issues on Windows
-logger.add(
-    "logs/voice_orchestrator.log",
-    rotation="1 day",
-    retention="7 days",
-    level="DEBUG",
-    enqueue=True,  # Use background thread to avoid file locking
-    catch=True,    # Catch errors in logging itself
-)
+def _configure_file_logging():
+    if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("WARDLINE_DISABLE_FILE_LOGGING") == "1":
+        return
+
+    try:
+        logger.add(
+            "logs/voice_orchestrator.log",
+            rotation="1 day",
+            retention="7 days",
+            level="DEBUG",
+            enqueue=True,
+            catch=True,
+        )
+    except (PermissionError, OSError):
+        logger.add(
+            "logs/voice_orchestrator.log",
+            rotation="1 day",
+            retention="7 days",
+            level="DEBUG",
+            enqueue=False,
+            catch=True,
+        )
+        logger.warning("Falling back to direct file logging because queued logging is unavailable")
+
+
+_configure_file_logging()
 
 
 @asynccontextmanager

@@ -22,6 +22,7 @@ import json
 from typing import Optional
 
 from loguru import logger
+from config import settings
 
 try:
     from pipecat.frames.frames import (
@@ -217,12 +218,11 @@ class TwilioMediaStreamAdapter:
         """Start the Pipecat bot pipeline in the background."""
         try:
             from bot import create_bot_pipeline
-            from config import settings as _settings
 
             # Validate required credentials before creating the pipeline
-            if not _settings.azure_speech_key:
+            if not settings.azure_speech_key:
                 raise ValueError("AZURE_SPEECH_KEY is not configured — cannot start streaming pipeline")
-            if not _settings.azure_openai_key and _settings.agent_type != "azure_ai_foundry":
+            if not settings.azure_openai_key and settings.agent_type != "azure_ai_foundry":
                 raise ValueError("AZURE_OPENAI_KEY is not configured — cannot start streaming pipeline")
 
             class _TwilioTransportShim:

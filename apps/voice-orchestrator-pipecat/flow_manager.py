@@ -3,6 +3,7 @@ Wardline Flow Manager - Dynamic workflow execution engine
 Loads and executes workflow JSON configurations from Core API
 """
 import asyncio
+import inspect
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from loguru import logger
@@ -28,6 +29,52 @@ class WardlineFlowManager:
         self.execution_state: Optional[WorkflowExecutionState] = None
         self._cache_ttl = 300  # 5 minutes cache for workflows
         self._workflow_cache: Dict[str, tuple[WorkflowGraph, float]] = {}
+
+    async def _maybe_await(self, value):
+        if inspect.isawaitable(value):
+            return await value
+        return value
+
+    def _result_flag(self, result: Any, primary_key: str, legacy_key: Optional[str] = None) -> bool:
+        explicit_fields = getattr(result, "__dict__", {})
+        if primary_key in explicit_fields:
+            return bool(explicit_fields[primary_key])
+        if legacy_key and legacy_key in explicit_fields:
+            return bool(explicit_fields[legacy_key])
+
+        primary_value = getattr(result, primary_key, None)
+        if isinstance(primary_value, bool):
+            return primary_value
+
+        if legacy_key:
+            legacy_value = getattr(result, legacy_key, None)
+            if isinstance(legacy_value, bool):
+                return legacy_value
+
+        return False
+
+    def _result_text(self, result: Any, key: str) -> Optional[str]:
+        explicit_fields = getattr(result, "__dict__", {})
+        if key in explicit_fields:
+            value = explicit_fields[key]
+            return value if isinstance(value, str) and value else None
+
+        value = getattr(result, key, None)
+        return value if isinstance(value, str) and value else None
+
+    def _mark_execution_complete(self, outcome: str):
+        if self.execution_state:
+            self.execution_state.mark_complete()
+
+        workflow_tracer.end_trace(
+            outcome,
+            {
+                "workflow_id": self.context.workflow.get("id", "default") if self.context.workflow else "default",
+                "business_id": self.context.business_id,
+                "call_id": self.context.call_id,
+                "call_sid": self.context.call_sid,
+            },
+        )
     
     async def load_workflow(self, business_id: str, phone_number_id: Optional[str] = None) -> bool:
         """
@@ -230,6 +277,7 @@ Be professional, empathetic, and efficient.""",
         if loop_count > 3:
             logger.error(f"Infinite loop detected at node {current_node.id} (visited {loop_count} times)")
             self.context.state = CallState.ENDING
+            self._mark_execution_complete("failed")
             return False
         
         # Add to execution path
@@ -246,52 +294,59 @@ Be professional, empathetic, and efficient.""",
             result = await executor.execute()
             
             # Trace node execution
-            await workflow_tracer.trace_node_execution(
+            await self._maybe_await(workflow_tracer.trace_node_execution(
                 node_id=current_node.id,
                 node_type=current_node.type,
                 config=current_node.config,
                 result={
                     "success": result.success,
                     "next_node_id": result.next_node_id,
-                    "should_escalate": result.should_escalate,
-                    "should_end_call": result.should_end_call,
+                    "should_escalate": self._result_flag(result, "should_escalate"),
+                    "should_end_call": self._result_flag(result, "should_end_call", "should_end"),
                 }
-            )
+            ))
             
             # Handle result
             if not result.success:
-                logger.error(f"Node execution failed: {result.error_message}")
-                if result.should_end_call:
+                logger.error(f"Node execution failed: {self._result_text(result, 'error_message')}")
+                if self._result_flag(result, "should_end_call", "should_end"):
                     self.context.state = CallState.ENDING
+                    self._mark_execution_complete("failed")
                     return False
                 # Continue to error handling node if configured
             
             # Store any context updates
-            for key, value in result.context_updates.items():
+            context_updates = getattr(result, "context_updates", {}) or {}
+            if not isinstance(context_updates, dict):
+                context_updates = {}
+
+            for key, value in context_updates.items():
                 self.execution_state.set_node_data(current_node.id, key, value)
             
             # Handle escalation
-            if result.should_escalate:
+            if self._result_flag(result, "should_escalate"):
                 logger.warning(f"🚨 Escalation requested: {result.escalation_reason}")
                 self.execution_state.escalated = True
-                self.execution_state.escalation_reason = result.escalation_reason
-                self.context.escalation_reason = result.escalation_reason
+                self.execution_state.escalation_reason = self._result_text(result, "escalation_reason") or "Workflow escalation requested"
+                self.context.escalation_reason = self.execution_state.escalation_reason
                 self.context.state = CallState.ESCALATING
                 
                 # Trace escalation
-                await workflow_tracer.trace_escalation(
-                    reason=result.escalation_reason,
+                await self._maybe_await(workflow_tracer.trace_escalation(
+                    reason=self.execution_state.escalation_reason,
                     queue_id=current_node.config.get("queueId", ""),
-                    context_package=result.context_updates
-                )
+                    context_package=context_updates
+                ))
                 
                 # Workflow will pause here, human takes over
+                self._mark_execution_complete("escalated")
                 return False
             
             # Handle call end
-            if result.should_end_call:
+            if self._result_flag(result, "should_end_call", "should_end"):
                 logger.info("Call ending by node request")
                 self.context.state = CallState.ENDING
+                self._mark_execution_complete("completed")
                 return False
             
             # Determine next node
@@ -300,6 +355,7 @@ Be professional, empathetic, and efficient.""",
             if not next_node_id:
                 logger.info("No next node found, ending workflow")
                 self.context.state = CallState.ENDING
+                self._mark_execution_complete("completed")
                 return False
             
             # Move to next node
@@ -311,6 +367,7 @@ Be professional, empathetic, and efficient.""",
             if next_node and next_node.type == "end":
                 # Execute end node and finish
                 await self.execute_current_node()
+                self._mark_execution_complete("completed")
                 return False
             
             return True
@@ -318,6 +375,7 @@ Be professional, empathetic, and efficient.""",
         except Exception as e:
             logger.error(f"Error executing node {current_node.id}: {e}", exc_info=True)
             self.context.state = CallState.ENDING
+            self._mark_execution_complete("failed")
             return False
     
     async def _determine_next_node(
@@ -367,12 +425,12 @@ Be professional, empathetic, and efficient.""",
                     logger.info(f"Condition matched: {edge.condition}")
                     
                     # Trace conditional evaluation
-                    await workflow_tracer.trace_conditional_evaluation(
+                    await self._maybe_await(workflow_tracer.trace_conditional_evaluation(
                         node_id=current_node.id,
                         conditions=[e.condition for e in edges if e.condition],
                         evaluation_results=condition_results,
                         selected_branch=edge.toNodeId
-                    )
+                    ))
                     
                     return edge.toNodeId
             else:
@@ -413,6 +471,38 @@ Be professional, empathetic, and efficient.""",
         # Continue workflow execution
         # Note: Actual AI response is generated in the Pipecat pipeline
         return None
+
+    async def handle_emergency(self, reason: str) -> bool:
+        """Short-circuit the workflow when an emergency is detected."""
+        logger.warning(f"Emergency flow triggered: {reason}")
+        self.context.is_emergency = True
+        self.context.escalation_reason = reason
+        self.context.state = CallState.ESCALATING
+
+        if self.execution_state:
+            self.execution_state.escalated = True
+            self.execution_state.escalation_reason = reason
+            self.execution_state.mark_complete()
+
+        await self._maybe_await(workflow_tracer.trace_escalation(
+            reason=reason,
+            queue_id="emergency",
+            context_package={
+                "business_id": self.context.business_id,
+                "call_id": self.context.call_id,
+                "call_sid": self.context.call_sid,
+            },
+        ))
+        workflow_tracer.end_trace(
+            "emergency",
+            {
+                "workflow_id": self.context.workflow.get("id", "default") if self.context.workflow else "default",
+                "business_id": self.context.business_id,
+                "call_id": self.context.call_id,
+                "call_sid": self.context.call_sid,
+            },
+        )
+        return True
     
     async def _check_emergency_keywords(self, text: str) -> bool:
         """Check if text contains emergency keywords"""
@@ -453,6 +543,8 @@ Be professional, empathetic, and efficient.""",
             "execution_path": self.execution_state.execution_path,
             "turn_count": self.execution_state.turn_count,
             "current_node": self.execution_state.current_node_id,
+            "completed": self.execution_state.completed,
+            "completed_at": self.execution_state.completed_at,
             "escalated": self.execution_state.escalated,
             "escalation_reason": self.execution_state.escalation_reason,
             "started_at": self.execution_state.started_at,

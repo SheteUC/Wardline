@@ -305,6 +305,34 @@ Default local ports:
 - Core API: `http://localhost:3001`
 - Voice orchestrator: `http://localhost:3002`
 
+### Mock Connector Smoke Flow
+
+The recommended local acceptance path for this phase uses the built-in mock integration server instead of real vendor credentials.
+
+1. Start the mock integration server in its own terminal:
+
+```bash
+pnpm mock:integrations
+```
+
+2. Seed the smoke fixture:
+
+```bash
+pnpm db:seed:smoke
+```
+
+This creates:
+
+- one owner user membership for local sign-in
+- one business
+- one phone number
+- one published workflow with runtime-action nodes
+- one integration per category pointed at the mock integration service
+
+3. Start the web app, Core API, and voice orchestrator.
+4. Open the integration screen and run a health check if you want to confirm capabilities manually.
+5. Run the smoke commands or manual call flows described below.
+
 ## Environment Variables
 
 ### Shared / database
@@ -376,9 +404,7 @@ ATHENAHEALTH_BILLING_TOKEN=...
 These are the main checks for the current V1 runtime:
 
 ```bash
-pnpm exec tsc --noEmit -p apps/core-api/tsconfig.json
-pnpm exec tsc --noEmit -p apps/web/tsconfig.json
-pnpm check:business-terminology
+pnpm test:smoke:typecheck
 python -m py_compile \
   apps/voice-orchestrator-pipecat/call_context.py \
   apps/voice-orchestrator-pipecat/core_api_client.py \
@@ -386,15 +412,26 @@ python -m py_compile \
   apps/voice-orchestrator-pipecat/server.py \
   apps/voice-orchestrator-pipecat/node_executors.py \
   apps/voice-orchestrator-pipecat/flow_manager.py
-pnpm test:smoke
+pnpm test:smoke:api
+pnpm test:smoke:web
+pnpm test:smoke:voice:gather
+pnpm test:smoke:voice:streaming
+pnpm test:smoke:local
 ```
 
-If `pytest` is installed in your Python environment, the focused voice runtime tests are:
+The voice smoke commands expect `pytest` (and `pytest-cov`, which `pytest.ini` uses for coverage) in the active Python environment. Install voice requirements, which include test dependencies:
 
 ```bash
-python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_tools.py
-python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_flow_manager.py
-python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_node_executors.py
+python -m pip install -r apps/voice-orchestrator-pipecat/requirements.txt
+python -m pip install pytest pytest-asyncio pytest-mock pytest-cov
+```
+
+Focused voice runtime tests are:
+
+```bash
+python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_tools.py -o addopts=--strict-markers
+python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_flow_manager.py -o addopts=--strict-markers
+python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_node_executors.py -o addopts=--strict-markers
 ```
 
 ### Manual Smoke Checklist
@@ -403,13 +440,20 @@ Use this sequence as the local release gate until broader end-to-end automation 
 
 1. Start Docker Postgres and Redis.
 2. Run `pnpm db:migrate`.
-3. Start the web app, Core API, and voice orchestrator.
-4. Sign in and let the first authenticated request auto-provision the local user.
-5. Open `/dashboard/settings` and create the first practice.
-6. Confirm the new practice becomes selected automatically.
-7. Open `/dashboard/workflows` and verify the editor mounts without render-loop or RBAC errors.
-8. Save a workflow draft.
-9. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard loads cleanly.
+3. Start the mock integration server with `pnpm mock:integrations`.
+4. Run `pnpm db:seed:smoke`.
+5. Start the web app, Core API, and voice orchestrator.
+6. Sign in and let the first authenticated request auto-provision the local user.
+7. Confirm the smoke business is visible and selected automatically, or create a business manually if you are not using the smoke seed.
+8. Open `/dashboard/integration-failures`, run a health check, and confirm the integration status becomes `CONNECTED`.
+9. Open `/dashboard/workflows` and verify the editor mounts without render-loop or RBAC errors.
+10. Save or publish the workflow.
+11. Run one Gather scenario and one streaming scenario, then confirm:
+   - the call appears in call logs
+   - live runtime actions record their outcomes
+   - fallback scenarios create follow-up tasks with the correct fallback reason
+   - voicemail links to the follow-up task when after-hours behavior is triggered
+12. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard reflects the mock outcomes cleanly.
 
 ## Known V1 Constraints
 

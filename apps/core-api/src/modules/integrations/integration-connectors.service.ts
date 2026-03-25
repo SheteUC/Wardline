@@ -114,6 +114,28 @@ function summarizePayload(payload: Record<string, unknown>) {
     );
 }
 
+function isTimeoutLikeError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+
+    const message = error.message.toLowerCase();
+    const cause = isRecord((error as Error & { cause?: unknown }).cause)
+        ? ((error as Error & { cause?: unknown }).cause as Record<string, unknown>)
+        : undefined;
+    const causeCode = typeof cause?.code === 'string' ? cause.code.toLowerCase() : '';
+    const causeMessage = typeof cause?.message === 'string' ? cause.message.toLowerCase() : '';
+
+    return (
+        error.name === 'AbortError' ||
+        error.name === 'TimeoutError' ||
+        message.includes('abort') ||
+        message.includes('timed out') ||
+        causeCode === 'und_err_abort' ||
+        causeCode === 'und_err_aborted' ||
+        causeMessage.includes('abort') ||
+        causeMessage.includes('timed out')
+    );
+}
+
 @Injectable()
 export class IntegrationConnectorsService {
     getAllCategories(): SupportedIntegrationCategory[] {
@@ -466,7 +488,7 @@ export class IntegrationConnectorsService {
                 ok: false,
                 handledLive: false,
                 message: error instanceof Error ? error.message : 'Live integration execution failed.',
-                fallbackReason: error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'request_error',
+                fallbackReason: isTimeoutLikeError(error) ? 'timeout' : 'request_error',
             };
         }
     }
@@ -538,32 +560,48 @@ export class IntegrationConnectorsService {
         },
     ) {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+        let timedOut = false;
+        const timeout = setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+        }, config.timeoutMs);
 
         try {
-            const response = await fetch(url, {
-                method: config.method,
-                headers: config.headers,
-                body: config.body ? JSON.stringify(config.body) : undefined,
-                signal: controller.signal,
-            });
-            const rawBody = await response.text();
-            let parsedBody: unknown = rawBody;
+            try {
+                const response = await fetch(url, {
+                    method: config.method,
+                    headers: config.headers,
+                    body: config.body ? JSON.stringify(config.body) : undefined,
+                    signal: controller.signal,
+                });
+                const rawBody = await response.text();
+                let parsedBody: unknown = rawBody;
 
-            if (rawBody) {
-                try {
-                    parsedBody = JSON.parse(rawBody);
-                } catch {
-                    parsedBody = rawBody;
+                if (rawBody) {
+                    try {
+                        parsedBody = JSON.parse(rawBody);
+                    } catch {
+                        parsedBody = rawBody;
+                    }
                 }
-            }
 
-            return {
-                ok: response.ok,
-                status: response.status,
-                bodyPreview: rawBody.slice(0, 500),
-                parsedBody,
-            };
+                return {
+                    ok: response.ok,
+                    status: response.status,
+                    bodyPreview: rawBody.slice(0, 500),
+                    parsedBody,
+                };
+            } catch (error) {
+                if (timedOut) {
+                    const timeoutError = new Error(
+                        `The integration request timed out after ${config.timeoutMs}ms.`,
+                    );
+                    timeoutError.name = 'TimeoutError';
+                    throw timeoutError;
+                }
+
+                throw error;
+            }
         } finally {
             clearTimeout(timeout);
         }

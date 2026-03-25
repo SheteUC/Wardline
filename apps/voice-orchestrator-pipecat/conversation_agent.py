@@ -232,7 +232,8 @@ class ConversationAgent:
     Implements the one-problem-at-a-time loop with safety check on every turn.
     """
 
-    def __init__(self):
+    def __init__(self, context: Optional[CallContext] = None):
+        self.context = context
         self.client = AsyncAzureOpenAI(
             api_key=settings.azure_openai_key,
             azure_endpoint=settings.azure_openai_endpoint,
@@ -326,6 +327,23 @@ class ConversationAgent:
 
         # 4. Pass to LLM with tool calling
         return await self._llm_turn(ctx)
+
+    async def generate_response(self, user_message: str) -> str:
+        """Compatibility wrapper used by the active voice runtime."""
+        if not self.context:
+            raise ValueError("ConversationAgent requires a bound CallContext for generate_response().")
+
+        result = await self.process_utterance(user_message, self.context)
+        speak = result.get("speak")
+        if speak:
+            return speak
+
+        action = result.get("action")
+        if action == "intent_detected":
+            intent = str(result.get("intent") or "that request").replace("_", " ")
+            return f"I can help with {intent}. Tell me a little more so I can get that started."
+
+        return "How can I help you with that today?"
 
     async def _llm_turn(self, ctx: CallContext) -> Dict[str, Any]:
         """Run a single LLM completion with tool calling."""
@@ -491,3 +509,34 @@ class ConversationAgent:
         ctx.state = CallState.VOICEMAIL
         ctx.add_message("assistant", speak)
         return speak
+
+
+class ConversationAgentManager:
+    """Manages one ConversationAgent per active call."""
+
+    def __init__(self):
+        self._agents: Dict[str, ConversationAgent] = {}
+
+    def get_or_create_agent(self, context: CallContext) -> ConversationAgent:
+        agent = self._agents.get(context.call_sid)
+        if agent is None:
+            agent = ConversationAgent(context)
+            self._agents[context.call_sid] = agent
+            logger.info(f"Created ConversationAgent for call {context.call_sid}")
+        else:
+            agent.context = context
+        return agent
+
+    def remove_agent(self, call_sid: str):
+        if call_sid in self._agents:
+            del self._agents[call_sid]
+            logger.info(f"Removed ConversationAgent for call {call_sid}")
+
+    def update_config(self, call_sid: str, new_config: dict):
+        agent = self._agents.get(call_sid)
+        if agent and "persona" in new_config:
+            agent.context.active_persona = new_config.get("persona")
+            logger.info(f"Updated ConversationAgent persona for {call_sid}")
+
+
+conversation_agent_manager = ConversationAgentManager()

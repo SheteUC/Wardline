@@ -10,10 +10,13 @@ Run with:
 """
 import asyncio
 import base64
+import importlib
 import json
 import os
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
+from fastapi.testclient import TestClient
 
 
 # ---------------------------------------------------------------------------
@@ -254,3 +257,46 @@ class TestTwilioMediaStreamAdapter:
 
         assert adapter._pipeline_task is None
         assert adapter._runner_task is None
+
+
+def _fresh_streaming_server(monkeypatch):
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC_test")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "auth_test")
+    monkeypatch.setenv("TWILIO_PHONE_NUMBER", "+15551230001")
+    monkeypatch.setenv("AZURE_SPEECH_KEY", "speech_test")
+    monkeypatch.setenv("AZURE_SPEECH_REGION", "eastus2")
+    monkeypatch.setenv("AZURE_OPENAI_KEY", "openai_test")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com")
+    monkeypatch.setenv("VOICE_AGENT_TYPE", "conversational")
+    monkeypatch.setenv("USE_STREAMING", "true")
+    monkeypatch.setenv("CORE_API_BASE_URL", "http://localhost:3001")
+
+    for module_name in ["server", "config"]:
+        sys.modules.pop(module_name, None)
+
+    server = importlib.import_module("server")
+    server.context_manager._contexts.clear()
+    server.context_manager._call_id_to_sid.clear()
+    return server
+
+
+class TestStreamingServerEndpoint:
+    @pytest.mark.integration
+    def test_media_websocket_invokes_adapter(self, monkeypatch):
+        server = _fresh_streaming_server(monkeypatch)
+        server.context_manager.create_context(call_sid="CA_stream", business_id="business-1")
+
+        with patch.object(server, "TwilioMediaStreamAdapter") as adapter_cls:
+            adapter_instance = MagicMock()
+            adapter_instance.run = AsyncMock(return_value=None)
+            adapter_cls.return_value = adapter_instance
+
+            with TestClient(server.app) as client:
+                with client.websocket_connect("/media/CA_stream") as websocket:
+                    websocket.close()
+
+            adapter_cls.assert_called_once()
+            adapter_instance.run.assert_awaited_once()
+            run_kwargs = adapter_instance.run.await_args.kwargs
+            assert run_kwargs["context"].call_sid == "CA_stream"
+            assert run_kwargs["flow_manager"] is not None

@@ -2,6 +2,7 @@
 Workflow models and types for dynamic workflow execution
 """
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Dict, Any, List, Optional, Literal
 from enum import Enum
 
@@ -229,8 +230,14 @@ class WorkflowExecutionState:
     node_data: Dict[str, Any] = field(default_factory=dict)  # Data collected at each node
     turn_count: int = 0
     started_at: Optional[str] = None
+    completed: bool = False
+    completed_at: Optional[str] = None
     escalated: bool = False
     escalation_reason: Optional[str] = None
+
+    @property
+    def is_complete(self) -> bool:
+        return self.completed
     
     def add_node_to_path(self, node_id: str):
         """Add a node to the execution path"""
@@ -253,3 +260,8 @@ class WorkflowExecutionState:
     def get_node_data(self, node_id: str, key: str, default: Any = None) -> Any:
         """Get data for a specific node"""
         return self.node_data.get(node_id, {}).get(key, default)
+
+    def mark_complete(self):
+        """Mark workflow execution as complete."""
+        self.completed = True
+        self.completed_at = self.completed_at or datetime.now().isoformat()
