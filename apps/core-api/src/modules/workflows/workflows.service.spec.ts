@@ -48,10 +48,10 @@ describe('WorkflowsService', () => {
   });
 
   describe('getActiveWorkflow', () => {
-    it('should return active workflow for hospital', async () => {
+    it('should return active workflow for business', async () => {
       const mockWorkflow = {
         id: 'workflow-1',
-        hospitalId: 'hospital-1',
+        businessId: 'business-1',
         name: 'Main Workflow',
         status: 'PUBLISHED',
         versions: [
@@ -68,7 +68,7 @@ describe('WorkflowsService', () => {
 
       mockPrismaService.workflow.findFirst = jest.fn().mockResolvedValue(mockWorkflow);
 
-      const result = await service.getActiveWorkflow('hospital-1');
+      const result = await service.getActiveWorkflow('business-1');
 
       expect(result).toBeDefined();
       expect(result.id).toBe('workflow-1');
@@ -76,7 +76,7 @@ describe('WorkflowsService', () => {
       expect(prisma.workflow.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            hospitalId: 'hospital-1',
+            businessId: 'business-1',
             status: 'PUBLISHED',
           }),
         }),
@@ -86,7 +86,7 @@ describe('WorkflowsService', () => {
     it('should return null if no active workflow found', async () => {
       mockPrismaService.workflow.findFirst = jest.fn().mockResolvedValue(null);
 
-      const result = await service.getActiveWorkflow('hospital-nonexistent');
+      const result = await service.getActiveWorkflow('business-nonexistent');
 
       expect(result).toBeNull();
     });
@@ -101,7 +101,7 @@ describe('WorkflowsService', () => {
         },
       });
 
-      const result = await service.getActiveWorkflow('hospital-1', 'phone-1');
+      const result = await service.getActiveWorkflow('business-1', 'phone-1');
 
       expect(result).toBeDefined();
       expect(result.id).toBe('workflow-1');
@@ -339,7 +339,7 @@ describe('WorkflowsService', () => {
     it('should load workflow in <100ms', async () => {
       const mockWorkflow = {
         id: 'workflow-1',
-        hospitalId: 'hospital-1',
+        businessId: 'business-1',
         versions: [
           {
             graphJson: {
@@ -357,7 +357,7 @@ describe('WorkflowsService', () => {
       mockPrismaService.workflow.findFirst = jest.fn().mockResolvedValue(mockWorkflow);
 
       const start = Date.now();
-      await service.getActiveWorkflow('hospital-1');
+      await service.getActiveWorkflow('business-1');
       const duration = Date.now() - start;
 
       expect(duration).toBeLessThan(100);

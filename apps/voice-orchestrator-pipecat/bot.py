@@ -158,18 +158,18 @@ async def create_bot_pipeline(
     Create the Pipecat pipeline for voice conversation with workflow integration
     """
     
-    # Load hospital data
-    if context.hospital_id:
-        hospital = await api_client.get_business(context.hospital_id)
-        if hospital:
-            context.hospital_name = hospital.get("name", context.hospital_name)
-        
-        context.intents = await api_client.get_intents(context.hospital_id)
-        context.departments = await api_client.get_departments(context.hospital_id)
+    # Load business data
+    if context.business_id:
+        business = await api_client.get_business(context.business_id)
+        if business:
+            context.business_name = business.get("name", context.business_name)
+
+        context.intents = await api_client.get_intents(context.business_id)
+        context.departments = await api_client.get_departments(context.business_id)
     
     # Load workflow configuration
     logger.info("Loading workflow for call...")
-    workflow_loaded = await flow_manager.load_workflow(context.hospital_id)
+    workflow_loaded = await flow_manager.load_workflow(context.business_id)
     
     if not workflow_loaded:
         logger.error("Failed to load workflow, using fallback")
@@ -179,7 +179,7 @@ async def create_bot_pipeline(
     
     # Get AI agent configuration from current workflow node if available
     system_prompt = get_system_prompt(
-        hospital_name=context.hospital_name,
+        business_name=context.business_name,
         intents=context.intents,
         departments=context.departments
     )
@@ -197,7 +197,7 @@ async def create_bot_pipeline(
                 logger.info("Using custom system prompt from workflow node")
     
     # Initial greeting
-    greeting = get_greeting_prompt(context.hospital_name)
+    greeting = get_greeting_prompt(context.business_name)
     
     # Initialize Azure OpenAI LLM
     llm = OpenAILLMService(
@@ -249,7 +249,7 @@ async def run_bot(
     call_sid: str,
     caller_phone: str,
     to_phone: str,
-    hospital_id: str = "",
+    business_id: str = "",
     websocket=None,
 ):
     """
@@ -262,7 +262,7 @@ async def run_bot(
         call_sid=call_sid,
         caller_phone=caller_phone,
         to_phone=to_phone,
-        hospital_id=hospital_id,
+        business_id=business_id,
     )
     context.state = CallState.INITIALIZING
     
@@ -320,7 +320,7 @@ async def run_bot(
                 await api_client.create_workflow_execution_log({
                     "call_id": context.call_id,
                     "workflow_id": execution_summary.get("workflow_id"),
-                    "hospital_id": context.hospital_id,
+                    "business_id": context.business_id,
                     "execution_path": execution_summary.get("execution_path"),
                     "node_data": execution_summary.get("node_data"),
                     "turn_count": execution_summary.get("turn_count"),
@@ -344,13 +344,13 @@ async def test_bot():
     context = CallContext(
         call_sid="test-call-123",
         caller_phone="+15551234567",
-        hospital_name="Wardline Medical Center",
+        business_name="Wardline Medical Center",
     )
     
     # Simple test loop
-    print(f"\n🏥 {context.hospital_name} AI Receptionist")
+    print(f"\n🏥 {context.business_name} AI Receptionist")
     print("=" * 50)
-    print(get_greeting_prompt(context.hospital_name))
+    print(get_greeting_prompt(context.business_name))
     print()
     
     while True:

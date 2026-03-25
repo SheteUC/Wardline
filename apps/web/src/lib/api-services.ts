@@ -195,8 +195,6 @@ export const createBusinessService = (client: ApiClientMethods) => ({
     },
 });
 
-export const createHospitalService = createBusinessService;
-
 export const createSystemService = () => ({
     async getHealth(): Promise<SystemHealth> {
         const response = await fetch(`${API_BASE_URL}/health`);
@@ -314,55 +312,5 @@ export const createFollowUpTasksService = (client: ApiClientMethods, businessId:
         return client.patch<FollowUpTask>(`/api/businesses/${businessId}/follow-up-tasks/${taskId}/status`, {
             status,
         });
-    },
-});
-
-export const createQueuesService = (_client: ApiClientMethods, _businessId: string) => ({
-    async getQueues(_filters?: unknown): Promise<PaginatedResponse<never>> {
-        return { data: [], total: 0, page: 1, pageSize: 20 };
-    },
-
-    async getQueueById(_queueId?: string): Promise<null> {
-        return null;
-    },
-
-    async createQueue(_data?: unknown): Promise<never> {
-        throw new Error('Queues are not implemented in the active Business API surface yet.');
-    },
-
-    async updateQueue(_queueId?: string, _data?: unknown): Promise<never> {
-        throw new Error('Queues are not implemented in the active Business API surface yet.');
-    },
-
-    async deleteQueue(_queueId?: string): Promise<void> {
-        return undefined;
-    },
-
-    async getQueueMetrics(
-        _queueId?: string,
-        _startDate?: Date,
-        _endDate?: Date,
-    ): Promise<Record<string, never>> {
-        return {};
-    },
-
-    async assignCall(_queueId?: string, _data?: unknown): Promise<never> {
-        throw new Error('Assignments are not implemented in the active Business API surface yet.');
-    },
-
-    async getAssignments(_filters?: unknown): Promise<PaginatedResponse<never>> {
-        return { data: [], total: 0, page: 1, pageSize: 20 };
-    },
-
-    async acceptAssignment(_assignmentId?: string, _agentId?: string): Promise<Record<string, never>> {
-        return {};
-    },
-
-    async completeAssignment(_assignmentId?: string): Promise<Record<string, never>> {
-        return {};
-    },
-
-    async abandonAssignment(_assignmentId?: string): Promise<Record<string, never>> {
-        return {};
     },
 });

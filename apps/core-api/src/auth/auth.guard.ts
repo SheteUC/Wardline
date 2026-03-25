@@ -49,8 +49,10 @@ export class AuthGuard implements CanActivate {
                 where: { clerkUserId },
                 include: {
                     businesses: {
-                        include: {
-                            business: true,
+                        select: {
+                            businessId: true,
+                            role: true,
+                            createdAt: true,
                         },
                     },
                 },
@@ -71,8 +73,10 @@ export class AuthGuard implements CanActivate {
                     where: { clerkUserId },
                     include: {
                         businesses: {
-                            include: {
-                                business: true,
+                            select: {
+                                businessId: true,
+                                role: true,
+                                createdAt: true,
                             },
                         },
                     },

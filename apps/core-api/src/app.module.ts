@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
@@ -23,16 +24,31 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { FollowUpTasksModule } from './modules/follow-up-tasks/follow-up-tasks.module';
 import { RuntimeActionsModule } from './modules/runtime-actions/runtime-actions.module';
 
+const rootEnvFilePaths = [
+    resolve(__dirname, '../../../.env.local'),
+    resolve(__dirname, '../../../.env'),
+];
+
+const deprecatedEnvFilePaths = [
+    resolve(__dirname, '../.env.local'),
+    resolve(__dirname, '../.env'),
+];
+
+const deprecatedCoreApiEnvPaths = deprecatedEnvFilePaths.filter((envPath) => existsSync(envPath));
+
+if (deprecatedCoreApiEnvPaths.length > 0) {
+    console.warn(
+        `[wardline] Deprecated core-api env file(s) detected: ${deprecatedCoreApiEnvPaths.join(
+            ', ',
+        )}. Use the repo-root .env.local/.env files instead.`,
+    );
+}
+
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            envFilePath: [
-                resolve(__dirname, '../../../.env.local'),
-                resolve(__dirname, '../../../.env'),
-                resolve(__dirname, '../.env.local'),
-                resolve(__dirname, '../.env'),
-            ],
+            envFilePath: rootEnvFilePaths,
         }),
         ScheduleModule.forRoot(),
         PrismaModule,

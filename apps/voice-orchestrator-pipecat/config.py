@@ -2,19 +2,39 @@
 Configuration for Pipecat Voice Orchestrator
 """
 import os
+import warnings
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from dotenv import load_dotenv
 
-load_dotenv()
+APP_DIR = Path(__file__).resolve().parent
+REPO_ROOT = APP_DIR.parents[1]
+ROOT_ENV_PATHS = [REPO_ROOT / ".env.local", REPO_ROOT / ".env"]
+LEGACY_ENV_PATHS = [APP_DIR / ".env"]
+
+for env_path in ROOT_ENV_PATHS:
+    if env_path.exists():
+        load_dotenv(env_path, override=False)
+
+existing_legacy_env_paths = [str(env_path) for env_path in LEGACY_ENV_PATHS if env_path.exists()]
+if existing_legacy_env_paths:
+    warnings.warn(
+        "Deprecated voice-orchestrator env file(s) detected: "
+        f"{', '.join(existing_legacy_env_paths)}. "
+        "Use the repo-root .env.local/.env files instead.",
+        stacklevel=2,
+    )
+
+for env_path in LEGACY_ENV_PATHS:
+    if env_path.exists():
+        load_dotenv(env_path, override=False)
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore"
     )
@@ -68,4 +88,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

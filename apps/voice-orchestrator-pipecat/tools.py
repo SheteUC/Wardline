@@ -9,7 +9,7 @@ from core_api_client import api_client
 
 
 def _business_name(context: CallContext) -> str:
-    return context.business_name or context.hospital_name or "the practice"
+    return context.business_name or "the practice"
 
 
 def _require_confirmation(

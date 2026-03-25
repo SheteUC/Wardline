@@ -251,7 +251,7 @@ packages/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.x
 - pnpm 8+
 - Python 3.11+
 - PostgreSQL 14+
@@ -267,6 +267,15 @@ packages/
 pnpm install
 python -m pip install -r apps/voice-orchestrator-pipecat/requirements.txt
 ```
+
+### Environment
+
+Use the repo-root `.env.local` or `.env` as the canonical local configuration file.
+
+- `apps/core-api/.env`, `apps/web/.env.local`, and `packages/db/.env` are deprecated for local development.
+- The Core API and Prisma now load only the root env files.
+- The web app injects its public runtime variables from the root env files.
+- The voice orchestrator prefers the root env files and only falls back to its local `.env` for missing values.
 
 ### Database
 
@@ -303,7 +312,7 @@ Default local ports:
 | Variable | Notes |
 | --- | --- |
 | `DATABASE_URL` | Required by Prisma and the Core API |
-| `REDIS_URL` | Optional but recommended; Core API falls back to in-memory cache if missing |
+| `REDIS_URL` | Recommended for the local happy path; defaults to `redis://localhost:6379` in Core API development mode |
 | `NODE_ENV` | `development`, `test`, or `production` |
 
 ### Web
@@ -369,6 +378,7 @@ These are the main checks for the current V1 runtime:
 ```bash
 pnpm exec tsc --noEmit -p apps/core-api/tsconfig.json
 pnpm exec tsc --noEmit -p apps/web/tsconfig.json
+pnpm check:business-terminology
 python -m py_compile \
   apps/voice-orchestrator-pipecat/call_context.py \
   apps/voice-orchestrator-pipecat/core_api_client.py \
@@ -376,6 +386,7 @@ python -m py_compile \
   apps/voice-orchestrator-pipecat/server.py \
   apps/voice-orchestrator-pipecat/node_executors.py \
   apps/voice-orchestrator-pipecat/flow_manager.py
+pnpm test:smoke
 ```
 
 If `pytest` is installed in your Python environment, the focused voice runtime tests are:
@@ -386,6 +397,20 @@ python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_flow_manager.py
 python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_node_executors.py
 ```
 
+### Manual Smoke Checklist
+
+Use this sequence as the local release gate until broader end-to-end automation exists:
+
+1. Start Docker Postgres and Redis.
+2. Run `pnpm db:migrate`.
+3. Start the web app, Core API, and voice orchestrator.
+4. Sign in and let the first authenticated request auto-provision the local user.
+5. Open `/dashboard/settings` and create the first practice.
+6. Confirm the new practice becomes selected automatically.
+7. Open `/dashboard/workflows` and verify the editor mounts without render-loop or RBAC errors.
+8. Save a workflow draft.
+9. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard loads cleanly.
+
 ## Known V1 Constraints
 
 - No live human queueing or staff presence management yet
@@ -393,7 +418,7 @@ python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_node_executors.
 - No multi-vendor routing within a category
 - No live after-hours urgent transfer in V1
 - Manual integration credential provisioning only
-- Some legacy `hospital` compatibility shims still exist outside the active path, but new work should use `Business` terminology and Business-scoped APIs only
+- Active web, Core API, and voice runtime paths are `Business`-native; live connector validation is the next milestone
 
 ## License
 

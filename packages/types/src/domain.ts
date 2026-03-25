@@ -345,8 +345,6 @@ export interface CallEvent {
 export interface CallContext {
     callId: string;
     businessId: string;
-    /** @deprecated use businessId */
-    hospitalId?: string;
     phoneNumberId: string;
     direction: 'inbound' | 'outbound';
     caller?: {
@@ -548,7 +546,6 @@ export const intentDetectionResultSchema = z.object({
 export const callContextSchema = z.object({
     callId: z.string().uuid(),
     businessId: z.string().uuid(),
-    hospitalId: z.string().uuid().optional(),
     phoneNumberId: z.string().uuid(),
     direction: z.enum(['inbound', 'outbound']),
     caller: z.object({

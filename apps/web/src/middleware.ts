@@ -63,7 +63,7 @@ export default clerkMiddleware(async (auth, request) => {
         }
     }
 
-    // Dashboard routes - for hospital staff (not patients)
+    // Dashboard routes - for business staff (not patients)
     if (isDashboardRoute(request)) {
         if (userRole === 'patient') {
             url.pathname = '/patient';

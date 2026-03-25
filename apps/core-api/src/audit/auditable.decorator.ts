@@ -10,7 +10,7 @@ export interface AuditableMetadata {
 /**
  * Decorator to mark routes for automatic audit logging
  * 
- * @param entityType - Type of entity being modified (e.g., 'user', 'hospital', 'workflow')
+ * @param entityType - Type of entity being modified (e.g., 'user', 'business', 'workflow')
  * @param action - Action being performed (e.g., 'CREATE', 'UPDATE', 'DELETE')
  * 
  * @example

@@ -8,9 +8,7 @@ import {
     createBusinessService,
     createCallsService,
     createFollowUpTasksService,
-    createHospitalService,
     createIntegrationsService,
-    createQueuesService,
     createTeamService,
     createWorkflowsService,
 } from '../api-services';
@@ -24,7 +22,6 @@ import type {
     CallDetail,
     CallListItem,
     FollowUpTask,
-    HospitalSettings,
     PaginatedResponse,
     TeamMember,
     VoicemailRecord,
@@ -69,15 +66,6 @@ export const queryKeys = {
     followUpTasks: (businessId: string, filters?: Record<string, unknown>) =>
         ['follow-up-tasks', businessId, filters] as const,
 
-    queues: (businessId: string) => ['queues', businessId] as const,
-    queuesList: (businessId: string, filters?: Record<string, unknown>) =>
-        [...queryKeys.queues(businessId), 'list', filters] as const,
-    queueDetail: (businessId: string, queueId: string) =>
-        [...queryKeys.queues(businessId), 'detail', queueId] as const,
-    queueMetrics: (businessId: string, queueId: string, startDate?: string, endDate?: string) =>
-        [...queryKeys.queues(businessId), 'metrics', queueId, startDate, endDate] as const,
-    assignments: (businessId: string, filters?: Record<string, unknown>) =>
-        ['assignments', businessId, filters] as const,
 };
 
 export function useCalls(filters?: {
@@ -347,10 +335,6 @@ export function useUpdateBusinessSettings() {
     });
 }
 
-export const useHospitalSettings = useBusinessSettings;
-export const useHospitals = useBusinesses;
-export const useUpdateHospital = useUpdateBusiness;
-
 export function useAgents() {
     const client = useApiClient();
     const { businessId } = useBusiness();
@@ -604,83 +588,6 @@ export function useTestIntegration() {
     });
 }
 
-export function useQueues(filters?: {
-    specialization?: string;
-    page?: number;
-    limit?: number;
-}) {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.queuesList(businessId || '', filters),
-        queryFn: async () => {
-            if (!businessId) throw new Error('No business selected');
-            return createQueuesService(client, businessId).getQueues(filters);
-        },
-        enabled: !!businessId,
-        placeholderData: (prev) => prev,
-    });
-}
-
-export function useQueue(queueId: string | null) {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.queueDetail(businessId || '', queueId || ''),
-        queryFn: async () => {
-            if (!businessId || !queueId) throw new Error('Missing business or queue ID');
-            return createQueuesService(client, businessId).getQueueById(queueId);
-        },
-        enabled: !!businessId && !!queueId,
-    });
-}
-
-export function useQueueMetrics(queueId: string | null, startDate?: Date, endDate?: Date) {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.queueMetrics(
-            businessId || '',
-            queueId || '',
-            startDate?.toISOString(),
-            endDate?.toISOString(),
-        ),
-        queryFn: async () => {
-            if (!businessId || !queueId) throw new Error('Missing business or queue ID');
-            return createQueuesService(client, businessId).getQueueMetrics(
-                queueId,
-                startDate,
-                endDate,
-            );
-        },
-        enabled: !!businessId && !!queueId,
-    });
-}
-
-export function useAssignments(filters?: {
-    status?: string;
-    agentId?: string;
-    queueId?: string;
-    page?: number;
-    limit?: number;
-}) {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.assignments(businessId || '', filters),
-        queryFn: async () => {
-            if (!businessId) throw new Error('No business selected');
-            return createQueuesService(client, businessId).getAssignments(filters);
-        },
-        enabled: !!businessId,
-        placeholderData: (prev) => prev,
-    });
-}
-
 export function useCacheInvalidation() {
     const { businessId } = useBusiness();
     const queryClient = useQueryClient();
@@ -716,16 +623,6 @@ export function useCacheInvalidation() {
                 queryClient.invalidateQueries({ queryKey: ['follow-up-tasks', businessId] });
             }
         },
-        invalidateQueues: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.queues(businessId) });
-            }
-        },
-        invalidateAssignments: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: ['assignments', businessId] });
-            }
-        },
         invalidateAll: () => {
             queryClient.invalidateQueries();
         },
@@ -742,7 +639,6 @@ export type {
     CallDetail,
     CallListItem,
     FollowUpTask,
-    HospitalSettings,
     PaginatedResponse,
     TeamMember,
     VoicemailRecord,

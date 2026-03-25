@@ -73,7 +73,7 @@ export class AuditService {
     }
 
     /**
-     * Query audit logs for a hospital
+     * Query audit logs for a business
      * @param businessId Business ID
      * @param options Query options (limit, offset, filters)
      */

@@ -38,14 +38,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             ],
         });
 
-        // Log queries in development
         if (process.env.NODE_ENV === 'development') {
             this.$on('query' as never, (e: any) => {
                 this.logger.debug(`Query: ${e.query}`, { duration: e.duration });
             });
         }
 
-        // Log errors
         this.$on('error' as never, (e: any) => {
             this.logger.error('Prisma error', e);
         });
@@ -54,9 +52,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     async onModuleInit() {
         try {
             await this.$connect();
-            this.logger.info('✅ Database connection established');
+            this.logger.info('Database connection established');
         } catch (error) {
-            this.logger.error('❌ Database connection failed', error);
+            this.logger.error('Database connection failed', error);
             throw error;
         }
     }

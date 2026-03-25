@@ -89,9 +89,8 @@ export class WorkflowsApiController {
     @ApiResponse({ status: 200, description: 'Active workflow configuration with graph JSON' })
     getActiveWorkflow(
         @Query('businessId') businessId?: string,
-        @Query('hospitalId') hospitalId?: string,
         @Query('phoneNumberId') phoneNumberId?: string,
     ) {
-        return this.workflowsService.getActiveWorkflow(businessId || hospitalId || '', phoneNumberId);
+        return this.workflowsService.getActiveWorkflow(businessId || '', phoneNumberId);
     }
 }

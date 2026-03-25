@@ -2,17 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import {
     LayoutDashboard, Phone, Settings, Search, Menu, X,
     AlertTriangle, Bot, GitBranch, Bell, ListTodo, PhoneCall, PlugZap, Voicemail,
 } from 'lucide-react';
+import { useBusiness } from '@/lib/business-context';
 import { useFollowUpTasks, useIntegrations, useVoicemails } from '@/lib/hooks/query-hooks';
+import { shouldRedirectToBusinessSettings } from '@/lib/business-selection';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
     const { user } = useUser();
+    const { businessId, isLoading: businessLoading } = useBusiness();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const followUpTasksQuery = useFollowUpTasks();
@@ -47,21 +51,37 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    useEffect(() => {
+        if (
+            shouldRedirectToBusinessSettings({
+                pathname,
+                businessId,
+                isLoading: businessLoading,
+            })
+        ) {
+            router.replace('/dashboard/settings');
+        }
+    }, [businessId, businessLoading, pathname, router]);
+
     const NavItem = ({
         href,
         icon: Icon,
         label,
         badge,
         exact,
+        requiresBusiness,
     }: {
         href: string;
         icon: React.ElementType;
         label: string;
         badge?: number;
         exact?: boolean;
+        requiresBusiness?: boolean;
     }) => {
         const normalizedPath = pathname.replace(/\/$/, '') || '/';
         const normalizedHref = href.replace(/\/$/, '') || '/';
+        const isDisabled = !!requiresBusiness && !businessLoading && !businessId;
+        const targetHref = isDisabled ? '/dashboard/settings' : href;
         const isActive = exact
             ? normalizedPath === normalizedHref
             : normalizedPath === normalizedHref ||
@@ -69,19 +89,27 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
         return (
             <Link
-                href={href}
+                href={targetHref}
                 onClick={() => { if (isMobile) setSidebarOpen(false); }}
                 className={[
                     "w-full flex items-center justify-between px-4 py-2.5",
                     "text-sm font-semibold rounded-2xl mb-1",
                     "transition-all duration-150",
+                    isDisabled
+                        ? "cursor-pointer text-muted-foreground/60"
+                        : "",
                     isActive
                         ? "neo-raised bg-[var(--background)] text-primary"
                         : "text-muted-foreground hover:text-foreground hover:neo-raised-sm hover:bg-[var(--background)]",
                 ].join(" ")}
+                aria-disabled={isDisabled}
             >
                 <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <Icon
+                        className={`w-4 h-4 shrink-0 ${
+                            isActive ? 'text-primary' : 'text-muted-foreground'
+                        } ${isDisabled ? 'opacity-60' : ''}`}
+                    />
                     {label}
                 </div>
                 {badge !== undefined && badge > 0 && (
@@ -105,6 +133,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (pathname.startsWith('/dashboard/settings')) return 'Settings';
         return 'Wardline';
     })();
+
+    const showOnboardingBanner = !businessLoading && !businessId;
 
     return (
         <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden">
@@ -134,23 +164,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             Overview
                         </div>
                         <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" exact />
-                        <NavItem href="/dashboard/calls" icon={Phone} label="Call Logs" />
-                        <NavItem href="/dashboard/urgent-calls" icon={AlertTriangle} label="Urgent Calls" badge={urgentCount} />
-                        <NavItem href="/dashboard/voicemails" icon={Voicemail} label="Voicemails" badge={voicemailCount} />
-                        <NavItem href="/dashboard/follow-ups" icon={ListTodo} label="Follow-ups" badge={followUpCount} />
+                        <NavItem href="/dashboard/calls" icon={Phone} label="Call Logs" requiresBusiness />
+                        <NavItem href="/dashboard/urgent-calls" icon={AlertTriangle} label="Urgent Calls" badge={urgentCount} requiresBusiness />
+                        <NavItem href="/dashboard/voicemails" icon={Voicemail} label="Voicemails" badge={voicemailCount} requiresBusiness />
+                        <NavItem href="/dashboard/follow-ups" icon={ListTodo} label="Follow-ups" badge={followUpCount} requiresBusiness />
                         <NavItem
                             href="/dashboard/integration-failures"
                             icon={PlugZap}
                             label="Integration Failures"
                             badge={integrationFailureCount}
+                            requiresBusiness
                         />
 
                         {/* Configuration */}
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
                             Configuration
                         </div>
-                        <NavItem href="/dashboard/agents" icon={Bot} label="Agents" />
-                        <NavItem href="/dashboard/workflows" icon={GitBranch} label="Call Flow" />
+                        <NavItem href="/dashboard/agents" icon={Bot} label="Agents" requiresBusiness />
+                        <NavItem href="/dashboard/workflows" icon={GitBranch} label="Call Flow" requiresBusiness />
 
                         {/* Account */}
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
@@ -221,6 +252,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto bg-background p-4 lg:p-8">
                     <div className="max-w-7xl mx-auto">
+                        {showOnboardingBanner && (
+                            <div className="mb-6 rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-950 neo-inset">
+                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                    <div>
+                                        <p className="font-semibold">Finish setting up your first practice</p>
+                                        <p className="text-amber-900/80">
+                                            Create a business in settings to unlock call flow, follow-up queues, and integrations.
+                                        </p>
+                                    </div>
+                                    <Link
+                                        href="/dashboard/settings"
+                                        className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-[var(--background)] px-4 py-2 text-sm font-semibold text-primary neo-raised"
+                                    >
+                                        Open settings
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
                         {children}
                     </div>
                 </div>

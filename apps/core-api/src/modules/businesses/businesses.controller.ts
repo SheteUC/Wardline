@@ -16,7 +16,12 @@ export class BusinessesController {
         @Req() request: any,
         @Query('includeSettings') includeSettings?: string,
     ) {
-        return this.businessesService.findAll(includeSettings === 'true', request.user?.id);
+        const scopedBusinessIds = request.user?.businesses?.map((membership: any) => membership.businessId);
+        return this.businessesService.findAll(
+            includeSettings === 'true',
+            request.user?.id,
+            scopedBusinessIds,
+        );
     }
 
     @Get('by-slug/:slug')

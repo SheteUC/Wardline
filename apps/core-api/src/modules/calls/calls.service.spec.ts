@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { CallsService } from './calls.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService } from '../../cache/cache.service';
-import { MedicalTriageGuardService } from '../safety/medical-triage-guard.service';
+import { FollowUpTasksService } from '../follow-up-tasks/follow-up-tasks.service';
 
 describe('CallsService', () => {
     let service: CallsService;
@@ -16,31 +17,30 @@ describe('CallsService', () => {
             update: jest.fn(),
         },
         phoneNumber: {
-            findUnique: jest.fn(),
+            findFirst: jest.fn(),
         },
         transcriptSegment: {
             createMany: jest.fn(),
-            findMany: jest.fn(),
         },
-        handoff: { create: jest.fn() },
+        handoff: {
+            create: jest.fn(),
+        },
+        voicemailRecord: {
+            create: jest.fn(),
+            count: jest.fn(),
+            findMany: jest.fn(),
+            update: jest.fn(),
+        },
+        $queryRaw: jest.fn(),
     };
 
     const mockCache = {
-        get: jest.fn().mockResolvedValue(null),
-        set: jest.fn(),
         getOrSet: jest.fn().mockImplementation(async (_key: string, factory: () => Promise<unknown>) => factory()),
         delete: jest.fn(),
-        invalidateByTag: jest.fn(),
     };
 
-    const mockTriageGuard = {
-        detectMedicalContent: jest.fn().mockResolvedValue({
-            isMedical: false,
-            requiresHumanEscalation: false,
-            triggeredKeywords: [],
-            confidence: 0,
-        }),
-        enforceHumanEscalation: jest.fn(),
+    const mockFollowUpTasks = {
+        create: jest.fn(),
     };
 
     beforeEach(async () => {
@@ -49,143 +49,153 @@ describe('CallsService', () => {
                 CallsService,
                 { provide: PrismaService, useValue: mockPrisma },
                 { provide: CacheService, useValue: mockCache },
-                { provide: MedicalTriageGuardService, useValue: mockTriageGuard },
+                { provide: FollowUpTasksService, useValue: mockFollowUpTasks },
             ],
         }).compile();
+
         service = module.get<CallsService>(CallsService);
     });
 
-    afterEach(() => jest.clearAllMocks());
-
-    // -----------------------------------------------------------------------
-    // findAllByHospital
-    // -----------------------------------------------------------------------
-
-    describe('findAllByHospital', () => {
-        it('returns paginated results from database', async () => {
-            mockPrisma.callSession.findMany.mockResolvedValue([{ id: 'c1' }]);
-            mockPrisma.callSession.count.mockResolvedValue(1);
-            const result = await service.findAllByHospital('hosp-1');
-            expect(result.data).toHaveLength(1);
-            expect(result.total).toBe(1);
-        });
-
-        it('returns cached result when available', async () => {
-            const cached = { data: [{ id: 'cached' }], total: 1 };
-            mockCache.get.mockResolvedValueOnce(cached);
-            const result = await service.findAllByHospital('hosp-1');
-            expect(result).toEqual(cached);
-            expect(mockPrisma.callSession.findMany).not.toHaveBeenCalled();
-        });
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
-    // -----------------------------------------------------------------------
-    // findOne
-    // -----------------------------------------------------------------------
+    describe('findAllByBusiness', () => {
+        it('returns paginated business call logs', async () => {
+            mockPrisma.callSession.findMany.mockResolvedValue([
+                {
+                    id: 'call-1',
+                    businessId: 'business-1',
+                    twilioCallSid: 'CA123',
+                    direction: 'INBOUND',
+                    status: 'COMPLETED',
+                    tag: 'FAQ',
+                    isEmergency: false,
+                    turnCount: 2,
+                    startedAt: new Date('2026-03-24T12:00:00Z'),
+                    endedAt: new Date('2026-03-24T12:05:00Z'),
+                    sentimentScore: 0.75,
+                    phoneNumber: { twilioPhoneNumber: '+15551234567', label: 'Main' },
+                    caller: { id: 'caller-1', name: 'Jane Doe', phone: '+15557654321' },
+                    voicemails: [],
+                    followUpTasks: [{ id: 'task-1', priority: 'HIGH', status: 'OPEN' }],
+                },
+            ]);
+            mockPrisma.callSession.count.mockResolvedValue(1);
+
+            const result = await service.findAllByBusiness('business-1');
+
+            expect(result.total).toBe(1);
+            expect(result.data[0]).toEqual(
+                expect.objectContaining({
+                    id: 'call-1',
+                    businessId: 'business-1',
+                    callerName: 'Jane Doe',
+                    followUpTaskCount: 1,
+                }),
+            );
+        });
+    });
 
     describe('findOne', () => {
-        it('returns call session with transcript', async () => {
-            const mockCall = { id: 'c1', hospitalId: 'hosp-1', transcriptSegments: [] };
-            mockPrisma.callSession.findUnique.mockResolvedValue(mockCall);
-            const result = await service.findOne('c1');
-            expect(result.id).toBe('c1');
+        it('returns the full call detail when found', async () => {
+            mockPrisma.callSession.findUnique.mockResolvedValue({
+                id: 'call-1',
+                businessId: 'business-1',
+                transcriptSegments: [],
+                handoffs: [],
+                voicemails: [],
+                followUpTasks: [],
+            });
+
+            const result = await service.findOne('call-1');
+
+            expect(result.id).toBe('call-1');
         });
 
-        it('returns null when call not found', async () => {
+        it('throws when the call is missing', async () => {
             mockPrisma.callSession.findUnique.mockResolvedValue(null);
-            const result = await service.findOne('bad');
-            expect(result).toBeNull();
+
+            await expect(service.findOne('missing-call')).rejects.toThrow(NotFoundException);
         });
     });
 
-    // -----------------------------------------------------------------------
-    // create
-    // -----------------------------------------------------------------------
-
     describe('create', () => {
-        it('creates and returns a new call session', async () => {
-            mockPrisma.phoneNumber.findUnique.mockResolvedValue({ id: 'pn-1', twilioPhoneNumber: '+15554321' });
-            mockPrisma.callSession.create.mockResolvedValue({ id: 'new-call', status: 'INITIATED' });
+        it('creates a call session from the matched business phone number', async () => {
+            mockPrisma.phoneNumber.findFirst.mockResolvedValue({
+                id: 'phone-1',
+                businessId: 'business-1',
+                twilioPhoneNumber: '+15554321',
+            });
+            mockPrisma.callSession.create.mockResolvedValue({ id: 'call-1', status: 'INITIATED' });
+
             const result = await service.create({
-                hospitalId: 'hosp-1',
                 twilioCallSid: 'CA_test',
                 direction: 'INBOUND',
                 fromNumber: '+15551234',
                 toNumber: '+15554321',
             });
-            expect(result.id).toBe('new-call');
+
+            expect(result.id).toBe('call-1');
+            expect(mockPrisma.callSession.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    businessId: 'business-1',
+                    phoneNumberId: 'phone-1',
+                    twilioCallSid: 'CA_test',
+                }),
+            });
         });
     });
 
-    // -----------------------------------------------------------------------
-    // saveTranscript
-    // -----------------------------------------------------------------------
-
     describe('saveTranscript', () => {
-        const callId = 'call-1';
-        const segments = [
-            { speaker: 'CALLER', text: 'Hello I need an appointment', timestamp: new Date(), confidence: 0.95 },
-        ];
-
-        beforeEach(() => {
-            mockPrisma.callSession.findUnique.mockResolvedValue({ startedAt: new Date() });
+        it('persists transcript segments and invalidates the call detail cache', async () => {
+            mockPrisma.callSession.findUnique.mockResolvedValue({ id: 'call-1' });
             mockPrisma.transcriptSegment.createMany.mockResolvedValue({ count: 1 });
-        });
 
-        it('creates transcript segments in the database', async () => {
-            await service.saveTranscript(callId, segments);
+            await service.saveTranscript('call-1', [
+                { speaker: 'CALLER', text: 'Hello', confidence: 0.95 },
+            ]);
+
             expect(mockPrisma.transcriptSegment.createMany).toHaveBeenCalledWith(
                 expect.objectContaining({
                     data: expect.arrayContaining([
-                        expect.objectContaining({ callId, text: segments[0].text }),
+                        expect.objectContaining({
+                            callId: 'call-1',
+                            speaker: 'CALLER',
+                            text: 'Hello',
+                        }),
                     ]),
                 }),
             );
+            expect(mockCache.delete).toHaveBeenCalledWith('calls:detail:call-1');
         });
+    });
 
-        it('invalidates the call detail cache', async () => {
-            await service.saveTranscript(callId, segments);
-            expect(mockCache.delete).toHaveBeenCalledWith(expect.stringContaining(callId));
-        });
+    describe('createVoicemail', () => {
+        it('creates a linked follow-up task for urgent voicemail', async () => {
+            mockPrisma.voicemailRecord.create.mockResolvedValue({ id: 'voicemail-1' });
+            mockPrisma.callSession.update.mockResolvedValue({});
 
-        it('triggers medical triage analysis asynchronously', async () => {
-            await service.saveTranscript(callId, segments);
-            // Allow microtask queue to flush
-            await new Promise((r) => setTimeout(r, 0));
-            expect(mockTriageGuard.detectMedicalContent).toHaveBeenCalledWith(
-                expect.stringContaining('Hello I need an appointment'),
-            );
-        });
-
-        it('calls enforceHumanEscalation when medical content is detected', async () => {
-            mockTriageGuard.detectMedicalContent.mockResolvedValueOnce({
-                isMedical: true,
-                requiresHumanEscalation: true,
-                triggeredKeywords: ['chest pain'],
-                confidence: 0.9,
+            await service.createVoicemail({
+                callId: 'call-1',
+                businessId: 'business-1',
+                callerPhone: '+15551234',
+                callerName: 'Jane Doe',
+                recordingUrl: 'https://example.com/audio.mp3',
+                context: 'Caller reports an urgent medication issue.',
+                isUrgent: true,
+                urgencyKeywords: ['urgent'],
             });
 
-            const medSegments = [
-                { speaker: 'CALLER', text: 'I have chest pain', timestamp: new Date(), confidence: 0.95 },
-            ];
-            await service.saveTranscript(callId, medSegments);
-            await new Promise((r) => setTimeout(r, 10));
-
-            expect(mockTriageGuard.enforceHumanEscalation).toHaveBeenCalledWith(
-                callId,
-                expect.any(String),
-                expect.arrayContaining(['chest pain']),
+            expect(mockFollowUpTasks.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    businessId: 'business-1',
+                    voicemailId: 'voicemail-1',
+                    type: 'URGENT_CALLBACK',
+                    priority: 'URGENT',
+                    urgencyKeywords: ['urgent'],
+                }),
             );
-        });
-
-        it('does not fail when triage guard throws', async () => {
-            mockTriageGuard.detectMedicalContent.mockRejectedValueOnce(new Error('AI service timeout'));
-            await expect(service.saveTranscript(callId, segments)).resolves.not.toThrow();
-        });
-
-        it('throws when call is not found', async () => {
-            mockPrisma.callSession.findUnique.mockResolvedValue(null);
-            await expect(service.saveTranscript('bad-call', segments)).rejects.toThrow('Call not found');
         });
     });
 });

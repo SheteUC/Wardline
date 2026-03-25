@@ -1,7 +1,5 @@
 """
 Client for communicating with the Wardline Core API.
-
-This is a Business-native client with hospital-era compatibility wrappers.
 """
 
 from __future__ import annotations
@@ -81,14 +79,8 @@ class CoreAPIClient:
         formatted = "".join(filter(str.isdigit, phone_number))
         return await self._get_json("/businesses/by-phone", params={"phoneNumber": formatted})
 
-    async def get_hospital_by_phone(self, phone_number: str) -> Optional[Dict[str, Any]]:
-        return await self.get_business_by_phone(phone_number)
-
     async def get_business(self, business_id: str) -> Optional[Dict[str, Any]]:
         return await self._get_json(f"/businesses/{business_id}", params={"includeRelations": "true"})
-
-    async def get_hospital(self, hospital_id: str) -> Optional[Dict[str, Any]]:
-        return await self.get_business(hospital_id)
 
     async def get_runtime_config(self, business_id: str) -> Optional[Dict[str, Any]]:
         cached = self._cache_get(self._runtime_config_cache, business_id)
@@ -105,9 +97,6 @@ class CoreAPIClient:
         if runtime_config:
             return runtime_config.get("settings")
         return None
-
-    async def get_hospital_config(self, hospital_id: str) -> Optional[Dict[str, Any]]:
-        return await self.get_business_config(hospital_id)
 
     async def get_active_workflow(
         self,
@@ -319,7 +308,7 @@ class CoreAPIClient:
         )
 
     async def create_escalation(self, context_package: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        business_id = context_package.get("businessId") or context_package.get("hospitalId")
+        business_id = context_package.get("businessId")
         if not business_id:
             logger.warning("Cannot create escalation without business ID")
             return None
@@ -360,7 +349,7 @@ class CoreAPIClient:
         return result is not None
 
     async def create_safety_event(self, event_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        business_id = event_data.get("businessId") or event_data.get("hospitalId")
+        business_id = event_data.get("businessId")
         if not business_id:
             return None
         return await self.create_follow_up_task(

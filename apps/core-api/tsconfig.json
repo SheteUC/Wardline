@@ -32,19 +32,7 @@
         "dist",
         "test",
         "src/**/*.spec.ts",
-        "src/modules/departments/**/*",
-        "src/modules/hospitals/**/*",
-        "src/modules/insurance/**/*",
-        "src/modules/intents/**/*",
-        "src/modules/marketing-events/**/*",
-        "src/modules/prescriptions/**/*",
-        "src/modules/queues/**/*",
-        "src/modules/safety/medical-triage-guard.service.ts",
-        "src/modules/safety/medical-triage-guard.service.spec.ts",
         "src/modules/calls/clients/**/*",
-        "src/modules/calls/call-context.service.ts",
-        "src/modules/workflows/services/workflow-execution.service.ts",
-        "src/scheduling/**/*",
         "src/websocket/**/*"
     ]
 }

@@ -29,14 +29,11 @@ export class AuditInterceptor implements NestInterceptor {
         const user = request.user;
         const { entityType, action } = auditMetadata;
 
-        // Extract business ID from request, while tolerating legacy hospital fields during migration
+        // Extract business ID from the active Business-scoped request shape
         const businessId =
             request.params.businessId ||
             request.body?.businessId ||
-            request.query?.businessId ||
-            request.params.hospitalId ||
-            request.body?.hospitalId ||
-            request.query?.hospitalId;
+            request.query?.businessId;
 
         if (!businessId) {
             this.logger.warn('Cannot create audit log: No business context', {

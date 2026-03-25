@@ -308,8 +308,8 @@ class MedicalSafetyGuard(FrameProcessor):
                 return
             
             event_data = {
-                "call_id": self.context.call_id,
-                "hospital_id": self.context.hospital_id,
+                "callId": self.context.call_id,
+                "businessId": self.context.business_id,
                 "keyword": match.keyword,
                 "category": match.category,
                 "severity": match.severity,

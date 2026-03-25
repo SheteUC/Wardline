@@ -4,25 +4,25 @@ System prompts and greeting messages for Wardline Voice AI
 from typing import List, Dict, Any
 
 
-def get_greeting_prompt(hospital_name: str = "Wardline Medical Center") -> str:
+def get_greeting_prompt(business_name: str = "Wardline Medical Center") -> str:
     """Return the opening greeting spoken to the caller."""
     return (
-        f"Thank you for calling {hospital_name}. "
+        f"Thank you for calling {business_name}. "
         "This is Wardline, your AI medical receptionist. "
         "How can I help you today?"
     )
 
 
 def get_system_prompt(
-    hospital_name: str = "Wardline Medical Center",
+    business_name: str = "Wardline Medical Center",
     intents: List[Dict[str, Any]] = None,
     departments: List[Dict[str, Any]] = None,
 ) -> str:
     """
-    Build the LLM system prompt from hospital context.
+    Build the LLM system prompt from business context.
 
     Args:
-        hospital_name: Name of the hospital/clinic.
+        business_name: Name of the practice.
         intents: List of configured intent objects from Core API.
         departments: List of department objects from Core API.
 
@@ -52,7 +52,7 @@ def get_system_prompt(
                 for d in active
             )
 
-    return f"""You are a warm, professional AI medical receptionist for {hospital_name}.
+    return f"""You are a warm, professional AI medical receptionist for {business_name}.
 
 Your responsibilities:
 - Greet callers courteously and identify how you can help

@@ -30,14 +30,11 @@ export class RbacGuard implements CanActivate {
             throw new ForbiddenException('User not authenticated');
         }
 
-        // Extract business ID from request params or body
+        // Extract business ID from the active Business-scoped request shape
         const businessId =
             request.params.businessId ||
             request.body?.businessId ||
-            request.query?.businessId ||
-            request.params.hospitalId ||
-            request.body?.hospitalId ||
-            request.query?.hospitalId;
+            request.query?.businessId;
 
         if (!businessId) {
             this.logger.warn('RBAC check failed: No business context', {

@@ -253,8 +253,6 @@ export interface BusinessSettings {
     };
 }
 
-export type HospitalSettings = BusinessSettings;
-
 export interface BusinessIntegration {
     id: string;
     businessId: string;

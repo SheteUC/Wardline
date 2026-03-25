@@ -31,7 +31,7 @@ class LangChainToolsAgent:
 
         @lc_tool
         async def check_insurance(carrier_name: str, plan_name: str = "") -> str:
-            """Check whether an insurance carrier/plan is accepted by the hospital."""
+            """Check whether an insurance carrier/plan is accepted by the practice."""
             from tools import check_insurance as _fn
             result = await _fn(context, carrier_name=carrier_name, plan_name=plan_name)
             return str(result)
@@ -76,7 +76,7 @@ class LangChainToolsAgent:
 
         @lc_tool
         async def lookup_department(service_type: str) -> str:
-            """Find a hospital department by service type."""
+            """Find a practice department by service type."""
             from tools import lookup_department as _fn
             result = await _fn(context, service_type=service_type)
             return str(result)
@@ -118,7 +118,7 @@ class LangChainToolsAgent:
 
             tools = self._build_tools()
             system_prompt = get_system_prompt(
-                hospital_name=self.context.hospital_name,
+                business_name=self.context.business_name,
                 intents=self.context.intents,
                 departments=self.context.departments,
             )
@@ -156,7 +156,7 @@ class LangChainToolsAgent:
             fallback = ConversationAgent(
                 self.context,
                 get_system_prompt(
-                    hospital_name=self.context.hospital_name,
+                    business_name=self.context.business_name,
                     intents=self.context.intents,
                     departments=self.context.departments,
                 ),

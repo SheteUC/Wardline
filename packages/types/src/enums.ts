@@ -61,9 +61,6 @@ export enum BusinessStatus {
     SUSPENDED = 'suspended',
 }
 
-/** @deprecated Use BusinessStatus */
-export const HospitalStatus = BusinessStatus;
-
 /**
  * Recording default setting
  */

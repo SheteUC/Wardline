@@ -38,8 +38,8 @@ describe('RbacGuard', () => {
 
     describe('Permission Hierarchy', () => {
         it('should allow OWNER to access ADMIN-required routes', async () => {
-            const user = createMockUser('hospital-123', UserRole.OWNER);
-            const context = createMockContext({ user, params: { hospitalId: 'hospital-123' } });
+            const user = createMockUser('business-123', UserRole.OWNER);
+            const context = createMockContext({ user, params: { businessId: 'business-123' } });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
             const result = await guard.canActivate(context);
@@ -48,8 +48,8 @@ describe('RbacGuard', () => {
         });
 
         it('should allow ADMIN to access SUPERVISOR-required routes', async () => {
-            const user = createMockUser('hospital-123', UserRole.ADMIN);
-            const context = createMockContext({ user, params: { hospitalId: 'hospital-123' } });
+            const user = createMockUser('business-123', UserRole.ADMIN);
+            const context = createMockContext({ user, params: { businessId: 'business-123' } });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.SUPERVISOR]);
 
             const result = await guard.canActivate(context);
@@ -58,34 +58,34 @@ describe('RbacGuard', () => {
         });
 
         it('should deny READONLY access to ADMIN-required routes', async () => {
-            const user = createMockUser('hospital-123', UserRole.READONLY);
-            const context = createMockContext({ user, params: { hospitalId: 'hospital-123' } });
+            const user = createMockUser('business-123', UserRole.READONLY);
+            const context = createMockContext({ user, params: { businessId: 'business-123' } });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
             await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
         });
     });
 
-    describe('Hospital Context', () => {
-        it('should throw ForbiddenException when no hospital context', async () => {
-            const user = createMockUser('hospital-123', UserRole.ADMIN);
+    describe('Business Context', () => {
+        it('should throw ForbiddenException when no business context', async () => {
+            const user = createMockUser('business-123', UserRole.ADMIN);
             const context = createMockContext({ user, params: {} });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
             await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
         });
 
-        it('should deny access when user does not belong to hospital', async () => {
-            const user = createMockUser('hospital-123', UserRole.ADMIN);
-            const context = createMockContext({ user, params: { hospitalId: 'hospital-456' } });
+        it('should deny access when user does not belong to the business', async () => {
+            const user = createMockUser('business-123', UserRole.ADMIN);
+            const context = createMockContext({ user, params: { businessId: 'business-456' } });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
             await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
         });
 
-        it('should extract hospitalId from request body', async () => {
-            const user = createMockUser('hospital-123', UserRole.ADMIN);
-            const context = createMockContext({ user, params: {}, body: { hospitalId: 'hospital-123' } });
+        it('should extract businessId from request body', async () => {
+            const user = createMockUser('business-123', UserRole.ADMIN);
+            const context = createMockContext({ user, params: {}, body: { businessId: 'business-123' } });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
             const result = await guard.canActivate(context);
@@ -93,9 +93,9 @@ describe('RbacGuard', () => {
             expect(result).toBe(true);
         });
 
-        it('should extract hospitalId from query params', async () => {
-            const user = createMockUser('hospital-123', UserRole.ADMIN);
-            const context = createMockContext({ user, params: {}, query: { hospitalId: 'hospital-123' } });
+        it('should extract businessId from query params', async () => {
+            const user = createMockUser('business-123', UserRole.ADMIN);
+            const context = createMockContext({ user, params: {}, query: { businessId: 'business-123' } });
             jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
 
             const result = await guard.canActivate(context);
@@ -105,14 +105,13 @@ describe('RbacGuard', () => {
     });
 });
 
-function createMockUser(hospitalId: string, role: UserRole) {
+function createMockUser(businessId: string, role: UserRole) {
     return {
         id: 'user-123',
-        hospitals: [
+        businesses: [
             {
-                hospitalId,
+                businessId,
                 role,
-                hospital: { id: hospitalId, name: 'Test Hospital' },
             },
         ],
     };

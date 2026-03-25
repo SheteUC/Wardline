@@ -15,16 +15,16 @@ async function applyIndexes() {
             sql: 'CREATE INDEX IF NOT EXISTS "call_sessions_status_idx" ON "call_sessions" ("status")',
         },
         {
-            name: 'call_sessions_hospital_status_idx',
-            sql: 'CREATE INDEX IF NOT EXISTS "call_sessions_hospital_status_idx" ON "call_sessions" ("hospital_id", "status")',
+            name: 'call_sessions_business_status_idx',
+            sql: 'CREATE INDEX IF NOT EXISTS "call_sessions_business_status_idx" ON "call_sessions" ("business_id", "status")',
         },
         {
             name: 'call_sessions_is_emergency_idx',
             sql: 'CREATE INDEX IF NOT EXISTS "call_sessions_is_emergency_idx" ON "call_sessions" ("is_emergency") WHERE "is_emergency" = true',
         },
         {
-            name: 'call_sessions_hospital_started_at_idx',
-            sql: 'CREATE INDEX IF NOT EXISTS "call_sessions_hospital_started_at_idx" ON "call_sessions" ("hospital_id", "started_at" DESC)',
+            name: 'call_sessions_business_started_at_idx',
+            sql: 'CREATE INDEX IF NOT EXISTS "call_sessions_business_started_at_idx" ON "call_sessions" ("business_id", "started_at" DESC)',
         },
         {
             name: 'call_sessions_sentiment_idx',
@@ -37,8 +37,8 @@ async function applyIndexes() {
         },
         // Intents Indexes
         {
-            name: 'intents_hospital_key_idx',
-            sql: 'CREATE INDEX IF NOT EXISTS "intents_hospital_key_idx" ON "intents" ("hospital_id", "key")',
+            name: 'intents_business_key_idx',
+            sql: 'CREATE INDEX IF NOT EXISTS "intents_business_key_idx" ON "intents" ("business_id", "key")',
         },
         // Patients Indexes
         {
@@ -47,8 +47,8 @@ async function applyIndexes() {
         },
         // Appointments Indexes
         {
-            name: 'appointments_hospital_scheduled_idx',
-            sql: 'CREATE INDEX IF NOT EXISTS "appointments_hospital_scheduled_idx" ON "appointments" ("hospital_id", "scheduled_at")',
+            name: 'appointments_business_scheduled_idx',
+            sql: 'CREATE INDEX IF NOT EXISTS "appointments_business_scheduled_idx" ON "appointments" ("business_id", "scheduled_at")',
         },
         // Audit Logs Indexes
         {

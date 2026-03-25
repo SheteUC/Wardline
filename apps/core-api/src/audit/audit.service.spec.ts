@@ -30,7 +30,7 @@ describe('AuditService', () => {
     describe('logAction', () => {
         it('should create an audit log entry', async () => {
             const params = {
-                hospitalId: 'hospital-123',
+                businessId: 'business-123',
                 userId: 'user-123',
                 action: 'CREATE',
                 entityType: 'user',
@@ -49,7 +49,7 @@ describe('AuditService', () => {
 
         it('should not throw when audit log creation fails', async () => {
             const params = {
-                hospitalId: 'hospital-123',
+                businessId: 'business-123',
                 action: 'CREATE',
                 entityType: 'user',
             };
@@ -64,12 +64,12 @@ describe('AuditService', () => {
         it('should create multiple audit log entries', async () => {
             const entries = [
                 {
-                    hospitalId: 'hospital-123',
+                    businessId: 'business-123',
                     action: 'CREATE',
                     entityType: 'user',
                 },
                 {
-                    hospitalId: 'hospital-123',
+                    businessId: 'business-123',
                     action: 'UPDATE',
                     entityType: 'workflow',
                 },
@@ -93,7 +93,7 @@ describe('AuditService', () => {
             const mockLogs = [{ id: '1', action: 'CREATE' }];
             (prisma.auditLog.findMany as jest.Mock).mockResolvedValue(mockLogs);
 
-            const result = await service.getAuditLogs('hospital-123', {
+            const result = await service.getAuditLogs('business-123', {
                 userId: 'user-123',
                 entityType: 'workflow',
                 limit: 50,
@@ -101,7 +101,7 @@ describe('AuditService', () => {
 
             expect(prisma.auditLog.findMany).toHaveBeenCalledWith({
                 where: {
-                    hospitalId: 'hospital-123',
+                    businessId: 'business-123',
                     userId: 'user-123',
                     entityType: 'workflow',
                 },
@@ -118,11 +118,11 @@ describe('AuditService', () => {
 
             (prisma.auditLog.findMany as jest.Mock).mockResolvedValue([]);
 
-            await service.getAuditLogs('hospital-123', { startDate, endDate });
+            await service.getAuditLogs('business-123', { startDate, endDate });
 
             expect(prisma.auditLog.findMany).toHaveBeenCalledWith({
                 where: {
-                    hospitalId: 'hospital-123',
+                    businessId: 'business-123',
                     createdAt: {
                         gte: startDate,
                         lte: endDate,

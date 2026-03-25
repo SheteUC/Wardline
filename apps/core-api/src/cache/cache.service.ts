@@ -29,6 +29,19 @@ interface CacheStats {
     usingRedis: boolean;
 }
 
+export function resolveRedisUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+    const configuredUrl = env.REDIS_URL?.trim();
+    if (configuredUrl) {
+        return configuredUrl;
+    }
+
+    if ((env.NODE_ENV ?? 'development') === 'development') {
+        return 'redis://localhost:6379';
+    }
+
+    return null;
+}
+
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(CacheService.name);
@@ -222,10 +235,15 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     // -------------------------------------------------------------------------
 
     private async _connectRedis() {
-        const url = process.env.REDIS_URL;
+        const configuredUrl = process.env.REDIS_URL?.trim();
+        const url = resolveRedisUrl();
         if (!url) {
-            this.logger.warn('REDIS_URL not set — using in-memory cache fallback');
+            this.logger.warn('REDIS_URL not set; using in-memory cache fallback');
             return;
+        }
+
+        if (!configuredUrl) {
+            this.logger.info(`REDIS_URL not set; defaulting to ${url} for local development`);
         }
 
         try {
@@ -245,7 +263,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
             this.redis.on('connect', () => {
                 if (!this.redisAvailable) {
-                    this.logger.info('Redis connected — switching to Redis cache');
+                    this.logger.info('Redis connected; switching to Redis cache');
                     this.redisAvailable = true;
                     this.stats.usingRedis = true;
                 }
@@ -256,7 +274,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
             this.stats.usingRedis = true;
             this.logger.info('Cache service initialised with Redis');
         } catch (err) {
-            this.logger.warn(`Cannot connect to Redis: ${err} — using in-memory fallback`);
+            this.logger.warn(`Cannot connect to Redis: ${err}; using in-memory fallback`);
             this.redisAvailable = false;
         }
     }
@@ -265,7 +283,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         if (this.redisAvailable) {
             this.redisAvailable = false;
             this.stats.usingRedis = false;
-            this.logger.warn('Redis unavailable — falling back to in-memory cache');
+            this.logger.warn('Redis unavailable; falling back to in-memory cache');
         }
     }
 
@@ -355,18 +373,18 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 }
 
 // ---------------------------------------------------------------------------
-// Cache key generators — unchanged so callers don't need to update imports
+// Cache key generators unchanged so callers don't need to update imports
 // ---------------------------------------------------------------------------
 export const CacheKeys = {
-    hospital: (id: string) => `hospital:${id}`,
-    hospitalSettings: (id: string) => `hospital:${id}:settings`,
-    hospitals: () => 'hospitals:list',
-    callsList: (hospitalId: string, hash: string) => `calls:${hospitalId}:list:${hash}`,
+    business: (id: string) => `business:${id}`,
+    businessSettings: (id: string) => `business:${id}:settings`,
+    businesses: () => 'businesses:list',
+    callsList: (businessId: string, hash: string) => `calls:${businessId}:list:${hash}`,
     callDetail: (id: string) => `call:${id}`,
-    callAnalytics: (hospitalId: string, startDate: string, endDate: string) =>
-        `calls:${hospitalId}:analytics:${startDate}:${endDate}`,
-    teamMembers: (hospitalId: string) => `team:${hospitalId}:members`,
-    workflowsList: (hospitalId: string) => `workflows:${hospitalId}:list`,
+    callAnalytics: (businessId: string, startDate: string, endDate: string) =>
+        `calls:${businessId}:analytics:${startDate}:${endDate}`,
+    teamMembers: (businessId: string) => `team:${businessId}:members`,
+    workflowsList: (businessId: string) => `workflows:${businessId}:list`,
     workflowDetail: (id: string) => `workflow:${id}`,
 };
 

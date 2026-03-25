@@ -70,14 +70,24 @@ export class BusinessesService {
         return business;
     }
 
-    async findAll(includeSettings = false, userId?: string): Promise<any[]> {
+    async findAll(includeSettings = false, userId?: string, businessIds?: string[]): Promise<any[]> {
+        if (businessIds && businessIds.length === 0) {
+            return [];
+        }
+
         const cacheKey = `${CacheKeys.businesses(userId)}:${includeSettings}`;
 
         return this.cache.getOrSet(
             cacheKey,
             async () =>
                 this.prisma.business.findMany({
-                    ...(userId
+                    ...(businessIds
+                        ? {
+                            where: {
+                                id: { in: businessIds },
+                            },
+                        }
+                        : userId
                         ? {
                             where: {
                                 users: {

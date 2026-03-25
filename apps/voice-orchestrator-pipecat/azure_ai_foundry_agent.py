@@ -106,7 +106,7 @@ class AzureAIFoundryAgent:
             fallback = ConversationAgent(
                 self.context,
                 get_system_prompt(
-                    hospital_name=self.context.hospital_name,
+                    business_name=self.context.business_name,
                     intents=self.context.intents,
                     departments=self.context.departments,
                 ),

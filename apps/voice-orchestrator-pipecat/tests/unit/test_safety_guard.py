@@ -19,7 +19,7 @@ def mock_context():
     """Create a mock call context"""
     context = Mock(spec=CallContext)
     context.call_id = "test-call-123"
-    context.hospital_id = "hospital-1"
+    context.business_id = "business-1"
     context.safety_events = []
     return context
 
@@ -203,7 +203,7 @@ class TestMedicalSafetyGuard:
             event_data = mock_report.call_args[0][0]
             assert event_data['keyword'] == "chest pain"
             assert event_data['severity'] == "critical"
-            assert event_data['call_id'] == mock_context.call_id
+            assert event_data['callId'] == mock_context.call_id
 
 
 class TestSafetyCheckpointProcessor:

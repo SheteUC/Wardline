@@ -60,7 +60,7 @@ class WorkflowTracer:
     async def trace_workflow_execution(
         self,
         workflow_id: str,
-        hospital_id: str,
+        business_id: str,
         call_id: str,
         execution_data: Dict[str, Any]
     ):
@@ -69,7 +69,7 @@ class WorkflowTracer:
         
         Args:
             workflow_id: Workflow identifier
-            hospital_id: Hospital identifier
+            business_id: Business identifier
             call_id: Call session identifier
             execution_data: Execution state data
         """
@@ -82,7 +82,7 @@ class WorkflowTracer:
             
             return {
                 "workflow_id": workflow_id,
-                "hospital_id": hospital_id,
+                "business_id": business_id,
                 "call_id": call_id,
                 **execution_data
             }

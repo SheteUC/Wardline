@@ -1,8 +1,5 @@
 """
 Call context management for the voice orchestrator.
-
-This module is intentionally compatibility-friendly while the runtime migrates
-from `hospital_*` terminology to `business_*`.
 """
 
 from dataclasses import dataclass, field
@@ -153,22 +150,6 @@ class CallContext:
     @property
     def twilio_call_sid(self) -> str:
         return self.call_sid
-
-    @property
-    def hospital_id(self) -> str:
-        return self.business_id
-
-    @hospital_id.setter
-    def hospital_id(self, value: str):
-        self.business_id = value
-
-    @property
-    def hospital_name(self) -> str:
-        return self.business_name
-
-    @hospital_name.setter
-    def hospital_name(self, value: str):
-        self.business_name = value
 
     @property
     def conversation_history(self) -> List[ConversationMessage]:

@@ -20,7 +20,6 @@ interface AuthContextType {
     isSystemAdmin: boolean;
     isCallCenterAdmin: boolean;
     isBusinessStaff: boolean;
-    isHospitalStaff: boolean;
     isLoading: boolean;
     hasPermission: (requiredRoles: ExtendedUserRole[]) => boolean;
 }
@@ -42,7 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const metadata = user?.publicMetadata as {
             role?: ExtendedUserRole;
             businessRoles?: Record<string, ExtendedUserRole>;
-            hospitalRoles?: Record<string, ExtendedUserRole>;
         } | undefined;
 
         let role: ExtendedUserRole | null = null;
@@ -54,8 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role = 'patient';
         } else if (businessId && metadata?.businessRoles?.[businessId]) {
             role = metadata.businessRoles[businessId];
-        } else if (businessId && metadata?.hospitalRoles?.[businessId]) {
-            role = metadata.hospitalRoles[businessId];
         } else if (metadata?.role) {
             role = metadata.role as ExtendedUserRole;
         } else {
@@ -92,7 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isSystemAdmin,
             isCallCenterAdmin,
             isBusinessStaff,
-            isHospitalStaff: isBusinessStaff,
             isLoading,
             hasPermission,
         };

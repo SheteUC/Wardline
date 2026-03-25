@@ -2,7 +2,7 @@
   "name": "wardline",
   "version": "1.0.0",
   "private": true,
-  "description": "HIPAA-compliant hospital call triage platform",
+  "description": "HIPAA-compliant business-native AI voice receptionist platform",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -12,6 +12,10 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "check:business-terminology": "node scripts/check-business-terminology.js",
+    "test:smoke:api": "pnpm --filter @wardline/core-api test -- --runInBand auth/auth.guard.spec.ts auth/rbac.guard.spec.ts cache/cache.service.spec.ts modules/businesses/businesses.service.spec.ts",
+    "test:smoke:web": "node apps/core-api/node_modules/jest/bin/jest.js --config apps/web/jest.smoke.config.cjs --runInBand",
+    "test:smoke": "pnpm check:business-terminology && pnpm test:smoke:api && pnpm test:smoke:web",
     "clean": "turbo run clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "pnpm --filter @wardline/db generate",
