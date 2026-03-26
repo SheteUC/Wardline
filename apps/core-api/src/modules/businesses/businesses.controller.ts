@@ -61,6 +61,13 @@ export class BusinessesController {
             recordingDefault: string;
             transcriptRetentionDays: number;
             operatingHours: unknown;
+            enabledActions: unknown;
+            afterHoursPolicy: unknown;
+            refillPolicy: unknown;
+            billingPolicy: unknown;
+            insurancePolicy: unknown;
+            knowledgeConfig: unknown;
+            escalationConfig: unknown;
             outOfScopeKeywords: string[];
             emergencyKeywords: string[];
         }>,

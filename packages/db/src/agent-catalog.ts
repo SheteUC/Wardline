@@ -1,6 +1,8 @@
 /**
- * Catalog definitions for the 5 starter agents.
- * These are seeded as active agents for any business that onboards.
+ * Internal catalog definitions for legacy starter agents.
+ * These remain available for internal testing, migration tooling, and
+ * advanced experimentation, but they are not part of the default
+ * customer onboarding path.
  * Each entry maps to an AgentCatalogId and carries default node graphs
  * and tool config schemas.
  */

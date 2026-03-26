@@ -2,7 +2,7 @@
 
 Wardline is a Business-native AI voice receptionist platform for independent family medicine practices. The current V1 focuses on low-latency inbound call handling, operational reliability, and a controlled integration model instead of free-form agent behavior.
 
-The system uses a shared US-only multi-tenant stack, one main workflow per business, English-only voice handling, athenahealth-first live connectors for supported categories, and a dashboard-first operations model for follow-up work.
+The system uses a shared US-only multi-tenant stack, one generated runtime workflow per business, English-only voice handling, athenahealth-first live connectors for supported categories, and a dashboard-first operations model for follow-up work.
 
 ## Current V1 Scope
 
@@ -10,7 +10,7 @@ The system uses a shared US-only multi-tenant stack, one main workflow per busin
 - Tenant model: `Business` only
 - Geography: US only
 - Language: English only
-- Workflow model: one active main workflow per business
+- Workflow model: one generated active runtime workflow per business
 - Integration model: one configured vendor per category
 - Voice runtime: Azure-first live voice path with a custom orchestrator
 - After-hours urgent policy: no live urgent handling after hours; capture urgent voicemail and create a next-day queue item
@@ -19,6 +19,7 @@ The system uses a shared US-only multi-tenant stack, one main workflow per busin
 ## What Is Implemented
 
 - Business-native contracts across the active web, core API, and voice runtime paths
+- Practice Setup as the customer-facing source of truth for hours, policies, integrations, and FAQs
 - `GET /businesses/:id/runtime-config` for one-shot business runtime bootstrap
 - Weekly operating hours stored in business settings
 - Generic runtime actions for:
@@ -40,7 +41,7 @@ The system uses a shared US-only multi-tenant stack, one main workflow per busin
   - Voicemails
   - Follow-ups
   - Integrations
-- Workflow compilation that translates integration nodes into vendor-agnostic runtime actions
+- Generated runtime workflows compiled from practice settings and translated into vendor-agnostic runtime actions
 - Voice confirmation handling so write actions do not execute until the caller explicitly confirms
 
 ## Runtime Flow
@@ -51,14 +52,14 @@ The system uses a shared US-only multi-tenant stack, one main workflow per busin
    - business profile
    - settings
    - operating hours
-   - active workflow
+   - generated active runtime workflow
    - integration categories and capabilities
 4. A deterministic pre-LLM policy guard runs before normal conversation:
    - emergency phrase hit -> 911 / emergency redirect
    - after-hours urgent -> urgent voicemail + urgent follow-up task
    - after-hours non-urgent -> voicemail
-   - business hours -> continue into workflow and runtime actions
-5. The workflow and tools collect fields, summarize the requested action, and require confirmation for write operations.
+   - business hours -> continue into the generated runtime workflow and runtime actions
+5. The generated runtime workflow and tools collect fields, summarize the requested action, and require confirmation for write operations.
 6. The voice runtime calls a generic runtime-action endpoint on the Core API.
 7. The Core API resolves the configured integration and either:
    - executes live if the connector is healthy and the capability is supported
@@ -77,7 +78,7 @@ The system uses a shared US-only multi-tenant stack, one main workflow per busin
   - a priority voicemail
   - an urgent follow-up task
   - a next-day item in the `Urgent Calls` dashboard queue
-- Non-urgent after-hours calls become a normal voicemail plus follow-up workflow when needed.
+- Non-urgent after-hours calls become a normal voicemail plus staff follow-up when needed.
 
 ## Integration Model
 
@@ -181,9 +182,11 @@ Standard response shape:
 - `POST /api/calls/:id/voicemail`
 - `POST /api/handoffs`
 
-## Workflow System
+## Internal Runtime Workflow System
 
-The workflow editor is still visual, but integration nodes no longer represent ad hoc vendor endpoints. They now compile into generic runtime actions.
+Normal customers do not author workflows in V1. Practice Setup is the customer-facing source of truth, and Wardline compiles one generated published runtime workflow per business behind the scenes.
+
+Internal workflow tooling still exists for advanced testing and migration support. Its integration nodes no longer represent ad hoc vendor endpoints. They compile into generic runtime actions.
 
 New integration-node model:
 
@@ -205,15 +208,19 @@ The current dashboard is API-backed and centered on operational work:
 - `/dashboard/voicemails`
 - `/dashboard/follow-ups`
 - `/dashboard/integration-failures`
-- `/dashboard/workflows`
 - `/dashboard/settings`
+
+Internal-only advanced tools remain available behind the internal feature gate:
+
+- `/dashboard/workflows`
+- `/dashboard/agents`
 
 Notable operational behaviors:
 
 - `Urgent Calls` is backed by persisted `FollowUpTask` records, not derived call filters
 - `Follow-ups` shows fallback reason, originating runtime action, and integration vendor metadata
 - `Voicemails` link to follow-up task status and runtime fallback metadata when present
-- `Workflow Settings` includes weekly operating-hours editing, recording defaults, transcript retention, and custom emergency / out-of-scope keywords
+- `Practice Setup` includes weekly operating-hours editing, recording defaults, transcript retention, service policies, FAQs, and custom emergency / out-of-scope keywords
 
 ## Repository Layout
 
@@ -326,7 +333,7 @@ This creates:
 - one owner user membership for local sign-in
 - one business
 - one phone number
-- one published workflow with runtime-action nodes
+- one generated published runtime workflow compiled from practice settings
 - one integration per category pointed at the mock integration service
 
 3. Start the web app, Core API, and voice orchestrator.
@@ -466,14 +473,13 @@ Use this sequence as the local release gate until broader end-to-end automation 
 6. Sign in and let the first authenticated request auto-provision the local user.
 7. Confirm the smoke business is visible and selected automatically, or create a business manually if you are not using the smoke seed.
 8. Open `/dashboard/integration-failures`, run a health check, and confirm the integration status becomes `CONNECTED`.
-9. Open `/dashboard/workflows` and verify the editor mounts without render-loop or RBAC errors.
-10. Save or publish the workflow.
-11. Run one Gather scenario and one streaming scenario, then confirm:
+9. Open `/dashboard/settings` and confirm the Practice Setup readiness checklist reflects the configured hours, policies, integrations, and knowledge content.
+10. Run one Gather scenario and one streaming scenario, then confirm:
    - the call appears in call logs
    - live runtime actions record their outcomes
    - fallback scenarios create follow-up tasks with the correct fallback reason
    - voicemail links to the follow-up task when after-hours behavior is triggered
-12. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard reflects the mock outcomes cleanly.
+11. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard reflects the mock outcomes cleanly.
 
 ## Known V1 Constraints
 

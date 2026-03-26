@@ -3,6 +3,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../../cache/cache.service';
 import { Logger } from '@wardline/utils';
 import { UserRole } from '@wardline/types';
+import {
+    buildPracticeSetupRuntimeGraph,
+    GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
+    GENERATED_PRACTICE_WORKFLOW_NAME,
+} from '@wardline/db';
+import { normalizePracticeSetup } from '../businesses/practice-config';
 
 @Injectable()
 export class WorkflowsService {
@@ -12,6 +18,112 @@ export class WorkflowsService {
         private prisma: PrismaService,
         private cache: CacheService,
     ) { }
+
+    async syncPracticeSetupWorkflow(businessId: string, requestedUserId?: string): Promise<any> {
+        const business = await this.prisma.business.findUnique({
+            where: { id: businessId },
+            include: {
+                settings: true,
+                integrations: {
+                    select: {
+                        category: true,
+                        status: true,
+                    },
+                },
+            },
+        });
+
+        if (!business || !business.settings) {
+            return null;
+        }
+
+        const actorUserId = await this.resolveActorUserId(businessId, requestedUserId);
+        const graphJson = this.compilePracticeSetupGraph(business);
+        const generatedWorkflow = await this.prisma.workflow.findFirst({
+            where: {
+                businessId,
+                name: GENERATED_PRACTICE_WORKFLOW_NAME,
+            },
+            include: {
+                versions: {
+                    orderBy: { versionNumber: 'desc' },
+                    take: 1,
+                },
+            },
+        });
+
+        if (generatedWorkflow?.versions[0]) {
+            const latestVersion = generatedWorkflow.versions[0];
+            if (
+                this.serializeGraphForComparison(latestVersion.graphJson) ===
+                    this.serializeGraphForComparison(graphJson) &&
+                latestVersion.status === 'PUBLISHED'
+            ) {
+                await this.prisma.workflow.update({
+                    where: { id: generatedWorkflow.id },
+                    data: {
+                        description: GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
+                        status: 'PUBLISHED' as const,
+                    },
+                });
+                await this.invalidateWorkflowCache(businessId);
+                return generatedWorkflow;
+            }
+        }
+
+        let workflowId = generatedWorkflow?.id;
+
+        if (!workflowId) {
+            const createdWorkflow = await this.prisma.workflow.create({
+                data: {
+                    businessId,
+                    name: GENERATED_PRACTICE_WORKFLOW_NAME,
+                    description: GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
+                    status: 'PUBLISHED' as const,
+                },
+            });
+            workflowId = createdWorkflow.id;
+        } else {
+            await this.prisma.workflow.update({
+                where: { id: workflowId },
+                data: {
+                    description: GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
+                    status: 'PUBLISHED' as const,
+                },
+            });
+        }
+
+        await this.prisma.workflowVersion.updateMany({
+            where: {
+                workflowId,
+                status: 'PUBLISHED',
+            },
+            data: {
+                status: 'APPROVED' as const,
+            },
+        });
+
+        const versionNumber = (generatedWorkflow?.versions[0]?.versionNumber ?? 0) + 1;
+        const version = await this.prisma.workflowVersion.create({
+            data: {
+                workflowId,
+                versionNumber,
+                graphJson,
+                createdByUserId: actorUserId,
+                approvedByUserId: actorUserId,
+                status: 'PUBLISHED' as const,
+                publishedAt: new Date(),
+            },
+        });
+
+        await this.invalidateWorkflowCache(businessId);
+        this.logger.info('Synced generated practice workflow', {
+            businessId,
+            workflowId,
+            versionNumber: version.versionNumber,
+        });
+        return version;
+    }
 
     async create(businessId: string, userId: string | undefined, data: any): Promise<any> {
         const actorUserId = await this.resolveActorUserId(businessId, userId);
@@ -377,6 +489,7 @@ export class WorkflowsService {
         return {
             nodes: normalizedNodes,
             edges: normalizedEdges,
+            __practiceSetup: graphJson?.__practiceSetup ?? null,
             __runtime: {
                 compiledAt: new Date().toISOString(),
                 startNodeId: startNode?.id ?? null,
@@ -386,11 +499,50 @@ export class WorkflowsService {
                     .map((node: any) => node.id),
                 nodeCount: normalizedNodes.length,
                 edgeCount: normalizedEdges.length,
-                hasEmergencyScreen: normalizedNodes.some((node: any) => node.type === 'emergency-screen'),
+                hasEmergencyScreen: normalizedNodes.some(
+                    (node: any) => node.type === 'emergency-screen' || node.type === 'safety-check',
+                ),
                 hasSafetyCheck: normalizedNodes.some((node: any) => node.type === 'safety-check'),
                 adjacency,
             },
         };
+    }
+
+    private compilePracticeSetupGraph(business: any) {
+        const practiceSetup = normalizePracticeSetup(business.settings);
+        return this.compileGraph(
+            buildPracticeSetupRuntimeGraph({
+                businessId: business.id,
+                businessName: business.name,
+                timeZone: business.timeZone,
+                enabledActions: practiceSetup.enabledActions,
+                afterHoursPolicy: practiceSetup.afterHoursPolicy,
+                refillPolicy: practiceSetup.refillPolicy,
+                billingPolicy: practiceSetup.billingPolicy,
+                insurancePolicy: practiceSetup.insurancePolicy,
+                knowledgeConfig: practiceSetup.knowledgeConfig,
+                escalationConfig: practiceSetup.escalationConfig,
+                emergencyKeywords: business.settings.emergencyKeywords ?? [],
+                outOfScopeKeywords: business.settings.outOfScopeKeywords ?? [],
+                connectedCategories: (business.integrations ?? [])
+                    .filter((integration: any) => integration.status === 'CONNECTED')
+                    .map((integration: any) => String(integration.category)),
+            }),
+        );
+    }
+
+    private serializeGraphForComparison(graphJson: any) {
+        const clone = JSON.parse(JSON.stringify(graphJson ?? {}));
+
+        if (clone.__runtime) {
+            delete clone.__runtime.compiledAt;
+        }
+
+        if (clone.__practiceSetup) {
+            delete clone.__practiceSetup.generatedAt;
+        }
+
+        return JSON.stringify(clone);
     }
 
     private normalizeNodeConfig(nodeType: string, config: Record<string, unknown>) {

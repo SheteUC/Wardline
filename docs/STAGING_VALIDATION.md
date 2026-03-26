@@ -22,9 +22,9 @@ The staging seed creates:
 - one owner user
 - one active family-medicine business
 - one phone number
-- one published workflow
+- one generated published runtime workflow compiled from practice setup
 - one integration record per active category
-- one agent catalog deployment surface
+- no agent deployment surface in the default setup path
 
 Default seed values are controlled by:
 
@@ -51,6 +51,17 @@ Integration endpoint configuration can be controlled by:
 - `STAGING_*_CREDENTIALS_REF`
 
 ## Required Staging Validation
+
+### Practice readiness
+
+In `/dashboard/settings`:
+
+1. Confirm the staging business is selected.
+2. Confirm hours are configured.
+3. Confirm service policies are saved.
+4. Confirm FAQ / knowledge content is present.
+5. Confirm the readiness checklist shows the business as ready for live calls once integrations are connected.
+6. Treat the generated runtime workflow as an internal artifact behind these settings; do not use the workflow editor for normal staging setup.
 
 ### Integration health
 
@@ -115,7 +126,7 @@ Capture p50 and p95 where possible for:
 
 - phone-number to business lookup
 - runtime-config fetch
-- active workflow load
+- generated active workflow load
 - confirmation to runtime-action completion
 - connector execution / fallback creation
 - dashboard queue loads for:

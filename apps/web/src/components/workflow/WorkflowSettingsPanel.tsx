@@ -128,9 +128,9 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
                 <CardHeader className="border-b">
                     <div className="flex items-center justify-between gap-4">
                         <div>
-                            <CardTitle>Workflow Settings</CardTitle>
+                            <CardTitle>Call Policy</CardTitle>
                             <CardDescription>
-                                Persist the live call rules that power privacy, urgency detection, and after-hours behavior.
+                                Review the internal call policy inputs that Wardline uses when compiling the live runtime workflow.
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -152,7 +152,7 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
 
                     {hasChanges && (
                         <div className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-700">
-                            You have unsaved workflow runtime changes.
+                            You have unsaved call policy changes.
                         </div>
                     )}
                 </CardHeader>

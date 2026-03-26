@@ -6,11 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import {
     LayoutDashboard, Phone, Settings, Search, Menu, X,
-    AlertTriangle, Bot, GitBranch, Bell, ListTodo, PhoneCall, PlugZap, Voicemail,
+    AlertTriangle, Bell, ListTodo, PhoneCall, PlugZap, Voicemail,
 } from 'lucide-react';
 import { useBusiness } from '@/lib/business-context';
 import { useFollowUpTasks, useIntegrations, useVoicemails } from '@/lib/hooks/query-hooks';
 import { shouldRedirectToBusinessSettings } from '@/lib/business-selection';
+import { canAccessInternalTools, shouldRedirectFromInternalTools } from '@/lib/internal-tools';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -22,6 +23,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const followUpTasksQuery = useFollowUpTasks();
     const voicemailsQuery = useVoicemails(true);
     const integrationsQuery = useIntegrations();
+    const showInternalTools = canAccessInternalTools(user);
 
     const userRole = (user?.publicMetadata?.role as string) || 'readonly';
     const openTasks = (followUpTasksQuery.data ?? []).filter(
@@ -62,6 +64,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             router.replace('/dashboard/settings');
         }
     }, [businessId, businessLoading, pathname, router]);
+
+    useEffect(() => {
+        if (
+            shouldRedirectFromInternalTools({
+                pathname,
+                user,
+            })
+        ) {
+            router.replace('/dashboard/settings');
+        }
+    }, [pathname, router, user]);
 
     const NavItem = ({
         href,
@@ -128,9 +141,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (pathname.startsWith('/dashboard/urgent-calls')) return 'Urgent Calls';
         if (pathname.startsWith('/dashboard/follow-ups')) return 'Follow-ups';
         if (pathname.startsWith('/dashboard/integration-failures')) return 'Integration Failures';
-        if (pathname.startsWith('/dashboard/agents')) return 'Agents';
-        if (pathname.startsWith('/dashboard/workflows')) return 'Call Flow';
-        if (pathname.startsWith('/dashboard/settings')) return 'Settings';
+        if (pathname.startsWith('/dashboard/agents')) return 'Agent Catalog';
+        if (pathname.startsWith('/dashboard/workflows')) return 'Workflow Editor';
+        if (pathname.startsWith('/dashboard/settings')) return 'Practice Setup';
         return 'Wardline';
     })();
 
@@ -176,18 +189,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             requiresBusiness
                         />
 
-                        {/* Configuration */}
+                        {/* Practice Setup */}
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
-                            Configuration
+                            Practice Setup
                         </div>
-                        <NavItem href="/dashboard/agents" icon={Bot} label="Agents" requiresBusiness />
-                        <NavItem href="/dashboard/workflows" icon={GitBranch} label="Call Flow" requiresBusiness />
+                        <NavItem href="/dashboard/settings" icon={Settings} label="Practice Setup" />
 
-                        {/* Account */}
-                        <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
-                            Account
-                        </div>
-                        <NavItem href="/dashboard/settings" icon={Settings} label="Settings" />
+                        {showInternalTools && (
+                            <>
+                                <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
+                                    Internal Tools
+                                </div>
+                                <NavItem href="/dashboard/agents" icon={PhoneCall} label="Agent Catalog" requiresBusiness />
+                                <NavItem href="/dashboard/workflows" icon={PlugZap} label="Workflow Editor" requiresBusiness />
+                            </>
+                        )}
                     </nav>
 
                     {/* User Card */}
@@ -258,7 +274,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                                     <div>
                                         <p className="font-semibold">Finish setting up your first practice</p>
                                         <p className="text-amber-900/80">
-                                            Create a business in settings to unlock call flow, follow-up queues, and integrations.
+                                            Create a practice in Practice Setup to unlock call handling, follow-up queues, and integrations.
                                         </p>
                                     </div>
                                     <Link

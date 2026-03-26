@@ -14,11 +14,11 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
-const STARTER_AGENTS = [
-  "Appointment scheduling",
-  "Billing & payments",
-  "Insurance verification",
-  "General FAQ & info",
+const PRACTICE_CAPABILITIES = [
+  "Appointment scheduling requests",
+  "Billing and payment intake",
+  "Insurance verification support",
+  "General FAQ and office information",
   "Prescription refill requests",
 ] as const;
 
@@ -33,8 +33,8 @@ export default function FeaturesPage() {
             Everything in one platform
           </h1>
           <p className="mt-6 text-lg text-muted-foreground">
-            Inbound calls go to the Pipecat voice orchestrator; your team manages agents,
-            workflows, and safety from the Wardline dashboard—no code required.
+            Inbound calls go to the Pipecat voice orchestrator while your team manages
+            practice setup, integrations, and safety from the Wardline dashboard.
           </p>
         </section>
 
@@ -65,13 +65,14 @@ export default function FeaturesPage() {
 
         <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-12">
           <h2 className="text-center text-2xl font-extrabold text-foreground sm:text-3xl">
-            Five starter agents
+            Practice-first capabilities
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
-            Deploy from the catalog and configure tool credentials—each agent has clear scope boundaries.
+            Configure the services your practice supports and Wardline handles the live
+            call orchestration behind the scenes.
           </p>
           <ul className="mx-auto mt-10 grid max-w-3xl gap-3 sm:grid-cols-2">
-            {STARTER_AGENTS.map((name) => (
+            {PRACTICE_CAPABILITIES.map((name) => (
               <li
                 key={name}
                 className="flex items-center gap-3 rounded-2xl bg-[var(--background)] px-4 py-3 text-sm font-semibold text-foreground neo-raised"
@@ -93,28 +94,28 @@ export default function FeaturesPage() {
                   <Workflow className="h-7 w-7 text-primary" />
                 </div>
                 <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">
-                  Visual call flow editor
+                  Practice setup becomes live call policy
                 </h2>
                 <p className="mt-4 text-muted-foreground leading-relaxed">
-                  Build greet → intent → route → resolve loops with a drag-and-drop workflow
-                  editor (React Flow). Node types include greeting, intent detection, routing,
-                  collection, human transfer, voicemail, emergency escalation, and more.
+                  Set office hours, escalation rules, FAQs, supported services, and
+                  integrations. Wardline compiles those settings into the runtime flow
+                  so practices do not have to design node graphs.
                 </p>
               </div>
               <div className="space-y-3 rounded-2xl bg-[var(--background)] p-6 neo-inset">
                 <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
                   <span className="h-2 w-2 rounded-full bg-primary" />
-                  Greet &amp; detect intent
+                  Screen safety &amp; determine intent
                 </div>
                 <div className="mx-auto h-4 w-0.5 bg-border" />
                 <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
                   <span className="h-2 w-2 rounded-full bg-accent" />
-                  Route to agent / human
+                  Use live actions or create follow-up
                 </div>
                 <div className="mx-auto h-4 w-0.5 bg-border" />
                 <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  Resolve or continue
+                  Escalate, voicemail, or resolve
                 </div>
               </div>
             </div>
@@ -152,7 +153,7 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-lg font-extrabold text-foreground">Telephony stack</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Twilio for inbound media streams; core API connects orchestrator, workflows, and
+                Twilio for inbound media streams; core API connects orchestrator, practice policies, and
                 your business data.
               </p>
             </div>
@@ -176,8 +177,8 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-lg font-extrabold text-foreground">Data layer</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                PostgreSQL for tenants, agents, calls, and voicemails—integrate scheduling and EHR
-                tools per agent.
+                PostgreSQL for practices, calls, voicemails, and follow-ups—integrate scheduling and EHR
+                tools per service category.
               </p>
             </div>
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">

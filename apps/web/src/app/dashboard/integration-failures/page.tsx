@@ -28,9 +28,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_HINTS: Record<string, string> = {
     SCHEDULING: 'Appointment requests, reschedules, and cancellations during the call.',
-    EHR_REFILL: 'Medication refill requests and patient-record lookups for staff workflows.',
+    EHR_REFILL: 'Medication refill requests and patient-record lookups that support staff follow-up.',
     BILLING: 'Live billing questions or captured follow-ups when billing needs staff review.',
-    INSURANCE: 'Coverage and acceptance checks the agent can complete during the call.',
+    INSURANCE: 'Coverage and acceptance checks Wardline can complete during the call.',
     KNOWLEDGE: 'Internal FAQ and policy answers powered by Wardline knowledge content.',
 };
 
@@ -413,7 +413,7 @@ export default function IntegrationFailuresPage() {
                 <div>
                     <h2 className="text-xl font-semibold text-foreground">Integrations</h2>
                     <p className="text-sm text-muted-foreground">
-                        Configure the single live connector per category, test its health, and inspect which runtime capabilities are available to the voice agent.
+                        Configure the single live connector per category, test its health, and inspect which runtime capabilities are available to the live call runtime.
                     </p>
                 </div>
             </div>

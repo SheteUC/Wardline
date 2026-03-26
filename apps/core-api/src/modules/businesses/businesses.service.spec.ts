@@ -22,6 +22,7 @@ describe('BusinessesService', () => {
         };
         workflowsService = {
             getActiveWorkflow: jest.fn(),
+            syncPracticeSetupWorkflow: jest.fn().mockResolvedValue(undefined),
         };
 
         service = new BusinessesService(prisma, cache, workflowsService);
@@ -67,6 +68,7 @@ describe('BusinessesService', () => {
         );
         expect(cache.invalidateByTag).toHaveBeenCalledWith('businesses');
         expect(cache.invalidateByTag).toHaveBeenCalledWith('user:user-1:businesses');
+        expect(workflowsService.syncPracticeSetupWorkflow).toHaveBeenCalledWith('business-1', 'user-1');
     });
 
     it('throws when a business with the same name or slug already exists', async () => {

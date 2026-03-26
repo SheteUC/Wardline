@@ -1,5 +1,10 @@
-import { prisma, UserRole } from './index';
-import { seedAgentsForBusiness } from './seed-agents';
+import {
+    buildPracticeSetupRuntimeGraph,
+    GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
+    GENERATED_PRACTICE_WORKFLOW_NAME,
+    prisma,
+    UserRole,
+} from './index';
 
 const DEFAULT_MOCK_BASE_URL = process.env.MOCK_INTEGRATION_BASE_URL || 'http://127.0.0.1:4010';
 const DEFAULT_CREDENTIAL_REF = process.env.MOCK_CREDENTIALS_REF || 'MOCK_ATHENAHEALTH_TOKEN';
@@ -17,6 +22,42 @@ const ALWAYS_OPEN_HOURS = Array.from({ length: 7 }, (_, index) => ({
     startTime: '00:00',
     endTime: '23:59',
 }));
+
+const SMOKE_PRACTICE_SETUP = {
+    enabledActions: ['appointment-request', 'refill-request', 'insurance-check', 'billing-request'] as const,
+    afterHoursPolicy: {
+        mode: 'urgent_voicemail' as const,
+        greeting:
+            'After hours, acknowledge urgent needs, capture a voicemail, and promise a next-business-day callback.',
+        sendUrgentToVoicemail: true,
+    },
+    refillPolicy: {
+        liveEnabled: true,
+        intakeNotes: 'Collect medication name, pharmacy, and caller date of birth before submitting refill requests.',
+        fallbackSummary: 'Create a refill follow-up for staff if live refill automation is unavailable.',
+    },
+    billingPolicy: {
+        liveEnabled: true,
+        intakeNotes: 'Capture the billing topic and account reference before creating a billing follow-up.',
+        fallbackSummary: 'Create a billing follow-up if live billing support is unavailable.',
+    },
+    insurancePolicy: {
+        liveEnabled: true,
+        intakeNotes: 'Answer acceptance and basic eligibility questions when the connected payer workflow supports it.',
+        fallbackSummary: 'Create an insurance follow-up if live verification is unavailable.',
+    },
+    knowledgeConfig: {
+        faqSummary:
+            'Smoke Family Medicine handles routine appointments, refill requests, insurance checks, and billing questions.',
+        commonQuestions: ['Office hours', 'Prescription refills', 'Insurance acceptance', 'Billing support'],
+    },
+    escalationConfig: {
+        urgentCallbackWindowMinutes: 30,
+        escalationMessage:
+            'Escalate emergencies immediately. Capture urgent after-hours messages and create priority follow-up tasks.',
+        notifyStaffImmediately: true,
+    },
+};
 
 async function ensureOwnerUser() {
     return prisma.user.upsert({
@@ -104,46 +145,6 @@ function buildIntegrationSettings(category: 'SCHEDULING' | 'EHR_REFILL' | 'BILLI
     }
 }
 
-function createSmokeWorkflowGraph() {
-    return {
-        nodes: [
-            {
-                id: 'start',
-                type: 'start',
-                position: { x: 0, y: 0 },
-                config: { label: 'Start' },
-            },
-            {
-                id: 'capture-follow-up',
-                type: 'integration',
-                position: { x: 220, y: 0 },
-                config: {
-                    label: 'Manual Follow-up',
-                    mode: 'runtime_action',
-                    runtimeAction: 'manual-follow-up',
-                    integrationCategory: 'MANUAL',
-                    requiresConfirmation: false,
-                    fallbackBehavior: 'create_follow_up',
-                    prompt: 'Capture a smoke-test staff follow-up request.',
-                },
-            },
-            {
-                id: 'end',
-                type: 'end',
-                position: { x: 440, y: 0 },
-                config: {
-                    endType: 'hangup',
-                    closingMessage: 'Your request has been captured.',
-                },
-            },
-        ],
-        edges: [
-            { id: 'edge-start-follow-up', fromNodeId: 'start', toNodeId: 'capture-follow-up' },
-            { id: 'edge-follow-up-end', fromNodeId: 'capture-follow-up', toNodeId: 'end' },
-        ],
-    };
-}
-
 async function main() {
     console.log('Creating Business-native smoke fixture...');
 
@@ -173,6 +174,13 @@ async function main() {
             recordingDefault: 'ASK',
             transcriptRetentionDays: 7,
             operatingHours: ALWAYS_OPEN_HOURS as any,
+            enabledActions: [...SMOKE_PRACTICE_SETUP.enabledActions],
+            afterHoursPolicy: SMOKE_PRACTICE_SETUP.afterHoursPolicy as any,
+            refillPolicy: SMOKE_PRACTICE_SETUP.refillPolicy as any,
+            billingPolicy: SMOKE_PRACTICE_SETUP.billingPolicy as any,
+            insurancePolicy: SMOKE_PRACTICE_SETUP.insurancePolicy as any,
+            knowledgeConfig: SMOKE_PRACTICE_SETUP.knowledgeConfig as any,
+            escalationConfig: SMOKE_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
             outOfScopeKeywords: ['legal advice', 'diagnosis'],
         },
@@ -181,6 +189,13 @@ async function main() {
             recordingDefault: 'ASK',
             transcriptRetentionDays: 7,
             operatingHours: ALWAYS_OPEN_HOURS as any,
+            enabledActions: [...SMOKE_PRACTICE_SETUP.enabledActions],
+            afterHoursPolicy: SMOKE_PRACTICE_SETUP.afterHoursPolicy as any,
+            refillPolicy: SMOKE_PRACTICE_SETUP.refillPolicy as any,
+            billingPolicy: SMOKE_PRACTICE_SETUP.billingPolicy as any,
+            insurancePolicy: SMOKE_PRACTICE_SETUP.insurancePolicy as any,
+            knowledgeConfig: SMOKE_PRACTICE_SETUP.knowledgeConfig as any,
+            escalationConfig: SMOKE_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
             outOfScopeKeywords: ['legal advice', 'diagnosis'],
         },
@@ -260,10 +275,26 @@ async function main() {
         },
     });
 
+    const graphJson = buildPracticeSetupRuntimeGraph({
+        businessId: business.id,
+        businessName: business.name,
+        timeZone: business.timeZone,
+        enabledActions: [...SMOKE_PRACTICE_SETUP.enabledActions],
+        afterHoursPolicy: SMOKE_PRACTICE_SETUP.afterHoursPolicy,
+        refillPolicy: SMOKE_PRACTICE_SETUP.refillPolicy,
+        billingPolicy: SMOKE_PRACTICE_SETUP.billingPolicy,
+        insurancePolicy: SMOKE_PRACTICE_SETUP.insurancePolicy,
+        knowledgeConfig: SMOKE_PRACTICE_SETUP.knowledgeConfig,
+        escalationConfig: SMOKE_PRACTICE_SETUP.escalationConfig,
+        emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
+        outOfScopeKeywords: ['legal advice', 'diagnosis'],
+        connectedCategories: ['KNOWLEDGE'],
+    });
+
     let workflow = await prisma.workflow.findFirst({
         where: {
             businessId: business.id,
-            name: 'Smoke Runtime Flow',
+            name: GENERATED_PRACTICE_WORKFLOW_NAME,
         },
     });
 
@@ -271,8 +302,8 @@ async function main() {
         workflow = await prisma.workflow.create({
             data: {
                 businessId: business.id,
-                name: 'Smoke Runtime Flow',
-                description: 'Business-native smoke workflow for local and CI validation.',
+                name: GENERATED_PRACTICE_WORKFLOW_NAME,
+                description: GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
                 status: 'PUBLISHED',
             },
         });
@@ -281,7 +312,7 @@ async function main() {
             where: { id: workflow.id },
             data: {
                 status: 'PUBLISHED',
-                description: 'Business-native smoke workflow for local and CI validation.',
+                description: GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
             },
         });
     }
@@ -294,7 +325,7 @@ async function main() {
         data: {
             workflowId: workflow.id,
             versionNumber: 1,
-            graphJson: createSmokeWorkflowGraph() as any,
+            graphJson: graphJson as any,
             createdByUserId: owner.id,
             approvedByUserId: owner.id,
             status: 'PUBLISHED',
@@ -319,14 +350,13 @@ async function main() {
         },
     });
 
-    await seedAgentsForBusiness(business.id);
-
     console.log('Smoke fixture ready.');
     console.log(`Business: ${business.name} (${business.id})`);
     console.log(`Owner Clerk user: ${owner.clerkUserId}`);
     console.log(`Phone number: ${DEFAULT_PHONE_NUMBER}`);
     console.log(`Mock integration base URL: ${DEFAULT_MOCK_BASE_URL}`);
     console.log(`Credential env ref: ${DEFAULT_CREDENTIAL_REF}`);
+    console.log(`Generated runtime workflow: ${GENERATED_PRACTICE_WORKFLOW_NAME}`);
   }
 
 main()

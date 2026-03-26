@@ -2,8 +2,9 @@ import { prisma } from './index';
 import { AGENT_CATALOG } from './agent-catalog';
 
 /**
- * Seed the 5 starter agents for a given business.
- * Call this during new-business onboarding.
+ * Seed the legacy starter agents for a given business.
+ * This is for internal/admin workflows only and is not part of the
+ * default practice-first onboarding path.
  */
 export async function seedAgentsForBusiness(businessId: string): Promise<void> {
     for (const catalog of AGENT_CATALOG) {
@@ -35,10 +36,10 @@ export async function seedAgentsForBusiness(businessId: string): Promise<void> {
 }
 
 /**
- * Standalone seed script — seeds agents for every business found.
+ * Standalone seed script — seeds internal-only agents for every business found.
  */
 async function main() {
-    console.log('Seeding clinic starter agents...');
+    console.log('Seeding internal starter agents...');
 
     const businesses = await prisma.business.findMany({ select: { id: true, name: true } });
 
@@ -48,11 +49,11 @@ async function main() {
     }
 
     for (const business of businesses) {
-        console.log(`  Seeding agents for: ${business.name}`);
+        console.log(`  Seeding internal agents for: ${business.name}`);
         await seedAgentsForBusiness(business.id);
     }
 
-    console.log(`Done. Seeded ${AGENT_CATALOG.length} agents per business.`);
+    console.log(`Done. Seeded ${AGENT_CATALOG.length} internal agent templates per business.`);
 }
 
 if (require.main === module) {

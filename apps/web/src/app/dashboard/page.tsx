@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { useUser } from '@clerk/nextjs';
 import {
     AlertTriangle,
     Bot,
     ChevronRight,
     Clock,
-    GitBranch,
     Phone,
     PhoneForwarded,
     PlugZap,
@@ -17,13 +17,13 @@ import {
 import { Card } from '@/components/dashboard/shared';
 import { useBusiness } from '@/lib/business-context';
 import {
-    useAgents,
     useCallAnalytics,
     useCalls,
     useFollowUpTasks,
     useIntegrations,
     useVoicemails,
 } from '@/lib/hooks/query-hooks';
+import { canAccessInternalTools } from '@/lib/internal-tools';
 
 const TAG_LABEL: Record<string, string> = {
     SCHEDULING: 'Scheduling',
@@ -55,6 +55,8 @@ function formatDuration(seconds: number) {
 
 export default function DashboardPage() {
     const { businessId, isLoading: businessLoading } = useBusiness();
+    const { user } = useUser();
+    const showInternalTools = canAccessInternalTools(user);
     const now = new Date();
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
@@ -63,7 +65,6 @@ export default function DashboardPage() {
     const analyticsQuery = useCallAnalytics(startOfToday, now);
     const voicemailsQuery = useVoicemails(true);
     const followUpTasksQuery = useFollowUpTasks();
-    const agentsQuery = useAgents();
     const integrationsQuery = useIntegrations();
 
     const recentCalls = callsQuery.data?.data ?? [];
@@ -75,24 +76,26 @@ export default function DashboardPage() {
     const urgentTasks = openTasks.filter(
         (task) => task.priority === 'URGENT' || task.type === 'URGENT_CALLBACK',
     );
-    const agents = agentsQuery.data ?? [];
     const integrations = integrationsQuery.data ?? [];
-
-    const activeAgents = agents.filter((agent) => agent.status === 'ACTIVE').length;
     const integrationFailures = integrations.filter((integration) => integration.status !== 'CONNECTED');
     const escalatedCalls = (analytics?.callsByTag?.HUMAN_TRANSFER ?? 0) + (analytics?.callsByTag?.EMERGENCY ?? 0);
     const aiResolved = Math.max((analytics?.completedCalls ?? 0) - escalatedCalls - (analytics?.voicemailCount ?? 0), 0);
     const topReasons = Object.entries(analytics?.callsByTag ?? {})
         .sort(([, left], [, right]) => right - left)
         .slice(0, 4);
+    const readinessIssues = [
+        !businessId ? 'Select a practice' : null,
+        integrationFailures.length > 0 ? `${integrationFailures.length} integrations need attention` : null,
+        urgentTasks.length > 0 ? `${urgentTasks.length} urgent follow-ups need review` : null,
+    ].filter(Boolean);
 
     if (!businessLoading && !businessId) {
         return (
             <Card>
                 <div className="py-16 text-center">
                     <h2 className="text-xl font-semibold text-foreground">Select a practice to get started</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Create or choose a business in settings before reviewing calls, workflows, and integrations.
+                        <p className="mt-2 text-sm text-muted-foreground">
+                        Create or choose a business in Practice Setup before reviewing calls, follow-ups, and integrations.
                     </p>
                     <Link
                         href="/dashboard/settings"
@@ -107,7 +110,7 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6">
-            {(integrationFailures.length > 0 || activeAgents === 0) && (
+            {readinessIssues.length > 0 && (
                 <div className="neo-raised rounded-[16px] bg-[var(--background)] p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-start gap-3">
@@ -116,20 +119,18 @@ export default function DashboardPage() {
                             </div>
                             <div>
                                 <p className="text-sm font-semibold text-foreground">
-                                    {integrationFailures.length > 0
-                                        ? `${integrationFailures.length} integrations need attention`
-                                        : 'No agents are active yet'}
+                                    {readinessIssues[0]}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    Connect vendors and activate the right agents so the live phone workflow can complete actions during the call.
+                                    Practice readiness now comes from setup, integrations, and follow-up coverage rather than customer-authored workflows.
                                 </p>
                             </div>
                         </div>
                         <Link
-                            href="/dashboard/agents"
+                            href="/dashboard/settings"
                             className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline"
                         >
-                            Review setup <ChevronRight className="h-4 w-4" />
+                            Open practice setup <ChevronRight className="h-4 w-4" />
                         </Link>
                     </div>
                 </div>
@@ -147,7 +148,7 @@ export default function DashboardPage() {
                         label: 'AI Resolved',
                         value: aiResolved,
                         detail: `${escalatedCalls} escalated`,
-                        icon: Bot,
+                        icon: PhoneForwarded,
                     },
                     {
                         label: 'Urgent Calls',
@@ -305,21 +306,23 @@ export default function DashboardPage() {
                     <Card>
                         <h2 className="mb-3 font-semibold text-foreground">Quick Actions</h2>
                         <div className="space-y-2">
-                            <Link href="/dashboard/agents" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
-                                <Bot className="h-4 w-4 text-primary" />
-                                <span className="text-sm font-medium text-foreground">Manage Agents</span>
-                                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                            </Link>
-                            <Link href="/dashboard/workflows" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
-                                <GitBranch className="h-4 w-4 text-amber-500" />
-                                <span className="text-sm font-medium text-foreground">Edit Call Flow</span>
-                                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                            </Link>
                             <Link href="/dashboard/settings" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
                                 <Settings2 className="h-4 w-4 text-sky-600" />
-                                <span className="text-sm font-medium text-foreground">Review Practice Settings</span>
+                                <span className="text-sm font-medium text-foreground">Review Practice Setup</span>
                                 <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                             </Link>
+                            <Link href="/dashboard/integration-failures" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
+                                <PlugZap className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium text-foreground">Check Integrations</span>
+                                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                            </Link>
+                            {showInternalTools && (
+                                <Link href="/dashboard/workflows" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
+                                    <PhoneForwarded className="h-4 w-4 text-amber-500" />
+                                    <span className="text-sm font-medium text-foreground">Open Internal Workflow Editor</span>
+                                    <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                                </Link>
+                            )}
                         </div>
                     </Card>
                 </div>

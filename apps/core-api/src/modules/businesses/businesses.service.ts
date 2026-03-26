@@ -4,6 +4,7 @@ import { CacheService, CacheTTL } from '../../cache/cache.service';
 import { Logger } from '@wardline/utils';
 import { WorkflowsService } from '../workflows/workflows.service';
 import { DEFAULT_OPERATING_HOURS, normalizeOperatingHours } from './business-hours';
+import { normalizePracticeSetup } from './practice-config';
 
 const CacheKeys = {
     businesses: (userId?: string) => `businesses:list:${userId ?? 'all'}`,
@@ -24,6 +25,7 @@ export class BusinessesService {
 
     async create(dto: { name: string; slug: string; timeZone?: string }, creatorUserId?: string): Promise<any> {
         this.logger.info('Creating business', { name: dto.name });
+        const practiceSetup = normalizePracticeSetup();
 
         const existing = await this.prisma.business.findFirst({
             where: { OR: [{ name: dto.name }, { slug: dto.slug }] },
@@ -42,6 +44,13 @@ export class BusinessesService {
                             recordingDefault: 'ON',
                             transcriptRetentionDays: 30,
                             operatingHours: DEFAULT_OPERATING_HOURS as any,
+                            enabledActions: practiceSetup.enabledActions,
+                            afterHoursPolicy: practiceSetup.afterHoursPolicy as any,
+                            refillPolicy: practiceSetup.refillPolicy as any,
+                            billingPolicy: practiceSetup.billingPolicy as any,
+                            insurancePolicy: practiceSetup.insurancePolicy as any,
+                            knowledgeConfig: practiceSetup.knowledgeConfig as any,
+                            escalationConfig: practiceSetup.escalationConfig as any,
                             outOfScopeKeywords: [],
                             emergencyKeywords: [],
                         },
@@ -67,6 +76,7 @@ export class BusinessesService {
         if (creatorUserId) {
             await this.cache.invalidateByTag(`user:${creatorUserId}:businesses`);
         }
+        await this.workflowsService.syncPracticeSetupWorkflow(business.id, creatorUserId);
         this.logger.info('Business created', { id: business.id });
         return business;
     }
@@ -125,7 +135,7 @@ export class BusinessesService {
                 });
                 if (!business) throw new NotFoundException(`Business "${id}" not found`);
                 if (business.settings) {
-                    business.settings.operatingHours = normalizeOperatingHours(business.settings.operatingHours) as any;
+                    business.settings = this.normalizeBusinessSettingsRecord(business.settings);
                 }
                 return business;
             },
@@ -139,6 +149,9 @@ export class BusinessesService {
             include: { settings: true },
         });
         if (!business) throw new NotFoundException(`Business with slug "${slug}" not found`);
+        if (business.settings) {
+            business.settings = this.normalizeBusinessSettingsRecord(business.settings);
+        }
         await this.cache.set(CacheKeys.business(business.id), business, {
             ttl: CacheTTL.LONG,
             tags: ['businesses', `business:${business.id}`],
@@ -191,7 +204,7 @@ export class BusinessesService {
 
                 if (!match) throw new NotFoundException(`Business with phone "${phoneNumber}" not found`);
                 if (match.business.settings) {
-                    match.business.settings.operatingHours = normalizeOperatingHours(match.business.settings.operatingHours) as any;
+                    match.business.settings = this.normalizeBusinessSettingsRecord(match.business.settings);
                 }
 
                 this.logger.debug('Resolved business by phone', {
@@ -225,6 +238,7 @@ export class BusinessesService {
         await this.cache.delete(`${CacheKeys.business(id)}:false`);
         await this.cache.invalidateByTag('businesses');
         await this.cache.delete(CacheKeys.runtimeConfig(id));
+        await this.workflowsService.syncPracticeSetupWorkflow(id);
         return business;
     }
 
@@ -232,21 +246,54 @@ export class BusinessesService {
         recordingDefault: string;
         transcriptRetentionDays: number;
         operatingHours: unknown;
+        enabledActions: unknown;
+        afterHoursPolicy: unknown;
+        refillPolicy: unknown;
+        billingPolicy: unknown;
+        insurancePolicy: unknown;
+        knowledgeConfig: unknown;
+        escalationConfig: unknown;
         outOfScopeKeywords: string[];
         emergencyKeywords: string[];
     }>): Promise<any> {
-        await this.findOne(id);
+        const business = await this.findOne(id);
+        const currentSettings = business.settings ?? this.getDefaultBusinessSettings();
+        const nextPracticeSetup = normalizePracticeSetup({
+            enabledActions:
+                settings.enabledActions !== undefined ? settings.enabledActions : currentSettings.enabledActions,
+            afterHoursPolicy:
+                settings.afterHoursPolicy !== undefined ? settings.afterHoursPolicy : currentSettings.afterHoursPolicy,
+            refillPolicy: settings.refillPolicy !== undefined ? settings.refillPolicy : currentSettings.refillPolicy,
+            billingPolicy:
+                settings.billingPolicy !== undefined ? settings.billingPolicy : currentSettings.billingPolicy,
+            insurancePolicy:
+                settings.insurancePolicy !== undefined ? settings.insurancePolicy : currentSettings.insurancePolicy,
+            knowledgeConfig:
+                settings.knowledgeConfig !== undefined ? settings.knowledgeConfig : currentSettings.knowledgeConfig,
+            escalationConfig:
+                settings.escalationConfig !== undefined
+                    ? settings.escalationConfig
+                    : currentSettings.escalationConfig,
+        });
         const normalizedSettings = {
             ...settings,
             ...(settings.operatingHours !== undefined
                 ? { operatingHours: normalizeOperatingHours(settings.operatingHours) as any }
                 : {}),
+            enabledActions: nextPracticeSetup.enabledActions,
+            afterHoursPolicy: nextPracticeSetup.afterHoursPolicy as any,
+            refillPolicy: nextPracticeSetup.refillPolicy as any,
+            billingPolicy: nextPracticeSetup.billingPolicy as any,
+            insurancePolicy: nextPracticeSetup.insurancePolicy as any,
+            knowledgeConfig: nextPracticeSetup.knowledgeConfig as any,
+            escalationConfig: nextPracticeSetup.escalationConfig as any,
         };
         const result = await this.prisma.businessSettings.update({
             where: { businessId: id },
             data: normalizedSettings as any,
         });
-        result.operatingHours = normalizeOperatingHours(result.operatingHours) as any;
+        await this.workflowsService.syncPracticeSetupWorkflow(id);
+        Object.assign(result, this.normalizeBusinessSettingsRecord(result));
         await this.cache.delete(`${CacheKeys.business(id)}:true`);
         await this.cache.delete(`${CacheKeys.business(id)}:false`);
         await this.cache.delete(CacheKeys.runtimeConfig(id));
@@ -285,7 +332,9 @@ export class BusinessesService {
                 if (!business) throw new NotFoundException(`Business "${id}" not found`);
 
                 const activeWorkflow = await this.workflowsService.getActiveWorkflow(id);
-                const operatingHours = normalizeOperatingHours(business.settings?.operatingHours);
+                const normalizedSettings = business.settings
+                    ? this.normalizeBusinessSettingsRecord(business.settings)
+                    : this.getDefaultBusinessSettings();
 
                 return {
                     business: {
@@ -295,18 +344,7 @@ export class BusinessesService {
                         timeZone: business.timeZone,
                         status: business.status,
                     },
-                    settings: business.settings
-                        ? {
-                            ...business.settings,
-                            operatingHours,
-                        }
-                        : {
-                            recordingDefault: 'ON',
-                            transcriptRetentionDays: 30,
-                            operatingHours,
-                            outOfScopeKeywords: [],
-                            emergencyKeywords: [],
-                        },
+                    settings: normalizedSettings,
                     phoneNumbers: business.phoneNumbers,
                     integrations: business.integrations,
                     connectedIntegrationCategories: business.integrations
@@ -337,5 +375,40 @@ export class BusinessesService {
         await this.cache.invalidateByTag('businesses');
         await this.cache.delete(CacheKeys.runtimeConfig(id));
         return business;
+    }
+
+    private getDefaultBusinessSettings() {
+        const practiceSetup = normalizePracticeSetup();
+
+        return {
+            recordingDefault: 'ON',
+            transcriptRetentionDays: 30,
+            operatingHours: DEFAULT_OPERATING_HOURS,
+            enabledActions: practiceSetup.enabledActions,
+            afterHoursPolicy: practiceSetup.afterHoursPolicy,
+            refillPolicy: practiceSetup.refillPolicy,
+            billingPolicy: practiceSetup.billingPolicy,
+            insurancePolicy: practiceSetup.insurancePolicy,
+            knowledgeConfig: practiceSetup.knowledgeConfig,
+            escalationConfig: practiceSetup.escalationConfig,
+            outOfScopeKeywords: [] as string[],
+            emergencyKeywords: [] as string[],
+        };
+    }
+
+    private normalizeBusinessSettingsRecord(settings: any) {
+        const practiceSetup = normalizePracticeSetup(settings);
+
+        return {
+            ...settings,
+            operatingHours: normalizeOperatingHours(settings.operatingHours) as any,
+            enabledActions: practiceSetup.enabledActions,
+            afterHoursPolicy: practiceSetup.afterHoursPolicy,
+            refillPolicy: practiceSetup.refillPolicy,
+            billingPolicy: practiceSetup.billingPolicy,
+            insurancePolicy: practiceSetup.insurancePolicy,
+            knowledgeConfig: practiceSetup.knowledgeConfig,
+            escalationConfig: practiceSetup.escalationConfig,
+        };
     }
 }

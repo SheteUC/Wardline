@@ -38,6 +38,35 @@ export interface OperatingHoursSlot {
     endTime: string | null;
 }
 
+export type PracticeAction =
+    | 'appointment-request'
+    | 'refill-request'
+    | 'insurance-check'
+    | 'billing-request';
+
+export interface AfterHoursPolicy {
+    mode: 'urgent_voicemail' | 'voicemail' | 'next_business_day_callback';
+    greeting: string;
+    sendUrgentToVoicemail: boolean;
+}
+
+export interface ServicePolicy {
+    liveEnabled: boolean;
+    intakeNotes: string;
+    fallbackSummary: string;
+}
+
+export interface KnowledgeConfig {
+    faqSummary: string;
+    commonQuestions: string[];
+}
+
+export interface EscalationConfig {
+    urgentCallbackWindowMinutes: number;
+    escalationMessage: string;
+    notifyStaffImmediately: boolean;
+}
+
 export interface FollowUpTask {
     id: string;
     businessId: string;
@@ -231,6 +260,13 @@ export interface BusinessSettings {
         recordingDefault: string;
         transcriptRetentionDays: number;
         operatingHours?: OperatingHoursSlot[];
+        enabledActions: PracticeAction[];
+        afterHoursPolicy: AfterHoursPolicy;
+        refillPolicy: ServicePolicy;
+        billingPolicy: ServicePolicy;
+        insurancePolicy: ServicePolicy;
+        knowledgeConfig: KnowledgeConfig;
+        escalationConfig: EscalationConfig;
         outOfScopeKeywords: string[];
         emergencyKeywords: string[];
     };

@@ -1,5 +1,10 @@
-import { prisma, UserRole } from './index';
-import { seedAgentsForBusiness } from './seed-agents';
+import {
+    buildPracticeSetupRuntimeGraph,
+    GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
+    GENERATED_PRACTICE_WORKFLOW_NAME,
+    prisma,
+    UserRole,
+} from './index';
 
 const STAGING_BUSINESS_NAME = process.env.STAGING_BUSINESS_NAME || 'Wardline Family Medicine Staging';
 const STAGING_BUSINESS_SLUG = process.env.STAGING_BUSINESS_SLUG || 'wardline-family-medicine-staging';
@@ -22,47 +27,44 @@ const FAMILY_MEDICINE_HOURS = [
     { dayOfWeek: 6, isClosed: true, startTime: null, endTime: null },
 ];
 
+const STAGING_PRACTICE_SETUP = {
+    enabledActions: ['appointment-request', 'refill-request', 'insurance-check', 'billing-request'] as const,
+    afterHoursPolicy: {
+        mode: 'urgent_voicemail' as const,
+        greeting:
+            'After hours, capture urgent messages, reassure the caller, and promise next-business-day staff follow-up.',
+        sendUrgentToVoicemail: true,
+    },
+    refillPolicy: {
+        liveEnabled: true,
+        intakeNotes: 'Collect medication name, pharmacy, and caller date of birth before creating a refill request.',
+        fallbackSummary: 'Create a refill follow-up when live refill execution is unavailable.',
+    },
+    billingPolicy: {
+        liveEnabled: true,
+        intakeNotes: 'Capture the billing topic and any account reference before creating a billing request.',
+        fallbackSummary: 'Create a billing follow-up when live billing support is unavailable.',
+    },
+    insurancePolicy: {
+        liveEnabled: true,
+        intakeNotes: 'Answer insurance acceptance and basic eligibility questions when supported by the connected system.',
+        fallbackSummary: 'Create an insurance follow-up when live eligibility verification is unavailable.',
+    },
+    knowledgeConfig: {
+        faqSummary:
+            'Wardline Family Medicine offers routine appointments, refill support, insurance checks, and billing help.',
+        commonQuestions: ['Office hours', 'Appointments', 'Refill requests', 'Insurance acceptance'],
+    },
+    escalationConfig: {
+        urgentCallbackWindowMinutes: 30,
+        escalationMessage:
+            'Escalate emergencies immediately. Capture urgent after-hours messages and create priority staff follow-ups.',
+        notifyStaffImmediately: true,
+    },
+};
+
 function envOrDefault(key: string, fallback: string) {
     return process.env[key] || fallback;
-}
-
-function createStagingWorkflowGraph() {
-    return {
-        nodes: [
-            {
-                id: 'start',
-                type: 'start',
-                position: { x: 0, y: 0 },
-                config: { label: 'Start' },
-            },
-            {
-                id: 'capture-follow-up',
-                type: 'integration',
-                position: { x: 240, y: 0 },
-                config: {
-                    label: 'Staff Follow-up',
-                    runtimeAction: 'manual-follow-up',
-                    integrationCategory: 'MANUAL',
-                    requiresConfirmation: false,
-                    fallbackBehavior: 'create_follow_up',
-                    prompt: 'Capture unresolved requests for staff follow-up during staging validation.',
-                },
-            },
-            {
-                id: 'end',
-                type: 'end',
-                position: { x: 480, y: 0 },
-                config: {
-                    endType: 'hangup',
-                    closingMessage: 'Your request has been captured.',
-                },
-            },
-        ],
-        edges: [
-            { id: 'edge-start-follow-up', fromNodeId: 'start', toNodeId: 'capture-follow-up' },
-            { id: 'edge-follow-up-end', fromNodeId: 'capture-follow-up', toNodeId: 'end' },
-        ],
-    };
 }
 
 function buildIntegrationSettings(category: 'SCHEDULING' | 'EHR_REFILL' | 'BILLING' | 'INSURANCE') {
@@ -162,6 +164,13 @@ async function main() {
             recordingDefault: 'ASK',
             transcriptRetentionDays: 7,
             operatingHours: FAMILY_MEDICINE_HOURS as any,
+            enabledActions: [...STAGING_PRACTICE_SETUP.enabledActions],
+            afterHoursPolicy: STAGING_PRACTICE_SETUP.afterHoursPolicy as any,
+            refillPolicy: STAGING_PRACTICE_SETUP.refillPolicy as any,
+            billingPolicy: STAGING_PRACTICE_SETUP.billingPolicy as any,
+            insurancePolicy: STAGING_PRACTICE_SETUP.insurancePolicy as any,
+            knowledgeConfig: STAGING_PRACTICE_SETUP.knowledgeConfig as any,
+            escalationConfig: STAGING_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
             outOfScopeKeywords: ['legal advice', 'diagnosis'],
         },
@@ -170,6 +179,13 @@ async function main() {
             recordingDefault: 'ASK',
             transcriptRetentionDays: 7,
             operatingHours: FAMILY_MEDICINE_HOURS as any,
+            enabledActions: [...STAGING_PRACTICE_SETUP.enabledActions],
+            afterHoursPolicy: STAGING_PRACTICE_SETUP.afterHoursPolicy as any,
+            refillPolicy: STAGING_PRACTICE_SETUP.refillPolicy as any,
+            billingPolicy: STAGING_PRACTICE_SETUP.billingPolicy as any,
+            insurancePolicy: STAGING_PRACTICE_SETUP.insurancePolicy as any,
+            knowledgeConfig: STAGING_PRACTICE_SETUP.knowledgeConfig as any,
+            escalationConfig: STAGING_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
             outOfScopeKeywords: ['legal advice', 'diagnosis'],
         },
@@ -249,10 +265,26 @@ async function main() {
         },
     });
 
+    const graphJson = buildPracticeSetupRuntimeGraph({
+        businessId: business.id,
+        businessName: business.name,
+        timeZone: business.timeZone,
+        enabledActions: [...STAGING_PRACTICE_SETUP.enabledActions],
+        afterHoursPolicy: STAGING_PRACTICE_SETUP.afterHoursPolicy,
+        refillPolicy: STAGING_PRACTICE_SETUP.refillPolicy,
+        billingPolicy: STAGING_PRACTICE_SETUP.billingPolicy,
+        insurancePolicy: STAGING_PRACTICE_SETUP.insurancePolicy,
+        knowledgeConfig: STAGING_PRACTICE_SETUP.knowledgeConfig,
+        escalationConfig: STAGING_PRACTICE_SETUP.escalationConfig,
+        emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
+        outOfScopeKeywords: ['legal advice', 'diagnosis'],
+        connectedCategories: ['KNOWLEDGE'],
+    });
+
     let workflow = await prisma.workflow.findFirst({
         where: {
             businessId: business.id,
-            name: 'Staging Validation Flow',
+            name: GENERATED_PRACTICE_WORKFLOW_NAME,
         },
     });
 
@@ -260,8 +292,8 @@ async function main() {
         workflow = await prisma.workflow.create({
             data: {
                 businessId: business.id,
-                name: 'Staging Validation Flow',
-                description: 'Canonical workflow for staging proof and launch-readiness checks.',
+                name: GENERATED_PRACTICE_WORKFLOW_NAME,
+                description: GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
                 status: 'PUBLISHED',
             },
         });
@@ -270,7 +302,7 @@ async function main() {
             where: { id: workflow.id },
             data: {
                 status: 'PUBLISHED',
-                description: 'Canonical workflow for staging proof and launch-readiness checks.',
+                description: GENERATED_PRACTICE_WORKFLOW_DESCRIPTION,
             },
         });
     }
@@ -283,7 +315,7 @@ async function main() {
         data: {
             workflowId: workflow.id,
             versionNumber: 1,
-            graphJson: createStagingWorkflowGraph() as any,
+            graphJson: graphJson as any,
             createdByUserId: owner.id,
             approvedByUserId: owner.id,
             status: 'PUBLISHED',
@@ -308,16 +340,16 @@ async function main() {
         },
     });
 
-    await seedAgentsForBusiness(business.id);
-
     console.log('Staging fixture ready.');
     console.log(`Business: ${business.name} (${business.id})`);
     console.log(`Owner Clerk user: ${owner.clerkUserId}`);
     console.log(`Phone number: ${STAGING_PHONE_NUMBER}`);
+    console.log(`Generated runtime workflow: ${GENERATED_PRACTICE_WORKFLOW_NAME}`);
     console.log('Next steps:');
-    console.log('1. Run integration health checks from /dashboard/integration-failures');
-    console.log('2. Validate one Gather and one streaming call flow');
-    console.log('3. Confirm live success and fallback paths for each runtime action category');
+    console.log('1. Open /dashboard/settings and confirm the Practice Setup readiness checklist is populated.');
+    console.log('2. Run integration health checks from /dashboard/integration-failures.');
+    console.log('3. Validate one Gather and one streaming call flow.');
+    console.log('4. Confirm live success and fallback paths for each runtime action category.');
 }
 
 main()

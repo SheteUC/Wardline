@@ -10,8 +10,8 @@ const TIERS = [
     price: "Custom",
     highlight: false,
     features: [
-      "5 starter agents (scheduling, billing, insurance, FAQ, Rx refill)",
-      "Visual call flow editor (13 node types)",
+      "Practice setup for scheduling, billing, insurance, FAQ, and Rx refill handling",
+      "Wardline-managed call policies compiled from your practice settings",
       "Call logs & voicemail inbox",
       "Configurable safety keywords + emergency escalation",
       "Email support",
@@ -19,13 +19,13 @@ const TIERS = [
   },
   {
     name: "Professional",
-    description: "Growing clinics that need full workflow control and integrations.",
+    description: "Growing clinics that need deeper practice policy control and integrations.",
     price: "Custom",
     highlight: true,
     features: [
       "Everything in Starter",
       "Human transfer & voicemail when staff unavailable",
-      "Tool credentials per agent (scheduling, EHR, etc.)",
+      "Integration credentials per service category (scheduling, EHR, etc.)",
       "Business settings & team roles",
       "Priority support",
     ],
@@ -57,8 +57,8 @@ export default function PricingPage() {
           </h1>
           <p className="mt-6 text-lg text-muted-foreground">
             Wardline is billed as a subscription (via Stripe). Every plan includes the
-            voice orchestrator, core API, and dashboard—configure agents and call flows
-            without writing code.
+            voice orchestrator, core API, and dashboard. Practices configure hours,
+            policies, integrations, and FAQs without writing code.
           </p>
         </section>
 

@@ -58,6 +58,13 @@ model BusinessSettings {
   recordingDefault        RecordingDefault @default(ON) @map("recording_default")
   transcriptRetentionDays Int              @default(30) @map("transcript_retention_days")
   operatingHours          Json?            @map("operating_hours")
+  enabledActions          String[]         @default([]) @map("enabled_actions")
+  afterHoursPolicy        Json?            @map("after_hours_policy")
+  refillPolicy            Json?            @map("refill_policy")
+  billingPolicy           Json?            @map("billing_policy")
+  insurancePolicy         Json?            @map("insurance_policy")
+  knowledgeConfig         Json?            @map("knowledge_config")
+  escalationConfig        Json?            @map("escalation_config")
   /** Override list of out-of-scope keywords that trigger deflection */
   outOfScopeKeywords      String[]         @map("out_of_scope_keywords")
   /** Additional emergency keywords on top of system defaults */
