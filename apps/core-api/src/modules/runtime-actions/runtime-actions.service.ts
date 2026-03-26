@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Logger } from '@wardline/utils';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import { FollowUpTasksService } from '../follow-up-tasks/follow-up-tasks.service';
@@ -39,6 +40,8 @@ interface BaseRuntimePayload {
 
 @Injectable()
 export class RuntimeActionsService {
+    private readonly logger = new Logger(RuntimeActionsService.name);
+
     constructor(
         private readonly prisma: PrismaService,
         private readonly auditService: AuditService,
@@ -539,6 +542,7 @@ export class RuntimeActionsService {
         callerPhone?: string;
         metadata?: Record<string, unknown>;
     }) {
+        const startedAt = Date.now();
         const task = await this.followUpTasksService.create({
             businessId: input.businessId,
             callId: input.callId,
@@ -559,6 +563,13 @@ export class RuntimeActionsService {
             },
         });
 
+        this.logger.debug('Created runtime-action fallback task', {
+            businessId: input.businessId,
+            actionName: input.actionName,
+            followUpTaskId: task.id,
+            fallbackReason: input.fallbackReason,
+            durationMs: Date.now() - startedAt,
+        });
         return task.id;
     }
 

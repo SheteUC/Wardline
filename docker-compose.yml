@@ -71,7 +71,7 @@ services:
     container_name: wardline-voice-orchestrator
     environment:
       PYTHON_ENV: ${PYTHON_ENV:-development}
-      PORT: 3002
+      VOICE_ORCHESTRATOR_PORT: 3002
       CORE_API_URL: http://core-api:3001
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}

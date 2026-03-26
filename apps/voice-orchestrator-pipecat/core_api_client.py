@@ -18,42 +18,59 @@ class CoreAPIClient:
         self.base_url = settings.core_api_url.rstrip("/")
         self.client = httpx.AsyncClient(timeout=10.0)
         self._cache_ttl_seconds = 300
+        self._phone_lookup_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
         self._runtime_config_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
         self._workflow_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
 
     async def close(self):
         await self.client.aclose()
 
+    def _log_latency(self, operation: str, started_at: float, **extra: Any):
+        duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        logger.info("Core API timing: {} in {}ms | {}", operation, duration_ms, extra)
+
     async def _get_json(self, path: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        started_at = time.perf_counter()
         try:
             response = await self.client.get(f"{self.base_url}{path}", params=params)
             if response.status_code == 200:
+                self._log_latency("GET", started_at, path=path, status_code=response.status_code)
                 return response.json()
+            self._log_latency("GET", started_at, path=path, status_code=response.status_code)
             logger.warning(f"GET {path} failed: {response.status_code}: {response.text}")
             return None
         except Exception as exc:
+            self._log_latency("GET", started_at, path=path, failed=True)
             logger.error(f"GET {path} failed: {exc}")
             return None
 
     async def _post_json(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        started_at = time.perf_counter()
         try:
             response = await self.client.post(f"{self.base_url}{path}", json=payload)
             if response.status_code in (200, 201):
+                self._log_latency("POST", started_at, path=path, status_code=response.status_code)
                 return response.json()
+            self._log_latency("POST", started_at, path=path, status_code=response.status_code)
             logger.warning(f"POST {path} failed: {response.status_code}: {response.text}")
             return None
         except Exception as exc:
+            self._log_latency("POST", started_at, path=path, failed=True)
             logger.error(f"POST {path} failed: {exc}")
             return None
 
     async def _patch_json(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        started_at = time.perf_counter()
         try:
             response = await self.client.patch(f"{self.base_url}{path}", json=payload)
             if response.status_code == 200:
+                self._log_latency("PATCH", started_at, path=path, status_code=response.status_code)
                 return response.json()
+            self._log_latency("PATCH", started_at, path=path, status_code=response.status_code)
             logger.warning(f"PATCH {path} failed: {response.status_code}: {response.text}")
             return None
         except Exception as exc:
+            self._log_latency("PATCH", started_at, path=path, failed=True)
             logger.error(f"PATCH {path} failed: {exc}")
             return None
 
@@ -71,13 +88,23 @@ class CoreAPIClient:
 
     def invalidate_business_cache(self, business_id: str):
         self._runtime_config_cache.pop(business_id, None)
+        self._phone_lookup_cache.clear()
         for cache_key in list(self._workflow_cache.keys()):
             if cache_key.startswith(f"{business_id}:"):
                 self._workflow_cache.pop(cache_key, None)
 
     async def get_business_by_phone(self, phone_number: str) -> Optional[Dict[str, Any]]:
         formatted = "".join(filter(str.isdigit, phone_number))
-        return await self._get_json("/businesses/by-phone", params={"phoneNumber": formatted})
+        cache_key = formatted[-10:] if len(formatted) >= 10 else formatted
+        cached = self._cache_get(self._phone_lookup_cache, cache_key)
+        if cached is not None:
+            logger.debug(f"Core API business lookup cache hit for {cache_key}")
+            return cached
+
+        result = await self._get_json("/businesses/by-phone", params={"phoneNumber": formatted})
+        if result is not None:
+            self._cache_set(self._phone_lookup_cache, cache_key, result)
+        return result
 
     async def get_business(self, business_id: str) -> Optional[Dict[str, Any]]:
         return await self._get_json(f"/businesses/{business_id}", params={"includeRelations": "true"})
@@ -85,6 +112,7 @@ class CoreAPIClient:
     async def get_runtime_config(self, business_id: str) -> Optional[Dict[str, Any]]:
         cached = self._cache_get(self._runtime_config_cache, business_id)
         if cached is not None:
+            logger.debug(f"Core API runtime config cache hit for business {business_id}")
             return cached
 
         runtime_config = await self._get_json(f"/businesses/{business_id}/runtime-config")
@@ -106,6 +134,7 @@ class CoreAPIClient:
         cache_key = f"{business_id}:{phone_number_id or 'default'}"
         cached = self._cache_get(self._workflow_cache, cache_key)
         if cached is not None:
+            logger.debug(f"Core API active workflow cache hit for {cache_key}")
             return cached
 
         workflow = await self._get_json(

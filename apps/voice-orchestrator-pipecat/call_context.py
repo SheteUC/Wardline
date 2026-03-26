@@ -3,7 +3,7 @@ Call context management for the voice orchestrator.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -36,6 +36,14 @@ class IntentType(Enum):
     UNKNOWN = "unknown"
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def utc_now_iso() -> str:
+    return utc_now().isoformat()
+
+
 @dataclass
 class CallTurn:
     turn_number: int
@@ -51,7 +59,7 @@ class CallTurn:
 class ConversationMessage:
     role: str
     content: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=utc_now)
     tool_call_id: Optional[str] = None
     tool_name: Optional[str] = None
 
@@ -60,7 +68,7 @@ class ConversationMessage:
 class CollectedField:
     value: Any
     confirmed: bool = False
-    updated_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    updated_at: str = field(default_factory=utc_now_iso)
 
     def __bool__(self):
         return bool(self.value)
@@ -144,7 +152,7 @@ class CallContext:
     pending_action_summary: Optional[str] = None
     pending_action_payload: Dict[str, Any] = field(default_factory=dict)
     last_action_outcome: Dict[str, Any] = field(default_factory=dict)
-    started_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=utc_now)
     ended_at: Optional[datetime] = None
 
     @property
@@ -203,7 +211,7 @@ class CallContext:
                     collected_fields=plain_fields,
                     outcome=outcome,
                     started_at=self.started_at.isoformat(),
-                    resolved_at=datetime.utcnow().isoformat(),
+                    resolved_at=utc_now_iso(),
                 ),
             )
 

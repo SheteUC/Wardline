@@ -5,6 +5,7 @@ Handles Twilio webhooks and manages voice bot instances
 import asyncio
 import json
 import os
+import time
 from datetime import datetime, timezone
 from typing import Optional
 from contextlib import asynccontextmanager
@@ -124,6 +125,14 @@ def _detect_after_hours_urgency(text: str) -> list[str]:
 def _is_confirmation(text: str, keywords: list[str]) -> bool:
     lowered = text.lower()
     return any(keyword in lowered for keyword in keywords)
+
+
+def _duration_ms(started_at: float) -> float:
+    return round((time.perf_counter() - started_at) * 1000, 2)
+
+
+def _log_voice_timing(operation: str, started_at: float, **extra):
+    logger.info(f"Voice timing: {operation} ({_duration_ms(started_at)}ms) | {extra}")
 
 
 async def _execute_pending_action(context: CallContext) -> str:
@@ -252,6 +261,7 @@ async def handle_incoming_call(request: Request):
     Handle incoming Twilio call
     Returns TwiML to greet caller and connect to WebSocket stream
     """
+    request_started_at = time.perf_counter()
     form_data = await request.form()
     call_sid = form_data.get("CallSid", "")
     from_number = form_data.get("From", "")
@@ -268,7 +278,9 @@ async def handle_incoming_call(request: Request):
     
     # Look up business by phone number
     try:
+        lookup_started_at = time.perf_counter()
         business = await api_client.get_business_by_phone(to_number)
+        _log_voice_timing("business_lookup", lookup_started_at, call_sid=call_sid)
         if business:
             context.business_id = business.get("id", "")
             context.business_name = business.get("name", "Wardline Medical Center")
@@ -277,7 +289,13 @@ async def handle_incoming_call(request: Request):
             if matched_phone_number:
                 context.phone_number_id = matched_phone_number.get("id", "")
 
+            runtime_config_started_at = time.perf_counter()
             runtime_config = await api_client.get_runtime_config(context.business_id)
+            _log_voice_timing(
+                "runtime_config_fetch",
+                runtime_config_started_at,
+                business_id=context.business_id,
+            )
             if runtime_config:
                 context.runtime_config = runtime_config
                 context.time_zone = runtime_config.get("business", {}).get("timeZone", context.time_zone)
@@ -286,12 +304,18 @@ async def handle_incoming_call(request: Request):
             logger.info(f"Found business: {context.business_name} ({context.business_id})")
 
             # Create call session in core-api (or get existing if duplicate webhook)
+            create_call_started_at = time.perf_counter()
             call_data = await api_client.create_call_session({
                 "twilioCallSid": call_sid,
                 "direction": "INBOUND",  # Must be uppercase enum value
                 "fromNumber": from_number,
                 "toNumber": to_number,
             })
+            _log_voice_timing(
+                "call_session_create",
+                create_call_started_at,
+                business_id=context.business_id,
+            )
             
             # If creation failed (possibly due to duplicate), try to get existing
             if not call_data:
@@ -390,6 +414,14 @@ async def handle_incoming_call(request: Request):
         response.say("I didn't catch that. How can I help you today?", voice="Polly.Joanna")
         response.redirect("/voice/incoming")
     
+    _log_voice_timing(
+        "incoming_call_bootstrap",
+        request_started_at,
+        call_sid=call_sid,
+        business_id=context.business_id or None,
+        after_hours=context.is_after_hours,
+        mode="streaming" if use_streaming and base_url else "gather",
+    )
     return Response(content=str(response), media_type="text/xml")
 
 
@@ -398,6 +430,7 @@ async def process_speech(request: Request):
     """
     Process speech input from Twilio and generate AI response
     """
+    processing_started_at = time.perf_counter()
     form_data = await request.form()
     call_sid = form_data.get("CallSid", "")
     speech_result = form_data.get("SpeechResult", "")
@@ -421,6 +454,7 @@ async def process_speech(request: Request):
             speech_timeout="auto",
         )
         response.append(gather)
+        _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="missing_context")
         return Response(content=str(response), media_type="text/xml")
     
     # Add user message to context
@@ -448,6 +482,7 @@ async def process_speech(request: Request):
         )
         # In production, could dial 911 or emergency line
         response.hangup()
+        _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="emergency")
         return Response(content=str(response), media_type="text/xml")
 
     if context.is_after_hours:
@@ -478,11 +513,27 @@ async def process_speech(request: Request):
         )
         response.say("We did not receive a message. Goodbye.", voice="Polly.Joanna")
         response.hangup()
+        _log_voice_timing(
+            "speech_process",
+            processing_started_at,
+            call_sid=call_sid,
+            branch="after_hours_voicemail",
+            urgent=bool(urgency_hits),
+        )
         return Response(content=str(response), media_type="text/xml")
 
     if context.pending_confirmation_required:
         if _is_confirmation(speech_result, AFFIRMATIVE_KEYWORDS):
+            pending_action_name = context.pending_action_name
+            action_started_at = time.perf_counter()
             confirmation_message = await _execute_pending_action(context)
+            _log_voice_timing(
+                "confirmed_runtime_action",
+                action_started_at,
+                call_sid=call_sid,
+                action_name=pending_action_name,
+                handled_live=context.last_action_outcome.get("handledLive"),
+            )
             context.add_assistant_message(confirmation_message)
 
             response = VoiceResponse()
@@ -499,6 +550,7 @@ async def process_speech(request: Request):
             gather.say(f"{confirmation_message} Is there anything else I can help you with today?", voice="Polly.Joanna")
             response.append(gather)
             response.redirect("/voice/incoming")
+            _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="confirmation_yes")
             return Response(content=str(response), media_type="text/xml")
 
         if _is_confirmation(speech_result, NEGATIVE_KEYWORDS):
@@ -521,6 +573,7 @@ async def process_speech(request: Request):
             )
             response.append(gather)
             response.redirect("/voice/incoming")
+            _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="confirmation_no")
             return Response(content=str(response), media_type="text/xml")
 
     # Generate AI response
@@ -544,6 +597,7 @@ async def process_speech(request: Request):
         )
         response.pause(length=30)
         response.hangup()
+        _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="escalation")
         return Response(content=str(response), media_type="text/xml")
     
     # Normal response - continue conversation
@@ -584,7 +638,7 @@ async def process_speech(request: Request):
         voice="Polly.Joanna"
     )
     response.redirect("/voice/incoming")
-    
+    _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="normal")
     return Response(content=str(response), media_type="text/xml")
 
 
@@ -593,6 +647,7 @@ async def complete_voicemail(request: Request):
     """
     Store an after-hours voicemail and create the linked follow-up task.
     """
+    voicemail_started_at = time.perf_counter()
     form_data = await request.form()
     call_sid = form_data.get("CallSid", "")
     recording_url = form_data.get("RecordingUrl", "")
@@ -605,6 +660,7 @@ async def complete_voicemail(request: Request):
     if not context or not context.call_id or not context.business_id:
         response.say("Thank you. Your message has been received. Goodbye.", voice="Polly.Joanna")
         response.hangup()
+        _log_voice_timing("voicemail_complete", voicemail_started_at, call_sid=call_sid, skipped=True)
         return Response(content=str(response), media_type="text/xml")
 
     await api_client.create_voicemail(
@@ -627,6 +683,13 @@ async def complete_voicemail(request: Request):
         voice="Polly.Joanna",
     )
     response.hangup()
+    _log_voice_timing(
+        "voicemail_complete",
+        voicemail_started_at,
+        call_sid=call_sid,
+        business_id=context.business_id,
+        priority=priority,
+    )
     return Response(content=str(response), media_type="text/xml")
 
 

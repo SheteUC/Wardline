@@ -77,7 +77,8 @@ describe('IntegrationConnectorsService', () => {
         expect(result.ok).toBe(false);
         expect(result.status).toBe('ERROR');
         expect(result.message).toContain('credential secret');
-        expect(result.metadata).toEqual({ missing: ['credentialsRef'] });
+        expect(result.metadata).toMatchObject({ missing: ['credentialsRef'] });
+        expect(result.metadata?.latencyMs).toEqual(expect.any(Number));
     });
 
     it('executes appointment requests live against the mock connector', async () => {
@@ -97,6 +98,7 @@ describe('IntegrationConnectorsService', () => {
         expect(result.message).toContain('submitted successfully');
         expect(result.data).toMatchObject({
             externalReferenceId: expect.stringContaining('appt-'),
+            latencyMs: expect.any(Number),
         });
     });
 

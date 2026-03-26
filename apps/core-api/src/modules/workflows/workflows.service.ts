@@ -135,8 +135,8 @@ export class WorkflowsService {
     async getActiveWorkflow(businessId: string, phoneNumberId?: string): Promise<any> {
         if (!businessId) return null;
         const cacheKey = `workflows:active:${businessId}:${phoneNumberId || 'default'}`;
-
-        return this.cache.getOrSet(
+        const startedAt = Date.now();
+        const workflow = await this.cache.getOrSet(
             cacheKey,
             async () => {
                 // If phone number provided, check if it has a specific workflow
@@ -201,6 +201,13 @@ export class WorkflowsService {
                 tags: [`business:${businessId}`, 'workflows:active'],
             },
         );
+        this.logger.debug('Loaded active workflow', {
+            businessId,
+            phoneNumberId,
+            durationMs: Date.now() - startedAt,
+            found: Boolean(workflow),
+        });
+        return workflow;
     }
 
     /**

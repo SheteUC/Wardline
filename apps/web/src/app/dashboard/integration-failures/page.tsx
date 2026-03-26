@@ -87,6 +87,9 @@ function capabilityBadges(capabilities: Record<string, unknown> | undefined) {
     return Object.entries(capabilities)
         .filter(([, value]) => typeof value === 'boolean' ? value : value !== undefined && value !== null && value !== '')
         .map(([key, value]) => {
+            if (key === 'lastHealthCheckLatencyMs' && typeof value === 'number') {
+                return `Health check latency: ${value}ms`;
+            }
             if (typeof value === 'boolean') {
                 return key.replace(/^can/, '').replace(/([A-Z])/g, ' $1').trim();
             }
@@ -147,7 +150,9 @@ function IntegrationCard({
             const result = await onTested(integration.category, draft);
             setFlash({
                 tone: result.ok ? 'success' : 'error',
-                message: result.message,
+                message: result.latencyMs
+                    ? `${result.message} (${result.latencyMs}ms)`
+                    : result.message,
             });
         } catch (error) {
             setFlash({
@@ -217,72 +222,80 @@ function IntegrationCard({
                     </select>
                 </label>
 
-                <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credentials Ref</span>
-                    <input
-                        className={neoFieldClass}
-                        value={draft.credentialsRef}
-                        onChange={(event) => updateField('credentialsRef', event.target.value)}
-                        placeholder="ATHENAHEALTH_SCHEDULING_TOKEN"
-                        disabled={disabled || integration.category === 'KNOWLEDGE'}
-                    />
-                </label>
+                {integration.category !== 'KNOWLEDGE' ? (
+                    <>
+                        <label className="space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credentials Ref</span>
+                            <input
+                                className={neoFieldClass}
+                                value={draft.credentialsRef}
+                                onChange={(event) => updateField('credentialsRef', event.target.value)}
+                                placeholder="e.g. MOCK_ATHENAHEALTH_TOKEN"
+                                disabled={disabled}
+                            />
+                        </label>
 
-                <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Base URL</span>
-                    <input
-                        className={neoFieldClass}
-                        value={draft.baseUrl}
-                        onChange={(event) => updateField('baseUrl', event.target.value)}
-                        placeholder="https://api.vendor.example"
-                        disabled={disabled || integration.category === 'KNOWLEDGE'}
-                    />
-                </label>
+                        <label className="space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Base URL</span>
+                            <input
+                                className={neoFieldClass}
+                                value={draft.baseUrl}
+                                onChange={(event) => updateField('baseUrl', event.target.value)}
+                                placeholder="e.g. http://127.0.0.1:4010/scenario/success"
+                                disabled={disabled}
+                            />
+                        </label>
 
-                <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Health Path</span>
-                    <input
-                        className={neoFieldClass}
-                        value={draft.healthPath}
-                        onChange={(event) => updateField('healthPath', event.target.value)}
-                        placeholder="/metadata"
-                        disabled={disabled || integration.category === 'KNOWLEDGE'}
-                    />
-                </label>
+                        <label className="space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Health Path</span>
+                            <input
+                                className={neoFieldClass}
+                                value={draft.healthPath}
+                                onChange={(event) => updateField('healthPath', event.target.value)}
+                                placeholder="/metadata"
+                                disabled={disabled}
+                            />
+                        </label>
 
-                <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Timeout (ms)</span>
-                    <input
-                        className={neoFieldClass}
-                        value={draft.timeoutMs}
-                        onChange={(event) => updateField('timeoutMs', event.target.value)}
-                        inputMode="numeric"
-                        placeholder="3500"
-                        disabled={disabled || integration.category === 'KNOWLEDGE'}
-                    />
-                </label>
+                        <label className="space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Timeout (ms)</span>
+                            <input
+                                className={neoFieldClass}
+                                value={draft.timeoutMs}
+                                onChange={(event) => updateField('timeoutMs', event.target.value)}
+                                inputMode="numeric"
+                                placeholder="3500"
+                                disabled={disabled}
+                            />
+                        </label>
 
-                <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Practice ID</span>
-                    <input
-                        className={neoFieldClass}
-                        value={draft.practiceId}
-                        onChange={(event) => updateField('practiceId', event.target.value)}
-                        placeholder="Optional practice scope"
-                        disabled={disabled || integration.category === 'KNOWLEDGE'}
-                    />
-                </label>
+                        <label className="space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Practice ID</span>
+                            <input
+                                className={neoFieldClass}
+                                value={draft.practiceId}
+                                onChange={(event) => updateField('practiceId', event.target.value)}
+                                placeholder="Optional practice scope"
+                                disabled={disabled}
+                            />
+                        </label>
 
-                <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Department ID</span>
-                    <input
-                        className={neoFieldClass}
-                        value={draft.departmentId}
-                        onChange={(event) => updateField('departmentId', event.target.value)}
-                        placeholder="Optional department scope"
-                        disabled={disabled || integration.category === 'KNOWLEDGE'}
-                    />
-                </label>
+                        <label className="space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Department ID</span>
+                            <input
+                                className={neoFieldClass}
+                                value={draft.departmentId}
+                                onChange={(event) => updateField('departmentId', event.target.value)}
+                                placeholder="Optional department scope"
+                                disabled={disabled}
+                            />
+                        </label>
+                    </>
+                ) : (
+                    <div className="md:col-span-2 xl:col-span-4 rounded-2xl bg-[var(--background)] p-4 text-sm text-muted-foreground neo-inset">
+                        Knowledge does not use an external base URL or credential ref. Those fields are omitted here so empty values are not mistaken for saved configuration.
+                    </div>
+                )}
 
                 {categoryActionField ? (
                     <label className="space-y-2">

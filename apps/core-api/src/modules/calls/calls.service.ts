@@ -20,6 +20,7 @@ export class CallsService {
     // -------------------------------------------------------------------------
 
     async findAllByBusiness(businessId: string, filters?: any): Promise<any> {
+        const startedAt = Date.now();
         const page = parseInt(filters?.page) || 1;
         const pageSize = parseInt(filters?.pageSize) || 20;
         const skip = (page - 1) * pageSize;
@@ -30,7 +31,7 @@ export class CallsService {
             .digest('hex')
             .substring(0, 8);
 
-        return this.cache.getOrSet(
+        const response = await this.cache.getOrSet(
             `calls:list:${businessId}:${filterHash}`,
             async () => {
                 const where: any = { businessId };
@@ -91,10 +92,22 @@ export class CallsService {
             },
             { ttl: CacheTTL.SHORT, tags: [`business:${businessId}`, 'calls'] },
         );
+
+        this.logger.info('Dashboard calls query completed', {
+            businessId,
+            durationMs: Date.now() - startedAt,
+            page,
+            pageSize,
+            total: response.total,
+            filters: filters ?? {},
+        });
+
+        return response;
     }
 
     async findOne(id: string): Promise<any> {
-        return this.cache.getOrSet(
+        const startedAt = Date.now();
+        const call = await this.cache.getOrSet(
             `calls:detail:${id}`,
             async () => {
                 const call = await this.prisma.callSession.findUnique({
@@ -116,6 +129,14 @@ export class CallsService {
             },
             { ttl: CacheTTL.MEDIUM, tags: ['calls', `call:${id}`] },
         );
+
+        this.logger.info('Call detail query completed', {
+            callId: id,
+            businessId: call.businessId,
+            durationMs: Date.now() - startedAt,
+        });
+
+        return call;
     }
 
     async findByTwilioSid(twilioCallSid: string): Promise<any[]> {
@@ -128,8 +149,9 @@ export class CallsService {
     }
 
     async getAnalytics(businessId: string, startDate: Date, endDate: Date): Promise<any> {
+        const startedAt = Date.now();
         const dateKey = `${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}`;
-        return this.cache.getOrSet(
+        const analytics = await this.cache.getOrSet(
             `calls:analytics:${businessId}:${dateKey}`,
             async () => {
                 const baseWhere = { businessId, startedAt: { gte: startDate, lte: endDate } };
@@ -167,6 +189,15 @@ export class CallsService {
             },
             { ttl: CacheTTL.MEDIUM, tags: [`business:${businessId}`, 'calls:analytics'] },
         );
+
+        this.logger.info('Dashboard call analytics query completed', {
+            businessId,
+            durationMs: Date.now() - startedAt,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+        });
+
+        return analytics;
     }
 
     // -------------------------------------------------------------------------
@@ -174,32 +205,49 @@ export class CallsService {
     // -------------------------------------------------------------------------
 
     async getVoicemails(businessId: string, unlistenedOnly = false): Promise<any[]> {
-        return this.prisma.voicemailRecord.findMany({
-            where: {
-                businessId,
-                ...(unlistenedOnly && { isListened: false }),
-            },
-            include: {
-                call: { select: { tag: true, startedAt: true, isEmergency: true } },
-                followUpTask: {
-                    select: {
-                        id: true,
-                        type: true,
-                        priority: true,
-                        status: true,
-                        metadata: true,
+        const startedAt = Date.now();
+        const voicemails = await this.cache.getOrSet(
+            `voicemails:${businessId}:${unlistenedOnly ? 'unlistened' : 'all'}`,
+            async () =>
+                this.prisma.voicemailRecord.findMany({
+                    where: {
+                        businessId,
+                        ...(unlistenedOnly && { isListened: false }),
                     },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
+                    include: {
+                        call: { select: { tag: true, startedAt: true, isEmergency: true } },
+                        followUpTask: {
+                            select: {
+                                id: true,
+                                type: true,
+                                priority: true,
+                                status: true,
+                                metadata: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                }),
+            { ttl: CacheTTL.SHORT, tags: [`business:${businessId}`, 'voicemails'] },
+        );
+
+        this.logger.info('Dashboard voicemail query completed', {
+            businessId,
+            durationMs: Date.now() - startedAt,
+            count: voicemails.length,
+            unlistenedOnly,
         });
+
+        return voicemails;
     }
 
     async markVoicemailListened(id: string): Promise<any> {
-        return this.prisma.voicemailRecord.update({
+        const voicemail = await this.prisma.voicemailRecord.update({
             where: { id },
             data: { isListened: true },
         });
+        await this.invalidateOperationalCaches(voicemail.businessId, voicemail.callId);
+        return voicemail;
     }
 
     async createVoicemail(data: {
@@ -251,6 +299,7 @@ export class CallsService {
             });
         }
 
+        await this.invalidateOperationalCaches(data.businessId, data.callId);
         this.logger.info('Voicemail recorded', { callId: data.callId, businessId: data.businessId });
         return voicemail;
     }
@@ -298,7 +347,9 @@ export class CallsService {
         if (dto.callerId !== undefined) data.callerId = dto.callerId;
 
         await this.cache.delete(`calls:detail:${id}`);
-        return this.prisma.callSession.update({ where: { id }, data });
+        const updated = await this.prisma.callSession.update({ where: { id }, data });
+        await this.invalidateOperationalCaches(updated.businessId, id);
+        return updated;
     }
 
     async saveTranscript(id: string, segments: any[]): Promise<any> {
@@ -318,6 +369,15 @@ export class CallsService {
 
         await this.cache.delete(`calls:detail:${id}`);
         return { success: true, segmentsAdded: segments.length };
+    }
+
+    private async invalidateOperationalCaches(businessId: string, callId?: string) {
+        await this.cache.invalidateByTag(`business:${businessId}`);
+        await this.cache.invalidateByTag('calls');
+        await this.cache.invalidateByTag('voicemails');
+        if (callId) {
+            await this.cache.delete(`calls:detail:${callId}`);
+        }
     }
 
     async createHandoff(dto: any): Promise<any> {

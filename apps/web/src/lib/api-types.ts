@@ -271,6 +271,7 @@ export interface IntegrationHealthCheckResult {
     ok: boolean;
     message: string;
     integration: BusinessIntegration;
+    latencyMs?: number;
 }
 
 export interface BusinessRuntimeConfig {

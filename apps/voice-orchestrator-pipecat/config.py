@@ -5,13 +5,14 @@ import os
 import warnings
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from dotenv import load_dotenv
 
 APP_DIR = Path(__file__).resolve().parent
 REPO_ROOT = APP_DIR.parents[1]
 ROOT_ENV_PATHS = [REPO_ROOT / ".env.local", REPO_ROOT / ".env"]
 LEGACY_ENV_PATHS = [APP_DIR / ".env"]
+ALLOW_LEGACY_ENV_FALLBACK = os.getenv("WARDLINE_ALLOW_LEGACY_VOICE_ENV") == "1"
 
 for env_path in ROOT_ENV_PATHS:
     if env_path.exists():
@@ -19,16 +20,21 @@ for env_path in ROOT_ENV_PATHS:
 
 existing_legacy_env_paths = [str(env_path) for env_path in LEGACY_ENV_PATHS if env_path.exists()]
 if existing_legacy_env_paths:
+    compatibility_message = (
+        "Set WARDLINE_ALLOW_LEGACY_VOICE_ENV=1 only if you need a temporary compatibility fallback."
+        if not ALLOW_LEGACY_ENV_FALLBACK
+        else "Temporary compatibility fallback enabled via WARDLINE_ALLOW_LEGACY_VOICE_ENV=1."
+    )
     warnings.warn(
         "Deprecated voice-orchestrator env file(s) detected: "
         f"{', '.join(existing_legacy_env_paths)}. "
-        "Use the repo-root .env.local/.env files instead.",
+        + compatibility_message,
         stacklevel=2,
     )
-
-for env_path in LEGACY_ENV_PATHS:
-    if env_path.exists():
-        load_dotenv(env_path, override=False)
+    if ALLOW_LEGACY_ENV_FALLBACK:
+        for env_path in LEGACY_ENV_PATHS:
+            if env_path.exists():
+                load_dotenv(env_path, override=False)
 
 
 class Settings(BaseSettings):
@@ -39,9 +45,12 @@ class Settings(BaseSettings):
         extra="ignore"
     )
     
-    # Server
+    # Server — do not use generic PORT here; repo-root .env sets PORT=3001 for Nest core-api.
     host: str = Field(default="0.0.0.0")
-    port: int = Field(default=3002)
+    port: int = Field(
+        default=3002,
+        validation_alias=AliasChoices("VOICE_ORCHESTRATOR_PORT", "VOICE_PORT"),
+    )
     debug: bool = Field(default=False)
     
     # Twilio

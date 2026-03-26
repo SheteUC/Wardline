@@ -16,6 +16,71 @@ const ALLOWED_CATEGORIES = new Set([
     'KNOWLEDGE',
 ]);
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+const DEFAULT_MOCK_CREDENTIALS_REF = () => process.env.MOCK_CREDENTIALS_REF || 'MOCK_ATHENAHEALTH_TOKEN';
+
+/** Merge incoming PUT payload with stored settings so omitted or empty baseUrl does not wipe seeded values. */
+function mergeAthenaSettingsPayload(
+    existingRow: { settings: unknown } | null,
+    incoming: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+    const prev = existingRow && isRecord(existingRow.settings) ? existingRow.settings : {};
+    const inc = incoming && isRecord(incoming) ? incoming : {};
+    const merged: Record<string, unknown> = {
+        ...prev,
+        ...inc,
+        endpoints: {
+            ...(isRecord(prev.endpoints) ? prev.endpoints : {}),
+            ...(isRecord(inc.endpoints) ? inc.endpoints : {}),
+        },
+    };
+    const hasExplicitBaseUrl = Object.prototype.hasOwnProperty.call(inc, 'baseUrl');
+    const incBaseUrl = inc.baseUrl;
+    const incBaseUrlEmpty =
+        !hasExplicitBaseUrl ||
+        incBaseUrl === null ||
+        incBaseUrl === undefined ||
+        String(incBaseUrl).trim() === '';
+    if (incBaseUrlEmpty) {
+        const prevBase = prev.baseUrl;
+        if (prevBase !== undefined && prevBase !== null && String(prevBase).trim() !== '') {
+            merged.baseUrl = prevBase;
+        } else if (!String(merged.baseUrl ?? '').trim()) {
+            merged.baseUrl =
+                process.env.STAGING_INTEGRATION_BASE_URL ||
+                process.env.MOCK_INTEGRATION_BASE_URL ||
+                '';
+        }
+    }
+    return merged;
+}
+
+function resolveCredentialsRef(
+    category: SupportedIntegrationCategory,
+    body: { credentialsRef?: string | null },
+    existing?: { credentialsRef: string | null } | null,
+): string | null {
+    if (category === 'KNOWLEDGE') {
+        return null;
+    }
+    const explicit = Object.prototype.hasOwnProperty.call(body, 'credentialsRef');
+    if (explicit) {
+        const v = body.credentialsRef;
+        if (v === null || v === undefined || String(v).trim() === '') {
+            return null;
+        }
+        return String(v).trim();
+    }
+    const existingRef = existing?.credentialsRef;
+    if (existingRef !== null && existingRef !== undefined && String(existingRef).trim() !== '') {
+        return existingRef;
+    }
+    return DEFAULT_MOCK_CREDENTIALS_REF();
+}
+
 @Injectable()
 export class IntegrationsService {
     constructor(
@@ -97,17 +162,33 @@ export class IntegrationsService {
         body: {
             vendor: string;
             status?: string;
-            credentialsRef?: string;
+            credentialsRef?: string | null;
             settings?: Record<string, unknown>;
             capabilities?: Record<string, unknown>;
         },
     ): Promise<any> {
         const normalizedCategory = this.normalizeCategory(category);
         const vendor = body.vendor?.trim() || this.integrationConnectors.getDefaultVendor(normalizedCategory);
+
+        const existing = await this.prisma.businessIntegration.findUnique({
+            where: {
+                businessId_category: {
+                    businessId,
+                    category: normalizedCategory as any,
+                },
+            },
+        });
+
+        const rawSettings =
+            vendor === 'wardline'
+                ? (body.settings ?? {})
+                : mergeAthenaSettingsPayload(existing, body.settings);
+        const resolvedCredentialsRef = resolveCredentialsRef(normalizedCategory, body, existing);
+
         const normalizedSettings = this.integrationConnectors.normalizeSettings(
             normalizedCategory,
             vendor,
-            body.settings,
+            rawSettings,
         );
         const normalizedCapabilities = body.capabilities ?? this.integrationConnectors.buildCapabilities(
             normalizedCategory,
@@ -126,7 +207,7 @@ export class IntegrationsService {
             update: {
                 vendor,
                 status: (body.status?.toUpperCase() ?? 'DISCONNECTED') as any,
-                credentialsRef: body.credentialsRef,
+                credentialsRef: resolvedCredentialsRef,
                 settings: normalizedSettings as any,
                 capabilities: normalizedCapabilities as any,
             },
@@ -135,7 +216,7 @@ export class IntegrationsService {
                 category: normalizedCategory as any,
                 vendor,
                 status: (body.status?.toUpperCase() ?? 'DISCONNECTED') as any,
-                credentialsRef: body.credentialsRef,
+                credentialsRef: resolvedCredentialsRef,
                 settings: normalizedSettings as any,
                 capabilities: normalizedCapabilities as any,
             },
@@ -149,7 +230,7 @@ export class IntegrationsService {
             metadata: {
                 category: normalizedCategory,
                 vendor,
-                credentialsRef: body.credentialsRef,
+                credentialsRef: resolvedCredentialsRef,
             },
         });
         await this.invalidate(businessId);
@@ -205,6 +286,10 @@ export class IntegrationsService {
             ok: healthResult.ok,
             message: healthResult.message,
             integration: updated,
+            latencyMs:
+                typeof healthResult.metadata?.latencyMs === 'number'
+                    ? healthResult.metadata.latencyMs
+                    : undefined,
         };
     }
 

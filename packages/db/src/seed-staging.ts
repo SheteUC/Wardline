@@ -1,0 +1,328 @@
+import { prisma, UserRole } from './index';
+import { seedAgentsForBusiness } from './seed-agents';
+
+const STAGING_BUSINESS_NAME = process.env.STAGING_BUSINESS_NAME || 'Wardline Family Medicine Staging';
+const STAGING_BUSINESS_SLUG = process.env.STAGING_BUSINESS_SLUG || 'wardline-family-medicine-staging';
+const STAGING_PHONE_NUMBER = process.env.STAGING_PHONE_NUMBER || '+15551239999';
+const STAGING_TWILIO_SID = process.env.STAGING_TWILIO_SID || 'PN_STAGING_0001';
+const STAGING_CLERK_USER_ID = process.env.STAGING_CLERK_USER_ID || 'user_staging_owner';
+const STAGING_USER_EMAIL = process.env.STAGING_USER_EMAIL || 'staging.owner@wardline.local';
+const STAGING_USER_NAME = process.env.STAGING_USER_NAME || 'Staging Owner';
+
+const DEFAULT_INTEGRATION_BASE_URL =
+    process.env.STAGING_INTEGRATION_BASE_URL || process.env.ATHENAHEALTH_BASE_URL || '';
+
+const FAMILY_MEDICINE_HOURS = [
+    { dayOfWeek: 0, isClosed: true, startTime: null, endTime: null },
+    { dayOfWeek: 1, isClosed: false, startTime: '08:00', endTime: '17:00' },
+    { dayOfWeek: 2, isClosed: false, startTime: '08:00', endTime: '17:00' },
+    { dayOfWeek: 3, isClosed: false, startTime: '08:00', endTime: '17:00' },
+    { dayOfWeek: 4, isClosed: false, startTime: '08:00', endTime: '17:00' },
+    { dayOfWeek: 5, isClosed: false, startTime: '08:00', endTime: '17:00' },
+    { dayOfWeek: 6, isClosed: true, startTime: null, endTime: null },
+];
+
+function envOrDefault(key: string, fallback: string) {
+    return process.env[key] || fallback;
+}
+
+function createStagingWorkflowGraph() {
+    return {
+        nodes: [
+            {
+                id: 'start',
+                type: 'start',
+                position: { x: 0, y: 0 },
+                config: { label: 'Start' },
+            },
+            {
+                id: 'capture-follow-up',
+                type: 'integration',
+                position: { x: 240, y: 0 },
+                config: {
+                    label: 'Staff Follow-up',
+                    runtimeAction: 'manual-follow-up',
+                    integrationCategory: 'MANUAL',
+                    requiresConfirmation: false,
+                    fallbackBehavior: 'create_follow_up',
+                    prompt: 'Capture unresolved requests for staff follow-up during staging validation.',
+                },
+            },
+            {
+                id: 'end',
+                type: 'end',
+                position: { x: 480, y: 0 },
+                config: {
+                    endType: 'hangup',
+                    closingMessage: 'Your request has been captured.',
+                },
+            },
+        ],
+        edges: [
+            { id: 'edge-start-follow-up', fromNodeId: 'start', toNodeId: 'capture-follow-up' },
+            { id: 'edge-follow-up-end', fromNodeId: 'capture-follow-up', toNodeId: 'end' },
+        ],
+    };
+}
+
+function buildIntegrationSettings(category: 'SCHEDULING' | 'EHR_REFILL' | 'BILLING' | 'INSURANCE') {
+    const baseUrl = envOrDefault(`STAGING_${category}_BASE_URL`, DEFAULT_INTEGRATION_BASE_URL);
+    const endpoints = {
+        health: envOrDefault(`STAGING_${category}_HEALTH_PATH`, '/metadata'),
+        appointmentRequest: envOrDefault('STAGING_SCHEDULING_APPOINTMENT_PATH', '/appointments/request'),
+        refillRequest: envOrDefault('STAGING_EHR_REFILL_PATH', '/medication-refills'),
+        insuranceCheck: envOrDefault('STAGING_INSURANCE_CHECK_PATH', '/coverage/check'),
+        billingRequest: envOrDefault('STAGING_BILLING_REQUEST_PATH', '/billing/cases'),
+    };
+
+    return {
+        baseUrl,
+        healthPath: endpoints.health,
+        timeoutMs: Number(process.env.STAGING_CONNECTOR_TIMEOUT_MS || 3500),
+        practiceId: process.env.STAGING_PRACTICE_ID || 'family-medicine-staging',
+        departmentId: process.env.STAGING_DEPARTMENT_ID || 'primary-care',
+        endpoints,
+    };
+}
+
+const DEFAULT_STAGING_CREDENTIALS_REF =
+    process.env.MOCK_CREDENTIALS_REF || 'MOCK_ATHENAHEALTH_TOKEN';
+
+function credentialsRefFor(category: 'SCHEDULING' | 'EHR_REFILL' | 'BILLING' | 'INSURANCE') {
+    switch (category) {
+        case 'SCHEDULING':
+            return process.env.STAGING_SCHEDULING_CREDENTIALS_REF || DEFAULT_STAGING_CREDENTIALS_REF;
+        case 'EHR_REFILL':
+            return process.env.STAGING_EHR_REFILL_CREDENTIALS_REF || DEFAULT_STAGING_CREDENTIALS_REF;
+        case 'INSURANCE':
+            return process.env.STAGING_INSURANCE_CREDENTIALS_REF || DEFAULT_STAGING_CREDENTIALS_REF;
+        case 'BILLING':
+            return process.env.STAGING_BILLING_CREDENTIALS_REF || DEFAULT_STAGING_CREDENTIALS_REF;
+    }
+}
+
+async function ensureOwnerUser() {
+    return prisma.user.upsert({
+        where: { clerkUserId: STAGING_CLERK_USER_ID },
+        update: {
+            email: STAGING_USER_EMAIL,
+            fullName: STAGING_USER_NAME,
+        },
+        create: {
+            clerkUserId: STAGING_CLERK_USER_ID,
+            email: STAGING_USER_EMAIL,
+            fullName: STAGING_USER_NAME,
+        },
+    });
+}
+
+async function ensureBusiness() {
+    return prisma.business.upsert({
+        where: { slug: STAGING_BUSINESS_SLUG },
+        update: {
+            name: STAGING_BUSINESS_NAME,
+            timeZone: 'America/New_York',
+            status: 'ACTIVE',
+        },
+        create: {
+            name: STAGING_BUSINESS_NAME,
+            slug: STAGING_BUSINESS_SLUG,
+            timeZone: 'America/New_York',
+            status: 'ACTIVE',
+        },
+    });
+}
+
+async function main() {
+    console.log('Creating staging validation fixture...');
+
+    const owner = await ensureOwnerUser();
+    const business = await ensureBusiness();
+
+    await prisma.businessUser.upsert({
+        where: {
+            businessId_userId: {
+                businessId: business.id,
+                userId: owner.id,
+            },
+        },
+        update: {
+            role: UserRole.OWNER,
+        },
+        create: {
+            businessId: business.id,
+            userId: owner.id,
+            role: UserRole.OWNER,
+        },
+    });
+
+    await prisma.businessSettings.upsert({
+        where: { businessId: business.id },
+        update: {
+            recordingDefault: 'ASK',
+            transcriptRetentionDays: 7,
+            operatingHours: FAMILY_MEDICINE_HOURS as any,
+            emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
+            outOfScopeKeywords: ['legal advice', 'diagnosis'],
+        },
+        create: {
+            businessId: business.id,
+            recordingDefault: 'ASK',
+            transcriptRetentionDays: 7,
+            operatingHours: FAMILY_MEDICINE_HOURS as any,
+            emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
+            outOfScopeKeywords: ['legal advice', 'diagnosis'],
+        },
+    });
+
+    for (const category of ['SCHEDULING', 'EHR_REFILL', 'BILLING', 'INSURANCE'] as const) {
+        await prisma.businessIntegration.upsert({
+            where: {
+                businessId_category: {
+                    businessId: business.id,
+                    category,
+                },
+            },
+            update: {
+                vendor: 'athenahealth',
+                status: 'DISCONNECTED',
+                credentialsRef: credentialsRefFor(category),
+                settings: buildIntegrationSettings(category) as any,
+                capabilities: {} as any,
+                lastHealthCheckAt: null,
+            },
+            create: {
+                businessId: business.id,
+                category,
+                vendor: 'athenahealth',
+                status: 'DISCONNECTED',
+                credentialsRef: credentialsRefFor(category),
+                settings: buildIntegrationSettings(category) as any,
+                capabilities: {} as any,
+            },
+        });
+    }
+
+    await prisma.businessIntegration.upsert({
+        where: {
+            businessId_category: {
+                businessId: business.id,
+                category: 'KNOWLEDGE',
+            },
+        },
+        update: {
+            vendor: 'wardline',
+            status: 'CONNECTED',
+            credentialsRef: null,
+            settings: {
+                source: 'wardline',
+                category: 'KNOWLEDGE',
+                enabled: true,
+            } as any,
+            capabilities: {
+                vendor: 'wardline',
+                category: 'KNOWLEDGE',
+                liveExecution: true,
+                canAnswerFaq: true,
+                healthChecked: true,
+            } as any,
+            lastHealthCheckAt: new Date(),
+        },
+        create: {
+            businessId: business.id,
+            category: 'KNOWLEDGE',
+            vendor: 'wardline',
+            status: 'CONNECTED',
+            settings: {
+                source: 'wardline',
+                category: 'KNOWLEDGE',
+                enabled: true,
+            } as any,
+            capabilities: {
+                vendor: 'wardline',
+                category: 'KNOWLEDGE',
+                liveExecution: true,
+                canAnswerFaq: true,
+                healthChecked: true,
+            } as any,
+            lastHealthCheckAt: new Date(),
+        },
+    });
+
+    let workflow = await prisma.workflow.findFirst({
+        where: {
+            businessId: business.id,
+            name: 'Staging Validation Flow',
+        },
+    });
+
+    if (!workflow) {
+        workflow = await prisma.workflow.create({
+            data: {
+                businessId: business.id,
+                name: 'Staging Validation Flow',
+                description: 'Canonical workflow for staging proof and launch-readiness checks.',
+                status: 'PUBLISHED',
+            },
+        });
+    } else {
+        workflow = await prisma.workflow.update({
+            where: { id: workflow.id },
+            data: {
+                status: 'PUBLISHED',
+                description: 'Canonical workflow for staging proof and launch-readiness checks.',
+            },
+        });
+    }
+
+    await prisma.workflowVersion.deleteMany({
+        where: { workflowId: workflow.id },
+    });
+
+    await prisma.workflowVersion.create({
+        data: {
+            workflowId: workflow.id,
+            versionNumber: 1,
+            graphJson: createStagingWorkflowGraph() as any,
+            createdByUserId: owner.id,
+            approvedByUserId: owner.id,
+            status: 'PUBLISHED',
+            publishedAt: new Date(),
+        },
+    });
+
+    await prisma.phoneNumber.upsert({
+        where: { twilioPhoneNumber: STAGING_PHONE_NUMBER },
+        update: {
+            businessId: business.id,
+            workflowId: workflow.id,
+            twilioSid: STAGING_TWILIO_SID,
+            label: 'Staging Main Line',
+        },
+        create: {
+            businessId: business.id,
+            workflowId: workflow.id,
+            twilioPhoneNumber: STAGING_PHONE_NUMBER,
+            twilioSid: STAGING_TWILIO_SID,
+            label: 'Staging Main Line',
+        },
+    });
+
+    await seedAgentsForBusiness(business.id);
+
+    console.log('Staging fixture ready.');
+    console.log(`Business: ${business.name} (${business.id})`);
+    console.log(`Owner Clerk user: ${owner.clerkUserId}`);
+    console.log(`Phone number: ${STAGING_PHONE_NUMBER}`);
+    console.log('Next steps:');
+    console.log('1. Run integration health checks from /dashboard/integration-failures');
+    console.log('2. Validate one Gather and one streaming call flow');
+    console.log('3. Confirm live success and fallback paths for each runtime action category');
+}
+
+main()
+    .catch((error) => {
+        console.error(error);
+        process.exitCode = 1;
+    })
+    .finally(() => prisma.$disconnect());

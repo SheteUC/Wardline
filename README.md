@@ -333,6 +333,17 @@ This creates:
 4. Open the integration screen and run a health check if you want to confirm capabilities manually.
 5. Run the smoke commands or manual call flows described below.
 
+### Staging Validation Flow
+
+Use the staging preflight and seed path when moving from mock validation to real secrets:
+
+```bash
+pnpm test:staging:preflight
+pnpm db:seed:staging
+```
+
+The full staging checklist lives in [docs/STAGING_VALIDATION.md](./docs/STAGING_VALIDATION.md).
+
 ## Environment Variables
 
 ### Shared / database
@@ -350,6 +361,7 @@ This creates:
 | `NEXT_PUBLIC_API_BASE_URL` | Usually `http://localhost:3001` locally |
 | `NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL` | Usually `http://localhost:3002` locally |
 | `NEXT_PUBLIC_CORE_API_URL` | Used by some websocket hooks |
+| `NEXT_PUBLIC_WEB_BASE_URL` | Public-facing web origin; defaults to `WEB_BASE_URL` for staging env preflight |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk frontend auth |
 | `CLERK_SECRET_KEY` | Required server-side in Next.js |
 
@@ -419,11 +431,19 @@ pnpm test:smoke:voice:streaming
 pnpm test:smoke:local
 ```
 
-The voice smoke commands expect `pytest` (and `pytest-cov`, which `pytest.ini` uses for coverage) in the active Python environment. Install voice requirements, which include test dependencies:
+The voice smoke commands use the voice app virtualenv automatically when `apps/voice-orchestrator-pipecat/venv` exists. You can override the interpreter with `WARDLINE_VOICE_PYTHON=/path/to/python` if needed.
+
+Install voice requirements, which include the Python runtime dependencies used by the smoke path:
 
 ```bash
 python -m pip install -r apps/voice-orchestrator-pipecat/requirements.txt
 python -m pip install pytest pytest-asyncio pytest-mock pytest-cov
+```
+
+For staging preflight, verify the required environment variables first:
+
+```bash
+pnpm test:staging:env
 ```
 
 Focused voice runtime tests are:

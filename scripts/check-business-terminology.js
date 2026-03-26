@@ -8,7 +8,7 @@ const TARGETS = [
     path.join(ROOT, 'apps', 'voice-orchestrator-pipecat'),
 ];
 
-const IGNORE_SEGMENTS = new Set(['venv', '__pycache__', 'tests', 'logs']);
+const IGNORE_SEGMENTS = new Set(['venv', '__pycache__', 'tests', 'logs', '.cache', '.pytest_cache']);
 const TEXT_FILE_EXTENSIONS = new Set([
     '.ts',
     '.tsx',
@@ -40,7 +40,15 @@ function shouldIgnore(filePath) {
 }
 
 function getFiles(dir) {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    let entries = [];
+    try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (error) {
+        if (error && (error.code === 'EPERM' || error.code === 'EACCES')) {
+            return [];
+        }
+        throw error;
+    }
     const files = [];
 
     for (const entry of entries) {

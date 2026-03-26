@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../../cache/cache.service';
+import { Logger } from '@wardline/utils';
 
 type FollowUpTaskType =
     | 'URGENT_CALLBACK'
@@ -39,6 +40,8 @@ const priorityWeight: Record<FollowUpTaskPriority, number> = {
 
 @Injectable()
 export class FollowUpTasksService {
+    private readonly logger = new Logger(FollowUpTasksService.name);
+
     constructor(
         private readonly prisma: PrismaService,
         private readonly cache: CacheService,
@@ -50,9 +53,10 @@ export class FollowUpTasksService {
         priority?: string;
         search?: string;
     }): Promise<any[]> {
+        const startedAt = Date.now();
         const cacheKey = `follow-up-tasks:${businessId}:${JSON.stringify(filters ?? {})}`;
 
-        return this.cache.getOrSet(
+        const tasks = await this.cache.getOrSet(
             cacheKey,
             async () => {
                 const where: Record<string, unknown> = { businessId };
@@ -104,6 +108,15 @@ export class FollowUpTasksService {
                 tags: [`business:${businessId}`, 'follow-up-tasks'],
             },
         );
+
+        this.logger.info('Dashboard follow-up query completed', {
+            businessId,
+            durationMs: Date.now() - startedAt,
+            count: tasks.length,
+            filters: filters ?? {},
+        });
+
+        return tasks;
     }
 
     async create(input: CreateFollowUpTaskInput): Promise<any> {

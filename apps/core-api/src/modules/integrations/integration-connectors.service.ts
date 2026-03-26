@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Logger } from '@wardline/utils';
 
 export type SupportedIntegrationCategory =
     | 'SCHEDULING'
@@ -138,6 +139,8 @@ function isTimeoutLikeError(error: unknown): boolean {
 
 @Injectable()
 export class IntegrationConnectorsService {
+    private readonly logger = new Logger(IntegrationConnectorsService.name);
+
     getAllCategories(): SupportedIntegrationCategory[] {
         return [...ALL_CATEGORIES];
     }
@@ -276,6 +279,7 @@ export class IntegrationConnectorsService {
     }
 
     async testIntegration(integration: ResolvedBusinessIntegration): Promise<IntegrationHealthCheckResult> {
+        const startedAt = Date.now();
         const normalizedSettings = this.normalizeSettings(
             integration.category,
             integration.vendor,
@@ -294,6 +298,7 @@ export class IntegrationConnectorsService {
                     normalizedSettings,
                     true,
                 ),
+                metadata: { latencyMs: Date.now() - startedAt },
             };
         }
 
@@ -312,7 +317,7 @@ export class IntegrationConnectorsService {
                     normalizedSettings,
                     false,
                 ),
-                metadata: { missing: ['baseUrl'] },
+                metadata: { missing: ['baseUrl'], latencyMs: Date.now() - startedAt },
             };
         }
 
@@ -328,7 +333,7 @@ export class IntegrationConnectorsService {
                     normalizedSettings,
                     false,
                 ),
-                metadata: { missing: ['credentialsRef'] },
+                metadata: { missing: ['credentialsRef'], latencyMs: Date.now() - startedAt },
             };
         }
 
@@ -345,7 +350,7 @@ export class IntegrationConnectorsService {
                     normalizedSettings,
                     false,
                 ),
-                metadata: { missing: ['healthPath'] },
+                metadata: { missing: ['healthPath'], latencyMs: Date.now() - startedAt },
             };
         }
 
@@ -360,12 +365,25 @@ export class IntegrationConnectorsService {
             });
 
             const ok = response.ok;
-            const capabilities = this.buildCapabilities(
-                integration.category,
-                integration.vendor,
-                normalizedSettings,
+            const latencyMs = Date.now() - startedAt;
+            const capabilities = {
+                ...this.buildCapabilities(
+                    integration.category,
+                    integration.vendor,
+                    normalizedSettings,
+                    ok,
+                ),
+                lastHealthCheckLatencyMs: latencyMs,
+            };
+
+            this.logger.info('Integration health check completed', {
+                businessId: integration.businessId,
+                category: integration.category,
+                vendor: integration.vendor,
+                statusCode: response.status,
                 ok,
-            );
+                latencyMs,
+            });
 
             return {
                 ok,
@@ -379,25 +397,38 @@ export class IntegrationConnectorsService {
                     statusCode: response.status,
                     testedUrl: healthUrl,
                     responsePreview: response.bodyPreview,
+                    latencyMs,
                 },
             };
         } catch (error) {
+            const latencyMs = Date.now() - startedAt;
+            this.logger.warn('Integration health check failed', {
+                businessId: integration.businessId,
+                category: integration.category,
+                vendor: integration.vendor,
+                latencyMs,
+            });
             return {
                 ok: false,
                 status: 'ERROR',
                 message: error instanceof Error ? error.message : 'athenahealth health check failed.',
                 settings: normalizedSettings,
-                capabilities: this.buildCapabilities(
-                    integration.category,
-                    integration.vendor,
-                    normalizedSettings,
-                    false,
-                ),
+                capabilities: {
+                    ...this.buildCapabilities(
+                        integration.category,
+                        integration.vendor,
+                        normalizedSettings,
+                        false,
+                    ),
+                    lastHealthCheckLatencyMs: latencyMs,
+                },
+                metadata: { latencyMs },
             };
         }
     }
 
     async execute(request: IntegrationExecutionRequest): Promise<IntegrationExecutionResult> {
+        const startedAt = Date.now();
         const normalizedSettings = this.normalizeSettings(
             request.integration.category,
             request.integration.vendor,
@@ -412,7 +443,7 @@ export class IntegrationConnectorsService {
                     request.integration.category === 'KNOWLEDGE'
                         ? 'Knowledge lookups stay on the internal Wardline source.'
                         : 'This integration category is not executed live by Wardline.',
-                data: { source: 'wardline' },
+                data: { source: 'wardline', latencyMs: Date.now() - startedAt },
                 fallbackReason: request.integration.category === 'KNOWLEDGE' ? undefined : 'unsupported_vendor',
             };
         }
@@ -423,6 +454,7 @@ export class IntegrationConnectorsService {
                 ok: false,
                 handledLive: false,
                 message: 'No credential secret is configured for this integration.',
+                data: { latencyMs: Date.now() - startedAt },
                 fallbackReason: 'missing_credentials',
             };
         }
@@ -435,6 +467,7 @@ export class IntegrationConnectorsService {
                 ok: false,
                 handledLive: false,
                 message: 'This athenahealth action is not configured for live execution.',
+                data: { latencyMs: Date.now() - startedAt },
                 fallbackReason: 'unsupported_capability',
             };
         }
@@ -454,6 +487,15 @@ export class IntegrationConnectorsService {
             });
 
             if (!response.ok) {
+                const latencyMs = Date.now() - startedAt;
+                this.logger.warn('Integration execution downgraded', {
+                    businessId: request.businessId,
+                    category: request.integration.category,
+                    vendor: request.integration.vendor,
+                    actionName: request.actionName,
+                    latencyMs,
+                    statusCode: response.status,
+                });
                 return {
                     ok: false,
                     handledLive: false,
@@ -462,11 +504,20 @@ export class IntegrationConnectorsService {
                     data: {
                         statusCode: response.status,
                         responsePreview: response.bodyPreview,
+                        latencyMs,
                     },
                 };
             }
 
             const parsed = response.parsedBody;
+            const latencyMs = Date.now() - startedAt;
+            this.logger.info('Integration execution completed', {
+                businessId: request.businessId,
+                category: request.integration.category,
+                vendor: request.integration.vendor,
+                actionName: request.actionName,
+                latencyMs,
+            });
             return {
                 ok: true,
                 handledLive: true,
@@ -476,18 +527,29 @@ export class IntegrationConnectorsService {
                         (isRecord(parsed) && asString(parsed.id)) ||
                         (isRecord(parsed) && asString(parsed.referenceId)) ||
                         `${request.actionName}:${Date.now()}`,
+                    latencyMs,
                     response: parsed,
                 },
                 metadata: {
                     requestedUrl: url,
                     actionName: request.actionName,
+                    latencyMs,
                 },
             };
         } catch (error) {
+            const latencyMs = Date.now() - startedAt;
+            this.logger.warn('Integration execution failed', {
+                businessId: request.businessId,
+                category: request.integration.category,
+                vendor: request.integration.vendor,
+                actionName: request.actionName,
+                latencyMs,
+            });
             return {
                 ok: false,
                 handledLive: false,
                 message: error instanceof Error ? error.message : 'Live integration execution failed.',
+                data: { latencyMs },
                 fallbackReason: isTimeoutLikeError(error) ? 'timeout' : 'request_error',
             };
         }

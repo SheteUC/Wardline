@@ -9,6 +9,7 @@ const CacheKeys = {
     businesses: (userId?: string) => `businesses:list:${userId ?? 'all'}`,
     business: (id: string) => `businesses:${id}`,
     runtimeConfig: (id: string) => `businesses:${id}:runtime-config`,
+    phoneLookup: (normalizedPhone: string) => `businesses:by-phone:${normalizedPhone}`,
 };
 
 @Injectable()
@@ -147,27 +148,61 @@ export class BusinessesService {
 
     async findByPhone(phoneNumber: string): Promise<any> {
         const normalized = phoneNumber.replace(/\D/g, '');
-        const phoneNumbers = await this.prisma.phoneNumber.findMany({
-            include: {
-                business: {
-                    include: {
-                        settings: true,
-                        phoneNumbers: true,
+        const cacheKey = CacheKeys.phoneLookup(normalized.slice(-10) || normalized);
+
+        return this.cache.getOrSet(
+            cacheKey,
+            async () => {
+                const last10 = normalized.slice(-10);
+                const candidates = Array.from(
+                    new Set(
+                        [
+                            phoneNumber.trim(),
+                            normalized,
+                            last10,
+                            last10 ? `+1${last10}` : null,
+                            last10 ? `1${last10}` : null,
+                        ].filter((value): value is string => Boolean(value)),
+                    ),
+                );
+
+                const phoneNumbers = await this.prisma.phoneNumber.findMany({
+                    where: {
+                        OR: candidates.flatMap((candidate) => [
+                            { twilioPhoneNumber: candidate },
+                            { twilioPhoneNumber: { endsWith: candidate } },
+                        ]),
                     },
-                },
+                    include: {
+                        business: {
+                            include: {
+                                settings: true,
+                                phoneNumbers: true,
+                            },
+                        },
+                    },
+                    take: 10,
+                });
+
+                const match = phoneNumbers.find((entry) => {
+                    const candidate = entry.twilioPhoneNumber.replace(/\D/g, '');
+                    return candidate.endsWith(last10 || normalized) || normalized.endsWith(candidate);
+                }) ?? phoneNumbers[0];
+
+                if (!match) throw new NotFoundException(`Business with phone "${phoneNumber}" not found`);
+                if (match.business.settings) {
+                    match.business.settings.operatingHours = normalizeOperatingHours(match.business.settings.operatingHours) as any;
+                }
+
+                this.logger.debug('Resolved business by phone', {
+                    phone: normalized.slice(-4),
+                    businessId: match.business.id,
+                });
+
+                return match.business;
             },
-        });
-
-        const match = phoneNumbers.find((entry) => {
-            const candidate = entry.twilioPhoneNumber.replace(/\D/g, '');
-            return candidate.endsWith(normalized) || normalized.endsWith(candidate);
-        });
-
-        if (!match) throw new NotFoundException(`Business with phone "${phoneNumber}" not found`);
-        if (match.business.settings) {
-            match.business.settings.operatingHours = normalizeOperatingHours(match.business.settings.operatingHours) as any;
-        }
-        return match.business;
+            { ttl: CacheTTL.MEDIUM, tags: ['businesses'] },
+        );
     }
 
     async update(id: string, dto: Partial<{ name: string; slug: string; timeZone: string }>): Promise<any> {
@@ -219,7 +254,8 @@ export class BusinessesService {
     }
 
     async getRuntimeConfig(id: string): Promise<any> {
-        return this.cache.getOrSet(
+        const startedAt = Date.now();
+        const runtimeConfig = await this.cache.getOrSet(
             CacheKeys.runtimeConfig(id),
             async () => {
                 const business = await this.prisma.business.findUnique({
@@ -279,8 +315,16 @@ export class BusinessesService {
                     activeWorkflow,
                 };
             },
-            { ttl: CacheTTL.MEDIUM, tags: ['businesses', `business:${id}`, 'runtime-config'] },
+            {
+                ttl: CacheTTL.MEDIUM,
+                tags: ['businesses', `business:${id}`, 'runtime-config'],
+            },
         );
+        this.logger.debug('Loaded runtime config', {
+            businessId: id,
+            durationMs: Date.now() - startedAt,
+        });
+        return runtimeConfig;
     }
 
     async suspend(id: string): Promise<any> {
