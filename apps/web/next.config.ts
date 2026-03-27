@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL:
       process.env.NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL ??
       process.env.NEXT_PUBLIC_VOICE_API_URL ??
-      "http://localhost:3002",
+      "http://localhost:3003",
   },
   images: {
     remotePatterns: [

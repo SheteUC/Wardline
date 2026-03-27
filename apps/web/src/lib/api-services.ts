@@ -1,7 +1,4 @@
 import type {
-    AgentCatalogItem,
-    AgentListItem,
-    AgentStats,
     BusinessIntegration,
     IntegrationHealthCheckResult,
     BusinessRuntimeConfig,
@@ -14,8 +11,6 @@ import type {
     SystemHealth,
     TeamMember,
     VoicemailRecord,
-    WorkflowDetail,
-    WorkflowListItem,
 } from './api-types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
@@ -74,46 +69,6 @@ export const createCallsService = (client: ApiClientMethods, businessId: string)
 
     async markVoicemailListened(id: string): Promise<VoicemailRecord> {
         return client.patch<VoicemailRecord>(`/api/voicemails/${id}/mark-listened`, {});
-    },
-});
-
-export const createWorkflowsService = (client: ApiClientMethods, businessId: string) => ({
-    async getWorkflows(): Promise<WorkflowListItem[]> {
-        return client.get<WorkflowListItem[]>(`/businesses/${businessId}/workflows`);
-    },
-
-    async getWorkflowById(workflowId: string): Promise<WorkflowDetail> {
-        return client.get<WorkflowDetail>(`/businesses/${businessId}/workflows/${workflowId}`);
-    },
-
-    async createWorkflow(data: {
-        name: string;
-        description?: string;
-        userId?: string;
-        graphJson?: unknown;
-    }): Promise<WorkflowDetail> {
-        return client.post<WorkflowDetail>(`/businesses/${businessId}/workflows`, data);
-    },
-
-    async createVersion(workflowId: string, data: {
-        userId?: string;
-        graphJson: unknown;
-    }): Promise<unknown> {
-        return client.post(`/businesses/${businessId}/workflows/${workflowId}/versions`, data);
-    },
-
-    async publishVersion(versionId: string, approverUserId?: string): Promise<unknown> {
-        return client.post(`/businesses/${businessId}/workflows/versions/${versionId}/publish`, {
-            approverUserId,
-        });
-    },
-
-    async validateWorkflow(workflowId: string): Promise<unknown> {
-        return client.post(`/businesses/${businessId}/workflows/${workflowId}/validate`, {});
-    },
-
-    async simulateWorkflow(workflowId: string, payload: unknown): Promise<unknown> {
-        return client.post(`/businesses/${businessId}/workflows/${workflowId}/simulate`, payload);
     },
 });
 
@@ -203,61 +158,10 @@ export const createSystemService = () => ({
     },
 
     async getVoiceOrchestratorHealth(): Promise<unknown> {
-        const url = process.env.NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL || 'http://localhost:3002';
+        const url = process.env.NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL || 'http://localhost:3003';
         const response = await fetch(`${url}/health`);
         if (!response.ok) throw new Error('Voice orchestrator health check failed');
         return response.json();
-    },
-});
-
-export const createAgentsService = (client: ApiClientMethods, businessId: string) => ({
-    async getCatalog(): Promise<AgentCatalogItem[]> {
-        return client.get<AgentCatalogItem[]>(`/api/businesses/${businessId}/agents/catalog`);
-    },
-
-    async getAgents(): Promise<AgentListItem[]> {
-        return client.get<AgentListItem[]>(`/api/businesses/${businessId}/agents`);
-    },
-
-    async getAgentById(agentId: string): Promise<AgentListItem> {
-        return client.get<AgentListItem>(`/api/businesses/${businessId}/agents/${agentId}`);
-    },
-
-    async getAgentStats(agentId: string): Promise<AgentStats> {
-        return client.get<AgentStats>(`/api/businesses/${businessId}/agents/${agentId}/stats`);
-    },
-
-    async deployAgent(catalogId: string): Promise<AgentListItem> {
-        return client.post<AgentListItem>(`/api/businesses/${businessId}/agents/deploy/${catalogId}`, {});
-    },
-
-    async updateAgentStatus(agentId: string, status: AgentListItem['status']): Promise<AgentListItem> {
-        return client.patch<AgentListItem>(`/api/businesses/${businessId}/agents/${agentId}/status`, { status });
-    },
-
-    async updateAgentToolConfig(agentId: string, toolConfig: Record<string, unknown>): Promise<AgentListItem> {
-        return client.patch<AgentListItem>(
-            `/api/businesses/${businessId}/agents/${agentId}/tool-config`,
-            toolConfig,
-        );
-    },
-
-    async updateAgentConfig(agentId: string, agentConfig: Record<string, unknown>): Promise<AgentListItem> {
-        return client.patch<AgentListItem>(
-            `/api/businesses/${businessId}/agents/${agentId}/agent-config`,
-            agentConfig,
-        );
-    },
-
-    async updateNodeGraph(agentId: string, nodeGraph: Record<string, unknown>): Promise<AgentListItem> {
-        return client.patch<AgentListItem>(
-            `/api/businesses/${businessId}/agents/${agentId}/node-graph`,
-            nodeGraph,
-        );
-    },
-
-    async deleteAgent(agentId: string): Promise<void> {
-        return client.delete<void>(`/api/businesses/${businessId}/agents/${agentId}`);
     },
 });
 

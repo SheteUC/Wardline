@@ -6,11 +6,10 @@ Use this document as the launch-readiness checklist during the Voice Runtime V2 
 
 Prove that the Practice Setup-driven runtime behaves correctly with real staging secrets, real Twilio callbacks, and one canonical family-medicine business before any broader feature work resumes.
 
-Current migration defaults:
+Current defaults:
 
-- Voice Runtime V2 is the target runtime for new staging and pilot validation.
-- The legacy Python orchestrator remains a rollback path only until V2 reaches parity.
-- Practice Setup remains the only customer-facing configuration surface in both cases.
+- Voice Runtime V2 is the only supported runtime target for staging and pilot validation.
+- Practice Setup remains the only customer-facing configuration surface.
 
 ## Preconditions
 
@@ -67,7 +66,7 @@ In `/dashboard/settings`:
 3. Confirm service policies are saved.
 4. Confirm FAQ / knowledge content is present.
 5. Confirm the readiness checklist shows the business as ready for live calls once integrations are connected.
-6. Treat the generated runtime workflow as an internal artifact behind these settings; do not use the workflow editor for normal staging setup.
+6. Treat the generated runtime artifact as an internal detail behind these settings; there is no supported workflow editor in the product path.
 
 ### Integration health
 
@@ -108,39 +107,25 @@ For every run, confirm:
 - fallback reason when downgraded
 - linked follow-up task when fallback happens
 
-### Gather voice path
+### Voice Runtime V2 session flow
 
-This is a rollback-only validation set during migration. Keep it green until Twilio traffic fully cuts over to V2.
+Validate one full Voice Runtime V2 scenario set:
 
-Validate one full Gather scenario set:
-
-1. emergency redirect
-2. after-hours urgent voicemail
-3. confirmed live appointment request
-4. confirmed fallback case
-5. confirmation repair:
+1. session bootstrap succeeds end to end
+2. confirmation gate blocks write actions until explicit approval
+3. one live action succeeds
+4. one fallback case creates the correct follow-up metadata
+5. confirmation repair works:
    - caller asks to repeat or summarize the pending request
    - caller says they want to change the pending request before submission
-6. receptionist quality:
+6. receptionist quality checks pass:
    - office-hours question gets a direct answer
    - practice-services question gets a direct answer
    - the caller can recover after a misunderstanding without the conversation stalling
 
-### Streaming voice path
+### Voice Runtime V2 local harness
 
-This is the parity target for Voice Runtime V2. Validate the same business outcomes under one supervisor-led receptionist flow.
-
-Validate one full streaming scenario set:
-
-1. connection stays healthy end to end
-2. confirmation gate blocks write actions until explicit approval
-3. one live action succeeds
-4. one fallback case creates the correct follow-up metadata
-5. the same confirmation-repair and receptionist-quality checks used for Gather behave acceptably in streaming mode
-
-### Voice Runtime V2 text-turn harness
-
-Before or alongside full telephony cutover, validate the V2 control-plane harness locally:
+Before or alongside full telephony cutover, validate the V2 local/session harness:
 
 1. start the service with `pnpm voice:v2:dev`
 2. run `pnpm test:voice:v2`
@@ -184,8 +169,7 @@ Wardline is staging-ready only when all of the following are true:
 - CI smoke-validation is green
 - staging env check passes
 - staging integration health is green
-- one Gather rollback validation set passes
-- one streaming / Voice Runtime V2 validation set passes
+- one Voice Runtime V2 validation set passes
 - each runtime-action category has:
   - one successful live path
   - one verified fallback path

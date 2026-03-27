@@ -14,8 +14,6 @@
     "seed:smoke": "tsx src/seed-smoke.ts",
     "seed:staging": "tsx src/seed-staging.ts",
     "seed:test": "tsx src/seed-test-data.ts",
-    "seed:agents": "tsx src/seed-agents.ts",
-    "seed:voice": "tsx src/seed-voice-test.ts",
     "add-user": "tsx src/add-user.ts",
     "clean": "rm -rf dist"
   },

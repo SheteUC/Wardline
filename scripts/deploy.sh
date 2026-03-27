@@ -62,11 +62,9 @@ log "✓ AWS credentials verified"
 
 log "Step 2: Running tests..."
 
-# Run Python tests
-log "Running Python unit tests..."
-cd apps/voice-orchestrator-pipecat
-pytest --cov --cov-report=term-missing || error "Python tests failed"
-cd ../..
+# Run Voice Runtime V2 tests
+log "Running Voice Runtime V2 tests..."
+node scripts/run-voice-v2-python.js -m unittest discover apps/voice-runtime-v2/tests -v || error "Voice Runtime V2 tests failed"
 log "✓ Python tests passed"
 
 # Run NestJS tests
@@ -107,10 +105,10 @@ log "Logging in to Amazon ECR..."
 aws ecr get-login-password --region $AWS_REGION | \
     docker login --username AWS --password-stdin $ECR_REGISTRY || error "ECR login failed"
 
-# Build Voice Orchestrator
-log "Building Voice Orchestrator image..."
+# Build Voice Runtime V2
+log "Building Voice Runtime V2 image..."
 docker build -t $ECR_REGISTRY/wardline-voice:$IMAGE_TAG \
-    -f apps/voice-orchestrator-pipecat/Dockerfile . || error "Voice Orchestrator build failed"
+    -f apps/voice-runtime-v2/Dockerfile . || error "Voice Runtime V2 build failed"
 
 docker tag $ECR_REGISTRY/wardline-voice:$IMAGE_TAG \
     $ECR_REGISTRY/wardline-voice:$ENVIRONMENT-latest
@@ -153,12 +151,12 @@ log "Step 8: Deploying to ECS..."
 # Update ECS services
 CLUSTER="wardline-$ENVIRONMENT"
 
-log "Updating Voice Orchestrator service..."
+log "Updating Voice Runtime V2 service..."
 aws ecs update-service \
     --cluster $CLUSTER \
     --service voice-orchestrator \
     --force-new-deployment \
-    --region $AWS_REGION || error "Voice Orchestrator deployment failed"
+    --region $AWS_REGION || error "Voice Runtime V2 deployment failed"
 
 log "Updating Core API service..."
 aws ecs update-service \
@@ -203,13 +201,13 @@ else
     error "Core API health check failed (HTTP $HTTP_STATUS)"
 fi
 
-# Health check - Voice Orchestrator
+# Health check - Voice Runtime V2
 VOICE_URL="https://voice-$ENVIRONMENT.wardline.com"
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $VOICE_URL/health)
 if [[ "$HTTP_STATUS" == "200" ]]; then
-    log "✓ Voice Orchestrator health check passed"
+    log "✓ Voice Runtime V2 health check passed"
 else
-    error "Voice Orchestrator health check failed (HTTP $HTTP_STATUS)"
+    error "Voice Runtime V2 health check failed (HTTP $HTTP_STATUS)"
 fi
 
 log "Step 11: Creating deployment tag..."

@@ -3,8 +3,6 @@ import {
     CallDirection,
     RecordingConsent,
     UserRole,
-    WorkflowStatus,
-    WorkflowVersionStatus,
     IntegrationCategory,
     IntegrationStatus,
 } from '@wardline/types';
@@ -230,34 +228,6 @@ export interface CallAnalytics {
     callsByTag: Record<string, number>;
 }
 
-export interface WorkflowVersionListItem {
-    id: string;
-    workflowId: string;
-    versionNumber: number;
-    status: WorkflowVersionStatus;
-    graphJson: unknown;
-    createdByUserId: string;
-    approvedByUserId?: string;
-    publishedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
-}
-
-export interface WorkflowListItem {
-    id: string;
-    businessId: string;
-    name: string;
-    description?: string;
-    status: WorkflowStatus;
-    versions?: WorkflowVersionListItem[];
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface WorkflowDetail extends WorkflowListItem {
-    versions: WorkflowVersionListItem[];
-}
-
 export interface TeamMember {
     id: string;
     businessId: string;
@@ -299,17 +269,10 @@ export interface BusinessSettings {
         twilioPhoneNumber: string;
         label: string;
     }>;
-    agents?: Array<{
-        id: string;
-        name: string;
-        status: string;
-        catalogId?: string;
-    }>;
     _count?: {
         users: number;
         phoneNumbers: number;
         callSessions: number;
-        agents: number;
     };
 }
 
@@ -394,52 +357,6 @@ export interface BusinessRuntimeConfig {
         version?: number;
         graphJson?: unknown;
     } | null;
-}
-
-export interface AgentCatalogItem {
-    catalogId: string;
-    name: string;
-    description?: string;
-    scopeBoundary?: string;
-    internalOnly?: boolean;
-    deprecated?: boolean;
-    deprecationNotice?: string;
-    icon?: string;
-    color?: string;
-    tags?: string[];
-    toolConfigSchema?: Array<{
-        key: string;
-        label: string;
-        type: string;
-        required: boolean;
-        options?: string[];
-        helpText?: string;
-    }>;
-}
-
-export interface AgentListItem {
-    id: string;
-    businessId: string;
-    catalogId: string;
-    name: string;
-    description?: string;
-    status: 'ACTIVE' | 'INACTIVE' | 'PAUSED';
-    internalOnly?: boolean;
-    deprecated?: boolean;
-    deprecationNotice?: string;
-    toolConfig?: Record<string, unknown>;
-    agentConfig?: Record<string, unknown>;
-    nodeGraph?: Record<string, unknown>;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface AgentStats {
-    totalCalls: number;
-    resolvedCalls: number;
-    escalatedCalls: number;
-    voicemailCalls: number;
-    resolutionRate: number;
 }
 
 export interface SystemHealth {

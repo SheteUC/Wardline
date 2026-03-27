@@ -1109,15 +1109,13 @@ OR use Clerk's test mode to sign in with these emails directly.
    - Click on +1 513-951-1583
    - Under "Voice & Fax" → "A CALL COMES IN":
      - Set to Webhook
-     - URL: https://<your-voice-orchestrator-url>/voice/incoming
+     - URL: https://<your-voice-runtime-url>/telephony/twilio/bootstrap
      - HTTP Method: POST
    
-2. Set Status Callback URL:
-   - URL: https://<your-voice-orchestrator-url>/voice/status
-   - HTTP Method: POST
+2. Status callbacks are optional in this phase. Voice Runtime V2 records operator-visible events from the live session flow directly.
 
 3. For local testing, use ngrok:
-   - Run: ngrok http 3002
+   - Run: ngrok http 3003
    - Use the ngrok URL in Twilio
 `);
 

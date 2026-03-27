@@ -112,6 +112,17 @@ class SessionMessage(BaseModel):
     createdAt: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
+class SessionTransportMetadata(BaseModel):
+    runtime: Literal["voice-runtime-v2"] = "voice-runtime-v2"
+    transport: Literal["livekit"] = "livekit"
+    sessionId: str
+    businessId: str
+    roomName: str
+    participantIdentity: str
+    livekitUrl: str = ""
+    providerSessionId: Optional[str] = None
+
+
 class SessionState(BaseModel):
     sessionId: str
     callSid: str
@@ -122,6 +133,7 @@ class SessionState(BaseModel):
     callerName: Optional[str] = None
     businessName: str
     runtimeConfig: RuntimeConfigBootstrap
+    transport: SessionTransportMetadata
     activeDomain: Optional[str] = None
     partialPayloads: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     pendingAction: Optional[PendingAction] = None

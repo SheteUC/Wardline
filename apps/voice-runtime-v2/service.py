@@ -20,7 +20,14 @@ from agents import (
     URGENT_AFTER_HOURS_KEYWORDS,
 )
 from core_api_client import CoreApiClient
-from models import PendingAction, RuntimeConfigBootstrap, SessionEvent, SessionMessage, SessionState
+from models import (
+    PendingAction,
+    RuntimeConfigBootstrap,
+    SessionEvent,
+    SessionMessage,
+    SessionState,
+    SessionTransportMetadata,
+)
 from providers import DeepgramSttAdapter, LiveKitTransportAdapter, ManagedTtsAdapter, ReasoningAdapter
 
 
@@ -71,9 +78,17 @@ class VoiceRuntimeV2:
                 "twilioCallSid": call_sid,
             }
         )
+        session_id = str(uuid.uuid4())
+        transport = SessionTransportMetadata.model_validate(
+            self.livekit.build_dispatch_metadata(
+                session_id=session_id,
+                business_id=runtime_config.business.id,
+                call_sid=call_sid,
+            ),
+        )
 
         session = SessionState(
-            sessionId=str(uuid.uuid4()),
+            sessionId=session_id,
             callSid=call_sid,
             callId=call_data.get("id") if call_data else None,
             businessId=runtime_config.business.id,
@@ -81,6 +96,7 @@ class VoiceRuntimeV2:
             calledPhone=called_phone,
             businessName=runtime_config.business.name,
             runtimeConfig=runtime_config,
+            transport=transport,
             isAfterHours=not self._is_business_open(runtime_config),
         )
         greeting = (
@@ -88,6 +104,17 @@ class VoiceRuntimeV2:
             "I'm Wardline, your virtual receptionist. How can I help you today?"
         )
         session.messages.append(SessionMessage(role="assistant", text=greeting))
+        session.events.append(
+            SessionEvent(
+                type="session_bootstrap",
+                actionName="voice-runtime-v2",
+                integrationCategory="TRANSPORT",
+                data={
+                    "transport": transport.model_dump(),
+                    "providers": self.readiness(),
+                },
+            )
+        )
         self.sessions[session.sessionId] = session
         await self._sync_call_state(session)
         return session
@@ -206,6 +233,57 @@ class VoiceRuntimeV2:
         session.awaitingVoicemail = False
         await self._sync_call_state(session, tag="VOICEMAIL", status="COMPLETED")
         return result or {"accepted": True}
+
+    async def process_transcript_turn(
+        self,
+        session_id: str,
+        text: str,
+        final: bool = True,
+        provider_session_id: str | None = None,
+    ) -> Dict[str, Any]:
+        session = self.get_session(session_id)
+        if provider_session_id and session.transport.providerSessionId != provider_session_id:
+            session.transport.providerSessionId = provider_session_id
+
+        if not final:
+            session.events.append(
+                SessionEvent(
+                    type="transcript_partial",
+                    actionName="partial-transcript",
+                    integrationCategory="TRANSPORT",
+                    data={"text": text, "providerSessionId": provider_session_id},
+                )
+            )
+            return {
+                "sessionId": session.sessionId,
+                "accepted": True,
+                "final": False,
+                "transport": session.transport.model_dump(),
+            }
+
+        return await self.process_text_turn(session_id, text)
+
+    def record_transport_event(
+        self,
+        session_id: str,
+        event_type: str,
+        payload: Dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        session = self.get_session(session_id)
+        session.events.append(
+            SessionEvent(
+                type="transport_event",
+                actionName=event_type,
+                integrationCategory="TRANSPORT",
+                data=payload or {},
+            )
+        )
+        return {
+            "sessionId": session.sessionId,
+            "accepted": True,
+            "eventType": event_type,
+            "transport": session.transport.model_dump(),
+        }
 
     async def _handle_pending_action(self, session: SessionState, text: str) -> Dict[str, Any]:
         pending = session.pendingAction
@@ -363,7 +441,7 @@ class VoiceRuntimeV2:
             "requiresConfirmation": requires_confirmation,
             "awaitingVoicemail": awaiting_voicemail,
             "pendingAction": session.pendingAction.model_dump() if session.pendingAction else None,
-            "transport": self.livekit.build_dispatch_metadata(session.sessionId, session.businessId),
+            "transport": session.transport.model_dump(),
         }
 
     def _domain_to_tag(self, domain: str) -> Optional[str]:

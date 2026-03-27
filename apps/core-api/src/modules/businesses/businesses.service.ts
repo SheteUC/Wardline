@@ -111,7 +111,7 @@ export class BusinessesService {
                     include: {
                         settings: includeSettings,
                         _count: {
-                            select: { users: true, phoneNumbers: true, callSessions: true, agents: true },
+                            select: { users: true, phoneNumbers: true, callSessions: true },
                         },
                     },
                     orderBy: { createdAt: 'desc' },
@@ -131,7 +131,7 @@ export class BusinessesService {
                     where: { id },
                     include: {
                         settings: true,
-                        ...(includeRelations && { phoneNumbers: true, agents: true }),
+                        ...(includeRelations && { phoneNumbers: true }),
                     },
                 });
                 if (!business) throw new NotFoundException(`Business "${id}" not found`);

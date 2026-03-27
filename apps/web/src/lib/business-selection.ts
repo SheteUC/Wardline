@@ -8,8 +8,6 @@ const BUSINESS_REQUIRED_ROUTE_PREFIXES = [
     '/dashboard/voicemails',
     '/dashboard/follow-ups',
     '/dashboard/integration-failures',
-    '/dashboard/agents',
-    '/dashboard/workflows',
 ];
 
 export function normalizeDashboardPath(pathname: string): string {

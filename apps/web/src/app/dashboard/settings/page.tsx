@@ -229,7 +229,7 @@ export default function PracticeSetupPage() {
                 outOfScopeKeywords: parseTextList(outOfScopeKeywords),
             } as NonNullable<BusinessSettings['settings']>);
             setHasChanges(false);
-            setSaveMessage('Practice setup saved. Wardline refreshed the live runtime workflow in the background.');
+            setSaveMessage('Practice setup saved. Wardline refreshed the live Voice Runtime V2 policy in the background.');
             businessQuery.refetch();
         } catch (error) {
             console.error(error);
@@ -250,7 +250,7 @@ export default function PracticeSetupPage() {
             <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
                     <h1 className="text-3xl font-semibold text-foreground">Practice Setup</h1>
-                    <p className="text-muted-foreground">Configure the practice. Wardline compiles the call flow behind the scenes.</p>
+                    <p className="text-muted-foreground">Configure the practice. Wardline drives Voice Runtime V2 behind the scenes.</p>
                 </div>
                 <Button variant="filled" onClick={handleSave} disabled={!businessId || !hasChanges || isSaving}>
                     {isSaving ? 'Saving...' : 'Save Practice Setup'}
@@ -347,9 +347,9 @@ export default function PracticeSetupPage() {
                     </Card>
                     <Card title="What changed">
                         <div className="space-y-3 text-sm text-muted-foreground">
-                            <div className="flex items-start gap-3"><Clock3 className="mt-0.5 h-4 w-4 text-primary" /><p>Practice setup replaces customer-authored call flow. Wardline now compiles the runtime workflow from these settings.</p></div>
+                            <div className="flex items-start gap-3"><Clock3 className="mt-0.5 h-4 w-4 text-primary" /><p>Practice setup replaces customer-authored call flow. Wardline now derives the live Voice Runtime V2 policy directly from these settings.</p></div>
                             <div className="flex items-start gap-3"><ClipboardList className="mt-0.5 h-4 w-4 text-primary" /><p>Emergency screening, after-hours handling, confirmation before write actions, and follow-up fallback still run under the hood.</p></div>
-                            <div className="flex items-start gap-3"><PlugZap className="mt-0.5 h-4 w-4 text-primary" /><p>Agents and workflow editing remain deprecated internal-only tools for migration support while Voice Runtime V2 replaces the live voice layer.</p></div>
+                            <div className="flex items-start gap-3"><PlugZap className="mt-0.5 h-4 w-4 text-primary" /><p>There is no customer-facing agent or workflow editor anymore. Voice Runtime V2 uses this practice configuration as its only supported input.</p></div>
                         </div>
                     </Card>
                     <Card title="Practice Setup Sections">

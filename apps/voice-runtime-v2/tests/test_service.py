@@ -157,6 +157,24 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(next_response["requiresConfirmation"])
         self.assertEqual(next_response["pendingAction"]["actionName"], "refill-request")
 
+    async def test_session_bootstrap_includes_transport_metadata(self):
+        self.assertEqual(self.session.transport.transport, "livekit")
+        self.assertEqual(self.session.transport.sessionId, self.session.sessionId)
+        self.assertTrue(self.session.transport.roomName.startswith("wardline-"))
+
+    async def test_partial_transcript_is_recorded_without_triggering_reasoning(self):
+        response = await self.runtime.process_transcript_turn(
+            self.session.sessionId,
+            "partial utterance",
+            final=False,
+            provider_session_id="lk-session-1",
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertFalse(response["final"])
+        self.assertEqual(response["transport"]["providerSessionId"], "lk-session-1")
+        self.assertEqual(len(self.api_client.runtime_action_calls), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

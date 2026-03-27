@@ -25,8 +25,8 @@ describe('business-selection helpers', () => {
         expect(businessId).toBe('business-1');
     });
 
-    it('gates workflow routes until a business exists', () => {
-        expect(routeRequiresBusiness('/dashboard/workflows')).toBe(true);
+    it('gates operational queue routes until a business exists', () => {
+        expect(routeRequiresBusiness('/dashboard/calls')).toBe(true);
         expect(routeRequiresBusiness('/dashboard/settings')).toBe(false);
         expect(routeRequiresBusiness('/dashboard')).toBe(false);
     });
@@ -34,7 +34,7 @@ describe('business-selection helpers', () => {
     it('redirects business-scoped routes to settings when no business is selected', () => {
         expect(
             shouldRedirectToBusinessSettings({
-                pathname: '/dashboard/workflows',
+                pathname: '/dashboard/calls',
                 businessId: null,
                 isLoading: false,
             }),

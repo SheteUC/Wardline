@@ -16,8 +16,6 @@ import { UsersModule } from './modules/users/users.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CallsModule } from './modules/calls/calls.module';
 import { TranscriptRetentionTask } from './tasks/transcript-retention.task';
-// Agent Platform Modules
-import { AgentsModule } from './modules/agents/agents.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { EscalationsModule } from './modules/escalations/escalations.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
@@ -59,8 +57,6 @@ if (deprecatedCoreApiEnvPaths.length > 0) {
         UsersModule,
         WorkflowsModule,
         CallsModule,
-        // Agent Platform Modules
-        AgentsModule,
         SafetyModule,
         EscalationsModule,
         IntegrationsModule,

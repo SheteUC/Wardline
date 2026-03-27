@@ -210,11 +210,6 @@ The current dashboard is API-backed and centered on operational work:
 - `/dashboard/integration-failures`
 - `/dashboard/settings`
 
-Internal-only advanced tools remain available behind the internal feature gate:
-
-- `/dashboard/workflows`
-- `/dashboard/agents`
-
 Notable operational behaviors:
 
 - `Urgent Calls` is backed by persisted `FollowUpTask` records, not derived call filters
@@ -228,7 +223,6 @@ Notable operational behaviors:
 apps/
   web/
     src/app/dashboard/               Next.js dashboard
-    src/components/workflow/         Workflow editor and config panels
     src/lib/                        Business-aware API client and query hooks
 
   core-api/
@@ -237,17 +231,9 @@ apps/
     src/modules/follow-up-tasks/     Persisted operational queues
     src/modules/integrations/        Connector registry, settings, health checks
     src/modules/runtime-actions/     Generic live actions + follow-up fallback
-    src/modules/workflows/           Workflow compile, validate, publish, simulate
-
-  voice-orchestrator-pipecat/
-    server.py                        Twilio webhook + after-hours policy + confirmation flow
-    call_context.py                  Canonical Business-native call context
-    core_api_client.py               Runtime-config and runtime-action client
-    tools.py                         Voice tools with confirmation gating
-    node_executors.py                Workflow executor runtime-action bridge
-    flow_manager.py                  Workflow loading and execution
+    src/modules/workflows/           Generated runtime artifact support
   voice-runtime-v2/
-    server.py                        FastAPI control plane for the new internal multi-agent runtime
+    server.py                        FastAPI control plane and transport bootstrap
     service.py                       Supervisor + specialist orchestration
     agents.py                        Internal specialist agents and routing logic
     core_api_client.py               Runtime-config and runtime-action bridge for V2
@@ -277,7 +263,7 @@ packages/
 
 ```bash
 pnpm install
-python -m pip install -r apps/voice-orchestrator-pipecat/requirements.txt
+python -m pip install -r apps/voice-runtime-v2/requirements.txt
 ```
 
 ### Environment
@@ -287,7 +273,7 @@ Use the repo-root `.env.local` or `.env` as the canonical local configuration fi
 - `apps/core-api/.env`, `apps/web/.env.local`, and `packages/db/.env` are deprecated for local development.
 - The Core API and Prisma now load only the root env files.
 - The web app injects its public runtime variables from the root env files.
-- The voice orchestrator prefers the root env files and only falls back to its local `.env` for missing values.
+- Voice Runtime V2 loads from the root env files.
 
 ### Database
 
@@ -308,32 +294,30 @@ docker compose up -d postgres redis
 ```bash
 pnpm --filter @wardline/web dev
 pnpm --filter @wardline/core-api dev
-cd apps/voice-orchestrator-pipecat && python server.py
+pnpm voice:v2:dev
 ```
 
 Default local ports:
 
 - Web: `http://localhost:3000`
 - Core API: `http://localhost:3001`
-- Voice orchestrator: `http://localhost:3002`
 - Voice Runtime V2: `http://localhost:3003`
 
 ### Voice Runtime V2
 
-Voice Runtime V2 is the new internal multi-agent rewrite. It keeps Practice Setup and runtime actions intact while replacing the old live voice layer over time.
+Voice Runtime V2 is the supported live voice runtime. It keeps Practice Setup and runtime actions intact while replacing the old live voice layer completely.
 
 ```bash
-python -m pip install -r apps/voice-runtime-v2/requirements.txt
 pnpm voice:v2:dev
 ```
 
-Current validation for the V2 service uses its internal text-turn harness:
+Current validation for the V2 service uses its session/bootstrap harness:
 
 ```bash
 pnpm test:voice:v2
 ```
 
-The V2 scripts reuse the existing voice virtualenv automatically when `apps/voice-orchestrator-pipecat/venv` exists. You can still override the interpreter with `WARDLINE_VOICE_PYTHON=/path/to/python`.
+The V2 scripts reuse the archived voice virtualenv automatically when `apps/voice-orchestrator-pipecat/venv` exists. You can still override the interpreter with `WARDLINE_VOICE_PYTHON=/path/to/python`.
 
 ### Mock Connector Smoke Flow
 
@@ -359,7 +343,7 @@ This creates:
 - one generated published runtime workflow compiled from practice settings
 - one integration per category pointed at the mock integration service
 
-3. Start the web app, Core API, and voice orchestrator.
+3. Start the web app, Core API, and Voice Runtime V2.
 4. Open the integration screen and run a health check if you want to confirm capabilities manually.
 5. Run the smoke commands or manual call flows described below.
 
@@ -396,8 +380,8 @@ Do not resume broader feature work until both the staging gate and the pilot-qua
 | Variable | Notes |
 | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | Usually `http://localhost:3001` locally |
-| `NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL` | Usually `http://localhost:3002` locally |
-| `NEXT_PUBLIC_CORE_API_URL` | Used by some websocket hooks |
+| `NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL` | Usually `http://localhost:3003` locally |
+| `NEXT_PUBLIC_CORE_API_URL` | Core API origin for web helpers |
 | `NEXT_PUBLIC_WEB_BASE_URL` | Public-facing web origin; defaults to `WEB_BASE_URL` for staging env preflight |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk frontend auth |
 | `CLERK_SECRET_KEY` | Required server-side in Next.js |
@@ -416,26 +400,25 @@ Do not resume broader feature work until both the staging gate and the pilot-qua
 | `STRIPE_SECRET_KEY` | Required by current Core API env schema |
 | `STRIPE_WEBHOOK_SECRET` | Required by current Core API env schema |
 
-### Voice orchestrator
+### Voice Runtime V2
 
 | Variable | Notes |
 | --- | --- |
-| `PORT` | Defaults to `3002` |
+| `VOICE_RUNTIME_V2_PORT` | Defaults to `3003` |
 | `CORE_API_BASE_URL` | Core API base URL |
-| `WEBHOOK_BASE_URL` | Public URL for Twilio callbacks / media streams |
-| `USE_STREAMING` | `true` for Twilio Media Streams, otherwise Gather fallback |
-| `VOICE_AGENT_TYPE` | `azure_ai_foundry`, `conversational`, or `langchain_tools` |
+| `WEBHOOK_BASE_URL` | Public URL for telephony/session callbacks |
 | `TWILIO_ACCOUNT_SID` | Twilio |
 | `TWILIO_AUTH_TOKEN` | Twilio |
 | `TWILIO_PHONE_NUMBER` | Twilio number |
-| `AZURE_SPEECH_KEY` | Azure Speech |
-| `AZURE_SPEECH_REGION` | Azure Speech region |
-| `AZURE_EXISTING_AIPROJECT_ENDPOINT` | Azure AI Foundry project endpoint |
-| `AZURE_EXISTING_AGENT_ID` | Azure AI Foundry agent identifier |
-| `AZURE_OPENAI_KEY` | Needed for conversational / langchain modes and parts of streaming |
+| `LIVEKIT_URL` | LiveKit server URL |
+| `LIVEKIT_API_KEY` | LiveKit API key |
+| `LIVEKIT_API_SECRET` | LiveKit API secret |
+| `DEEPGRAM_API_KEY` | Deepgram streaming STT |
+| `AZURE_SPEECH_KEY` | Optional managed speech fallback |
+| `AZURE_SPEECH_REGION` | Optional managed speech fallback region |
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint |
-| `AZURE_OPENAI_DEPLOYMENT` | Azure OpenAI deployment |
-| `AZURE_OPENAI_API_VERSION` | Defaults in `config.py` |
+| `AZURE_OPENAI_KEY` | Azure OpenAI key |
+| `AZURE_OPENAI_DEPLOYMENT` | Defaults to `gpt-4o-mini` |
 
 ### Integration secrets
 
@@ -450,31 +433,29 @@ ATHENAHEALTH_BILLING_TOKEN=...
 
 ## Verification
 
-These are the main checks for the current V1 runtime:
+These are the main checks for the supported V2 runtime:
 
 ```bash
 pnpm test:smoke:typecheck
 python -m py_compile \
-  apps/voice-orchestrator-pipecat/call_context.py \
-  apps/voice-orchestrator-pipecat/core_api_client.py \
-  apps/voice-orchestrator-pipecat/tools.py \
-  apps/voice-orchestrator-pipecat/server.py \
-  apps/voice-orchestrator-pipecat/node_executors.py \
-  apps/voice-orchestrator-pipecat/flow_manager.py
+  apps/voice-runtime-v2/config.py \
+  apps/voice-runtime-v2/core_api_client.py \
+  apps/voice-runtime-v2/providers.py \
+  apps/voice-runtime-v2/server.py \
+  apps/voice-runtime-v2/service.py \
+  apps/voice-runtime-v2/agents.py
 pnpm test:smoke:api
 pnpm test:smoke:web
-pnpm test:smoke:voice:gather
-pnpm test:smoke:voice:streaming
+pnpm test:voice:v2
 pnpm test:smoke:local
 ```
 
-The voice smoke commands use the voice app virtualenv automatically when `apps/voice-orchestrator-pipecat/venv` exists. You can override the interpreter with `WARDLINE_VOICE_PYTHON=/path/to/python` if needed.
+The voice smoke commands use the archived voice virtualenv automatically when `apps/voice-orchestrator-pipecat/venv` exists. You can override the interpreter with `WARDLINE_VOICE_PYTHON=/path/to/python` if needed.
 
-Install voice requirements, which include the Python runtime dependencies used by the smoke path:
+Install V2 voice requirements, which include the Python runtime dependencies used by the smoke path:
 
 ```bash
-python -m pip install -r apps/voice-orchestrator-pipecat/requirements.txt
-python -m pip install pytest pytest-asyncio pytest-mock pytest-cov
+python -m pip install -r apps/voice-runtime-v2/requirements.txt
 ```
 
 For staging preflight, verify the required environment variables first:
@@ -486,9 +467,7 @@ pnpm test:staging:env
 Focused voice runtime tests are:
 
 ```bash
-python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_tools.py -o addopts=--strict-markers
-python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_flow_manager.py -o addopts=--strict-markers
-python -m pytest apps/voice-orchestrator-pipecat/tests/unit/test_node_executors.py -o addopts=--strict-markers
+node scripts/run-voice-v2-python.js -m unittest discover apps/voice-runtime-v2/tests -v
 ```
 
 ### Manual Smoke Checklist
@@ -499,24 +478,25 @@ Use this sequence as the local release gate until broader end-to-end automation 
 2. Run `pnpm db:migrate`.
 3. Start the mock integration server with `pnpm mock:integrations`.
 4. Run `pnpm db:seed:smoke`.
-5. Start the web app, Core API, and voice orchestrator.
+5. Start the web app, Core API, and Voice Runtime V2.
 6. Sign in and let the first authenticated request auto-provision the local user.
 7. Confirm the smoke business is visible and selected automatically, or create a business manually if you are not using the smoke seed.
 8. Open `/dashboard/integration-failures`, run a health check, and confirm the integration status becomes `CONNECTED`.
 9. Open `/dashboard/settings` and confirm the Practice Setup readiness checklist reflects the configured hours, policies, integrations, and knowledge content.
-10. Run one Gather scenario and one streaming scenario, then confirm:
+10. Run the Voice Runtime V2 validation flow, then confirm:
    - the call appears in call logs
    - live runtime actions record their outcomes
    - fallback scenarios create follow-up tasks with the correct fallback reason
    - voicemail links to the follow-up task when after-hours behavior is triggered
+   - the V2 session bootstrap exposes transport metadata for LiveKit / Twilio cutover
 11. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard reflects the mock outcomes cleanly.
 
-## Known V1 Constraints
+## Known V2 Constraints
 
-- No live human queueing or staff presence management yet
+- LiveKit/Twilio transport bootstrap is implemented, but full provider-backed telephony still depends on real credentials and staging wiring
 - No bilingual runtime yet
 - No multi-vendor routing within a category
-- No live after-hours urgent transfer in V1
+- No live human queueing or staff presence management yet
 - Manual integration credential provisioning only
 - Active web, Core API, and voice runtime paths are `Business`-native; live connector validation is the next milestone
 

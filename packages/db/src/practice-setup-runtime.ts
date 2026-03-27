@@ -41,7 +41,7 @@ export interface PracticeSetupRuntimeConfig {
 
 export const GENERATED_PRACTICE_WORKFLOW_NAME = 'Practice Setup Runtime';
 export const GENERATED_PRACTICE_WORKFLOW_DESCRIPTION =
-    'Generated from practice setup. Internal teams can override this from the workflow editor when advanced testing is enabled.';
+    'Generated from practice setup for internal runtime use. Practices do not edit this artifact directly.';
 
 function buildRuntimeActionNode(options: {
     id: string;

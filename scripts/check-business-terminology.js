@@ -5,7 +5,7 @@ const ROOT = process.cwd();
 const TARGETS = [
     path.join(ROOT, 'apps', 'core-api', 'src'),
     path.join(ROOT, 'apps', 'web', 'src'),
-    path.join(ROOT, 'apps', 'voice-orchestrator-pipecat'),
+    path.join(ROOT, 'apps', 'voice-runtime-v2'),
 ];
 
 const IGNORE_SEGMENTS = new Set(['venv', '__pycache__', 'tests', 'logs', '.cache', '.pytest_cache']);

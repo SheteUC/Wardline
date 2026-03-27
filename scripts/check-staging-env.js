@@ -30,6 +30,10 @@ const required = [
 
 const recommended = [
   { label: 'WEBHOOK_BASE_URL', keys: ['WEBHOOK_BASE_URL'] },
+  { label: 'LIVEKIT_URL', keys: ['LIVEKIT_URL'] },
+  { label: 'LIVEKIT_API_KEY', keys: ['LIVEKIT_API_KEY'] },
+  { label: 'LIVEKIT_API_SECRET', keys: ['LIVEKIT_API_SECRET'] },
+  { label: 'DEEPGRAM_API_KEY', keys: ['DEEPGRAM_API_KEY'] },
   { label: 'ATHENAHEALTH_SCHEDULING_TOKEN', keys: ['ATHENAHEALTH_SCHEDULING_TOKEN'] },
   { label: 'ATHENAHEALTH_REFILL_TOKEN', keys: ['ATHENAHEALTH_REFILL_TOKEN'] },
   { label: 'ATHENAHEALTH_INSURANCE_TOKEN', keys: ['ATHENAHEALTH_INSURANCE_TOKEN'] },

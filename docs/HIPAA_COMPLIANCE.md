@@ -36,7 +36,7 @@ Transcript text (`TranscriptSegment.text`) is **never** placed in cache.
 ### In Transit
 - All HTTP traffic must be served over TLS 1.2+ (enforced by Vercel / Azure App Service).
 - WebSocket connections (Twilio Media Streams, Agent Console) use WSS (TLS).
-- Internal service-to-service calls between `core-api` and `voice-orchestrator` must use HTTPS in production (`VOICE_ORCHESTRATOR_URL` must be an `https://` URL).
+- Internal service-to-service calls between `core-api` and Voice Runtime V2 must use HTTPS in production (`NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL` / the deployed voice runtime URL must be an `https://` URL).
 
 ### At Rest
 - PostgreSQL: Enable at-rest encryption at the provider level (Neon/Supabase both support AES-256).

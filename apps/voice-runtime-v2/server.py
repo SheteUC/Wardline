@@ -11,8 +11,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel, Field
 
 from config import settings
 from service import VoiceRuntimeV2
@@ -33,6 +33,17 @@ class TextTurnRequest(BaseModel):
 class VoicemailRequest(BaseModel):
     recordingUrl: str
     transcription: Optional[str] = None
+
+
+class TranscriptTurnRequest(BaseModel):
+    text: str
+    final: bool = True
+    providerSessionId: Optional[str] = None
+
+
+class SessionEventRequest(BaseModel):
+    type: str
+    payload: dict = Field(default_factory=dict)
 
 
 @asynccontextmanager
@@ -82,6 +93,32 @@ async def start_session(request: StartSessionRequest):
         "callId": session.callId,
         "businessId": session.businessId,
         "greeting": session.messages[-1].text if session.messages else "",
+        "transport": session.transport.model_dump(),
+        "providers": runtime.readiness(),
+    }
+
+
+@app.post("/telephony/twilio/bootstrap")
+async def bootstrap_twilio_session(request: Request):
+    form_data = await request.form()
+    call_sid = str(form_data.get("CallSid") or "")
+    caller_phone = str(form_data.get("From") or "")
+    called_phone = str(form_data.get("To") or "")
+
+    if not call_sid or not caller_phone or not called_phone:
+        raise HTTPException(status_code=400, detail="Missing Twilio bootstrap fields")
+
+    session = await runtime.start_session(
+        call_sid=call_sid,
+        caller_phone=caller_phone,
+        called_phone=called_phone,
+    )
+    return {
+        "sessionId": session.sessionId,
+        "callId": session.callId,
+        "businessId": session.businessId,
+        "greeting": session.messages[-1].text if session.messages else "",
+        "transport": session.transport.model_dump(),
         "providers": runtime.readiness(),
     }
 
@@ -99,6 +136,27 @@ async def get_session(session_id: str):
 async def process_turn(session_id: str, request: TextTurnRequest):
     try:
         return await runtime.process_text_turn(session_id, request.text)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@app.post("/sessions/{session_id}/transcript")
+async def process_transcript_turn(session_id: str, request: TranscriptTurnRequest):
+    try:
+        return await runtime.process_transcript_turn(
+            session_id,
+            request.text,
+            final=request.final,
+            provider_session_id=request.providerSessionId,
+        )
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@app.post("/sessions/{session_id}/events")
+async def record_session_event(session_id: str, request: SessionEventRequest):
+    try:
+        return runtime.record_transport_event(session_id, request.type, request.payload)
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 

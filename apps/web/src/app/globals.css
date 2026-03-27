@@ -157,27 +157,6 @@
 }
 
 /* React Flow — Silk controls (Workflow Builder) */
-.workflow-flow .react-flow__controls {
-  overflow: hidden;
-  border-radius: 1rem;
-  border: 0 !important;
-  background: var(--background);
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.08),
-    -6px -6px 12px rgba(255, 255, 255, 0.6);
-}
-.workflow-flow .react-flow__controls-button {
-  border: 0 !important;
-  background: var(--background) !important;
-  box-shadow: none !important;
-}
-.workflow-flow .react-flow__controls-button:hover {
-  background: color-mix(in oklab, var(--muted) 45%, var(--background)) !important;
-}
-.workflow-flow .react-flow__controls-button svg {
-  fill: var(--foreground);
-}
-
 /* ─── Skeleton shimmer ────────────────────────────────────────────────────── */
 
 @keyframes shimmer {

@@ -11,7 +11,6 @@ import {
 import { useBusiness } from '@/lib/business-context';
 import { useFollowUpTasks, useIntegrations, useVoicemails } from '@/lib/hooks/query-hooks';
 import { shouldRedirectToBusinessSettings } from '@/lib/business-selection';
-import { canAccessInternalTools, shouldRedirectFromInternalTools } from '@/lib/internal-tools';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -23,8 +22,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const followUpTasksQuery = useFollowUpTasks();
     const voicemailsQuery = useVoicemails(true);
     const integrationsQuery = useIntegrations();
-    const showInternalTools = canAccessInternalTools(user);
-
     const userRole = (user?.publicMetadata?.role as string) || 'readonly';
     const openTasks = (followUpTasksQuery.data ?? []).filter(
         (task) => task.status !== 'COMPLETED' && task.status !== 'CANCELLED',
@@ -64,17 +61,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             router.replace('/dashboard/settings');
         }
     }, [businessId, businessLoading, pathname, router]);
-
-    useEffect(() => {
-        if (
-            shouldRedirectFromInternalTools({
-                pathname,
-                user,
-            })
-        ) {
-            router.replace('/dashboard/settings');
-        }
-    }, [pathname, router, user]);
 
     const NavItem = ({
         href,
@@ -141,8 +127,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (pathname.startsWith('/dashboard/urgent-calls')) return 'Urgent Calls';
         if (pathname.startsWith('/dashboard/follow-ups')) return 'Follow-ups';
         if (pathname.startsWith('/dashboard/integration-failures')) return 'Integrations';
-        if (pathname.startsWith('/dashboard/agents')) return 'Legacy Agent Catalog';
-        if (pathname.startsWith('/dashboard/workflows')) return 'Legacy Workflow Editor';
         if (pathname.startsWith('/dashboard/settings')) return 'Practice Setup';
         return 'Wardline';
     })();
@@ -195,15 +179,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         </div>
                         <NavItem href="/dashboard/settings" icon={Settings} label="Practice Setup" />
 
-                        {showInternalTools && (
-                            <>
-                                <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
-                                    Internal Runtime Tools
-                                </div>
-                                <NavItem href="/dashboard/agents" icon={PhoneCall} label="Legacy Agent Catalog" requiresBusiness />
-                                <NavItem href="/dashboard/workflows" icon={PlugZap} label="Legacy Workflow Editor" requiresBusiness />
-                            </>
-                        )}
                     </nav>
 
                     {/* User Card */}

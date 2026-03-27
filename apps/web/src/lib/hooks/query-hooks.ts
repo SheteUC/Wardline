@@ -4,18 +4,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '../api-client';
 import { useBusiness } from '../business-context';
 import {
-    createAgentsService,
     createBusinessService,
     createCallsService,
     createFollowUpTasksService,
     createIntegrationsService,
     createTeamService,
-    createWorkflowsService,
 } from '../api-services';
 import type {
-    AgentCatalogItem,
-    AgentListItem,
-    AgentStats,
     BusinessIntegration,
     BusinessSettings,
     CallAnalytics,
@@ -25,8 +20,6 @@ import type {
     PaginatedResponse,
     TeamMember,
     VoicemailRecord,
-    WorkflowDetail,
-    WorkflowListItem,
 } from '../api-types';
 
 export const queryKeys = {
@@ -40,24 +33,11 @@ export const queryKeys = {
     voicemails: (businessId: string, unlistenedOnly?: boolean) =>
         ['voicemails', businessId, unlistenedOnly] as const,
 
-    workflows: (businessId: string) => ['workflows', businessId] as const,
-    workflowsList: (businessId: string) => [...queryKeys.workflows(businessId), 'list'] as const,
-    workflowDetail: (businessId: string, workflowId: string) =>
-        [...queryKeys.workflows(businessId), 'detail', workflowId] as const,
-
     team: (businessId: string) => ['team', businessId] as const,
     teamMembers: (businessId: string) => [...queryKeys.team(businessId), 'members'] as const,
 
     businesses: () => ['businesses'] as const,
     businessDetail: (businessId: string) => ['business', businessId] as const,
-
-    agents: (businessId: string) => ['agents', businessId] as const,
-    agentsList: (businessId: string) => [...queryKeys.agents(businessId), 'list'] as const,
-    agentDetail: (businessId: string, agentId: string) =>
-        [...queryKeys.agents(businessId), 'detail', agentId] as const,
-    agentCatalog: (businessId: string) => [...queryKeys.agents(businessId), 'catalog'] as const,
-    agentStats: (businessId: string, agentId: string) =>
-        [...queryKeys.agents(businessId), 'stats', agentId] as const,
 
     integrations: (businessId: string) => ['integrations', businessId] as const,
     integrationDetail: (businessId: string, category: string) =>
@@ -199,52 +179,6 @@ export function usePrefetchCallsPage() {
     };
 }
 
-export function useWorkflows() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.workflowsList(businessId || ''),
-        queryFn: async () => {
-            if (!businessId) throw new Error('No business selected');
-            return createWorkflowsService(client, businessId).getWorkflows();
-        },
-        enabled: !!businessId,
-    });
-}
-
-export function useWorkflow(workflowId: string | null) {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.workflowDetail(businessId || '', workflowId || ''),
-        queryFn: async () => {
-            if (!businessId || !workflowId) throw new Error('Missing business or workflow ID');
-            return createWorkflowsService(client, businessId).getWorkflowById(workflowId);
-        },
-        enabled: !!businessId && !!workflowId,
-    });
-}
-
-export function useCreateWorkflow() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (data: { name: string; description?: string; userId?: string; graphJson?: unknown }) => {
-            if (!businessId) throw new Error('No business selected');
-            return createWorkflowsService(client, businessId).createWorkflow(data);
-        },
-        onSuccess: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.workflowsList(businessId) });
-            }
-        },
-    });
-}
-
 export function useTeamMembers() {
     const client = useApiClient();
     const { businessId } = useBusiness();
@@ -330,137 +264,6 @@ export function useUpdateBusinessSettings() {
         onSuccess: () => {
             if (businessId) {
                 queryClient.invalidateQueries({ queryKey: queryKeys.businessDetail(businessId) });
-            }
-        },
-    });
-}
-
-export function useAgents() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.agentsList(businessId || ''),
-        queryFn: async () => {
-            if (!businessId) throw new Error('No business selected');
-            return createAgentsService(client, businessId).getAgents();
-        },
-        enabled: !!businessId,
-    });
-}
-
-export function useAgent(agentId: string | null) {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.agentDetail(businessId || '', agentId || ''),
-        queryFn: async () => {
-            if (!businessId || !agentId) throw new Error('Missing business or agent ID');
-            return createAgentsService(client, businessId).getAgentById(agentId);
-        },
-        enabled: !!businessId && !!agentId,
-        staleTime: 1000 * 60 * 2,
-    });
-}
-
-export function useAgentCatalog() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.agentCatalog(businessId || ''),
-        queryFn: async () => {
-            if (!businessId) throw new Error('No business selected');
-            return createAgentsService(client, businessId).getCatalog();
-        },
-        enabled: !!businessId,
-        staleTime: 1000 * 60 * 10,
-    });
-}
-
-export function useAgentStats(agentId: string | null) {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-
-    return useQuery({
-        queryKey: queryKeys.agentStats(businessId || '', agentId || ''),
-        queryFn: async () => {
-            if (!businessId || !agentId) throw new Error('Missing business or agent ID');
-            return createAgentsService(client, businessId).getAgentStats(agentId);
-        },
-        enabled: !!businessId && !!agentId,
-        staleTime: 1000 * 30,
-    });
-}
-
-export function useDeployAgent() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (catalogId: string) => {
-            if (!businessId) throw new Error('No business selected');
-            return createAgentsService(client, businessId).deployAgent(catalogId);
-        },
-        onSuccess: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
-            }
-        },
-    });
-}
-
-export function useUpdateAgentStatus() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async ({ agentId, status }: { agentId: string; status: AgentListItem['status'] }) => {
-            if (!businessId) throw new Error('No business selected');
-            return createAgentsService(client, businessId).updateAgentStatus(agentId, status);
-        },
-        onSuccess: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
-            }
-        },
-    });
-}
-
-export function useUpdateAgentToolConfig() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async ({ agentId, toolConfig }: { agentId: string; toolConfig: Record<string, unknown> }) => {
-            if (!businessId) throw new Error('No business selected');
-            return createAgentsService(client, businessId).updateAgentToolConfig(agentId, toolConfig);
-        },
-        onSuccess: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
-            }
-        },
-    });
-}
-
-export function useUndeployAgent() {
-    const client = useApiClient();
-    const { businessId } = useBusiness();
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (agentId: string) => {
-            if (!businessId) throw new Error('No business selected');
-            return createAgentsService(client, businessId).deleteAgent(agentId);
-        },
-        onSuccess: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
             }
         },
     });
@@ -598,19 +401,9 @@ export function useCacheInvalidation() {
                 queryClient.invalidateQueries({ queryKey: queryKeys.calls(businessId) });
             }
         },
-        invalidateWorkflows: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.workflows(businessId) });
-            }
-        },
         invalidateTeam: () => {
             if (businessId) {
                 queryClient.invalidateQueries({ queryKey: queryKeys.team(businessId) });
-            }
-        },
-        invalidateAgents: () => {
-            if (businessId) {
-                queryClient.invalidateQueries({ queryKey: queryKeys.agents(businessId) });
             }
         },
         invalidateIntegrations: () => {
@@ -630,9 +423,6 @@ export function useCacheInvalidation() {
 }
 
 export type {
-    AgentCatalogItem,
-    AgentListItem,
-    AgentStats,
     BusinessIntegration,
     BusinessSettings,
     CallAnalytics,
@@ -642,6 +432,4 @@ export type {
     PaginatedResponse,
     TeamMember,
     VoicemailRecord,
-    WorkflowDetail,
-    WorkflowListItem,
 };

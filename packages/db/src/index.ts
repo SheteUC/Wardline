@@ -20,6 +20,5 @@ if (process.env.NODE_ENV !== 'production') {
     globalForPrisma.prisma = prisma;
 }
 
-export { AGENT_CATALOG } from './agent-catalog';
 export * from './practice-setup-runtime';
 export * from './generated/prisma/client';

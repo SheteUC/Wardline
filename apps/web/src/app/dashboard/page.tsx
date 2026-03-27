@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { useUser } from '@clerk/nextjs';
 import {
     AlertTriangle,
     Bot,
@@ -23,7 +22,6 @@ import {
     useIntegrations,
     useVoicemails,
 } from '@/lib/hooks/query-hooks';
-import { canAccessInternalTools } from '@/lib/internal-tools';
 
 const TAG_LABEL: Record<string, string> = {
     SCHEDULING: 'Scheduling',
@@ -55,8 +53,6 @@ function formatDuration(seconds: number) {
 
 export default function DashboardPage() {
     const { businessId, isLoading: businessLoading } = useBusiness();
-    const { user } = useUser();
-    const showInternalTools = canAccessInternalTools(user);
     const now = new Date();
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
@@ -316,13 +312,6 @@ export default function DashboardPage() {
                                 <span className="text-sm font-medium text-foreground">Check Integrations</span>
                                 <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                             </Link>
-                            {showInternalTools && (
-                                <Link href="/dashboard/workflows" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
-                                    <PhoneForwarded className="h-4 w-4 text-amber-500" />
-                                    <span className="text-sm font-medium text-foreground">Open Legacy Runtime Tools</span>
-                                    <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                                </Link>
-                            )}
                         </div>
                     </Card>
                 </div>

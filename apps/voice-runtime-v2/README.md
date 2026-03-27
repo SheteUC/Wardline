@@ -1,13 +1,6 @@
 # Voice Runtime V2
 
-Voice Runtime V2 is Wardline's new internal multi-agent voice service.
-
-It is intentionally separate from `apps/voice-orchestrator-pipecat` so the team can:
-
-- rebuild the voice architecture without restarting the product
-- keep Practice Setup as the customer-facing source of truth
-- preserve existing runtime-action APIs and operator workflows
-- cut over only after V2 reaches behavioral parity
+Voice Runtime V2 is Wardline's internal multi-agent voice service and the only supported live voice direction.
 
 ## Runtime model
 
@@ -42,10 +35,13 @@ V2 local runs do not depend on whichever Python happens to be first on `PATH`.
 
 ## Validation
 
-The text-turn endpoints are the current local harness while realtime transport is being introduced:
+The local/session endpoints are the current validation harness while provider-backed telephony is being wired:
 
 - `POST /sessions`
+- `POST /telephony/twilio/bootstrap`
 - `POST /sessions/{sessionId}/turn`
+- `POST /sessions/{sessionId}/transcript`
+- `POST /sessions/{sessionId}/events`
 - `POST /sessions/{sessionId}/voicemail`
 
-These endpoints validate the internal multi-agent behavior without depending on full telephony cutover.
+These endpoints validate internal multi-agent behavior and transport bootstrap metadata without depending on a full carrier cutover.
