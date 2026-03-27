@@ -216,10 +216,14 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                                         />
                                     </div>
                                     <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                        {event.domain && <span>{event.domain}</span>}
                                         {event.integrationCategory && <span>{event.integrationCategory}</span>}
                                         {event.integrationVendor && <span>{event.integrationVendor}</span>}
                                         {event.latencyMs !== undefined && <span>{event.latencyMs}ms</span>}
                                     </div>
+                                    {event.operatorSummary && (
+                                        <p className="mt-2 text-xs text-foreground/80">{event.operatorSummary}.</p>
+                                    )}
                                     {event.fallbackReason && (
                                         <p className="mt-2 text-xs text-amber-700">
                                             Downgraded because {humanizeFallbackReason(event.fallbackReason)}.

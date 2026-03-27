@@ -51,6 +51,36 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["eventType"], "participant_joined")
 
+    def test_turn_endpoint_returns_operator_summary(self):
+        with patch.object(
+            server.runtime,
+            "process_text_turn",
+            AsyncMock(
+                return_value={
+                    "sessionId": "session-1",
+                    "reply": "I can help with appointments, refills, insurance questions, or billing support.",
+                    "domain": "knowledge",
+                    "stage": "intake",
+                    "requiresConfirmation": False,
+                    "awaitingVoicemail": False,
+                    "awaitingAnythingElse": False,
+                    "pendingAction": None,
+                    "operatorSummary": {
+                        "headline": "Answered practice services question",
+                        "nextStep": "No staff follow-up is needed unless the caller asks for something else.",
+                        "specialist": "knowledge",
+                        "callerRequest": "Practice services question",
+                        "followUpRequired": False,
+                    },
+                    "transport": {"runtime": "voice-runtime-v2", "transport": "livekit"},
+                }
+            ),
+        ):
+            response = self.client.post("/sessions/session-1/turn", json={"text": "What do you help with?"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["operatorSummary"]["headline"], "Answered practice services question")
+
 
 if __name__ == "__main__":
     unittest.main()

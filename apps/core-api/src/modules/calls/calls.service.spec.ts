@@ -110,11 +110,13 @@ describe('CallsService', () => {
                     {
                         type: 'runtime_action_outcome',
                         actionName: 'billing-request',
+                        domain: 'billing',
                         integrationCategory: 'BILLING',
                         integrationVendor: 'athenahealth',
                         handledLive: false,
                         followUpTaskId: 'task-1',
                         fallbackReason: 'timeout',
+                        operatorSummary: 'Billing request ready',
                         data: { latencyMs: 1200 },
                         createdAt: '2026-03-26T12:00:00.000Z',
                     },
@@ -138,15 +140,17 @@ describe('CallsService', () => {
             expect(result.runtimeActionEvents).toEqual([
                 expect.objectContaining({
                     actionName: 'billing-request',
+                    domain: 'billing',
                     handledLive: false,
                     fallbackReason: 'timeout',
                     followUpTaskId: 'task-1',
+                    operatorSummary: 'Billing request ready',
                     latencyMs: 1200,
                 }),
             ]);
             expect(result.operatorSummary).toEqual(
                 expect.objectContaining({
-                    label: 'Staff follow-up required',
+                    label: 'Billing request ready',
                     fallbackReason: 'timeout',
                     actionName: 'billing-request',
                 }),

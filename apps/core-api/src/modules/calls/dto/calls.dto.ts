@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsNumber, IsArray, ValidateNested, IsDateString } from 'class-validator';
+import {
+    IsString,
+    IsOptional,
+    IsEnum,
+    IsNumber,
+    IsArray,
+    ValidateNested,
+    IsDateString,
+    IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 // Enums matching Prisma schema
@@ -75,19 +84,50 @@ export class UpdateCallDto {
     @IsEnum(RecordingConsent)
     recordingConsent?: RecordingConsent;
 
-    @ApiPropertyOptional({ description: 'Detected intent key' })
-    @IsOptional()
-    @IsString()
-    detectedIntent?: string;
-
     @ApiPropertyOptional({ description: 'Is emergency call' })
     @IsOptional()
+    @IsBoolean()
     isEmergency?: boolean;
 
     @ApiPropertyOptional({ enum: CallTag, description: 'Call tag' })
     @IsOptional()
     @IsEnum(CallTag)
     tag?: CallTag;
+
+    @ApiPropertyOptional({ description: 'Call end timestamp' })
+    @IsOptional()
+    @IsDateString()
+    endedAt?: string;
+
+    @ApiPropertyOptional({ description: 'Recording URL' })
+    @IsOptional()
+    @IsString()
+    recordingUrl?: string;
+
+    @ApiPropertyOptional({ description: 'Sentiment score' })
+    @IsOptional()
+    @IsNumber()
+    sentimentScore?: number;
+
+    @ApiPropertyOptional({ description: 'Turn count' })
+    @IsOptional()
+    @IsNumber()
+    turnCount?: number;
+
+    @ApiPropertyOptional({ description: 'Structured runtime session events' })
+    @IsOptional()
+    @IsArray()
+    turnsJson?: Array<Record<string, unknown>>;
+
+    @ApiPropertyOptional({ description: 'Caller id' })
+    @IsOptional()
+    @IsString()
+    callerId?: string;
+
+    @ApiPropertyOptional({ description: 'Detected intent/domain key' })
+    @IsOptional()
+    @IsString()
+    detectedIntent?: string;
 }
 
 // DTO for a single transcript segment

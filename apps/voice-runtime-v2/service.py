@@ -8,25 +8,32 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from pydantic import ValidationError
+
 from agents import (
+    BillingAgent,
     HandoffAgent,
     InsuranceAgent,
     KnowledgeAgent,
     RefillAgent,
     SafetyAgent,
     SchedulingAgent,
-    BillingAgent,
     SupervisorAgent,
     URGENT_AFTER_HOURS_KEYWORDS,
 )
 from core_api_client import CoreApiClient
 from models import (
+    DomainName,
+    OperatorSummary,
     PendingAction,
+    RuntimeActionOutcome,
     RuntimeConfigBootstrap,
     SessionEvent,
     SessionMessage,
     SessionState,
     SessionTransportMetadata,
+    SpecialistResult,
+    SupervisorDecision,
 )
 from providers import DeepgramSttAdapter, LiveKitTransportAdapter, ManagedTtsAdapter, ReasoningAdapter
 
@@ -68,8 +75,14 @@ class VoiceRuntimeV2:
         runtime_config_payload = await self.api_client.get_runtime_config(str(business["id"]))
         if not runtime_config_payload:
             raise ValueError(f"Unable to load runtime-config for business {business['id']}")
+        if "voicePolicyV2" not in runtime_config_payload:
+            raise ValueError(f"Runtime-config for business {business['id']} is missing required voicePolicyV2")
 
-        runtime_config = RuntimeConfigBootstrap.model_validate(runtime_config_payload)
+        try:
+            runtime_config = RuntimeConfigBootstrap.model_validate(runtime_config_payload)
+        except ValidationError as error:
+            raise ValueError(f"Runtime-config for business {business['id']} is invalid for Voice Runtime V2") from error
+
         call_data = await self.api_client.create_call_session(
             {
                 "direction": "INBOUND",
@@ -103,12 +116,14 @@ class VoiceRuntimeV2:
             f"Thank you for calling {runtime_config.business.name}. "
             "I'm Wardline, your virtual receptionist. How can I help you today?"
         )
-        session.messages.append(SessionMessage(role="assistant", text=greeting))
+        self._append_assistant_message(session, greeting)
         session.events.append(
             SessionEvent(
                 type="session_bootstrap",
                 actionName="voice-runtime-v2",
+                domain="knowledge",
                 integrationCategory="TRANSPORT",
+                operatorSummary="Voice Runtime V2 session started.",
                 data={
                     "transport": transport.model_dump(),
                     "providers": self.readiness(),
@@ -135,76 +150,69 @@ class VoiceRuntimeV2:
 
     async def process_text_turn(self, session_id: str, text: str) -> Dict[str, Any]:
         session = self.get_session(session_id)
+        cleaned_text = text.strip()
         session.turns += 1
-        session.messages.append(SessionMessage(role="caller", text=text))
+        session.messages.append(SessionMessage(role="caller", text=cleaned_text))
 
-        safety_result = self.safety.evaluate(session, text)
+        if session.awaitingAnythingElse:
+            continuation = await self._handle_anything_else(session, cleaned_text)
+            if continuation is not None:
+                return continuation
+
+        if session.awaitingVoicemail:
+            reply = "I'm ready to capture your voicemail whenever you're ready. Please leave your message after the tone."
+            self._append_assistant_message(session, reply)
+            await self._sync_call_state(session, tag="VOICEMAIL")
+            return self._build_turn_response(session, reply, "handoff", False, awaiting_voicemail=True)
+
+        safety_result = self.safety.evaluate(session, cleaned_text)
         if safety_result:
             if safety_result.requestHumanFollowUp:
-                await self._create_manual_follow_up_event(session, safety_result.operatorSummary or text)
-            session.messages.append(SessionMessage(role="assistant", text=safety_result.reply))
-            await self._sync_call_state(session, tag="EMERGENCY" if session.isEmergency else "HUMAN_TRANSFER")
-            return self._build_turn_response(session, safety_result.reply, safety_result.domain, True)
+                await self._create_manual_follow_up_event(
+                    session,
+                    safety_result.operatorSummary.headline if safety_result.operatorSummary else cleaned_text,
+                )
+                session.lastOperatorSummary = safety_result.operatorSummary
+            return await self._finalize_specialist_result(session, safety_result)
 
         if session.pendingAction:
-            return await self._handle_pending_action(session, text)
+            return await self._handle_pending_action(session, cleaned_text)
 
-        knowledge_result = self.knowledge.handle(session, text)
-        if knowledge_result:
-            session.activeDomain = None
-            session.messages.append(SessionMessage(role="assistant", text=knowledge_result.reply))
+        decision = self.supervisor.choose_domain(session, cleaned_text)
+        session.lastDecision = decision
+        session.activeDomain = decision.domain if decision.mode != "clarify" else None
+        self._record_supervisor_decision(session, decision, cleaned_text)
+
+        if decision.mode == "clarify":
+            reply = decision.clarificationPrompt or "How can I help you today?"
+            self._append_assistant_message(session, reply)
             await self._sync_call_state(session)
-            return self._build_turn_response(session, knowledge_result.reply, knowledge_result.domain, False)
+            return self._build_turn_response(session, reply, "knowledge", False)
 
-        if session.isAfterHours and _contains(text, URGENT_AFTER_HOURS_KEYWORDS):
-            handoff_result = self.handoff.build_after_hours_urgent_reply(session)
-            session.awaitingVoicemail = True
+        if decision.mode == "knowledge":
+            knowledge_result = self.knowledge.handle(session, cleaned_text)
+            if knowledge_result:
+                session.activeDomain = None
+                return await self._finalize_specialist_result(session, knowledge_result)
+
+        if session.isAfterHours and decision.domain not in {"knowledge", "safety"}:
+            if _contains(cleaned_text, URGENT_AFTER_HOURS_KEYWORDS) and session.runtimeConfig.voicePolicyV2.afterHoursPolicy.sendUrgentToVoicemail:
+                session.activeDomain = "handoff"
+                return await self._handle_specialist_result(
+                    session,
+                    self.handoff.build_after_hours_urgent_reply(session, cleaned_text),
+                )
+
+            after_hours_result = self.handoff.build_after_hours_standard_reply(session, cleaned_text)
+            if after_hours_result.status == "execute_now":
+                return await self._handle_specialist_result(session, after_hours_result)
+
             session.activeDomain = "handoff"
-            session.messages.append(SessionMessage(role="assistant", text=handoff_result.reply))
-            await self._sync_call_state(session, tag="VOICEMAIL")
-            return self._build_turn_response(
-                session,
-                handoff_result.reply,
-                handoff_result.domain,
-                False,
-                awaiting_voicemail=True,
-            )
+            return await self._handle_specialist_result(session, after_hours_result)
 
-        domain = self.supervisor.choose_domain(session, text)
-        session.activeDomain = domain
-
-        if domain == "handoff":
-            result = self.handoff.build_manual_follow_up(text)
-        elif domain == "scheduling":
-            result = self.scheduling.handle(session, text)
-        elif domain == "refill":
-            result = self.refill.handle(session, text)
-        elif domain == "insurance":
-            result = self.insurance.handle(session, text)
-        elif domain == "billing":
-            result = self.billing.handle(session, text)
-        else:
-            result = self.knowledge.handle(session, text) or self.handoff.build_manual_follow_up(text)
-
-        if result.runtimeAction and result.confirmationSummary and result.runtimeAction in session.runtimeConfig.voicePolicyV2.writeActionsRequiringConfirmation:
-            session.pendingAction = PendingAction(
-                actionName=result.runtimeAction,
-                summary=result.confirmationSummary,
-                payload=result.runtimePayload,
-                domain=result.domain,
-            )
-        elif result.runtimeAction:
-            return await self._execute_specialist_result(session, result)
-
-        session.messages.append(SessionMessage(role="assistant", text=result.reply))
-        await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
-        return self._build_turn_response(
-            session,
-            result.reply,
-            result.domain,
-            bool(session.pendingAction),
-            awaiting_voicemail=session.awaitingVoicemail,
-        )
+        specialist = self._select_specialist(decision.domain)
+        result = specialist.handle(session, cleaned_text)
+        return await self._handle_specialist_result(session, result)
 
     async def capture_voicemail(
         self,
@@ -231,6 +239,25 @@ class VoiceRuntimeV2:
             },
         )
         session.awaitingVoicemail = False
+        session.stage = "completed"
+        session.lastOperatorSummary = OperatorSummary(
+            headline="Voicemail captured",
+            nextStep="Review the voicemail and linked follow-up in the dashboard.",
+            specialist="handoff",
+            callerRequest="Voicemail captured for staff review.",
+            followUpRequired=True,
+        )
+        session.events.append(
+            SessionEvent(
+                type="voicemail_captured",
+                actionName="voicemail",
+                domain="handoff",
+                status="voicemail",
+                operatorSummary=session.lastOperatorSummary.headline,
+                requiresFollowUp=True,
+                data={"recordingUrl": recording_url, "transcription": transcription},
+            )
+        )
         await self._sync_call_state(session, tag="VOICEMAIL", status="COMPLETED")
         return result or {"accepted": True}
 
@@ -250,6 +277,7 @@ class VoiceRuntimeV2:
                 SessionEvent(
                     type="transcript_partial",
                     actionName="partial-transcript",
+                    domain=session.activeDomain,
                     integrationCategory="TRANSPORT",
                     data={"text": text, "providerSessionId": provider_session_id},
                 )
@@ -274,6 +302,7 @@ class VoiceRuntimeV2:
             SessionEvent(
                 type="transport_event",
                 actionName=event_type,
+                domain=session.activeDomain,
                 integrationCategory="TRANSPORT",
                 data=payload or {},
             )
@@ -285,22 +314,109 @@ class VoiceRuntimeV2:
             "transport": session.transport.model_dump(),
         }
 
+    async def _handle_anything_else(self, session: SessionState, text: str) -> Optional[Dict[str, Any]]:
+        lowered = _normalize(text)
+        if lowered in {"no", "nope", "nothing else", "that's all", "that is all", "thanks", "thank you"}:
+            session.awaitingAnythingElse = False
+            session.stage = "completed"
+            reply = f"Thanks for calling {session.businessName}. Take care."
+            self._append_assistant_message(session, reply)
+            await self._sync_call_state(session, status="COMPLETED")
+            return self._build_turn_response(session, reply, "knowledge", False)
+
+        if lowered in {"yes", "yeah", "yep", "sure", "okay"}:
+            session.awaitingAnythingElse = False
+            session.stage = "intake"
+            reply = "Of course. What else can I help you with today?"
+            self._append_assistant_message(session, reply)
+            await self._sync_call_state(session)
+            return self._build_turn_response(session, reply, "knowledge", False)
+
+        session.awaitingAnythingElse = False
+        session.stage = "intake"
+        return None
+
+    async def _handle_specialist_result(self, session: SessionState, result: SpecialistResult) -> Dict[str, Any]:
+        session.lastSpecialistResult = result
+        session.lastOperatorSummary = result.operatorSummary
+        self._record_specialist_result(session, result)
+
+        if result.status == "needs_information":
+            session.stage = "intake"
+            return await self._finalize_specialist_result(session, result)
+
+        if result.status == "ready_for_confirmation":
+            session.pendingAction = PendingAction(
+                actionName=result.runtimeAction or "",
+                summary=result.confirmationSummary or result.nextPrompt,
+                payload=result.runtimePayload,
+                domain=result.domain,
+                callerRequestSummary=result.callerRequestSummary or result.confirmationSummary or result.nextPrompt,
+                fallbackRecommendation=result.fallbackRecommendation,
+            )
+            session.stage = "confirmation"
+            return await self._finalize_specialist_result(
+                session,
+                result,
+                requires_confirmation=True,
+            )
+
+        if result.status == "execute_now":
+            return await self._execute_specialist_result(session, result)
+
+        if result.status == "voicemail":
+            session.awaitingVoicemail = True
+            session.stage = "voicemail"
+            return await self._finalize_specialist_result(
+                session,
+                result,
+                awaiting_voicemail=True,
+            )
+
+        return await self._finalize_specialist_result(session, result)
+
+    async def _finalize_specialist_result(
+        self,
+        session: SessionState,
+        result: SpecialistResult,
+        requires_confirmation: bool = False,
+        awaiting_voicemail: bool = False,
+    ) -> Dict[str, Any]:
+        reply = result.nextPrompt
+        if result.resolved and not awaiting_voicemail and not session.isEmergency:
+            reply = self._offer_anything_else(session, reply, result.domain)
+        else:
+            session.awaitingAnythingElse = False
+
+        self._append_assistant_message(session, reply)
+        await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
+        return self._build_turn_response(
+            session,
+            reply,
+            result.domain,
+            requires_confirmation,
+            awaiting_voicemail=awaiting_voicemail,
+        )
+
     async def _handle_pending_action(self, session: SessionState, text: str) -> Dict[str, Any]:
         pending = session.pendingAction
         if not pending:
-            return self._build_turn_response(session, "What would you like to do next?", "supervisor", False)
+            return self._build_turn_response(session, "What would you like to do next?", "knowledge", False)
 
         lowered = _normalize(text)
         if any(keyword in lowered for keyword in ["repeat", "summarize", "what are you confirming", "say that again"]):
+            pending.confirmAttempts += 1
             reply = f"To confirm, {pending.summary}. Say yes to submit it, or tell me what you want to change."
-            session.messages.append(SessionMessage(role="assistant", text=reply))
-            return self._build_turn_response(session, reply, "supervisor", True)
+            self._append_assistant_message(session, reply)
+            return self._build_turn_response(session, reply, pending.domain, True)
 
         if any(keyword in lowered for keyword in ["actually", "change", "wrong", "not that", "wait"]):
+            pending.requestedChanges.append(text.strip())
             session.pendingAction = None
             session.activeDomain = pending.domain
+            session.stage = "intake"
             reply = f"Okay, let's update that {pending.domain} request. Tell me the corrected details."
-            session.messages.append(SessionMessage(role="assistant", text=reply))
+            self._append_assistant_message(session, reply)
             return self._build_turn_response(session, reply, pending.domain, False)
 
         if any(keyword in lowered for keyword in ["yes", "yeah", "yep", "correct", "confirm"]):
@@ -308,81 +424,88 @@ class VoiceRuntimeV2:
 
         if any(keyword in lowered for keyword in ["no", "cancel", "stop", "not now"]):
             session.pendingAction = None
-            reply = "Okay, I won't submit that. What else can I help you with today?"
-            session.messages.append(SessionMessage(role="assistant", text=reply))
+            session.stage = "intake"
+            reply = self._offer_anything_else(session, "Okay, I won't submit that.", pending.domain)
+            self._append_assistant_message(session, reply)
             await self._sync_call_state(session)
-            return self._build_turn_response(session, reply, "supervisor", False)
+            return self._build_turn_response(session, reply, pending.domain, False)
 
+        pending.confirmAttempts += 1
         reply = f"Please say yes to confirm, or tell me what you want to change about {pending.summary}."
-        session.messages.append(SessionMessage(role="assistant", text=reply))
-        return self._build_turn_response(session, reply, "supervisor", True)
+        self._append_assistant_message(session, reply)
+        return self._build_turn_response(session, reply, pending.domain, True)
 
     async def _execute_pending_action(self, session: SessionState) -> Dict[str, Any]:
         pending = session.pendingAction
         if not pending:
             raise ValueError("No pending action to execute")
 
-        result, latency_ms = await self.api_client.execute_runtime_action(
-            session.businessId,
+        outcome = await self._run_runtime_action(
+            session,
             pending.actionName,
-            {
-                **pending.payload,
-                "callId": session.callId,
-            },
+            {**pending.payload, "callId": session.callId},
         )
-
-        event = SessionEvent(
-            type="runtime_action_outcome",
-            actionName=pending.actionName,
-            integrationCategory=self._integration_category_for_action(pending.actionName),
-            handledLive=bool(result and result.get("handledLive")),
-            followUpTaskId=result.get("followUpTaskId") if result else None,
-            fallbackReason=(result.get("fallbackReason") or result.get("message")) if result and not result.get("handledLive") else None,
-            callerName=session.callerName,
-            callerPhone=session.callerPhone,
-            data={"latencyMs": latency_ms, "domain": pending.domain},
-        )
-        session.events.append(event)
         session.pendingAction = None
-
-        reply = (
-            result.get("message")
-            if result
-            else "I wasn't able to complete that right now, but the staff can follow up with you."
+        session.completedDomains.append(pending.domain)
+        enriched_summary = self._combine_operator_summary(
+            base=session.lastOperatorSummary,
+            outcome=outcome,
+            domain=pending.domain,
+            caller_request=pending.callerRequestSummary,
         )
-        session.messages.append(SessionMessage(role="assistant", text=reply))
+        self._record_runtime_action_outcome(session, pending.domain, pending.actionName, outcome, enriched_summary)
+        reply = self._offer_anything_else(session, outcome.message, pending.domain)
+        self._append_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(pending.domain))
         return self._build_turn_response(session, reply, pending.domain, False)
 
-    async def _execute_specialist_result(self, session: SessionState, result) -> Dict[str, Any]:
-        api_result, latency_ms = await self.api_client.execute_runtime_action(
-            session.businessId,
+    async def _execute_specialist_result(self, session: SessionState, result: SpecialistResult) -> Dict[str, Any]:
+        if not result.runtimeAction:
+            return await self._finalize_specialist_result(session, result)
+
+        outcome = await self._run_runtime_action(
+            session,
             result.runtimeAction,
-            {
-                **result.runtimePayload,
-                "callId": session.callId,
-            },
+            {**result.runtimePayload, "callId": session.callId},
         )
-        event = SessionEvent(
-            type="runtime_action_outcome",
-            actionName=result.runtimeAction or "manual-follow-up",
-            integrationCategory=self._integration_category_for_action(result.runtimeAction),
-            handledLive=bool(api_result and api_result.get("handledLive")),
-            followUpTaskId=api_result.get("followUpTaskId") if api_result else None,
-            fallbackReason=(api_result.get("fallbackReason") or api_result.get("message")) if api_result and not api_result.get("handledLive") else None,
-            callerName=session.callerName,
-            callerPhone=session.callerPhone,
-            data={"latencyMs": latency_ms, "domain": result.domain},
+        session.completedDomains.append(result.domain)
+        enriched_summary = self._combine_operator_summary(
+            base=result.operatorSummary,
+            outcome=outcome,
+            domain=result.domain,
+            caller_request=result.callerRequestSummary or result.nextPrompt,
         )
-        session.events.append(event)
-        reply = api_result.get("message") if api_result else result.reply
-        session.messages.append(SessionMessage(role="assistant", text=reply))
+        self._record_runtime_action_outcome(session, result.domain, result.runtimeAction, outcome, enriched_summary)
+        reply = self._offer_anything_else(session, outcome.message, result.domain)
+        self._append_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
         return self._build_turn_response(session, reply, result.domain, False)
 
+    async def _run_runtime_action(
+        self,
+        session: SessionState,
+        action_name: str,
+        payload: Dict[str, Any],
+    ) -> RuntimeActionOutcome:
+        result, latency_ms = await self.api_client.execute_runtime_action(session.businessId, action_name, payload)
+        response = result or {}
+        return RuntimeActionOutcome(
+            actionName=action_name,
+            handledLive=bool(response.get("handledLive")),
+            fallbackCreated=bool(response.get("fallbackCreated")),
+            requiresStaffFollowUp=bool(response.get("requiresStaffFollowUp")),
+            message=response.get("message")
+            or "I wasn't able to complete that live, but the staff can follow up with you.",
+            followUpTaskId=response.get("followUpTaskId"),
+            fallbackReason=response.get("fallbackReason"),
+            integration=response.get("integration") or {},
+            data=response.get("data") or {},
+            latencyMs=latency_ms,
+        )
+
     async def _create_manual_follow_up_event(self, session: SessionState, summary: str):
-        result, latency_ms = await self.api_client.execute_runtime_action(
-            session.businessId,
+        outcome = await self._run_runtime_action(
+            session,
             "manual-follow-up",
             {
                 "callId": session.callId,
@@ -393,19 +516,16 @@ class VoiceRuntimeV2:
                 "priority": "URGENT" if session.isEmergency else "HIGH",
             },
         )
-        session.events.append(
-            SessionEvent(
-                type="runtime_action_outcome",
-                actionName="manual-follow-up",
-                integrationCategory="MANUAL",
-                handledLive=bool(result and result.get("handledLive")),
-                followUpTaskId=result.get("followUpTaskId") if result else None,
-                fallbackReason=result.get("message") if result else None,
-                callerName=session.callerName,
-                callerPhone=session.callerPhone,
-                data={"latencyMs": latency_ms, "domain": "handoff"},
-            )
+        manual_summary = OperatorSummary(
+            headline="Staff follow-up requested",
+            nextStep="Review the follow-up task and contact the caller if needed.",
+            specialist="handoff",
+            callerRequest=summary,
+            followUpRequired=True,
+            handledLive=outcome.handledLive,
+            fallbackReason=outcome.fallbackReason,
         )
+        self._record_runtime_action_outcome(session, "handoff", "manual-follow-up", outcome, manual_summary)
 
     async def _sync_call_state(
         self,
@@ -421,8 +541,10 @@ class VoiceRuntimeV2:
                 "status": status,
                 "tag": tag,
                 "isEmergency": session.isEmergency,
+                "detectedIntent": session.activeDomain.upper() if session.activeDomain else None,
                 "turnCount": session.turns,
                 "turnsJson": [event.model_dump() for event in session.events],
+                "endedAt": datetime.now(timezone.utc).isoformat() if status == "COMPLETED" else None,
             },
         )
 
@@ -430,7 +552,7 @@ class VoiceRuntimeV2:
         self,
         session: SessionState,
         reply: str,
-        domain: str,
+        domain: DomainName,
         requires_confirmation: bool,
         awaiting_voicemail: bool = False,
     ) -> Dict[str, Any]:
@@ -438,13 +560,140 @@ class VoiceRuntimeV2:
             "sessionId": session.sessionId,
             "reply": reply,
             "domain": domain,
+            "stage": session.stage,
+            "activeDomain": session.activeDomain,
             "requiresConfirmation": requires_confirmation,
             "awaitingVoicemail": awaiting_voicemail,
+            "awaitingAnythingElse": session.awaitingAnythingElse,
             "pendingAction": session.pendingAction.model_dump() if session.pendingAction else None,
+            "operatorSummary": session.lastOperatorSummary.model_dump() if session.lastOperatorSummary else None,
             "transport": session.transport.model_dump(),
         }
 
-    def _domain_to_tag(self, domain: str) -> Optional[str]:
+    def _record_supervisor_decision(self, session: SessionState, decision: SupervisorDecision, caller_text: str):
+        session.events.append(
+            SessionEvent(
+                type="supervisor_decision",
+                actionName=decision.mode,
+                domain=decision.domain,
+                operatorSummary=decision.reason,
+                data={
+                    "confidence": decision.confidence,
+                    "reason": decision.reason,
+                    "continuation": decision.continuation,
+                    "callerText": caller_text,
+                },
+            )
+        )
+
+    def _record_specialist_result(self, session: SessionState, result: SpecialistResult):
+        session.events.append(
+            SessionEvent(
+                type="specialist_result",
+                actionName=result.runtimeAction or result.domain,
+                domain=result.domain,
+                status=result.status,
+                operatorSummary=result.operatorSummary.headline if result.operatorSummary else None,
+                requiresFollowUp=bool(result.operatorSummary and result.operatorSummary.followUpRequired),
+                data={
+                    "missingFields": result.missingFields,
+                    "extractedFields": result.extractedFields,
+                    "callerRequestSummary": result.callerRequestSummary,
+                    "fallbackRecommendation": result.fallbackRecommendation,
+                },
+            )
+        )
+
+    def _record_runtime_action_outcome(
+        self,
+        session: SessionState,
+        domain: DomainName,
+        action_name: str,
+        outcome: RuntimeActionOutcome,
+        operator_summary: OperatorSummary,
+    ):
+        session.lastOperatorSummary = operator_summary
+        session.events.append(
+            SessionEvent(
+                type="runtime_action_outcome",
+                actionName=action_name,
+                domain=domain,
+                status="execute_now",
+                integrationCategory=self._integration_category_for_action(action_name),
+                integrationVendor=outcome.integration.get("vendor") if isinstance(outcome.integration, dict) else None,
+                handledLive=outcome.handledLive,
+                followUpTaskId=outcome.followUpTaskId,
+                fallbackReason=outcome.fallbackReason,
+                operatorSummary=operator_summary.headline,
+                callerName=session.callerName,
+                callerPhone=session.callerPhone,
+                requiresFollowUp=operator_summary.followUpRequired,
+                data={
+                    "latencyMs": outcome.latencyMs,
+                    "callerRequest": operator_summary.callerRequest,
+                    "nextStep": operator_summary.nextStep,
+                    "followUpRequired": operator_summary.followUpRequired,
+                    "handledLive": outcome.handledLive,
+                    "integration": outcome.integration,
+                    "responseData": outcome.data,
+                },
+            )
+        )
+
+    def _combine_operator_summary(
+        self,
+        base: Optional[OperatorSummary],
+        outcome: RuntimeActionOutcome,
+        domain: DomainName,
+        caller_request: str,
+    ) -> OperatorSummary:
+        if base:
+            return base.model_copy(
+                update={
+                    "handledLive": outcome.handledLive,
+                    "fallbackReason": outcome.fallbackReason,
+                    "followUpRequired": outcome.requiresStaffFollowUp or base.followUpRequired,
+                    "callerRequest": caller_request or base.callerRequest,
+                }
+            )
+
+        return OperatorSummary(
+            headline="Handled live" if outcome.handledLive else "Staff follow-up required",
+            nextStep=(
+                "No staff follow-up is currently required."
+                if outcome.handledLive
+                else "Review the linked follow-up task and complete the staff request."
+            ),
+            specialist=domain,
+            callerRequest=caller_request,
+            followUpRequired=outcome.requiresStaffFollowUp,
+            handledLive=outcome.handledLive,
+            fallbackReason=outcome.fallbackReason,
+        )
+
+    def _append_assistant_message(self, session: SessionState, reply: str):
+        session.messages.append(SessionMessage(role="assistant", text=reply))
+
+    def _offer_anything_else(self, session: SessionState, reply: str, domain: DomainName) -> str:
+        if domain in {"safety", "handoff"} and (session.isEmergency or session.awaitingVoicemail):
+            session.awaitingAnythingElse = False
+            return reply
+
+        session.awaitingAnythingElse = True
+        session.stage = "intake"
+        return f"{reply} What else can I help you with today?"
+
+    def _select_specialist(self, domain: DomainName):
+        return {
+            "knowledge": self.knowledge,
+            "scheduling": self.scheduling,
+            "refill": self.refill,
+            "insurance": self.insurance,
+            "billing": self.billing,
+            "handoff": self.handoff,
+        }.get(domain, self.knowledge)
+
+    def _domain_to_tag(self, domain: DomainName) -> Optional[str]:
         return {
             "scheduling": "SCHEDULING",
             "refill": "PRESCRIPTION_REFILL",

@@ -196,11 +196,13 @@ export interface CallDetail {
     runtimeActionEvents: Array<{
         type: 'runtime_action_outcome';
         actionName: string;
+        domain?: string;
         integrationCategory?: string;
         integrationVendor?: string;
         handledLive: boolean;
         followUpTaskId?: string;
         fallbackReason?: string;
+        operatorSummary?: string;
         callerName?: string;
         callerPhone?: string;
         data?: Record<string, unknown>;

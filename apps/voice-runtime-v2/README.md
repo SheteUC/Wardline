@@ -35,7 +35,7 @@ V2 local runs do not depend on whichever Python happens to be first on `PATH`.
 
 ## Validation
 
-The local/session endpoints are the current validation harness while provider-backed telephony is being wired:
+The local/session endpoints are the current proof surface while provider-backed telephony is deferred:
 
 - `POST /sessions`
 - `POST /telephony/twilio/bootstrap`
@@ -44,4 +44,13 @@ The local/session endpoints are the current validation harness while provider-ba
 - `POST /sessions/{sessionId}/events`
 - `POST /sessions/{sessionId}/voicemail`
 
-These endpoints validate internal multi-agent behavior and transport bootstrap metadata without depending on a full carrier cutover.
+These endpoints validate:
+
+- supervisor routing and clarification
+- specialist intake and continuation
+- confirmation repair and change flow
+- runtime-action live/fallback parity
+- voicemail and manual handoff packaging
+- operator-summary persistence
+
+`pnpm test:voice:v2` is the authoritative voice proof gate for this phase.

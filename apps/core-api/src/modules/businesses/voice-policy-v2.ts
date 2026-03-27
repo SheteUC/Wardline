@@ -86,6 +86,7 @@ export function buildVoicePolicyV2(input: {
     const connectedCategories = (input.integrations ?? [])
         .filter((integration) => integration.status === 'CONNECTED')
         .map((integration) => String(integration.category));
+    const connectedCategorySet = new Set(connectedCategories);
 
     const enabledDomains = new Set<SpecialistDomain>(['safety', 'knowledge', 'handoff']);
     if (practiceSetup.enabledActions.includes('appointment-request')) enabledDomains.add('scheduling');
@@ -111,7 +112,9 @@ export function buildVoicePolicyV2(input: {
                 enabled: practiceSetup.enabledActions.includes('appointment-request'),
                 runtimeAction: 'appointment-request',
                 integrationCategory: 'SCHEDULING',
-                liveEnabled: practiceSetup.enabledActions.includes('appointment-request'),
+                liveEnabled:
+                    practiceSetup.enabledActions.includes('appointment-request') &&
+                    connectedCategorySet.has('SCHEDULING'),
                 intakeNotes:
                     'Collect the visit type, desired timing, and callback number before requesting an appointment.',
                 fallbackSummary:
@@ -121,7 +124,9 @@ export function buildVoicePolicyV2(input: {
                 enabled: practiceSetup.enabledActions.includes('refill-request'),
                 runtimeAction: 'refill-request',
                 integrationCategory: 'EHR_REFILL',
-                liveEnabled: practiceSetup.refillPolicy.liveEnabled,
+                liveEnabled:
+                    practiceSetup.refillPolicy.liveEnabled &&
+                    connectedCategorySet.has('EHR_REFILL'),
                 intakeNotes: practiceSetup.refillPolicy.intakeNotes,
                 fallbackSummary: practiceSetup.refillPolicy.fallbackSummary,
             },
@@ -129,7 +134,9 @@ export function buildVoicePolicyV2(input: {
                 enabled: practiceSetup.enabledActions.includes('insurance-check'),
                 runtimeAction: 'insurance-check',
                 integrationCategory: 'INSURANCE',
-                liveEnabled: practiceSetup.insurancePolicy.liveEnabled,
+                liveEnabled:
+                    practiceSetup.insurancePolicy.liveEnabled &&
+                    connectedCategorySet.has('INSURANCE'),
                 intakeNotes: practiceSetup.insurancePolicy.intakeNotes,
                 fallbackSummary: practiceSetup.insurancePolicy.fallbackSummary,
             },
@@ -137,7 +144,9 @@ export function buildVoicePolicyV2(input: {
                 enabled: practiceSetup.enabledActions.includes('billing-request'),
                 runtimeAction: 'billing-request',
                 integrationCategory: 'BILLING',
-                liveEnabled: practiceSetup.billingPolicy.liveEnabled,
+                liveEnabled:
+                    practiceSetup.billingPolicy.liveEnabled &&
+                    connectedCategorySet.has('BILLING'),
                 intakeNotes: practiceSetup.billingPolicy.intakeNotes,
                 fallbackSummary: practiceSetup.billingPolicy.fallbackSummary,
             },

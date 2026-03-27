@@ -12,7 +12,7 @@ The system uses a shared US-only multi-tenant stack, one generated runtime workf
 - Language: English only
 - Workflow model: one generated active runtime workflow per business
 - Integration model: one configured vendor per category
-- Voice runtime: V1 rollback path plus an in-progress internal Voice Runtime V2 rewrite
+- Voice runtime: internal Voice Runtime V2 only, proven first through the local/session harness
 - After-hours urgent policy: no live urgent handling after hours; capture urgent voicemail and create a next-day queue item
 - Data posture: compact summaries and operational metadata by default, with optional short transcript retention for debugging
 

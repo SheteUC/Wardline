@@ -161,11 +161,14 @@ export class CallsService {
                 actionName: entry.actionName,
                 integrationCategory: entry.integrationCategory,
                 integrationVendor: entry.integrationVendor,
+                domain: typeof entry.domain === 'string' ? entry.domain : undefined,
                 handledLive: Boolean(entry.handledLive),
                 followUpTaskId:
                     typeof entry.followUpTaskId === 'string' ? entry.followUpTaskId : undefined,
                 fallbackReason:
                     typeof entry.fallbackReason === 'string' ? entry.fallbackReason : undefined,
+                operatorSummary:
+                    typeof entry.operatorSummary === 'string' ? entry.operatorSummary : undefined,
                 callerName: typeof entry.callerName === 'string' ? entry.callerName : undefined,
                 callerPhone: typeof entry.callerPhone === 'string' ? entry.callerPhone : undefined,
                 data:
@@ -202,9 +205,11 @@ export class CallsService {
         },
         runtimeActionEvents: Array<{
             actionName: string;
+            domain?: string;
             handledLive: boolean;
             followUpTaskId?: string;
             fallbackReason?: string;
+            operatorSummary?: string;
         }>,
     ) {
         const openFollowUpTask = (call.followUpTasks ?? []).find(
@@ -226,7 +231,7 @@ export class CallsService {
             if (latestRuntimeAction.handledLive) {
                 return {
                     resolution: 'LIVE_RESOLVED',
-                    label: 'Handled live',
+                    label: latestRuntimeAction.operatorSummary || 'Handled live',
                     nextStep: openFollowUpTask
                         ? 'A follow-up task is still open. Review it and close it if the live action fully resolved the call.'
                         : 'No staff follow-up is currently required unless the caller contacts the practice again.',
@@ -237,7 +242,7 @@ export class CallsService {
 
             return {
                 resolution: 'FOLLOW_UP_REQUIRED',
-                label: 'Staff follow-up required',
+                label: latestRuntimeAction.operatorSummary || 'Staff follow-up required',
                 nextStep: openFollowUpTask
                     ? `Open the ${this.humanizeTaskType(openFollowUpTask.type)} task and complete the requested staff follow-up.`
                     : 'Review the call and create or complete the appropriate staff follow-up.',
@@ -487,6 +492,7 @@ export class CallsService {
         if (dto.turnCount !== undefined) data.turnCount = dto.turnCount;
         if (dto.turnsJson !== undefined) data.turnsJson = dto.turnsJson;
         if (dto.callerId !== undefined) data.callerId = dto.callerId;
+        if (dto.detectedIntent !== undefined) data.detectedIntent = dto.detectedIntent;
 
         await this.cache.delete(`calls:detail:${id}`);
         const updated = await this.prisma.callSession.update({ where: { id }, data });

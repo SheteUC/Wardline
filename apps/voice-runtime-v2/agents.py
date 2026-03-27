@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Dict, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from models import SessionState, SpecialistResult
+from models import OperatorSummary, SessionState, SpecialistResult, SupervisorDecision
 
 EMERGENCY_KEYWORDS = [
     "chest pain",
@@ -124,6 +124,20 @@ def _format_hours(session: SessionState) -> str:
     return f"The office is open today, {today_label}, from {start_time} to {end_time}."
 
 
+def _enabled_service_labels(session: SessionState) -> str:
+    enabled_domains = set(session.runtimeConfig.voicePolicyV2.enabledDomains)
+    labels = []
+    if "scheduling" in enabled_domains:
+        labels.append("appointments")
+    if "refill" in enabled_domains:
+        labels.append("prescription refills")
+    if "insurance" in enabled_domains:
+        labels.append("insurance questions")
+    if "billing" in enabled_domains:
+        labels.append("billing support")
+    return ", ".join(labels) or "general staff messages"
+
+
 class SafetyAgent:
     def evaluate(self, session: SessionState, text: str) -> Optional[SpecialistResult]:
         lowered = _normalize(text)
@@ -133,12 +147,20 @@ class SafetyAgent:
             session.isEmergency = True
             return SpecialistResult(
                 domain="safety",
+                status="handoff",
                 confidence=1.0,
-                reply=(
+                nextPrompt=(
                     "I'm hearing something that may be a medical emergency. "
                     "Please call 911 right away or go to the nearest emergency room."
                 ),
-                operatorSummary="Emergency language detected. Escalate immediately.",
+                operatorSummary=OperatorSummary(
+                    headline="Emergency language detected",
+                    nextStep="Escalate immediately and confirm emergency guidance was given.",
+                    specialist="safety",
+                    callerRequest=text.strip() or "Emergency concern",
+                    followUpRequired=True,
+                ),
+                callerRequestSummary="Emergency concern reported by caller.",
                 requestHumanFollowUp=True,
                 resolved=True,
             )
@@ -146,12 +168,20 @@ class SafetyAgent:
         if any(phrase in lowered for phrase in CLINICAL_ADVICE_PHRASES):
             return SpecialistResult(
                 domain="safety",
-                confidence=0.9,
-                reply=(
+                status="handoff",
+                confidence=0.92,
+                nextPrompt=(
                     "I'm not able to provide medical advice, but I can connect you with a staff member or capture a message for clinical follow-up."
                 ),
                 fallbackRecommendation="manual-follow-up",
-                operatorSummary="Clinical-advice boundary reached. Route to staff follow-up.",
+                operatorSummary=OperatorSummary(
+                    headline="Clinical advice request redirected",
+                    nextStep="Route to staff follow-up for clinical guidance.",
+                    specialist="safety",
+                    callerRequest=text.strip() or "Clinical advice request",
+                    followUpRequired=True,
+                ),
+                callerRequestSummary="Caller requested medical advice and was redirected to staff.",
                 requestHumanFollowUp=True,
                 resolved=True,
             )
@@ -160,24 +190,54 @@ class SafetyAgent:
 
 
 class KnowledgeAgent:
+    KNOWLEDGE_KEYWORDS = [
+        "hours",
+        "open",
+        "close",
+        "closing",
+        "services",
+        "what do you do",
+        "what can you help with",
+        "after hours",
+        "closed",
+        "voicemail",
+        "call back",
+    ]
+
     def handle(self, session: SessionState, text: str) -> Optional[SpecialistResult]:
         lowered = _normalize(text)
         if any(keyword in lowered for keyword in ["hours", "open", "close", "closing"]):
+            answer = _format_hours(session)
             return SpecialistResult(
                 domain="knowledge",
+                status="answered",
                 confidence=0.95,
-                reply=_format_hours(session),
-                operatorSummary="Answered office-hours question from practice setup.",
+                nextPrompt=answer,
+                operatorSummary=OperatorSummary(
+                    headline="Answered office-hours question",
+                    nextStep="No staff follow-up is needed unless the caller asks for something else.",
+                    specialist="knowledge",
+                    callerRequest=text.strip() or "Office hours question",
+                ),
+                callerRequestSummary="Office-hours question answered from practice setup.",
                 resolved=True,
             )
 
         if any(keyword in lowered for keyword in ["services", "what do you do", "what can you help with"]):
             summary = session.runtimeConfig.voicePolicyV2.knowledgeConfig.faqSummary
+            answer = summary or f"I can help with {_enabled_service_labels(session)}."
             return SpecialistResult(
                 domain="knowledge",
+                status="answered",
                 confidence=0.9,
-                reply=summary or "I can help with appointments, prescription refills, insurance questions, and billing support.",
-                operatorSummary="Answered practice-services question from knowledge config.",
+                nextPrompt=answer,
+                operatorSummary=OperatorSummary(
+                    headline="Answered practice services question",
+                    nextStep="No staff follow-up is needed unless the caller asks for something else.",
+                    specialist="knowledge",
+                    callerRequest=text.strip() or "Practice services question",
+                ),
+                callerRequestSummary="Practice services question answered from knowledge config.",
                 resolved=True,
             )
 
@@ -185,9 +245,34 @@ class KnowledgeAgent:
             policy = session.runtimeConfig.voicePolicyV2.afterHoursPolicy.greeting
             return SpecialistResult(
                 domain="knowledge",
+                status="answered",
                 confidence=0.9,
-                reply=policy,
-                operatorSummary="Answered after-hours policy question.",
+                nextPrompt=policy,
+                operatorSummary=OperatorSummary(
+                    headline="Answered after-hours policy question",
+                    nextStep="No staff follow-up is needed unless the caller asks for something else.",
+                    specialist="knowledge",
+                    callerRequest=text.strip() or "After-hours question",
+                ),
+                callerRequestSummary="After-hours policy question answered from practice setup.",
+                resolved=True,
+            )
+
+        common_questions = session.runtimeConfig.voicePolicyV2.knowledgeConfig.commonQuestions
+        if any(question.lower() in lowered for question in common_questions):
+            return SpecialistResult(
+                domain="knowledge",
+                status="answered",
+                confidence=0.78,
+                nextPrompt=session.runtimeConfig.voicePolicyV2.knowledgeConfig.faqSummary
+                or "I can help with practice questions and route anything else to the staff.",
+                operatorSummary=OperatorSummary(
+                    headline="Answered practice FAQ",
+                    nextStep="No staff follow-up is needed unless the caller asks for something else.",
+                    specialist="knowledge",
+                    callerRequest=text.strip() or "FAQ",
+                ),
+                callerRequestSummary="Practice FAQ answered from configured knowledge.",
                 resolved=True,
             )
 
@@ -211,10 +296,17 @@ class SchedulingAgent:
         if not payload.get("serviceType"):
             return SpecialistResult(
                 domain="scheduling",
-                confidence=0.82,
-                reply="What kind of appointment do you need, such as a physical, consultation, or follow-up?",
+                status="needs_information",
+                confidence=0.84,
+                nextPrompt="What kind of appointment do you need, such as a physical, consultation, or follow-up?",
                 missingFields=["serviceType"],
-                operatorSummary="Collecting appointment type before scheduling request.",
+                extractedFields=payload,
+                operatorSummary=OperatorSummary(
+                    headline="Collecting appointment details",
+                    nextStep="Continue intake until the visit type is captured.",
+                    specialist="scheduling",
+                    callerRequest=text.strip() or "Appointment request",
+                ),
             )
 
         summary = f"you want the practice to request a {payload['serviceType']} appointment"
@@ -225,8 +317,10 @@ class SchedulingAgent:
 
         return SpecialistResult(
             domain="scheduling",
-            confidence=0.9,
-            reply=f"Before I submit that, please confirm: {summary}.",
+            status="ready_for_confirmation",
+            confidence=0.92,
+            nextPrompt=f"Before I submit that, please confirm: {summary}.",
+            extractedFields=payload,
             confirmationSummary=summary,
             runtimeAction="appointment-request",
             runtimePayload={
@@ -239,7 +333,13 @@ class SchedulingAgent:
                 "confirmed": True,
             },
             fallbackRecommendation=session.runtimeConfig.voicePolicyV2.servicePolicies["scheduling"].fallbackSummary,
-            operatorSummary="Prepared appointment request for confirmation.",
+            operatorSummary=OperatorSummary(
+                headline="Appointment request ready",
+                nextStep="Submit after explicit caller confirmation.",
+                specialist="scheduling",
+                callerRequest=summary,
+            ),
+            callerRequestSummary=summary,
         )
 
 
@@ -254,17 +354,26 @@ class RefillAgent:
         if not payload.get("medicationName"):
             return SpecialistResult(
                 domain="refill",
+                status="needs_information",
                 confidence=0.84,
-                reply="What medication would you like the practice to refill?",
+                nextPrompt="What medication would you like the practice to refill?",
                 missingFields=["medicationName"],
-                operatorSummary="Collecting medication name before refill request.",
+                extractedFields=payload,
+                operatorSummary=OperatorSummary(
+                    headline="Collecting refill details",
+                    nextStep="Continue intake until the medication name is captured.",
+                    specialist="refill",
+                    callerRequest=text.strip() or "Refill request",
+                ),
             )
 
         summary = f"you want the practice to submit a refill request for {payload['medicationName']}"
         return SpecialistResult(
             domain="refill",
+            status="ready_for_confirmation",
             confidence=0.92,
-            reply=f"Before I submit that, please confirm: {summary}.",
+            nextPrompt=f"Before I submit that, please confirm: {summary}.",
+            extractedFields=payload,
             confirmationSummary=summary,
             runtimeAction="refill-request",
             runtimePayload={
@@ -275,7 +384,13 @@ class RefillAgent:
                 "confirmed": True,
             },
             fallbackRecommendation=session.runtimeConfig.voicePolicyV2.servicePolicies["refill"].fallbackSummary,
-            operatorSummary="Prepared refill request for confirmation.",
+            operatorSummary=OperatorSummary(
+                headline="Refill request ready",
+                nextStep="Submit after explicit caller confirmation.",
+                specialist="refill",
+                callerRequest=summary,
+            ),
+            callerRequestSummary=summary,
         )
 
 
@@ -290,16 +405,26 @@ class InsuranceAgent:
         if not payload.get("carrierName"):
             return SpecialistResult(
                 domain="insurance",
+                status="needs_information",
                 confidence=0.8,
-                reply="Which insurance carrier would you like me to check?",
+                nextPrompt="Which insurance carrier would you like me to check?",
                 missingFields=["carrierName"],
-                operatorSummary="Collecting insurance carrier before live check.",
+                extractedFields=payload,
+                operatorSummary=OperatorSummary(
+                    headline="Collecting insurance details",
+                    nextStep="Continue intake until the carrier name is captured.",
+                    specialist="insurance",
+                    callerRequest=text.strip() or "Insurance question",
+                ),
             )
 
+        caller_request = f"check whether the practice works with {payload['carrierName']}"
         return SpecialistResult(
             domain="insurance",
+            status="execute_now",
             confidence=0.9,
-            reply=f"I'll check {payload['carrierName']} for you now.",
+            nextPrompt=f"I'll check {payload['carrierName']} for you now.",
+            extractedFields=payload,
             runtimeAction="insurance-check",
             runtimePayload={
                 "callerName": session.callerName or None,
@@ -309,7 +434,13 @@ class InsuranceAgent:
                 "inquiryType": "acceptance",
             },
             fallbackRecommendation=session.runtimeConfig.voicePolicyV2.servicePolicies["insurance"].fallbackSummary,
-            operatorSummary="Prepared insurance acceptance check.",
+            operatorSummary=OperatorSummary(
+                headline="Insurance check ready",
+                nextStep="Run the live insurance check now.",
+                specialist="insurance",
+                callerRequest=caller_request,
+            ),
+            callerRequestSummary=caller_request,
             resolved=True,
         )
 
@@ -324,8 +455,10 @@ class BillingAgent:
         summary = f"you want the practice to follow up about {topic}"
         return SpecialistResult(
             domain="billing",
-            confidence=0.86,
-            reply=f"Before I submit that, please confirm: {summary}.",
+            status="ready_for_confirmation",
+            confidence=0.87,
+            nextPrompt=f"Before I submit that, please confirm: {summary}.",
+            extractedFields=payload,
             confirmationSummary=summary,
             runtimeAction="billing-request",
             runtimePayload={
@@ -336,38 +469,94 @@ class BillingAgent:
                 "confirmed": True,
             },
             fallbackRecommendation=session.runtimeConfig.voicePolicyV2.servicePolicies["billing"].fallbackSummary,
-            operatorSummary="Prepared billing request for confirmation.",
+            operatorSummary=OperatorSummary(
+                headline="Billing request ready",
+                nextStep="Submit after explicit caller confirmation.",
+                specialist="billing",
+                callerRequest=summary,
+            ),
+            callerRequestSummary=summary,
         )
 
 
 class HandoffAgent:
-    def build_after_hours_urgent_reply(self, session: SessionState) -> SpecialistResult:
+    def build_after_hours_urgent_reply(self, session: SessionState, text: str) -> SpecialistResult:
         callback_window = session.runtimeConfig.voicePolicyV2.escalationConfig.urgentCallbackWindowMinutes
         return SpecialistResult(
             domain="handoff",
+            status="voicemail",
             confidence=0.98,
-            reply=(
+            nextPrompt=(
                 f"{session.runtimeConfig.voicePolicyV2.afterHoursPolicy.greeting} "
                 f"Please leave a message and the team will review urgent callbacks within about {callback_window} minutes during staffed hours."
             ),
-            operatorSummary="After-hours urgent flow triggered. Awaiting voicemail capture.",
+            operatorSummary=OperatorSummary(
+                headline="After-hours urgent voicemail required",
+                nextStep="Capture an urgent voicemail and route it for staff review.",
+                specialist="handoff",
+                callerRequest=text.strip() or "Urgent after-hours request",
+                followUpRequired=True,
+            ),
+            callerRequestSummary="Urgent after-hours request routed to voicemail.",
             requestHumanFollowUp=True,
             resolved=True,
         )
 
-    def build_manual_follow_up(self, text: str) -> SpecialistResult:
+    def build_after_hours_standard_reply(self, session: SessionState, text: str) -> SpecialistResult:
+        policy = session.runtimeConfig.voicePolicyV2.afterHoursPolicy
+        if policy.mode == "next_business_day_callback":
+            return self.build_manual_follow_up(
+                text=text,
+                headline="After-hours callback requested",
+                next_step="Create a next-business-day follow-up task for staff.",
+                priority="HIGH",
+            )
+
         return SpecialistResult(
             domain="handoff",
-            confidence=0.8,
-            reply="I can have the staff follow up with you directly. I'll capture that request now.",
+            status="voicemail",
+            confidence=0.95,
+            nextPrompt=f"{policy.greeting} Please leave a message and the practice will follow up during business hours.",
+            operatorSummary=OperatorSummary(
+                headline="After-hours voicemail required",
+                nextStep="Capture voicemail and review during staffed hours.",
+                specialist="handoff",
+                callerRequest=text.strip() or "After-hours request",
+                followUpRequired=True,
+            ),
+            callerRequestSummary="After-hours request routed to voicemail.",
+            requestHumanFollowUp=True,
+            resolved=True,
+        )
+
+    def build_manual_follow_up(
+        self,
+        text: str,
+        headline: str = "Manual follow-up requested",
+        next_step: str = "Create a staff follow-up task.",
+        priority: str = "HIGH",
+    ) -> SpecialistResult:
+        summary = text.strip() or "Staff follow-up requested by caller."
+        return SpecialistResult(
+            domain="handoff",
+            status="execute_now",
+            confidence=0.84,
+            nextPrompt="I can have the staff follow up with you directly. I'll capture that request now.",
             runtimeAction="manual-follow-up",
             runtimePayload={
-                "title": "Manual staff follow-up requested",
-                "summary": text.strip(),
-                "priority": "HIGH",
+                "title": headline,
+                "summary": summary,
+                "priority": priority,
             },
             fallbackRecommendation="manual-follow-up",
-            operatorSummary="Manual follow-up requested by caller.",
+            operatorSummary=OperatorSummary(
+                headline=headline,
+                nextStep=next_step,
+                specialist="handoff",
+                callerRequest=summary,
+                followUpRequired=True,
+            ),
+            callerRequestSummary=summary,
             requestHumanFollowUp=True,
             resolved=True,
         )
@@ -382,18 +571,72 @@ class SupervisorAgent:
         ("handoff", ["human", "staff", "representative", "someone"]),
     ]
 
-    def choose_domain(self, session: SessionState, text: str) -> str:
+    KNOWLEDGE_KEYWORDS = [
+        "hours",
+        "open",
+        "close",
+        "closing",
+        "services",
+        "what do you do",
+        "what can you help with",
+        "after hours",
+        "closed",
+    ]
+
+    def choose_domain(self, session: SessionState, text: str) -> SupervisorDecision:
         enabled_domains = set(session.runtimeConfig.voicePolicyV2.enabledDomains)
         lowered = _normalize(text)
+
         for domain, keywords in self.DOMAIN_KEYWORDS:
             if domain in enabled_domains and any(keyword in lowered for keyword in keywords):
-                return domain
+                return SupervisorDecision(
+                    mode="delegate" if session.activeDomain != domain else "continue",
+                    domain=domain,
+                    confidence=0.9,
+                    reason="keyword-match",
+                    continuation=session.activeDomain == domain,
+                )
+
+        if "insurance" in enabled_domains and any(carrier in lowered for carrier in COMMON_INSURANCE_CARRIERS):
+            return SupervisorDecision(
+                mode="delegate" if session.activeDomain != "insurance" else "continue",
+                domain="insurance",
+                confidence=0.84,
+                reason="insurance-carrier-match",
+                continuation=session.activeDomain == "insurance",
+            )
+
+        if any(keyword in lowered for keyword in self.KNOWLEDGE_KEYWORDS):
+            return SupervisorDecision(
+                mode="knowledge",
+                domain="knowledge",
+                confidence=0.86,
+                reason="knowledge-keyword-match",
+            )
 
         if (
             session.activeDomain
             and session.pendingAction is None
             and session.activeDomain in enabled_domains
-            and session.activeDomain not in {"knowledge", "safety"}
+            and session.activeDomain not in {"knowledge", "safety", "handoff"}
+            and session.activeDomain in session.partialPayloads
         ):
-            return session.activeDomain
-        return "knowledge"
+            return SupervisorDecision(
+                mode="continue",
+                domain=session.activeDomain,
+                confidence=0.72,
+                reason="continue-partial-intake",
+                continuation=True,
+            )
+
+        services = _enabled_service_labels(session)
+        return SupervisorDecision(
+            mode="clarify",
+            domain="knowledge",
+            confidence=0.4,
+            reason="no-domain-match",
+            clarificationPrompt=(
+                f"I can help with {services}, or I can take a message for the staff. "
+                "What would you like help with today?"
+            ),
+        )
