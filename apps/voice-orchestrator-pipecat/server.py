@@ -48,6 +48,36 @@ AFTER_HOURS_URGENT_KEYWORDS = [
 
 AFFIRMATIVE_KEYWORDS = ["yes", "yeah", "yep", "correct", "that's right", "please do", "confirm"]
 NEGATIVE_KEYWORDS = ["no", "nope", "don't", "do not", "cancel", "stop", "not now"]
+CONFIRMATION_REPAIR_KEYWORDS = [
+    "repeat that",
+    "say that again",
+    "what are you confirming",
+    "what did you say",
+    "can you repeat",
+    "can you summarize",
+    "what are the details",
+]
+CONFIRMATION_CHANGE_KEYWORDS = [
+    "actually",
+    "wait",
+    "hold on",
+    "change that",
+    "that's wrong",
+    "not that",
+    "i need to change",
+]
+HOURS_KEYWORDS = ["hours", "open", "close", "closing", "office hours", "when are you open"]
+SERVICES_KEYWORDS = [
+    "what do you help with",
+    "what can you do",
+    "services",
+    "what services",
+    "appointments",
+    "refill",
+    "billing",
+    "insurance",
+]
+AFTER_HOURS_POLICY_KEYWORDS = ["after hours", "closed", "urgent", "voicemail", "call back"]
 
 
 def _normalize_keyword_list(values) -> list[str]:
@@ -125,6 +155,134 @@ def _detect_after_hours_urgency(text: str) -> list[str]:
 def _is_confirmation(text: str, keywords: list[str]) -> bool:
     lowered = text.lower()
     return any(keyword in lowered for keyword in keywords)
+
+
+def _contains_phrase(text: str, phrases: list[str]) -> bool:
+    lowered = text.lower()
+    return any(phrase in lowered for phrase in phrases)
+
+
+def _format_clock_time(value: str | None) -> str | None:
+    if not value or ":" not in value:
+        return value
+    hour, minute = value.split(":", 1)
+    try:
+        hour_int = int(hour)
+        minute_int = int(minute)
+    except ValueError:
+        return value
+
+    suffix = "AM" if hour_int < 12 else "PM"
+    normalized_hour = hour_int % 12 or 12
+    return f"{normalized_hour}:{minute_int:02d} {suffix}"
+
+
+def _build_today_hours_response(context: CallContext) -> str:
+    operating_hours = _get_operating_hours(context)
+    if not operating_hours:
+        return "The practice has not published office hours yet, but I can still help take your request for staff follow-up."
+
+    try:
+        now_local = datetime.now(ZoneInfo(_get_business_timezone(context)))
+    except ZoneInfoNotFoundError:
+        now_local = datetime.now(timezone.utc)
+
+    day_of_week = int(now_local.strftime("%w"))
+    today_label = now_local.strftime("%A")
+    today_entry = next((entry for entry in operating_hours if entry.get("dayOfWeek") == day_of_week), None)
+
+    if not today_entry or today_entry.get("isClosed"):
+        return f"The office is closed today, {today_label}. If you'd like, I can still help capture a message or request for staff."
+
+    start_time = _format_clock_time(today_entry.get("startTime"))
+    end_time = _format_clock_time(today_entry.get("endTime"))
+    if not start_time or not end_time:
+        return f"The office is open on {today_label}, but I do not have the exact posted hours right now."
+
+    return f"The office is open today, {today_label}, from {start_time} to {end_time}. How else can I help you?"
+
+
+def _enabled_services(context: CallContext) -> list[str]:
+    settings = context.runtime_config.get("settings", {}) if context.runtime_config else {}
+    enabled_actions = settings.get("enabledActions")
+    if not isinstance(enabled_actions, list):
+        return []
+
+    labels = {
+        "appointment-request": "appointments",
+        "refill-request": "prescription refills",
+        "insurance-check": "insurance questions",
+        "billing-request": "billing questions",
+    }
+    return [labels[action] for action in enabled_actions if action in labels]
+
+
+def _build_services_response(context: CallContext) -> str:
+    settings = context.runtime_config.get("settings", {}) if context.runtime_config else {}
+    knowledge_config = settings.get("knowledgeConfig") if isinstance(settings, dict) else {}
+    faq_summary = (
+        str(knowledge_config.get("faqSummary")).strip()
+        if isinstance(knowledge_config, dict) and knowledge_config.get("faqSummary")
+        else ""
+    )
+    services = _enabled_services(context)
+
+    if services:
+        if len(services) == 1:
+            services_text = services[0]
+        elif len(services) == 2:
+            services_text = f"{services[0]} and {services[1]}"
+        else:
+            services_text = f"{', '.join(services[:-1])}, and {services[-1]}"
+        base = f"I can help with {services_text}."
+    else:
+        base = "I can help capture requests for the practice and route staff follow-up when needed."
+
+    if faq_summary:
+        return f"{base} {faq_summary}"
+    return base
+
+
+def _build_after_hours_policy_response(context: CallContext) -> str:
+    settings = context.runtime_config.get("settings", {}) if context.runtime_config else {}
+    after_hours_policy = settings.get("afterHoursPolicy") if isinstance(settings, dict) else {}
+    escalation_config = settings.get("escalationConfig") if isinstance(settings, dict) else {}
+
+    greeting = (
+        str(after_hours_policy.get("greeting")).strip()
+        if isinstance(after_hours_policy, dict) and after_hours_policy.get("greeting")
+        else ""
+    )
+    callback_window = (
+        escalation_config.get("urgentCallbackWindowMinutes")
+        if isinstance(escalation_config, dict)
+        else None
+    )
+
+    message = greeting or (
+        "After hours, urgent issues are captured for priority review and non-urgent requests are queued for the next business day."
+    )
+    if isinstance(callback_window, int) and callback_window > 0:
+        message += f" During staffed hours, urgent callbacks are targeted within about {callback_window} minutes."
+    return message
+
+
+def _try_answer_practice_faq(context: CallContext, text: str) -> Optional[str]:
+    if _contains_phrase(text, HOURS_KEYWORDS):
+        return _build_today_hours_response(context)
+
+    if _contains_phrase(text, AFTER_HOURS_POLICY_KEYWORDS):
+        return _build_after_hours_policy_response(context)
+
+    if _contains_phrase(text, SERVICES_KEYWORDS):
+        return _build_services_response(context)
+
+    return None
+
+
+def _build_confirmation_reprompt(context: CallContext) -> str:
+    pending_summary = context.pending_action_summary or "that request"
+    return f"To confirm, {pending_summary} Say yes to submit it, or tell me what you would like to change."
 
 
 def _duration_ms(started_at: float) -> float:
@@ -241,7 +399,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "voice-orchestrator-pipecat",
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -523,6 +681,47 @@ async def process_speech(request: Request):
         return Response(content=str(response), media_type="text/xml")
 
     if context.pending_confirmation_required:
+        if _contains_phrase(speech_result, CONFIRMATION_REPAIR_KEYWORDS):
+            response = VoiceResponse()
+            gather = Gather(
+                input="speech",
+                action="/voice/process",
+                method="POST",
+                speech_timeout="3",
+                timeout=15,
+                speech_model="phone_call",
+                enhanced=True,
+                language="en-US",
+            )
+            gather.say(_build_confirmation_reprompt(context), voice="Polly.Joanna")
+            response.append(gather)
+            response.redirect("/voice/incoming")
+            _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="confirmation_repair")
+            return Response(content=str(response), media_type="text/xml")
+
+        if _contains_phrase(speech_result, CONFIRMATION_CHANGE_KEYWORDS):
+            pending_summary = context.pending_action_summary or "that request"
+            context.clear_pending_action()
+            response = VoiceResponse()
+            gather = Gather(
+                input="speech",
+                action="/voice/process",
+                method="POST",
+                speech_timeout="3",
+                timeout=15,
+                speech_model="phone_call",
+                enhanced=True,
+                language="en-US",
+            )
+            gather.say(
+                f"No problem. I will not submit {pending_summary} yet. Tell me what you would like to change.",
+                voice="Polly.Joanna",
+            )
+            response.append(gather)
+            response.redirect("/voice/incoming")
+            _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="confirmation_change")
+            return Response(content=str(response), media_type="text/xml")
+
         if _is_confirmation(speech_result, AFFIRMATIVE_KEYWORDS):
             pending_action_name = context.pending_action_name
             action_started_at = time.perf_counter()
@@ -576,8 +775,26 @@ async def process_speech(request: Request):
             _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="confirmation_no")
             return Response(content=str(response), media_type="text/xml")
 
+        response = VoiceResponse()
+        gather = Gather(
+            input="speech",
+            action="/voice/process",
+            method="POST",
+            speech_timeout="3",
+            timeout=15,
+            speech_model="phone_call",
+            enhanced=True,
+            language="en-US",
+        )
+        gather.say(_build_confirmation_reprompt(context), voice="Polly.Joanna")
+        response.append(gather)
+        response.redirect("/voice/incoming")
+        _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="confirmation_reprompt")
+        return Response(content=str(response), media_type="text/xml")
+
     # Generate AI response
-    ai_response = await generate_ai_response(context, speech_result)
+    deterministic_response = _try_answer_practice_faq(context, speech_result)
+    ai_response = deterministic_response or await generate_ai_response(context, speech_result)
     
     # Add AI response to context
     context.add_assistant_message(ai_response)
@@ -638,7 +855,12 @@ async def process_speech(request: Request):
         voice="Polly.Joanna"
     )
     response.redirect("/voice/incoming")
-    _log_voice_timing("speech_process", processing_started_at, call_sid=call_sid, branch="normal")
+    _log_voice_timing(
+        "speech_process",
+        processing_started_at,
+        call_sid=call_sid,
+        branch="deterministic_faq" if deterministic_response else "normal",
+    )
     return Response(content=str(response), media_type="text/xml")
 
 
@@ -704,10 +926,10 @@ async def call_status(request: Request):
     logger.info(f"📊 Call {call_sid}: {call_status} (duration: {call_duration}s)")
     
     if call_status in ["completed", "failed", "busy", "no-answer"]:
-        context = context_manager.get_context(call_sid)
-        if context:
-            context.state = CallState.COMPLETED
-            context.ended_at = datetime.now()
+            context = context_manager.get_context(call_sid)
+            if context:
+                context.state = CallState.COMPLETED
+                context.ended_at = datetime.now(timezone.utc)
             
             # Map Twilio status to Core API enum
             status_map = {

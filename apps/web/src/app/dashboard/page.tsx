@@ -122,7 +122,7 @@ export default function DashboardPage() {
                                     {readinessIssues[0]}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    Practice readiness now comes from setup, integrations, and follow-up coverage rather than customer-authored workflows.
+                                    Practice readiness now comes from setup, integrations, and follow-up coverage rather than manual runtime design.
                                 </p>
                             </div>
                         </div>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
                             {showInternalTools && (
                                 <Link href="/dashboard/workflows" className="flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-150 hover:bg-[var(--background)] hover:neo-raised-sm">
                                     <PhoneForwarded className="h-4 w-4 text-amber-500" />
-                                    <span className="text-sm font-medium text-foreground">Open Internal Workflow Editor</span>
+                                    <span className="text-sm font-medium text-foreground">Open Legacy Runtime Tools</span>
                                     <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                                 </Link>
                             )}

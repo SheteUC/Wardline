@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ChevronRight, ListTodo } from 'lucide-react';
 import { Button, Card } from '@/components/dashboard/shared';
 import { useFollowUpTasks, useUpdateFollowUpTaskStatus } from '@/lib/hooks/query-hooks';
+import { humanizeFallbackReason, labelRuntimeAction } from '@/lib/operator-insights';
 
 const TYPE_LABELS: Record<string, string> = {
     MANUAL_REVIEW: 'Manual review',
@@ -24,10 +25,6 @@ const STATUS_TONES: Record<string, string> = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function labelizeRuntimeAction(actionName: string) {
-    return actionName.replaceAll('-', ' ');
 }
 
 export default function FollowUpsPage() {
@@ -103,7 +100,7 @@ export default function FollowUpsPage() {
                                                 </span>
                                                 {originatingAction && (
                                                     <span className="rounded-full bg-[var(--background)] px-2 py-0.5 text-xs font-medium text-muted-foreground neo-flat">
-                                                        {labelizeRuntimeAction(originatingAction)}
+                                                        {labelRuntimeAction(originatingAction)}
                                                     </span>
                                                 )}
                                                 {integrationVendor && (
@@ -116,7 +113,7 @@ export default function FollowUpsPage() {
                                             <p className="mt-1 text-sm text-muted-foreground">{task.summary}</p>
                                             {fallbackReason && (
                                                 <p className="mt-2 text-xs text-amber-700">
-                                                    Live execution downgraded because {fallbackReason.replaceAll('_', ' ')}.
+                                                    Downgraded to staff follow-up because {humanizeFallbackReason(fallbackReason)}.
                                                 </p>
                                             )}
                                             {liveAttemptMessage && (

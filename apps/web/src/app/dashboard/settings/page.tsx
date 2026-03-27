@@ -349,7 +349,7 @@ export default function PracticeSetupPage() {
                         <div className="space-y-3 text-sm text-muted-foreground">
                             <div className="flex items-start gap-3"><Clock3 className="mt-0.5 h-4 w-4 text-primary" /><p>Practice setup replaces customer-authored call flow. Wardline now compiles the runtime workflow from these settings.</p></div>
                             <div className="flex items-start gap-3"><ClipboardList className="mt-0.5 h-4 w-4 text-primary" /><p>Emergency screening, after-hours handling, confirmation before write actions, and follow-up fallback still run under the hood.</p></div>
-                            <div className="flex items-start gap-3"><PlugZap className="mt-0.5 h-4 w-4 text-primary" /><p>Agents and workflow editing remain internal-only tools for advanced testing and migration support.</p></div>
+                            <div className="flex items-start gap-3"><PlugZap className="mt-0.5 h-4 w-4 text-primary" /><p>Agents and workflow editing remain deprecated internal-only tools for migration support while Voice Runtime V2 replaces the live voice layer.</p></div>
                         </div>
                     </Card>
                     <Card title="Practice Setup Sections">

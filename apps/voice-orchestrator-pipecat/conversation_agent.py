@@ -265,6 +265,20 @@ class ConversationAgent:
                 prompt += f"  - Handled: {t.intent_key} (outcome: {t.outcome})\n"
         if ctx.caller_name:
             prompt += f"\nCALLER NAME: {ctx.caller_name}"
+        runtime_settings = ctx.runtime_config.get("settings", {}) if ctx.runtime_config else {}
+        if isinstance(runtime_settings, dict):
+            knowledge_config = runtime_settings.get("knowledgeConfig", {})
+            enabled_actions = runtime_settings.get("enabledActions", [])
+            after_hours_policy = runtime_settings.get("afterHoursPolicy", {})
+
+            if isinstance(knowledge_config, dict) and knowledge_config.get("faqSummary"):
+                prompt += f"\nPRACTICE SUMMARY: {knowledge_config.get('faqSummary')}"
+
+            if isinstance(enabled_actions, list) and enabled_actions:
+                prompt += "\nLIVE SERVICES ENABLED: " + ", ".join(str(action) for action in enabled_actions)
+
+            if isinstance(after_hours_policy, dict) and after_hours_policy.get("greeting"):
+                prompt += f"\nAFTER-HOURS POLICY: {after_hours_policy.get('greeting')}"
         return prompt
 
     async def get_greeting(self, ctx: CallContext, business_name: str = "our clinic") -> str:

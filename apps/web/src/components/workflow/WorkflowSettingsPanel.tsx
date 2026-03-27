@@ -130,7 +130,7 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
                         <div>
                             <CardTitle>Call Policy</CardTitle>
                             <CardDescription>
-                                Review the internal call policy inputs that Wardline uses when compiling the live runtime workflow.
+                                Review the internal call policy inputs Wardline uses when compiling the live runtime behavior.
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -319,7 +319,7 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
                                         <div>
                                             <h3 className="font-semibold">Scope guardrails</h3>
                                             <p className="text-sm text-muted-foreground">
-                                                Help the AI deflect unsupported requests and keep the call inside the approved workflow.
+                                                Help the AI deflect unsupported requests and keep the call inside the approved practice policy.
                                             </p>
                                         </div>
                                     </div>
@@ -345,9 +345,9 @@ export function WorkflowSettingsPanel({ onClose }: WorkflowSettingsPanelProps) {
 
                             <div className="space-y-6">
                                 <section className="rounded-2xl border p-5">
-                                    <h3 className="font-semibold">V1 policy snapshot</h3>
+                                    <h3 className="font-semibold">Runtime policy snapshot</h3>
                                     <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                                        <p>One main workflow per business.</p>
+                                        <p>One generated runtime policy per business.</p>
                                         <p>English only.</p>
                                         <p>After-hours urgent calls become priority voicemails for next-business-day review.</p>
                                         <p>Emergency phrases still trigger immediate redirect messaging.</p>

@@ -215,9 +215,9 @@ export default function AgentsPage() {
         return (
             <Card>
                 <div className="py-16 text-center">
-                    <h2 className="text-xl font-semibold text-foreground">Choose a practice before deploying agents</h2>
+                    <h2 className="text-xl font-semibold text-foreground">Choose a practice before opening legacy agent tools</h2>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Agents are deployed per business so the correct workflow and integrations are used on each line.
+                        Legacy agent records are still scoped per business for migration and regression checks.
                     </p>
                 </div>
             </Card>
@@ -228,27 +228,32 @@ export default function AgentsPage() {
         <div className="space-y-8">
             <div className="rounded-3xl bg-[var(--background)] p-6 sm:p-8 neo-raised">
                 <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
-                    Agents
+                    Agent Catalog
                 </h2>
                 <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Deploy business-specific receptionist agents, connect their vendor tools, and control which ones are live on the phone line.
+                    Internal-only legacy surface for migration testing. Voice Runtime V2 replaces deployed agent records
+                    with code-defined specialists behind Practice Setup.
                 </p>
+                <div className="mt-4 rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-950 neo-inset">
+                    Do not use this page as part of normal business setup or pilot readiness. Keep changes here limited to
+                    internal migration and regression testing while Voice Runtime V2 is being introduced.
+                </div>
             </div>
 
             <section className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground">Deployed agents</h3>
+                <h3 className="text-lg font-semibold text-foreground">Legacy deployed records</h3>
                 {agentsQuery.isLoading || catalogQuery.isLoading ? (
                     <Card>
-                        <div className="py-12 text-center text-sm text-muted-foreground">Loading agents...</div>
+                        <div className="py-12 text-center text-sm text-muted-foreground">Loading legacy records...</div>
                     </Card>
                 ) : agentsQuery.isError || catalogQuery.isError ? (
                     <Card>
-                        <div className="py-12 text-center text-sm text-destructive">Failed to load agents.</div>
+                        <div className="py-12 text-center text-sm text-destructive">Failed to load legacy records.</div>
                     </Card>
                 ) : deployedOrdered.length === 0 ? (
                     <Card>
                         <div className="py-12 text-center text-sm text-muted-foreground">
-                            No agents deployed yet. Add one from <span className="font-medium text-foreground">Available agents</span> below.
+                            No legacy agents deployed. Add one from <span className="font-medium text-foreground">Available internal templates</span> below only if you are validating migration behavior.
                         </div>
                     </Card>
                 ) : (
@@ -281,7 +286,7 @@ export default function AgentsPage() {
                                                             )}
                                                         </div>
                                                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                                            {catalogItem?.description || agent.description || 'Configured agent for this business.'}
+                                                            {catalogItem?.description || agent.description || 'Configured legacy template for this business.'}
                                                         </p>
                                                     </div>
                                                     <div className="shrink-0 pt-0.5">
@@ -348,9 +353,9 @@ export default function AgentsPage() {
             </section>
 
             <section className="space-y-3" id="available-agents">
-                <h3 className="text-lg font-semibold text-foreground">Available agents</h3>
+                <h3 className="text-lg font-semibold text-foreground">Available internal templates</h3>
                 {availableCatalog.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">All catalog agents are already deployed.</p>
+                    <p className="text-sm text-muted-foreground">All internal templates are already deployed.</p>
                 ) : (
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                         {availableCatalog.map((catalogItem) => {
@@ -390,7 +395,7 @@ export default function AgentsPage() {
                                             onClick={() => deployAgent.mutate(catalogItem.catalogId)}
                                         >
                                             <Plus className="mr-2 h-4 w-4" />
-                                            Deploy agent
+                                            Deploy template
                                         </Button>
                                     </div>
                                 </Card>
@@ -413,7 +418,7 @@ export default function AgentsPage() {
                 <div>
                     <div className="text-2xl font-semibold text-foreground">{summary.total}</div>
                     <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Deployed agents
+                        Legacy records
                     </div>
                 </div>
                 <div className="hidden h-10 w-px bg-border sm:block" />
@@ -434,7 +439,7 @@ export default function AgentsPage() {
                 <div>
                     <div className="text-2xl font-semibold text-orange-600">{summary.paused}</div>
                     <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Paused agents
+                        Paused records
                     </div>
                 </div>
             </div>

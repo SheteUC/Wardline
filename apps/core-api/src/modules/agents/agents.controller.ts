@@ -1,8 +1,11 @@
 import {
-    Controller, Get, Post, Patch, Delete,
+    Controller, Get, Post, Patch, Delete, Header,
     Param, Body, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { AgentsService } from './agents.service';
+
+const DEPRECATION_NOTICE =
+    'Voice Runtime V2 replaces deployed agent records with internal specialists.';
 
 @Controller('api/businesses/:businessId/agents')
 export class AgentsController {
@@ -13,11 +16,13 @@ export class AgentsController {
     // -------------------------------------------------------------------------
 
     @Get('catalog')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     getCatalog() {
         return this.agentsService.getCatalog();
     }
 
     @Get('catalog/:catalogId')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     getCatalogItem(@Param('catalogId') catalogId: string) {
         return this.agentsService.getCatalogItem(catalogId);
     }
@@ -27,16 +32,19 @@ export class AgentsController {
     // -------------------------------------------------------------------------
 
     @Get()
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     findAll(@Param('businessId') businessId: string) {
         return this.agentsService.findAll(businessId);
     }
 
     @Get(':id')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     findOne(@Param('id') id: string) {
         return this.agentsService.findOne(id);
     }
 
     @Get(':id/stats')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     getStats(
         @Param('id') id: string,
         @Param('businessId') businessId: string,
@@ -47,6 +55,7 @@ export class AgentsController {
     /** Deploy a catalog agent for this business */
     @Post('deploy/:catalogId')
     @HttpCode(HttpStatus.CREATED)
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     deploy(
         @Param('businessId') businessId: string,
         @Param('catalogId') catalogId: string,
@@ -55,6 +64,7 @@ export class AgentsController {
     }
 
     @Patch(':id/status')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     updateStatus(
         @Param('id') id: string,
         @Body() body: { status: 'ACTIVE' | 'INACTIVE' | 'PAUSED' },
@@ -63,6 +73,7 @@ export class AgentsController {
     }
 
     @Patch(':id/tool-config')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     updateToolConfig(
         @Param('id') id: string,
         @Body() body: Record<string, unknown>,
@@ -71,6 +82,7 @@ export class AgentsController {
     }
 
     @Patch(':id/agent-config')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     updateAgentConfig(
         @Param('id') id: string,
         @Body() body: Record<string, unknown>,
@@ -79,6 +91,7 @@ export class AgentsController {
     }
 
     @Patch(':id/node-graph')
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     updateNodeGraph(
         @Param('id') id: string,
         @Body() body: Record<string, unknown>,
@@ -88,6 +101,7 @@ export class AgentsController {
 
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @Header('X-Wardline-Deprecated', DEPRECATION_NOTICE)
     async undeploy(@Param('id') id: string) {
         await this.agentsService.undeploy(id);
     }

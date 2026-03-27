@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { EnhancedWorkflowEditor } from "@/components/workflow/EnhancedWorkflowEditor";
 import { useApiClient } from "@/lib/api-client";
 import { useBusiness } from "@/lib/business-context";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { Node, Edge } from '@xyflow/react';
 import type { WorkflowDetail, WorkflowListItem } from '@/lib/api-types';
 import { WorkflowStatus } from '@wardline/types';
@@ -165,6 +165,12 @@ export default function WorkflowsPage() {
 
     return (
         <div className="h-full flex flex-col">
+            <div className="mb-4 flex items-start gap-3 rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-950 neo-inset">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                    Legacy internal-only route. Practice Setup remains the customer-facing source of truth, and Voice Runtime V2 no longer depends on editing customer workflows directly.
+                </span>
+            </div>
             {!businessId && (
                 <div className="mb-4 flex items-center gap-3 rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-950 neo-inset">
                     <span>
@@ -172,7 +178,7 @@ export default function WorkflowsPage() {
                         <a href="/dashboard/settings" className="font-semibold text-primary underline underline-offset-2">
                             Settings
                         </a>{' '}
-                        to save workflows.
+                        to review the current practice policy before using this legacy editor.
                     </span>
                 </div>
             )}

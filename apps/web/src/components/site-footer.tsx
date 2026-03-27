@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, Linkedin, Twitter } from "lucide-react";
+import { Linkedin, Phone, Twitter } from "lucide-react";
 
 export function SiteFooter() {
   return (
@@ -16,8 +16,8 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-              AI voice receptionist for medical and dental clinics—24/7 scheduling,
-              FAQs, billing, insurance, and refills with safe human handoff.
+              AI voice receptionist for family medicine practices with scheduling,
+              FAQs, billing, insurance, refills, and safe human handoff.
             </p>
           </div>
           <div>
@@ -62,7 +62,7 @@ export function SiteFooter() {
 
         <div className="mt-12 flex flex-col gap-6 border-t border-[#dcdee4] pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-bold text-muted-foreground">
-            © {new Date().getFullYear()} Wardline Health, Inc. All rights reserved.
+            Copyright {new Date().getFullYear()} Wardline Health, Inc. All rights reserved.
           </p>
           <div className="flex gap-3">
             <a

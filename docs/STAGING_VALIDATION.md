@@ -1,10 +1,16 @@
 # Staging Validation
 
-Use this document as the launch-readiness checklist for the current Wardline V1.
+Use this document as the launch-readiness checklist during the Voice Runtime V2 migration.
 
 ## Goal
 
-Prove that the Business-native runtime behaves correctly with real staging secrets, real Twilio callbacks, and one canonical family-medicine business before any broader feature work resumes.
+Prove that the Practice Setup-driven runtime behaves correctly with real staging secrets, real Twilio callbacks, and one canonical family-medicine business before any broader feature work resumes.
+
+Current migration defaults:
+
+- Voice Runtime V2 is the target runtime for new staging and pilot validation.
+- The legacy Python orchestrator remains a rollback path only until V2 reaches parity.
+- Practice Setup remains the only customer-facing configuration surface in both cases.
 
 ## Preconditions
 
@@ -104,14 +110,25 @@ For every run, confirm:
 
 ### Gather voice path
 
+This is a rollback-only validation set during migration. Keep it green until Twilio traffic fully cuts over to V2.
+
 Validate one full Gather scenario set:
 
 1. emergency redirect
 2. after-hours urgent voicemail
 3. confirmed live appointment request
 4. confirmed fallback case
+5. confirmation repair:
+   - caller asks to repeat or summarize the pending request
+   - caller says they want to change the pending request before submission
+6. receptionist quality:
+   - office-hours question gets a direct answer
+   - practice-services question gets a direct answer
+   - the caller can recover after a misunderstanding without the conversation stalling
 
 ### Streaming voice path
+
+This is the parity target for Voice Runtime V2. Validate the same business outcomes under one supervisor-led receptionist flow.
 
 Validate one full streaming scenario set:
 
@@ -119,6 +136,29 @@ Validate one full streaming scenario set:
 2. confirmation gate blocks write actions until explicit approval
 3. one live action succeeds
 4. one fallback case creates the correct follow-up metadata
+5. the same confirmation-repair and receptionist-quality checks used for Gather behave acceptably in streaming mode
+
+### Voice Runtime V2 text-turn harness
+
+Before or alongside full telephony cutover, validate the V2 control-plane harness locally:
+
+1. start the service with `pnpm voice:v2:dev`
+2. run `pnpm test:voice:v2`
+3. confirm the V2 runtime can:
+   - interrupt for emergencies
+   - complete scheduling confirmation
+   - continue an in-progress refill intake across turns
+   - persist runtime-action outcomes without relying on workflow graphs
+
+### Operator review
+
+For each staged call outcome, open the linked call detail page and confirm:
+
+1. the operator summary explains what happened in plain language
+2. the next step is obvious without reading raw JSON-style metadata
+3. runtime-action history shows whether the request was handled live or downgraded
+4. fallback reason text is human-readable
+5. linked follow-ups and voicemails are visible from the same call record
 
 ## Latency Targets
 
@@ -144,8 +184,8 @@ Wardline is staging-ready only when all of the following are true:
 - CI smoke-validation is green
 - staging env check passes
 - staging integration health is green
-- one Gather validation set passes
-- one streaming validation set passes
+- one Gather rollback validation set passes
+- one streaming / Voice Runtime V2 validation set passes
 - each runtime-action category has:
   - one successful live path
   - one verified fallback path
@@ -154,5 +194,6 @@ Wardline is staging-ready only when all of the following are true:
   - voicemails
   - urgent items
   - follow-ups
+- call detail pages clearly explain what happened and what staff should do next
 
 If any of the above fail, fix staging trust and responsiveness before resuming broader feature work.

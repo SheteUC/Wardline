@@ -140,9 +140,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (pathname.startsWith('/dashboard/calls')) return 'Call Logs';
         if (pathname.startsWith('/dashboard/urgent-calls')) return 'Urgent Calls';
         if (pathname.startsWith('/dashboard/follow-ups')) return 'Follow-ups';
-        if (pathname.startsWith('/dashboard/integration-failures')) return 'Integration Failures';
-        if (pathname.startsWith('/dashboard/agents')) return 'Agent Catalog';
-        if (pathname.startsWith('/dashboard/workflows')) return 'Workflow Editor';
+        if (pathname.startsWith('/dashboard/integration-failures')) return 'Integrations';
+        if (pathname.startsWith('/dashboard/agents')) return 'Legacy Agent Catalog';
+        if (pathname.startsWith('/dashboard/workflows')) return 'Legacy Workflow Editor';
         if (pathname.startsWith('/dashboard/settings')) return 'Practice Setup';
         return 'Wardline';
     })();
@@ -184,7 +184,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <NavItem
                             href="/dashboard/integration-failures"
                             icon={PlugZap}
-                            label="Integration Failures"
+                            label="Integrations"
                             badge={integrationFailureCount}
                             requiresBusiness
                         />
@@ -198,10 +198,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         {showInternalTools && (
                             <>
                                 <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
-                                    Internal Tools
+                                    Internal Runtime Tools
                                 </div>
-                                <NavItem href="/dashboard/agents" icon={PhoneCall} label="Agent Catalog" requiresBusiness />
-                                <NavItem href="/dashboard/workflows" icon={PlugZap} label="Workflow Editor" requiresBusiness />
+                                <NavItem href="/dashboard/agents" icon={PhoneCall} label="Legacy Agent Catalog" requiresBusiness />
+                                <NavItem href="/dashboard/workflows" icon={PlugZap} label="Legacy Workflow Editor" requiresBusiness />
                             </>
                         )}
                     </nav>

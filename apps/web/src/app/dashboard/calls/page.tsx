@@ -41,24 +41,52 @@ const TAG_COLOR: Record<string, string> = {
     EMERGENCY: 'bg-red-500/18 text-red-900',
 };
 
+type CallResolution =
+    | 'AI_RESOLVED'
+    | 'STAFF_FOLLOW_UP'
+    | 'ESCALATED'
+    | 'VOICEMAIL'
+    | 'EMERGENCY';
+
 function formatDuration(seconds: number) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
+function getCallResolution(call: {
+    isEmergency: boolean;
+    tag?: string;
+    followUpTaskCount?: number;
+}): CallResolution {
+    if (call.isEmergency || call.tag === 'EMERGENCY') return 'EMERGENCY';
+    if (call.tag === 'VOICEMAIL') return 'VOICEMAIL';
+    if ((call.followUpTaskCount ?? 0) > 0) return 'STAFF_FOLLOW_UP';
+    if (call.tag === 'HUMAN_TRANSFER') return 'ESCALATED';
+    return 'AI_RESOLVED';
+}
+
 function OutcomeIcon({
     tag,
     isEmergency,
-    resolvedByAI,
+    resolution,
 }: {
     tag?: string;
     isEmergency: boolean;
-    resolvedByAI: boolean;
+    resolution: CallResolution;
 }) {
-    if (isEmergency || tag === 'EMERGENCY') return <AlertTriangle className="h-4 w-4 text-red-600" />;
-    if (tag === 'VOICEMAIL') return <Voicemail className="h-4 w-4 text-red-500" />;
-    if (!resolvedByAI) return <PhoneForwarded className="h-4 w-4 text-orange-500" />;
+    if (resolution === 'EMERGENCY' || isEmergency || tag === 'EMERGENCY') {
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+    }
+    if (resolution === 'VOICEMAIL' || tag === 'VOICEMAIL') {
+        return <Voicemail className="h-4 w-4 text-red-500" />;
+    }
+    if (resolution === 'STAFF_FOLLOW_UP') {
+        return <AlertTriangle className="h-4 w-4 text-amber-600" />;
+    }
+    if (resolution === 'ESCALATED') {
+        return <PhoneForwarded className="h-4 w-4 text-orange-500" />;
+    }
     return <Bot className="h-4 w-4 text-emerald-600" />;
 }
 
@@ -90,12 +118,8 @@ export default function CallLogsPage() {
         }
     }, [filters, page, prefetchCallsPage, totalPages]);
 
-    const resolvedByAI = calls.filter(
-        (call) => !call.isEmergency && call.tag !== 'HUMAN_TRANSFER' && call.tag !== 'VOICEMAIL',
-    ).length;
-    const escalated = calls.filter(
-        (call) => call.isEmergency || call.tag === 'HUMAN_TRANSFER' || call.tag === 'VOICEMAIL',
-    ).length;
+    const resolvedByAI = calls.filter((call) => getCallResolution(call) === 'AI_RESOLVED').length;
+    const escalated = calls.filter((call) => getCallResolution(call) !== 'AI_RESOLVED').length;
 
     return (
         <div className="space-y-5">
@@ -144,13 +168,13 @@ export default function CallLogsPage() {
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
                 <span><strong className="text-foreground">{total}</strong> calls</span>
-                <span className="text-muted-foreground/50">·</span>
+                <span className="text-muted-foreground/50">&bull;</span>
                 <span className="text-emerald-700">
                     <strong>{resolvedByAI}</strong> resolved by AI
                 </span>
-                <span className="text-muted-foreground/50">·</span>
+                <span className="text-muted-foreground/50">&bull;</span>
                 <span className="text-orange-700">
-                    <strong>{escalated}</strong> escalated or voicemail
+                    <strong>{escalated}</strong> escalated, follow-up, or voicemail
                 </span>
             </div>
 
@@ -180,8 +204,7 @@ export default function CallLogsPage() {
                                 </thead>
                                 <tbody>
                                     {calls.map((call) => {
-                                        const isResolvedByAI =
-                                            !call.isEmergency && call.tag !== 'HUMAN_TRANSFER' && call.tag !== 'VOICEMAIL';
+                                        const resolution = getCallResolution(call);
 
                                         return (
                                             <tr key={call.id} className="border-b border-border/50 transition-colors last:border-0 hover:bg-[var(--background)]/80">
@@ -190,13 +213,13 @@ export default function CallLogsPage() {
                                                         <div
                                                             className={cn(
                                                                 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full neo-inset',
-                                                                isResolvedByAI ? 'text-emerald-700' : 'text-orange-700',
+                                                                resolution === 'AI_RESOLVED' ? 'text-emerald-700' : 'text-orange-700',
                                                             )}
                                                         >
                                                             <OutcomeIcon
                                                                 tag={call.tag}
                                                                 isEmergency={call.isEmergency}
-                                                                resolvedByAI={isResolvedByAI}
+                                                                resolution={resolution}
                                                             />
                                                         </div>
                                                         <div>
@@ -225,12 +248,22 @@ export default function CallLogsPage() {
                                                     <span
                                                         className={cn(
                                                             'rounded-full px-2 py-0.5 text-xs font-semibold',
-                                                            isResolvedByAI
+                                                            resolution === 'AI_RESOLVED'
                                                                 ? 'bg-emerald-500/12 text-emerald-800'
-                                                                : 'bg-orange-500/12 text-orange-900',
+                                                                : resolution === 'STAFF_FOLLOW_UP'
+                                                                  ? 'bg-amber-500/12 text-amber-900'
+                                                                  : 'bg-orange-500/12 text-orange-900',
                                                         )}
                                                     >
-                                                        {isResolvedByAI ? 'AI resolved' : 'Escalated'}
+                                                        {resolution === 'AI_RESOLVED'
+                                                            ? 'AI resolved'
+                                                            : resolution === 'STAFF_FOLLOW_UP'
+                                                              ? 'Staff follow-up'
+                                                              : resolution === 'VOICEMAIL'
+                                                                ? 'Voicemail'
+                                                                : resolution === 'EMERGENCY'
+                                                                  ? 'Emergency'
+                                                                  : 'Escalated'}
                                                     </span>
                                                 </td>
                                                 <td className="hidden px-4 py-3 sm:table-cell">

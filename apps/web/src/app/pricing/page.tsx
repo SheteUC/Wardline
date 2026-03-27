@@ -6,40 +6,40 @@ import { SiteFooter } from "@/components/site-footer";
 const TIERS = [
   {
     name: "Starter",
-    description: "Single location practices getting started with AI voice.",
+    description: "Single-location family medicine practices getting started with AI voice.",
     price: "Custom",
     highlight: false,
     features: [
-      "Practice setup for scheduling, billing, insurance, FAQ, and Rx refill handling",
-      "Wardline-managed call policies compiled from your practice settings",
-      "Call logs & voicemail inbox",
-      "Configurable safety keywords + emergency escalation",
+      "Practice Setup for scheduling, billing, insurance, FAQ, and refill handling",
+      "Wardline-managed runtime behavior compiled from practice settings",
+      "Call logs, voicemail inbox, and follow-up queue",
+      "Configurable safety keywords and emergency escalation",
       "Email support",
     ],
   },
   {
     name: "Professional",
-    description: "Growing clinics that need deeper practice policy control and integrations.",
+    description: "Growing clinics that need deeper policy control and live integrations.",
     price: "Custom",
     highlight: true,
     features: [
       "Everything in Starter",
-      "Human transfer & voicemail when staff unavailable",
-      "Integration credentials per service category (scheduling, EHR, etc.)",
-      "Business settings & team roles",
+      "Human transfer and voicemail when staff are unavailable",
+      "Integration credentials per service category",
+      "Business settings and team roles",
       "Priority support",
     ],
   },
   {
     name: "Enterprise",
-    description: "Health systems with compliance, scale, and custom rollout needs.",
+    description: "Organizations with compliance, rollout, and custom deployment needs.",
     price: "Let's talk",
     highlight: false,
     features: [
       "Everything in Professional",
-      "HIPAA-aligned architecture (BAA with vendors)",
-      "Audit-friendly call history & safety events",
-      "Custom integrations & deployment guidance",
+      "HIPAA-aligned architecture with vendor BAA planning",
+      "Audit-friendly call history and safety events",
+      "Custom integration guidance",
       "Dedicated success contact",
     ],
   },
@@ -51,14 +51,14 @@ export default function PricingPage() {
       <SiteHeader />
 
       <main>
-        <section className="mx-auto max-w-3xl px-6 pt-20 pb-12 text-center lg:px-12">
+        <section className="mx-auto max-w-3xl px-6 pb-12 pt-20 text-center lg:px-12">
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
             Simple, transparent pricing
           </h1>
           <p className="mt-6 text-lg text-muted-foreground">
-            Wardline is billed as a subscription (via Stripe). Every plan includes the
-            voice orchestrator, core API, and dashboard. Practices configure hours,
-            policies, integrations, and FAQs without writing code.
+            Wardline is billed as a subscription. Every plan includes the voice runtime,
+            core API, and dashboard. Practices configure hours, policies, integrations,
+            and FAQs without writing code.
           </p>
         </section>
 
@@ -80,12 +80,12 @@ export default function PricingPage() {
                 <p className="mt-2 text-sm text-muted-foreground">{tier.description}</p>
                 <p className="mt-6 text-3xl font-extrabold text-foreground">{tier.price}</p>
                 <ul className="mt-8 flex-1 space-y-3 text-sm text-muted-foreground">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex gap-3">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex gap-3">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <Check className="h-3 w-3" />
                       </span>
-                      <span>{f}</span>
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -106,10 +106,9 @@ export default function PricingPage() {
           <div className="mx-auto mt-12 max-w-3xl rounded-3xl bg-[var(--background)] p-8 neo-inset">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="font-extrabold text-foreground">What you&apos;re running on</h3>
+                <h3 className="font-extrabold text-foreground">What you are running on</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Pipecat voice orchestrator · Azure Speech & OpenAI · Twilio · NestJS core API ·
-                  Next.js dashboard
+                  Practice Setup-driven voice runtime / Twilio / realtime speech stack / NestJS core API / Next.js dashboard
                 </p>
               </div>
               <Link

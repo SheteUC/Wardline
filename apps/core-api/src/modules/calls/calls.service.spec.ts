@@ -37,6 +37,7 @@ describe('CallsService', () => {
     const mockCache = {
         getOrSet: jest.fn().mockImplementation(async (_key: string, factory: () => Promise<unknown>) => factory()),
         delete: jest.fn(),
+        invalidateByTag: jest.fn(),
     };
 
     const mockFollowUpTasks = {
@@ -102,15 +103,54 @@ describe('CallsService', () => {
             mockPrisma.callSession.findUnique.mockResolvedValue({
                 id: 'call-1',
                 businessId: 'business-1',
+                isEmergency: false,
+                tag: 'BILLING',
+                status: 'COMPLETED',
+                turnsJson: [
+                    {
+                        type: 'runtime_action_outcome',
+                        actionName: 'billing-request',
+                        integrationCategory: 'BILLING',
+                        integrationVendor: 'athenahealth',
+                        handledLive: false,
+                        followUpTaskId: 'task-1',
+                        fallbackReason: 'timeout',
+                        data: { latencyMs: 1200 },
+                        createdAt: '2026-03-26T12:00:00.000Z',
+                    },
+                ],
                 transcriptSegments: [],
                 handoffs: [],
                 voicemails: [],
-                followUpTasks: [],
+                followUpTasks: [
+                    {
+                        id: 'task-1',
+                        type: 'BILLING_REQUEST',
+                        status: 'OPEN',
+                        priority: 'HIGH',
+                    },
+                ],
             });
 
             const result = await service.findOne('call-1');
 
             expect(result.id).toBe('call-1');
+            expect(result.runtimeActionEvents).toEqual([
+                expect.objectContaining({
+                    actionName: 'billing-request',
+                    handledLive: false,
+                    fallbackReason: 'timeout',
+                    followUpTaskId: 'task-1',
+                    latencyMs: 1200,
+                }),
+            ]);
+            expect(result.operatorSummary).toEqual(
+                expect.objectContaining({
+                    label: 'Staff follow-up required',
+                    fallbackReason: 'timeout',
+                    actionName: 'billing-request',
+                }),
+            );
         });
 
         it('throws when the call is missing', async () => {

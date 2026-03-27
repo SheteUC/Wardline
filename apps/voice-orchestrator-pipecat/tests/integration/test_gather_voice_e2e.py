@@ -113,6 +113,13 @@ def server_module(monkeypatch):
             "message": "Your appointment request was submitted successfully.",
         }
     )
+    server.api_client.create_billing_request = AsyncMock(
+        return_value={
+            "recordId": "billing-1",
+            "handledLive": False,
+            "message": "I have captured your billing request for staff follow-up.",
+        }
+    )
     server.generate_ai_response = AsyncMock(return_value="How can I help you today?")
 
     yield server
@@ -249,3 +256,65 @@ class TestGatherVoiceFlow:
         call_kwargs = server_module.api_client.create_appointment.await_args.kwargs
         assert call_kwargs["business_id"] == "business-1"
         assert call_kwargs["confirmed"] is True
+
+    @pytest.mark.integration
+    def test_confirmation_repair_repeats_summary_without_submitting(self, client, server_module):
+        client.post(
+            "/voice/incoming",
+            data={
+                "CallSid": "CA_repair",
+                "From": "+15550000005",
+                "To": "+15551230001",
+            },
+        )
+
+        context = server_module.context_manager.get_context("CA_repair")
+        context.call_id = "call-1"
+        context.business_id = "business-1"
+        context.set_pending_action(
+            "billing-request",
+            "you'd like the practice to follow up about a billing statement for Smoke Caller.",
+            {
+                "caller_name": "Smoke Caller",
+                "caller_phone": "+15550000005",
+                "billing_topic": "statement question",
+            },
+        )
+
+        response = client.post(
+            "/voice/process",
+            data={
+                "CallSid": "CA_repair",
+                "SpeechResult": "can you repeat that",
+                "Confidence": "0.88",
+            },
+        )
+
+        assert response.status_code == 200
+        assert "To confirm" in response.text
+        assert "billing statement" in response.text
+        assert context.pending_confirmation_required is True
+        server_module.api_client.create_billing_request.assert_not_awaited()
+
+    @pytest.mark.integration
+    def test_common_hours_question_gets_direct_practice_answer(self, client, server_module):
+        client.post(
+            "/voice/incoming",
+            data={
+                "CallSid": "CA_hours",
+                "From": "+15550000006",
+                "To": "+15551230001",
+            },
+        )
+
+        response = client.post(
+            "/voice/process",
+            data={
+                "CallSid": "CA_hours",
+                "SpeechResult": "what time are you open today",
+                "Confidence": "0.92",
+            },
+        )
+
+        assert response.status_code == 200
+        assert "The office is open today" in response.text

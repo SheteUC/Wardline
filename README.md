@@ -1,6 +1,6 @@
 # Wardline
 
-Wardline is a Business-native AI voice receptionist platform for independent family medicine practices. The current V1 focuses on low-latency inbound call handling, operational reliability, and a controlled integration model instead of free-form agent behavior.
+Wardline is a Business-native AI voice receptionist platform for independent family medicine practices. The current product focuses on operational reliability, controlled integration behavior, and a Practice Setup-first model instead of customer-authored workflows or free-form agent behavior.
 
 The system uses a shared US-only multi-tenant stack, one generated runtime workflow per business, English-only voice handling, athenahealth-first live connectors for supported categories, and a dashboard-first operations model for follow-up work.
 
@@ -12,7 +12,7 @@ The system uses a shared US-only multi-tenant stack, one generated runtime workf
 - Language: English only
 - Workflow model: one generated active runtime workflow per business
 - Integration model: one configured vendor per category
-- Voice runtime: Azure-first live voice path with a custom orchestrator
+- Voice runtime: V1 rollback path plus an in-progress internal Voice Runtime V2 rewrite
 - After-hours urgent policy: no live urgent handling after hours; capture urgent voicemail and create a next-day queue item
 - Data posture: compact summaries and operational metadata by default, with optional short transcript retention for debugging
 
@@ -46,20 +46,20 @@ The system uses a shared US-only multi-tenant stack, one generated runtime workf
 
 ## Runtime Flow
 
-1. Twilio sends the inbound call to the Python voice orchestrator.
-2. The orchestrator looks up the business by phone number.
-3. The orchestrator loads `runtime-config`, including:
+1. Twilio sends the inbound call to the active voice runtime.
+2. The runtime looks up the business by phone number.
+3. The runtime loads `runtime-config`, including:
    - business profile
    - settings
    - operating hours
    - generated active runtime workflow
    - integration categories and capabilities
-4. A deterministic pre-LLM policy guard runs before normal conversation:
+4. A deterministic policy guard runs before normal conversation:
    - emergency phrase hit -> 911 / emergency redirect
    - after-hours urgent -> urgent voicemail + urgent follow-up task
    - after-hours non-urgent -> voicemail
    - business hours -> continue into the generated runtime workflow and runtime actions
-5. The generated runtime workflow and tools collect fields, summarize the requested action, and require confirmation for write operations.
+5. The active runtime uses Practice Setup policy, generated runtime data, and internal specialist logic to collect fields, summarize the requested action, and require confirmation for write operations.
 6. The voice runtime calls a generic runtime-action endpoint on the Core API.
 7. The Core API resolves the configured integration and either:
    - executes live if the connector is healthy and the capability is supported
@@ -246,6 +246,11 @@ apps/
     tools.py                         Voice tools with confirmation gating
     node_executors.py                Workflow executor runtime-action bridge
     flow_manager.py                  Workflow loading and execution
+  voice-runtime-v2/
+    server.py                        FastAPI control plane for the new internal multi-agent runtime
+    service.py                       Supervisor + specialist orchestration
+    agents.py                        Internal specialist agents and routing logic
+    core_api_client.py               Runtime-config and runtime-action bridge for V2
 
 packages/
   db/                               Prisma schema and generated client
@@ -311,6 +316,24 @@ Default local ports:
 - Web: `http://localhost:3000`
 - Core API: `http://localhost:3001`
 - Voice orchestrator: `http://localhost:3002`
+- Voice Runtime V2: `http://localhost:3003`
+
+### Voice Runtime V2
+
+Voice Runtime V2 is the new internal multi-agent rewrite. It keeps Practice Setup and runtime actions intact while replacing the old live voice layer over time.
+
+```bash
+python -m pip install -r apps/voice-runtime-v2/requirements.txt
+pnpm voice:v2:dev
+```
+
+Current validation for the V2 service uses its internal text-turn harness:
+
+```bash
+pnpm test:voice:v2
+```
+
+The V2 scripts reuse the existing voice virtualenv automatically when `apps/voice-orchestrator-pipecat/venv` exists. You can still override the interpreter with `WARDLINE_VOICE_PYTHON=/path/to/python`.
 
 ### Mock Connector Smoke Flow
 
@@ -350,6 +373,13 @@ pnpm db:seed:staging
 ```
 
 The full staging checklist lives in [docs/STAGING_VALIDATION.md](./docs/STAGING_VALIDATION.md).
+Pilot proof now includes both technical validation and receptionist-quality review:
+
+- voice confirmation repair and caller recovery
+- direct answers for common practice questions like hours and supported services
+- operator-facing call detail pages that explain what happened and what staff should do next
+
+Do not resume broader feature work until both the staging gate and the pilot-quality review pass.
 
 ## Environment Variables
 

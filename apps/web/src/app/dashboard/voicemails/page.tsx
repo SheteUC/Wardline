@@ -6,6 +6,7 @@ import { Card, Button } from '@/components/dashboard/shared';
 import { CheckCircle, Phone, Play, Voicemail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMarkVoicemailListened, useVoicemails } from '@/lib/hooks/query-hooks';
+import { humanizeFallbackReason, labelRuntimeAction } from '@/lib/operator-insights';
 
 const TAG_LABEL: Record<string, string> = {
     SCHEDULING: 'Scheduling',
@@ -126,7 +127,7 @@ export default function VoicemailsPage() {
                                                 )}
                                                 {originatingAction && (
                                                     <span className="rounded-full bg-[var(--background)] px-2 py-0.5 text-xs font-medium text-muted-foreground neo-flat">
-                                                        {originatingAction.replaceAll('-', ' ')}
+                                                        {labelRuntimeAction(originatingAction)}
                                                     </span>
                                                 )}
                                             </div>
@@ -149,7 +150,7 @@ export default function VoicemailsPage() {
                                             </p>
                                             {fallbackReason && (
                                                 <p className="text-xs text-amber-700">
-                                                    Live action downgraded because {fallbackReason.replaceAll('_', ' ')}.
+                                                    Downgraded to staff follow-up because {humanizeFallbackReason(fallbackReason)}.
                                                 </p>
                                             )}
                                             {liveAttemptMessage && (

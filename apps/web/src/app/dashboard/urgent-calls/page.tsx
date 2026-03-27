@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, ChevronRight, Phone } from 'lucide-react';
 import { Button, Card } from '@/components/dashboard/shared';
 import { useFollowUpTasks, useUpdateFollowUpTaskStatus } from '@/lib/hooks/query-hooks';
+import { humanizeFallbackReason } from '@/lib/operator-insights';
 
 const TYPE_LABELS: Record<string, string> = {
     URGENT_CALLBACK: 'Urgent callback',
@@ -98,7 +99,7 @@ export default function UrgentCallsPage() {
                                             </div>
                                             {fallbackReason && (
                                                 <p className="mt-2 text-xs text-amber-700">
-                                                    Live action downgraded because {fallbackReason.replaceAll('_', ' ')}.
+                                                    Downgraded to staff follow-up because {humanizeFallbackReason(fallbackReason)}.
                                                 </p>
                                             )}
                                         </Link>

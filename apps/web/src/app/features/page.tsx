@@ -1,25 +1,26 @@
 import {
-  Brain,
-  Users,
-  Workflow,
-  Shield,
   Activity,
-  Phone,
-  Zap,
-  Database,
-  Check,
   ArrowRight,
+  Bot,
+  Check,
+  ClipboardList,
+  Database,
+  Phone,
+  PlugZap,
+  Shield,
+  Users,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 const PRACTICE_CAPABILITIES = [
-  "Appointment scheduling requests",
-  "Billing and payment intake",
-  "Insurance verification support",
-  "General FAQ and office information",
-  "Prescription refill requests",
+  "Appointment request intake and follow-up",
+  "Prescription refill capture and confirmation",
+  "Insurance acceptance checks",
+  "Billing request handling",
+  "Office information and FAQ answers",
 ] as const;
 
 export default function FeaturesPage() {
@@ -28,13 +29,14 @@ export default function FeaturesPage() {
       <SiteHeader />
 
       <main>
-        <section className="mx-auto max-w-4xl px-6 pt-20 pb-16 text-center lg:px-12">
+        <section className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center lg:px-12">
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-            Everything in one platform
+            Built around one front-desk job
           </h1>
           <p className="mt-6 text-lg text-muted-foreground">
-            Inbound calls go to the Pipecat voice orchestrator while your team manages
-            practice setup, integrations, and safety from the Wardline dashboard.
+            Wardline answers the phone, follows practice policy, uses live
+            integrations when available, and gives staff a clean operational
+            queue when a request needs follow-up.
           </p>
         </section>
 
@@ -42,22 +44,24 @@ export default function FeaturesPage() {
           <div className="grid gap-8 md:grid-cols-2">
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
-                <Brain className="h-7 w-7 text-primary" />
+                <Bot className="h-7 w-7 text-primary" />
               </div>
-              <h2 className="text-2xl font-extrabold text-foreground">AI voice layer</h2>
+              <h2 className="text-2xl font-extrabold text-foreground">Voice runtime</h2>
               <p className="mt-3 text-muted-foreground leading-relaxed">
-                Real-time speech (Azure), GPT-4 class models, natural TTS. One-problem-at-a-time
-                conversations with always-on emergency keyword detection before the LLM runs.
+                One receptionist voice on the outside, structured runtime logic on
+                the inside. Emergency screening, after-hours handling, confirmation,
+                and escalation stay enforced throughout the call.
               </p>
             </div>
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
                 <Users className="h-7 w-7 text-primary" />
               </div>
-              <h2 className="text-2xl font-extrabold text-foreground">Human handoff</h2>
+              <h2 className="text-2xl font-extrabold text-foreground">Human backup</h2>
               <p className="mt-3 text-muted-foreground leading-relaxed">
-                Warm transfer to staff when needed; if no one answers, callers can leave voicemail
-                in the same flow. Out-of-scope clinical questions are deflected per policy.
+                When a live action cannot complete, Wardline creates the right
+                follow-up task, links voicemail or urgent context, and makes the
+                next step obvious for staff.
               </p>
             </div>
           </div>
@@ -68,8 +72,7 @@ export default function FeaturesPage() {
             Practice-first capabilities
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
-            Configure the services your practice supports and Wardline handles the live
-            call orchestration behind the scenes.
+            Practices configure the business. Wardline handles the live runtime behind the scenes.
           </p>
           <ul className="mx-auto mt-10 grid max-w-3xl gap-3 sm:grid-cols-2">
             {PRACTICE_CAPABILITIES.map((name) => (
@@ -91,31 +94,31 @@ export default function FeaturesPage() {
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               <div>
                 <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
-                  <Workflow className="h-7 w-7 text-primary" />
+                  <ClipboardList className="h-7 w-7 text-primary" />
                 </div>
                 <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">
-                  Practice setup becomes live call policy
+                  Practice Setup becomes live call policy
                 </h2>
                 <p className="mt-4 text-muted-foreground leading-relaxed">
-                  Set office hours, escalation rules, FAQs, supported services, and
-                  integrations. Wardline compiles those settings into the runtime flow
-                  so practices do not have to design node graphs.
+                  Set office hours, escalation rules, FAQs, supported services,
+                  and integrations. Wardline compiles those settings into the live
+                  runtime so practices do not have to design node graphs or deploy agents.
                 </p>
               </div>
               <div className="space-y-3 rounded-2xl bg-[var(--background)] p-6 neo-inset">
                 <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
                   <span className="h-2 w-2 rounded-full bg-primary" />
-                  Screen safety &amp; determine intent
+                  Screen safety and determine the request type
                 </div>
                 <div className="mx-auto h-4 w-0.5 bg-border" />
                 <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
                   <span className="h-2 w-2 rounded-full bg-accent" />
-                  Use live actions or create follow-up
+                  Execute live action or create staff follow-up
                 </div>
                 <div className="mx-auto h-4 w-0.5 bg-border" />
                 <div className="flex items-center gap-3 rounded-xl bg-[var(--background)] px-4 py-3 text-sm font-semibold neo-raised">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  Escalate, voicemail, or resolve
+                  Keep calls, voicemails, and tasks linked in the dashboard
                 </div>
               </div>
             </div>
@@ -124,7 +127,7 @@ export default function FeaturesPage() {
 
         <section className="mx-auto max-w-6xl px-6 pb-16 lg:px-12">
           <h2 className="text-center text-2xl font-extrabold text-foreground sm:text-3xl">
-            Safety &amp; operations
+            Safety and operations
           </h2>
           <div className="mt-10 grid gap-8 md:grid-cols-3">
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
@@ -133,28 +136,25 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-lg font-extrabold text-foreground">Safety guard</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Emergency keywords trigger 911 advisory and escalation; clinical questions are
-                deflected with offer to transfer. Owners can add keywords, not remove system defaults.
+                Emergency language triggers immediate safe escalation guidance. Clinical-advice requests are deflected to staff follow-up.
               </p>
             </div>
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
                 <Activity className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-lg font-extrabold text-foreground">Call intelligence</h3>
+              <h3 className="text-lg font-extrabold text-foreground">Operator clarity</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Call logs with turn-level detail, tags, and outcomes; voicemails with playback and
-                transcription in the dashboard.
+                Calls, voicemails, urgent items, and follow-ups stay visible with plain-language summaries and next steps.
               </p>
             </div>
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
                 <Phone className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-lg font-extrabold text-foreground">Telephony stack</h3>
+              <h3 className="text-lg font-extrabold text-foreground">Telephony and live actions</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Twilio for inbound media streams; core API connects orchestrator, practice policies, and
-                your business data.
+                Twilio handles inbound telephony while the runtime uses one live connector per category and falls back safely when needed.
               </p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-lg font-extrabold text-foreground">Performance</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Redis-backed core API for caching and scale; designed for production workloads.
+                Hot-path latency is measured across call bootstrap, runtime actions, fallback creation, and dashboard queue loads.
               </p>
             </div>
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
@@ -177,18 +177,16 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-lg font-extrabold text-foreground">Data layer</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                PostgreSQL for practices, calls, voicemails, and follow-ups—integrate scheduling and EHR
-                tools per service category.
+                PostgreSQL stores businesses, calls, follow-ups, voicemails, and integration metadata in one shared operational model.
               </p>
             </div>
             <div className="rounded-3xl bg-[var(--background)] p-8 neo-raised">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset">
-                <Shield className="h-6 w-6 text-primary" />
+                <PlugZap className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-lg font-extrabold text-foreground">Compliance posture</h3>
+              <h3 className="text-lg font-extrabold text-foreground">Practice readiness</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Build on HIPAA-aligned patterns: encrypt in transit, vendor BAAs where applicable,
-                and least-privilege access for your team.
+                Hours, policies, integrations, and FAQs roll up into one readiness view so a practice knows when it is safe to go live.
               </p>
             </div>
           </div>
@@ -200,7 +198,7 @@ export default function FeaturesPage() {
               See it on your stack
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Talk to us about pricing, rollout, and integrations.
+              Talk to us about pricing, rollout, and integration fit for your practice.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link

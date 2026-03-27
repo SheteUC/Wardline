@@ -121,6 +121,7 @@ class LangChainToolsAgent:
                 business_name=self.context.business_name,
                 intents=self.context.intents,
                 departments=self.context.departments,
+                runtime_config=self.context.runtime_config,
             )
 
             self._agent = create_react_agent(llm, tools, state_modifier=system_prompt)
@@ -153,14 +154,7 @@ class LangChainToolsAgent:
             # Graceful fallback
             from conversation_agent import ConversationAgent
             from prompts import get_system_prompt
-            fallback = ConversationAgent(
-                self.context,
-                get_system_prompt(
-                    business_name=self.context.business_name,
-                    intents=self.context.intents,
-                    departments=self.context.departments,
-                ),
-            )
+            fallback = ConversationAgent(self.context)
             return await fallback.generate_response(user_message)
 
     def update_context(self):

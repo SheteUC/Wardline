@@ -79,5 +79,7 @@ describe('practice setup helpers', () => {
 
         const integrationReadiness = readiness.find((item) => item.key === 'integrations');
         expect(integrationReadiness?.complete).toBe(false);
+        expect(readiness.find((item) => item.key === 'services')?.complete).toBe(true);
+        expect(readiness.find((item) => item.key === 'policy')?.complete).toBe(true);
     });
 });

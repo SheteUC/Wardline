@@ -12,6 +12,7 @@ describe('BusinessesService', () => {
             business: {
                 findFirst: jest.fn(),
                 findMany: jest.fn(),
+                findUnique: jest.fn(),
             },
             $transaction: jest.fn(),
         };
@@ -85,5 +86,84 @@ describe('BusinessesService', () => {
         expect(result).toEqual([]);
         expect(cache.getOrSet).not.toHaveBeenCalled();
         expect(prisma.business.findMany).not.toHaveBeenCalled();
+    });
+
+    it('includes the internal voicePolicyV2 adapter in runtime config', async () => {
+        const business = {
+            id: 'business-1',
+            name: 'Family Practice',
+            slug: 'family-practice',
+            timeZone: 'America/New_York',
+            status: 'ACTIVE',
+            settings: {
+                recordingDefault: 'ON',
+                transcriptRetentionDays: 30,
+                operatingHours: [],
+                enabledActions: ['appointment-request', 'billing-request'],
+                afterHoursPolicy: {
+                    mode: 'urgent_voicemail',
+                    greeting: 'Leave an urgent voicemail after hours.',
+                    sendUrgentToVoicemail: true,
+                },
+                refillPolicy: {
+                    liveEnabled: true,
+                    intakeNotes: 'Refill notes',
+                    fallbackSummary: 'Refill fallback',
+                },
+                billingPolicy: {
+                    liveEnabled: false,
+                    intakeNotes: 'Billing notes',
+                    fallbackSummary: 'Billing fallback',
+                },
+                insurancePolicy: {
+                    liveEnabled: true,
+                    intakeNotes: 'Insurance notes',
+                    fallbackSummary: 'Insurance fallback',
+                },
+                knowledgeConfig: {
+                    faqSummary: 'Practice summary',
+                    commonQuestions: ['Hours'],
+                },
+                escalationConfig: {
+                    urgentCallbackWindowMinutes: 30,
+                    escalationMessage: 'Escalate urgent calls',
+                    notifyStaffImmediately: true,
+                },
+                outOfScopeKeywords: ['lawsuit'],
+                emergencyKeywords: ['stroke'],
+            },
+            phoneNumbers: [],
+            integrations: [
+                { id: 'integration-1', category: 'SCHEDULING', vendor: 'athenahealth', status: 'CONNECTED', capabilities: {}, lastHealthCheckAt: null },
+                { id: 'integration-2', category: 'BILLING', vendor: 'athenahealth', status: 'ERROR', capabilities: {}, lastHealthCheckAt: null },
+            ],
+        };
+
+        prisma.business.findUnique.mockResolvedValue(business);
+        workflowsService.getActiveWorkflow.mockResolvedValue({
+            id: 'workflow-1',
+            name: 'Practice Setup Runtime',
+            version: 1,
+            graphJson: {},
+        });
+        cache.getOrSet.mockImplementation(async (_key: string, factory: () => Promise<unknown>) => factory());
+
+        const result = await service.getRuntimeConfig('business-1');
+
+        expect(result.voicePolicyV2).toEqual(
+            expect.objectContaining({
+                version: 'v2',
+                runtime: 'internal-multi-agent',
+                enabledDomains: expect.arrayContaining(['safety', 'knowledge', 'handoff', 'scheduling', 'billing']),
+                connectedCategories: ['SCHEDULING'],
+                fallbackRuntimeAction: 'manual-follow-up',
+            }),
+        );
+        expect(result.voicePolicyV2.servicePolicies.billing.liveEnabled).toBe(false);
+        expect(result.voicePolicyV2.writeActionsRequiringConfirmation).toEqual([
+            'appointment-request',
+            'refill-request',
+            'billing-request',
+        ]);
     });
 });

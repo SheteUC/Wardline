@@ -13,6 +13,7 @@ import {
 import { Button, Card, Badge } from "@/components/dashboard/shared";
 import { useCall } from '@/lib/hooks/query-hooks';
 import { CallStatus } from '@wardline/types';
+import { humanizeFallbackReason, labelRuntimeAction } from '@/lib/operator-insights';
 
 const TAG_LABEL: Record<string, string> = {
     SCHEDULING: 'Scheduling',
@@ -23,6 +24,16 @@ const TAG_LABEL: Record<string, string> = {
     HUMAN_TRANSFER: 'Human transfer',
     VOICEMAIL: 'Voicemail',
     EMERGENCY: 'Emergency',
+};
+
+const FOLLOW_UP_LABELS: Record<string, string> = {
+    URGENT_CALLBACK: 'Urgent callback',
+    MANUAL_REVIEW: 'Manual review',
+    APPOINTMENT_REQUEST: 'Appointment request',
+    REFILL_REQUEST: 'Refill request',
+    INSURANCE_CHECK: 'Insurance check',
+    BILLING_REQUEST: 'Billing request',
+    VOICEMAIL_REVIEW: 'Voicemail review',
 };
 
 function formatDuration(startedAt: string, endedAt?: string): string {
@@ -65,10 +76,13 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
     }
 
     const duration = formatDuration(call.startedAt, call.endedAt);
+    const openFollowUps = (call.followUpTasks ?? []).filter(
+        (task) => task.status !== 'COMPLETED' && task.status !== 'CANCELLED',
+    );
 
     return (
         <div className="flex h-[calc(100vh-100px)] flex-col gap-6 lg:flex-row">
-            <div className="w-full flex-shrink-0 space-y-6 lg:w-80">
+            <div className="w-full flex-shrink-0 space-y-6 lg:w-96">
                 <Link href="/dashboard/calls">
                     <Button variant="secondary" icon={ChevronRight} className="mb-2 rotate-180">
                         Back to List
@@ -136,6 +150,86 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                         </div>
                     </div>
                 </Card>
+
+                {call.operatorSummary && (
+                    <Card title="Operator Summary">
+                        <div className="space-y-3">
+                            <div>
+                                <div className="text-sm font-medium text-foreground">{call.operatorSummary.label}</div>
+                                <p className="mt-1 text-sm text-muted-foreground">{call.operatorSummary.nextStep}</p>
+                            </div>
+                            {call.operatorSummary.actionName && (
+                                <div className="rounded-2xl bg-[var(--background)] p-3 neo-inset">
+                                    <div className="text-xs font-semibold uppercase text-muted-foreground">Latest runtime action</div>
+                                    <div className="mt-1 text-sm text-foreground">
+                                        {labelRuntimeAction(call.operatorSummary.actionName)}
+                                    </div>
+                                </div>
+                            )}
+                            {call.operatorSummary.fallbackReason && (
+                                <p className="text-xs text-amber-700">
+                                    Staff follow-up was required because {humanizeFallbackReason(call.operatorSummary.fallbackReason)}.
+                                </p>
+                            )}
+                        </div>
+                    </Card>
+                )}
+
+                {openFollowUps.length > 0 && (
+                    <Card title="Linked Follow-ups">
+                        <div className="space-y-3">
+                            {openFollowUps.map((task) => (
+                                <div key={task.id} className="rounded-2xl bg-[var(--background)] p-3 neo-inset">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            {FOLLOW_UP_LABELS[task.type] ?? task.type.replaceAll('_', ' ')}
+                                        </div>
+                                        <Badge
+                                            type={task.priority === 'URGENT' ? 'danger' : 'neutral'}
+                                            text={task.status.replaceAll('_', ' ')}
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground">{task.summary}</p>
+                                    {typeof task.metadata?.fallbackReason === 'string' && (
+                                        <p className="mt-2 text-xs text-amber-700">
+                                            Downgraded because {humanizeFallbackReason(task.metadata.fallbackReason)}.
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                )}
+
+                {call.runtimeActionEvents.length > 0 && (
+                    <Card title="Runtime Actions">
+                        <div className="space-y-3">
+                            {call.runtimeActionEvents.map((event, index) => (
+                                <div key={`${event.createdAt}-${index}`} className="rounded-2xl bg-[var(--background)] p-3 neo-inset">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            {labelRuntimeAction(event.actionName)}
+                                        </div>
+                                        <Badge
+                                            type={event.handledLive ? 'success' : 'warning'}
+                                            text={event.handledLive ? 'Handled live' : 'Staff follow-up'}
+                                        />
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                        {event.integrationCategory && <span>{event.integrationCategory}</span>}
+                                        {event.integrationVendor && <span>{event.integrationVendor}</span>}
+                                        {event.latencyMs !== undefined && <span>{event.latencyMs}ms</span>}
+                                    </div>
+                                    {event.fallbackReason && (
+                                        <p className="mt-2 text-xs text-amber-700">
+                                            Downgraded because {humanizeFallbackReason(event.fallbackReason)}.
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                )}
 
                 {call.handoffs.length > 0 && (
                     <Card title="Handoffs">

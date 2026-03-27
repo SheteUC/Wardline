@@ -121,11 +121,16 @@ export class CallsService {
                         appointments: { select: { id: true, callerName: true, scheduledAt: true, status: true } },
                         prescriptionRefills: { select: { id: true, medicationName: true, status: true } },
                         insuranceInquiries: { select: { id: true, inquiryType: true, resolved: true } },
-                        followUpTasks: true,
+                        followUpTasks: { orderBy: { createdAt: 'desc' } },
                     },
                 });
                 if (!call) throw new NotFoundException(`Call not found: ${id}`);
-                return call;
+                const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
+                return {
+                    ...call,
+                    runtimeActionEvents,
+                    operatorSummary: this.buildOperatorSummary(call, runtimeActionEvents),
+                };
             },
             { ttl: CacheTTL.MEDIUM, tags: ['calls', `call:${id}`] },
         );
@@ -137,6 +142,143 @@ export class CallsService {
         });
 
         return call;
+    }
+
+    private extractRuntimeActionEvents(turnsJson: unknown) {
+        if (!Array.isArray(turnsJson)) {
+            return [];
+        }
+
+        return turnsJson
+            .filter((entry): entry is Record<string, any> =>
+                Boolean(entry) &&
+                typeof entry === 'object' &&
+                entry.type === 'runtime_action_outcome' &&
+                typeof entry.actionName === 'string',
+            )
+            .map((entry) => ({
+                type: 'runtime_action_outcome',
+                actionName: entry.actionName,
+                integrationCategory: entry.integrationCategory,
+                integrationVendor: entry.integrationVendor,
+                handledLive: Boolean(entry.handledLive),
+                followUpTaskId:
+                    typeof entry.followUpTaskId === 'string' ? entry.followUpTaskId : undefined,
+                fallbackReason:
+                    typeof entry.fallbackReason === 'string' ? entry.fallbackReason : undefined,
+                callerName: typeof entry.callerName === 'string' ? entry.callerName : undefined,
+                callerPhone: typeof entry.callerPhone === 'string' ? entry.callerPhone : undefined,
+                data:
+                    entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)
+                        ? entry.data
+                        : {},
+                latencyMs:
+                    entry.data &&
+                    typeof entry.data === 'object' &&
+                    !Array.isArray(entry.data) &&
+                    typeof entry.data.latencyMs === 'number'
+                        ? entry.data.latencyMs
+                        : undefined,
+                createdAt:
+                    typeof entry.createdAt === 'string'
+                        ? entry.createdAt
+                        : new Date().toISOString(),
+            }))
+            .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    }
+
+    private buildOperatorSummary(
+        call: {
+            isEmergency?: boolean;
+            tag?: string | null;
+            status?: string | null;
+            voicemails?: Array<unknown>;
+            followUpTasks?: Array<{
+                id: string;
+                status: string;
+                priority: string;
+                type: string;
+            }>;
+        },
+        runtimeActionEvents: Array<{
+            actionName: string;
+            handledLive: boolean;
+            followUpTaskId?: string;
+            fallbackReason?: string;
+        }>,
+    ) {
+        const openFollowUpTask = (call.followUpTasks ?? []).find(
+            (task) => task.status === 'OPEN' || task.status === 'IN_PROGRESS',
+        );
+        const latestRuntimeAction = runtimeActionEvents[0];
+
+        if (call.isEmergency || call.tag === 'EMERGENCY') {
+            return {
+                resolution: 'EMERGENCY_ESCALATION',
+                label: 'Emergency escalation',
+                nextStep: openFollowUpTask
+                    ? 'Review the urgent task and contact the caller immediately if staff intervention is still needed.'
+                    : 'Confirm the caller received emergency guidance and staff awareness where appropriate.',
+            };
+        }
+
+        if (latestRuntimeAction) {
+            if (latestRuntimeAction.handledLive) {
+                return {
+                    resolution: 'LIVE_RESOLVED',
+                    label: 'Handled live',
+                    nextStep: openFollowUpTask
+                        ? 'A follow-up task is still open. Review it and close it if the live action fully resolved the call.'
+                        : 'No staff follow-up is currently required unless the caller contacts the practice again.',
+                    actionName: latestRuntimeAction.actionName,
+                    handledLive: true,
+                };
+            }
+
+            return {
+                resolution: 'FOLLOW_UP_REQUIRED',
+                label: 'Staff follow-up required',
+                nextStep: openFollowUpTask
+                    ? `Open the ${this.humanizeTaskType(openFollowUpTask.type)} task and complete the requested staff follow-up.`
+                    : 'Review the call and create or complete the appropriate staff follow-up.',
+                actionName: latestRuntimeAction.actionName,
+                handledLive: false,
+                followUpTaskId: latestRuntimeAction.followUpTaskId,
+                fallbackReason: latestRuntimeAction.fallbackReason,
+            };
+        }
+
+        if ((call.voicemails ?? []).length > 0 || call.tag === 'VOICEMAIL') {
+            return {
+                resolution: 'VOICEMAIL_CAPTURED',
+                label: 'Voicemail captured',
+                nextStep: openFollowUpTask
+                    ? 'Review the voicemail and the linked follow-up task.'
+                    : 'Review the voicemail recording and transcript for next steps.',
+            };
+        }
+
+        if (call.tag === 'HUMAN_TRANSFER') {
+            return {
+                resolution: 'HUMAN_ESCALATION',
+                label: 'Escalated to staff',
+                nextStep: openFollowUpTask
+                    ? 'Review the linked follow-up task for the escalation outcome.'
+                    : 'Review the call context to confirm the caller reached the right staff workflow.',
+            };
+        }
+
+        return {
+            resolution: call.status === 'COMPLETED' ? 'CALL_COMPLETED' : 'CALL_IN_PROGRESS',
+            label: call.status === 'COMPLETED' ? 'Call completed' : 'Call in progress',
+            nextStep: openFollowUpTask
+                ? 'A follow-up task is open for this call.'
+                : 'Review the transcript only if the caller needs additional follow-up.',
+        };
+    }
+
+    private humanizeTaskType(type: string) {
+        return type.toLowerCase().replaceAll('_', ' ');
     }
 
     async findByTwilioSid(twilioCallSid: string): Promise<any[]> {

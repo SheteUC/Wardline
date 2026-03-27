@@ -103,14 +103,7 @@ class AzureAIFoundryAgent:
             # Graceful fallback to conversational agent
             from conversation_agent import ConversationAgent
             from prompts import get_system_prompt
-            fallback = ConversationAgent(
-                self.context,
-                get_system_prompt(
-                    business_name=self.context.business_name,
-                    intents=self.context.intents,
-                    departments=self.context.departments,
-                ),
-            )
+            fallback = ConversationAgent(self.context)
             return await fallback.generate_response(user_message)
 
 

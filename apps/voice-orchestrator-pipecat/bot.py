@@ -181,7 +181,8 @@ async def create_bot_pipeline(
     system_prompt = get_system_prompt(
         business_name=context.business_name,
         intents=context.intents,
-        departments=context.departments
+        departments=context.departments,
+        runtime_config=context.runtime_config,
     )
     
     # Check if current node has custom prompt

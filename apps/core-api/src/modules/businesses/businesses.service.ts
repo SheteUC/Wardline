@@ -5,6 +5,7 @@ import { Logger } from '@wardline/utils';
 import { WorkflowsService } from '../workflows/workflows.service';
 import { DEFAULT_OPERATING_HOURS, normalizeOperatingHours } from './business-hours';
 import { normalizePracticeSetup } from './practice-config';
+import { buildVoicePolicyV2 } from './voice-policy-v2';
 
 const CacheKeys = {
     businesses: (userId?: string) => `businesses:list:${userId ?? 'all'}`,
@@ -350,6 +351,10 @@ export class BusinessesService {
                     connectedIntegrationCategories: business.integrations
                         .filter((integration) => integration.status === 'CONNECTED')
                         .map((integration) => integration.category),
+                    voicePolicyV2: buildVoicePolicyV2({
+                        settings: normalizedSettings,
+                        integrations: business.integrations,
+                    }),
                     activeWorkflow,
                 };
             },

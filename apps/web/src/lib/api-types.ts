@@ -194,6 +194,30 @@ export interface CallDetail {
         inquiryType?: string;
         resolved?: boolean;
     }>;
+    followUpTasks: FollowUpTask[];
+    runtimeActionEvents: Array<{
+        type: 'runtime_action_outcome';
+        actionName: string;
+        integrationCategory?: string;
+        integrationVendor?: string;
+        handledLive: boolean;
+        followUpTaskId?: string;
+        fallbackReason?: string;
+        callerName?: string;
+        callerPhone?: string;
+        data?: Record<string, unknown>;
+        latencyMs?: number;
+        createdAt: string;
+    }>;
+    operatorSummary?: {
+        resolution: string;
+        label: string;
+        nextStep: string;
+        fallbackReason?: string;
+        actionName?: string;
+        followUpTaskId?: string;
+        handledLive?: boolean;
+    };
 }
 
 export interface CallAnalytics {
@@ -326,6 +350,43 @@ export interface BusinessRuntimeConfig {
     }>;
     integrations: Array<Pick<BusinessIntegration, 'id' | 'category' | 'vendor' | 'status' | 'capabilities' | 'lastHealthCheckAt'>>;
     connectedIntegrationCategories: string[];
+    voicePolicyV2: {
+        version: 'v2';
+        runtime: 'internal-multi-agent';
+        speaker: 'supervisor';
+        enabledDomains: Array<'safety' | 'knowledge' | 'scheduling' | 'refill' | 'insurance' | 'billing' | 'handoff'>;
+        connectedCategories: string[];
+        writeActionsRequiringConfirmation: Array<'appointment-request' | 'refill-request' | 'billing-request'>;
+        afterHoursPolicy: AfterHoursPolicy;
+        knowledgeConfig: KnowledgeConfig;
+        servicePolicies: {
+            scheduling: ServicePolicy & {
+                enabled: boolean;
+                runtimeAction: 'appointment-request';
+                integrationCategory: 'SCHEDULING';
+            };
+            refill: ServicePolicy & {
+                enabled: boolean;
+                runtimeAction: 'refill-request';
+                integrationCategory: 'EHR_REFILL';
+            };
+            insurance: ServicePolicy & {
+                enabled: boolean;
+                runtimeAction: 'insurance-check';
+                integrationCategory: 'INSURANCE';
+            };
+            billing: ServicePolicy & {
+                enabled: boolean;
+                runtimeAction: 'billing-request';
+                integrationCategory: 'BILLING';
+            };
+        };
+        escalationConfig: EscalationConfig;
+        emergencyKeywords: string[];
+        outOfScopeKeywords: string[];
+        fallbackRuntimeAction: 'manual-follow-up';
+        operatorSummaryEnabled: true;
+    };
     activeWorkflow?: {
         id: string;
         name: string;
@@ -340,6 +401,9 @@ export interface AgentCatalogItem {
     name: string;
     description?: string;
     scopeBoundary?: string;
+    internalOnly?: boolean;
+    deprecated?: boolean;
+    deprecationNotice?: string;
     icon?: string;
     color?: string;
     tags?: string[];
@@ -360,6 +424,9 @@ export interface AgentListItem {
     name: string;
     description?: string;
     status: 'ACTIVE' | 'INACTIVE' | 'PAUSED';
+    internalOnly?: boolean;
+    deprecated?: boolean;
+    deprecationNotice?: string;
     toolConfig?: Record<string, unknown>;
     agentConfig?: Record<string, unknown>;
     nodeGraph?: Record<string, unknown>;

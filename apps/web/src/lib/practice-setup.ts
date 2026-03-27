@@ -220,9 +220,17 @@ export function buildPracticeReadiness(options: {
                 normalized.knowledgeConfig.commonQuestions.length > 0,
         },
         {
+            key: 'services',
+            label: 'Live services enabled',
+            complete: normalized.enabledActions.length > 0,
+        },
+        {
             key: 'policy',
             label: 'Call policy saved',
-            complete: normalized.afterHoursPolicy.greeting.trim().length > 0,
+            complete:
+                normalized.afterHoursPolicy.greeting.trim().length > 0 &&
+                normalized.escalationConfig.escalationMessage.trim().length > 0 &&
+                normalized.escalationConfig.urgentCallbackWindowMinutes > 0,
         },
     ];
 }
