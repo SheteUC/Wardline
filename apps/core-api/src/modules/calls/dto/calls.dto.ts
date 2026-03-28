@@ -148,6 +148,16 @@ export class TranscriptSegmentDto {
     @IsOptional()
     @IsNumber()
     confidence?: number;
+
+    @ApiPropertyOptional({ description: 'Segment start time in milliseconds' })
+    @IsOptional()
+    @IsNumber()
+    startTimeMs?: number;
+
+    @ApiPropertyOptional({ description: 'Segment end time in milliseconds' })
+    @IsOptional()
+    @IsNumber()
+    endTimeMs?: number;
 }
 
 // DTO for saving transcript

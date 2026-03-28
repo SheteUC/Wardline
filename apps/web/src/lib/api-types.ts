@@ -193,6 +193,17 @@ export interface CallDetail {
         resolved?: boolean;
     }>;
     followUpTasks: FollowUpTask[];
+    transportSummary?: {
+        runtime: string;
+        transport: string;
+        roomName?: string;
+        participantIdentity?: string;
+        livekitUrl?: string;
+        twilioMediaStreamUrl?: string;
+        twilioStreamSid?: string;
+        providerSessionId?: string;
+        transcriptEventCount?: number;
+    };
     runtimeActionEvents: Array<{
         type: 'runtime_action_outcome';
         actionName: string;

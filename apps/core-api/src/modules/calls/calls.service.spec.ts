@@ -108,6 +108,28 @@ describe('CallsService', () => {
                 status: 'COMPLETED',
                 turnsJson: [
                     {
+                        type: 'session_bootstrap',
+                        actionName: 'voice-runtime-v2',
+                        data: {
+                            transport: {
+                                runtime: 'voice-runtime-v2',
+                                transport: 'livekit',
+                                roomName: 'wardline-business-call',
+                                participantIdentity: 'wardline-session-session-1',
+                                livekitUrl: 'wss://livekit.example.com',
+                                twilioMediaStreamUrl: 'wss://voice.example.com/telephony/twilio/media',
+                            },
+                        },
+                    },
+                    {
+                        type: 'transport_event',
+                        actionName: 'twilio_stream_started',
+                        data: {
+                            twilioStreamSid: 'MZ123',
+                            deepgramRequestId: 'dg-123',
+                        },
+                    },
+                    {
                         type: 'runtime_action_outcome',
                         actionName: 'billing-request',
                         domain: 'billing',
@@ -153,6 +175,15 @@ describe('CallsService', () => {
                     label: 'Billing request ready',
                     fallbackReason: 'timeout',
                     actionName: 'billing-request',
+                }),
+            );
+            expect(result.transportSummary).toEqual(
+                expect.objectContaining({
+                    runtime: 'voice-runtime-v2',
+                    transport: 'livekit',
+                    roomName: 'wardline-business-call',
+                    twilioStreamSid: 'MZ123',
+                    providerSessionId: 'dg-123',
                 }),
             );
         });

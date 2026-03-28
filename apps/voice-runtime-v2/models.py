@@ -184,6 +184,10 @@ class SessionTransportMetadata(BaseModel):
     roomName: str
     participantIdentity: str
     livekitUrl: str = ""
+    livekitAccessToken: str = ""
+    twilioMediaStreamUrl: str = ""
+    twilioStreamSid: Optional[str] = None
+    deepgramRequestId: Optional[str] = None
     providerSessionId: Optional[str] = None
 
 
@@ -213,3 +217,4 @@ class SessionState(BaseModel):
     lastSpecialistResult: Optional[SpecialistResult] = None
     lastOperatorSummary: Optional[OperatorSummary] = None
     turns: int = 0
+    transcriptCursorMs: int = 0

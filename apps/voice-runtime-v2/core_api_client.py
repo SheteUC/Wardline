@@ -53,6 +53,9 @@ class CoreApiClient:
     async def create_voicemail(self, call_id: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return await self._post_json(f"/api/calls/{call_id}/voicemail", payload)
 
+    async def save_transcript(self, call_id: str, segments: list[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        return await self._post_json(f"/api/calls/{call_id}/transcript", {"segments": segments})
+
     async def execute_runtime_action(
         self,
         business_id: str,

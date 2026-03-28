@@ -175,6 +175,44 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                     </Card>
                 )}
 
+                {call.transportSummary && (
+                    <Card title="Voice Runtime">
+                        <div className="space-y-3 text-sm text-foreground">
+                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                <Badge type="neutral" text={call.transportSummary.runtime} />
+                                <Badge type="neutral" text={call.transportSummary.transport} />
+                            </div>
+                            {call.transportSummary.roomName && (
+                                <div>
+                                    <div className="text-xs font-medium uppercase text-muted-foreground">LiveKit room</div>
+                                    <div>{call.transportSummary.roomName}</div>
+                                </div>
+                            )}
+                            {(call.transportSummary.twilioStreamSid || call.transportSummary.providerSessionId) && (
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    {call.transportSummary.twilioStreamSid && (
+                                        <div>
+                                            <div className="text-xs font-medium uppercase text-muted-foreground">Twilio stream</div>
+                                            <div>{call.transportSummary.twilioStreamSid}</div>
+                                        </div>
+                                    )}
+                                    {call.transportSummary.providerSessionId && (
+                                        <div>
+                                            <div className="text-xs font-medium uppercase text-muted-foreground">Provider session</div>
+                                            <div>{call.transportSummary.providerSessionId}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {typeof call.transportSummary.transcriptEventCount === 'number' && (
+                                <p className="text-xs text-muted-foreground">
+                                    Transcript events captured: {call.transportSummary.transcriptEventCount}
+                                </p>
+                            )}
+                        </div>
+                    </Card>
+                )}
+
                 {openFollowUps.length > 0 && (
                     <Card title="Linked Follow-ups">
                         <div className="space-y-3">

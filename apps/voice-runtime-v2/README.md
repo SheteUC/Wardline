@@ -35,10 +35,11 @@ V2 local runs do not depend on whichever Python happens to be first on `PATH`.
 
 ## Validation
 
-The local/session endpoints are the current proof surface while provider-backed telephony is deferred:
+The local/session endpoints remain the fast proof surface, and the Twilio bootstrap + media endpoints now define the real telephony cutover path:
 
 - `POST /sessions`
 - `POST /telephony/twilio/bootstrap`
+- `WS /telephony/twilio/media`
 - `POST /sessions/{sessionId}/turn`
 - `POST /sessions/{sessionId}/transcript`
 - `POST /sessions/{sessionId}/events`
@@ -54,3 +55,14 @@ These endpoints validate:
 - operator-summary persistence
 
 `pnpm test:voice:v2` is the authoritative voice proof gate for this phase.
+
+## First real call
+
+1. Set `VOICE_RUNTIME_V2_PUBLIC_URL` or `WEBHOOK_BASE_URL` to the public URL Twilio can reach.
+2. Start `pnpm mock:integrations`.
+3. Start `pnpm voice:v2:dev`.
+4. Point the Twilio number voice webhook at `POST /telephony/twilio/bootstrap`.
+5. Place one inbound call and confirm:
+   - the caller hears the V2 greeting
+   - one specialist path runs end to end
+   - the dashboard call detail page shows operator summary and transport metadata

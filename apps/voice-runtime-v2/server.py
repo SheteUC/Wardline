@@ -1,9 +1,9 @@
 """
 FastAPI control plane for Voice Runtime V2.
 
-This service is the new internal multi-agent runtime. Twilio/LiveKit ingress is
-intended to target this runtime over time, but the text-turn endpoints provide a
-stable integration surface for local validation before full telephony cutover.
+This service is the new internal multi-agent runtime. The local text/session
+endpoints remain the proof surface, and the Twilio bootstrap + media endpoints
+provide the real provider-backed cutover path for V2.
 """
 from __future__ import annotations
 
@@ -11,11 +11,12 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
 from pydantic import BaseModel, Field
 
 from config import settings
 from service import VoiceRuntimeV2
+from telephony import TwilioMediaSession
 
 runtime = VoiceRuntimeV2()
 
@@ -113,14 +114,14 @@ async def bootstrap_twilio_session(request: Request):
         caller_phone=caller_phone,
         called_phone=called_phone,
     )
-    return {
-        "sessionId": session.sessionId,
-        "callId": session.callId,
-        "businessId": session.businessId,
-        "greeting": session.messages[-1].text if session.messages else "",
-        "transport": session.transport.model_dump(),
-        "providers": runtime.readiness(),
-    }
+    twiml = runtime.build_twilio_bootstrap_response(session.sessionId)
+    return Response(content=twiml, media_type="text/xml")
+
+
+@app.websocket("/telephony/twilio/media")
+async def twilio_media_stream(websocket: WebSocket):
+    bridge = TwilioMediaSession(websocket, runtime)
+    await bridge.run()
 
 
 @app.get("/sessions/{session_id}")

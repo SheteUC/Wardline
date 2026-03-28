@@ -317,6 +317,12 @@ Current validation for the V2 service uses its session/bootstrap harness:
 pnpm test:voice:v2
 ```
 
+Telephony cutover is now driven by the V2 service itself:
+
+- `POST /telephony/twilio/bootstrap` returns the TwiML `<Connect><Stream>` response for inbound calls
+- `WS /telephony/twilio/media` accepts the Twilio media stream and feeds provider-backed transcripts into the V2 turn loop
+- the first real-call proof target is: real Twilio + LiveKit/Deepgram-ready transport + mock-backed runtime actions
+
 The V2 scripts reuse the archived voice virtualenv automatically when `apps/voice-orchestrator-pipecat/venv` exists. You can still override the interpreter with `WARDLINE_VOICE_PYTHON=/path/to/python`.
 
 ### Mock Connector Smoke Flow
@@ -406,14 +412,18 @@ Do not resume broader feature work until both the staging gate and the pilot-qua
 | --- | --- |
 | `VOICE_RUNTIME_V2_PORT` | Defaults to `3003` |
 | `CORE_API_BASE_URL` | Core API base URL |
-| `WEBHOOK_BASE_URL` | Public URL for telephony/session callbacks |
+| `VOICE_RUNTIME_V2_PUBLIC_URL` or `WEBHOOK_BASE_URL` | Public URL for Twilio/media callbacks |
 | `TWILIO_ACCOUNT_SID` | Twilio |
 | `TWILIO_AUTH_TOKEN` | Twilio |
 | `TWILIO_PHONE_NUMBER` | Twilio number |
 | `LIVEKIT_URL` | LiveKit server URL |
 | `LIVEKIT_API_KEY` | LiveKit API key |
 | `LIVEKIT_API_SECRET` | LiveKit API secret |
+| `LIVEKIT_TOKEN_TTL_MINUTES` | Access-token TTL for the V2 transport session |
 | `DEEPGRAM_API_KEY` | Deepgram streaming STT |
+| `DEEPGRAM_STT_MODEL` | Defaults to `nova-2-phonecall` |
+| `DEEPGRAM_TTS_MODEL` | Defaults to `aura-2-thalia-en` |
+| `TWILIO_MEDIA_STREAM_PATH` | Defaults to `/telephony/twilio/media` |
 | `AZURE_SPEECH_KEY` | Optional managed speech fallback |
 | `AZURE_SPEECH_REGION` | Optional managed speech fallback region |
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint |
@@ -489,11 +499,28 @@ Use this sequence as the local release gate until broader end-to-end automation 
    - fallback scenarios create follow-up tasks with the correct fallback reason
    - voicemail links to the follow-up task when after-hours behavior is triggered
    - the V2 session bootstrap exposes transport metadata for LiveKit / Twilio cutover
+   - the inbound Twilio bootstrap endpoint returns TwiML that points at the V2 media websocket
 11. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard reflects the mock outcomes cleanly.
+
+### Telephony Cutover Checklist
+
+Use this sequence for the first provider-backed V2 call:
+
+1. Set `VOICE_RUNTIME_V2_PUBLIC_URL` or `WEBHOOK_BASE_URL` to the public HTTPS URL that Twilio can reach.
+2. Confirm `TWILIO_*`, `LIVEKIT_*`, and `DEEPGRAM_*` env vars are present.
+3. Start `pnpm mock:integrations`.
+4. Start `pnpm voice:v2:dev`.
+5. Point the Twilio number voice webhook at `POST {public_url}/telephony/twilio/bootstrap`.
+6. Seed a business with `voicePolicyV2` and confirm the business phone number matches the Twilio number.
+7. Place one real inbound call and confirm:
+   - the call reaches V2
+   - the caller hears the greeting
+   - one domain flow completes with confirmation before a write action
+   - call detail shows operator summary plus transport metadata
 
 ## Known V2 Constraints
 
-- LiveKit/Twilio transport bootstrap is implemented, but full provider-backed telephony still depends on real credentials and staging wiring
+- Real provider-backed telephony still depends on real Twilio, LiveKit, and Deepgram credentials plus public callback wiring
 - No bilingual runtime yet
 - No multi-vendor routing within a category
 - No live human queueing or staff presence management yet

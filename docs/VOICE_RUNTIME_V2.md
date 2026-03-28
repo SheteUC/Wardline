@@ -31,7 +31,23 @@ Only the supervisor speaks to the caller. Specialists return structured results 
   - supervisor/specialist orchestration
   - runtime-action bridge
   - voicemail capture
+  - Twilio bootstrap + media ingress
   - transport/bootstrap metadata for LiveKit-oriented cutover
   - unit-test harness
 
 The legacy Python voice runtime is now archived code, not a supported product direction.
+
+## Telephony cutover
+
+- Twilio inbound calls should target `POST /telephony/twilio/bootstrap`.
+- Voice Runtime V2 responds with TwiML that connects the call to `WS /telephony/twilio/media`.
+- The media bridge persists provider transport metadata, forwards Deepgram transcripts into the existing V2 turn loop, and reuses the runtime-action/operator-summary path that already exists in the local harness.
+
+## Proof target
+
+The next provider-backed proof target is:
+
+- one real Twilio inbound call
+- Voice Runtime V2 as the only live runtime
+- mock-backed business actions
+- operator review through the existing dashboard call detail page

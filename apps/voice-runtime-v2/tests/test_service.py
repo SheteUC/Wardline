@@ -81,6 +81,7 @@ class FakeCoreApiClient:
         self.runtime_action_calls = []
         self.updated_calls = []
         self.created_voicemails = []
+        self.saved_transcripts = []
 
     async def close(self):
         return None
@@ -120,6 +121,10 @@ class FakeCoreApiClient:
     async def create_voicemail(self, call_id, payload):
         self.created_voicemails.append((call_id, payload))
         return {"ok": True}
+
+    async def save_transcript(self, call_id, payload):
+        self.saved_transcripts.append((call_id, payload))
+        return {"success": True}
 
     async def execute_runtime_action(self, business_id, action_name, payload):
         self.runtime_action_calls.append((business_id, action_name, payload))
@@ -173,11 +178,15 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
             await runtime.start_session("CA_test", "+15550000001", "+15551230001")
 
     async def test_session_bootstrap_includes_transport_metadata(self):
-        _runtime, _api_client, session = await self.create_runtime()
+        runtime, _api_client, session = await self.create_runtime()
 
         self.assertEqual(session.transport.transport, "livekit")
         self.assertEqual(session.transport.sessionId, session.sessionId)
         self.assertTrue(session.transport.roomName.startswith("wardline-"))
+        self.assertIn("/telephony/twilio/media", session.transport.twilioMediaStreamUrl)
+        twiml = runtime.build_twilio_bootstrap_response(session.sessionId)
+        self.assertIn("<Stream", twiml)
+        self.assertIn(session.sessionId, twiml)
 
     async def test_partial_transcript_is_recorded_without_triggering_reasoning(self):
         runtime, api_client, session = await self.create_runtime()
@@ -192,6 +201,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response["accepted"])
         self.assertFalse(response["final"])
         self.assertEqual(response["transport"]["providerSessionId"], "lk-session-1")
+        self.assertEqual(response["transport"]["deepgramRequestId"], "lk-session-1")
         self.assertEqual(len(api_client.runtime_action_calls), 0)
 
     async def test_unknown_intent_prompts_clarification(self):
@@ -242,6 +252,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("What else can I help you with today?", confirmed["reply"])
         self.assertEqual(api_client.runtime_action_calls[-1][1], "appointment-request")
         self.assertTrue(confirmed["awaitingAnythingElse"])
+        self.assertGreaterEqual(len(api_client.saved_transcripts), 3)
 
     async def test_confirmation_change_flow_returns_to_the_same_domain(self):
         runtime, _api_client, session = await self.create_runtime()

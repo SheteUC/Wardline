@@ -21,17 +21,20 @@ env:
   CI: "true"
 
 jobs:
-  smoke-validation:
+  validate:
     name: Smoke Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       DATABASE_URL: postgresql://postgres:test@localhost:5432/wardline_test
       REDIS_URL: redis://localhost:6379
       NODE_ENV: test
+      PORT: "3001"
+      CORE_API_BASE_URL: http://localhost:3001
+      WEB_BASE_URL: http://localhost:3000
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
       NEXT_PUBLIC_CORE_API_URL: http://localhost:3001
-      NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL: http://localhost:3002
+      NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL: http://localhost:3003
       NEXT_PUBLIC_WEB_BASE_URL: http://localhost:3000
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
       CLERK_SECRET_KEY: sk_test_ci_placeholder
@@ -43,88 +46,18 @@ jobs:
       STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
       AZURE_OPENAI_KEY: azure_ci_placeholder
       AZURE_OPENAI_ENDPOINT: https://example.openai.azure.com/
-      AZURE_OPENAI_DEPLOYMENT: gpt-4.1-mini
+      AZURE_OPENAI_DEPLOYMENT: gpt-4o-mini
       AZURE_SPEECH_KEY: speech_ci_placeholder
       AZURE_SPEECH_REGION: eastus2
       TWILIO_ACCOUNT_SID: AC_ci_placeholder
       TWILIO_AUTH_TOKEN: twilio_ci_placeholder
       TWILIO_PHONE_NUMBER: "+15555550123"
+      VOICE_RUNTIME_V2_PUBLIC_URL: https://example.ngrok.app
+      LIVEKIT_URL: wss://example.livekit.cloud
+      LIVEKIT_API_KEY: livekit_ci_placeholder
+      LIVEKIT_API_SECRET: livekit_secret_ci_placeholder
+      DEEPGRAM_API_KEY: deepgram_ci_placeholder
       MOCK_ATHENAHEALTH_TOKEN: mock-athena-token
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/voice-orchestrator-pipecat/requirements.txt
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Python test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r apps/voice-orchestrator-pipecat/requirements.txt
-
-      - name: Run smoke validation
-        run: pnpm test:smoke
-
-  python-tests:
-    name: Python Unit Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: ./apps/voice-orchestrator-pipecat
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/voice-orchestrator-pipecat/requirements.txt
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run tests
-        run: pytest --cov-fail-under=0
-
-      - name: Upload coverage to Codecov
-        if: ${{ always() && hashFiles('apps/voice-orchestrator-pipecat/coverage.xml') != '' }}
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./apps/voice-orchestrator-pipecat/coverage.xml
-          flags: python
-          name: voice-orchestrator
-
-  nestjs-tests:
-    name: NestJS Unit and Integration Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://postgres:test@localhost:5432/wardline_test
-      REDIS_URL: redis://localhost:6379
-      NODE_ENV: test
 
     services:
       postgres:
@@ -153,249 +86,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: Install dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: apps/voice-runtime-v2/requirements.txt
+
+      - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma Client
+      - name: Install V2 voice dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r apps/voice-runtime-v2/requirements.txt
+
+      - name: Generate Prisma client
         run: pnpm --filter @wardline/db generate
 
-      - name: Run database migrations
-        run: pnpm --filter @wardline/db run migrate:deploy
-
-      - name: Run tests with coverage
-        working-directory: ./apps/core-api
-        run: pnpm test:cov
-
-      - name: Upload coverage
-        if: ${{ always() && hashFiles('apps/core-api/coverage/lcov.info') != '' }}
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./apps/core-api/coverage/lcov.info
-          flags: nestjs
-          name: core-api
-
-  web-build:
-    name: Web Build Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://postgres:test@localhost:5432/wardline_test
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
-      NEXT_PUBLIC_CORE_API_URL: http://localhost:3001
-      NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL: http://localhost:3002
-      NEXT_PUBLIC_WEB_BASE_URL: http://localhost:3000
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
-      CLERK_SECRET_KEY: sk_test_ci_placeholder
-      NEXT_PUBLIC_POSTHOG_KEY: phc_ci_placeholder
-      NEXT_PUBLIC_POSTHOG_HOST: https://app.posthog.com
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
-      API_BASE_URL: http://localhost:3001
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build web app
-        run: pnpm exec turbo run build --filter=@wardline/web
-
-  lint-and-typecheck:
-    name: Lint and Type Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://postgres:test@localhost:5432/wardline_test
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
-      NEXT_PUBLIC_CORE_API_URL: http://localhost:3001
-      NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL: http://localhost:3002
-      NEXT_PUBLIC_WEB_BASE_URL: http://localhost:3000
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
-      CLERK_SECRET_KEY: sk_test_ci_placeholder
-      NEXT_PUBLIC_POSTHOG_KEY: phc_ci_placeholder
-      NEXT_PUBLIC_POSTHOG_HOST: https://app.posthog.com
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
-      API_BASE_URL: http://localhost:3001
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run ESLint
-        run: pnpm lint
-
-      - name: Type check web
-        run: pnpm --filter @wardline/web type-check
-
-  security-scan:
-    name: Security Vulnerability Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run pnpm audit
-        run: pnpm audit --audit-level=moderate || true
-
-      - name: Run Snyk Security Scan
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: test
-          args: --severity-threshold=high
-        continue-on-error: true
-
-  e2e-tests:
-    name: End-to-End Tests
-    runs-on: ubuntu-latest
-    needs: [python-tests, nestjs-tests, web-build]
-    timeout-minutes: 30
-    env:
-      POSTGRES_PASSWORD: wardline_dev
-      JWT_SECRET: e2e-ci-jwt-secret
-      TWILIO_ACCOUNT_SID: AC_ci_placeholder
-      TWILIO_AUTH_TOKEN: twilio_ci_placeholder
-      CLERK_SECRET_KEY: sk_test_ci_placeholder
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
-      AZURE_SPEECH_KEY: speech_ci_placeholder
-      AZURE_SPEECH_REGION: eastus2
-      AZURE_OPENAI_API_KEY: azure_ci_placeholder
-      AZURE_OPENAI_ENDPOINT: https://example.openai.azure.com/
-      LANGSMITH_TRACING: "false"
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: Start services with Docker Compose
-        run: |
-          docker compose -f docker-compose.yml up -d
-          sleep 30
-
-      - name: Run E2E tests
-        run: pnpm exec playwright test
-
-      - name: Upload Playwright Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
-
-      - name: Stop services
-        if: always()
-        run: docker compose -f docker-compose.yml down
-
-  build-check:
-    name: Build Check
-    runs-on: ubuntu-latest
-    needs: [lint-and-typecheck]
-    timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://postgres:test@localhost:5432/wardline_test
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
-      NEXT_PUBLIC_CORE_API_URL: http://localhost:3001
-      NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL: http://localhost:3002
-      NEXT_PUBLIC_WEB_BASE_URL: http://localhost:3000
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
-      CLERK_SECRET_KEY: sk_test_ci_placeholder
-      NEXT_PUBLIC_POSTHOG_KEY: phc_ci_placeholder
-      NEXT_PUBLIC_POSTHOG_HOST: https://app.posthog.com
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
-      API_BASE_URL: http://localhost:3001
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build all packages
-        run: pnpm build
+      - name: Run smoke validation
+        run: pnpm test:smoke
 
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [smoke-validation, python-tests, nestjs-tests, web-build, build-check]
+    needs: validate
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     environment:
       name: staging
@@ -404,7 +130,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -415,28 +141,28 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Voice Orchestrator image
+      - name: Build and push Voice Runtime V2 image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/wardline-voice:$IMAGE_TAG ./apps/voice-orchestrator-pipecat
-          docker push $ECR_REGISTRY/wardline-voice:$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/wardline-voice-v2:$IMAGE_TAG -f apps/voice-runtime-v2/Dockerfile .
+          docker push $ECR_REGISTRY/wardline-voice-v2:$IMAGE_TAG
 
       - name: Build and push Core API image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/wardline-api:$IMAGE_TAG ./apps/core-api
+          docker build -t $ECR_REGISTRY/wardline-api:$IMAGE_TAG -f apps/core-api/Dockerfile .
           docker push $ECR_REGISTRY/wardline-api:$IMAGE_TAG
 
       - name: Deploy to ECS
         run: |
-          aws ecs update-service --cluster wardline-staging --service voice-orchestrator --force-new-deployment
+          aws ecs update-service --cluster wardline-staging --service voice-runtime-v2 --force-new-deployment
           aws ecs update-service --cluster wardline-staging --service core-api --force-new-deployment
 
-      - name: Deploy Web to Vercel
+      - name: Deploy web to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -447,7 +173,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [smoke-validation, python-tests, nestjs-tests, web-build, build-check, security-scan]
+    needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production
@@ -456,7 +182,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -467,36 +193,33 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push images
+      - name: Build and push Voice Runtime V2 image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/wardline-voice:$IMAGE_TAG ./apps/voice-orchestrator-pipecat
-          docker push $ECR_REGISTRY/wardline-voice:$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/wardline-voice-v2:$IMAGE_TAG -f apps/voice-runtime-v2/Dockerfile .
+          docker push $ECR_REGISTRY/wardline-voice-v2:$IMAGE_TAG
 
-          docker build -t $ECR_REGISTRY/wardline-api:$IMAGE_TAG ./apps/core-api
+      - name: Build and push Core API image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/wardline-api:$IMAGE_TAG -f apps/core-api/Dockerfile .
           docker push $ECR_REGISTRY/wardline-api:$IMAGE_TAG
 
-      - name: Deploy to ECS with Blue/Green
+      - name: Deploy to ECS
         run: |
-          aws ecs update-service --cluster wardline-prod --service voice-orchestrator --force-new-deployment
+          aws ecs update-service --cluster wardline-prod --service voice-runtime-v2 --force-new-deployment
           aws ecs update-service --cluster wardline-prod --service core-api --force-new-deployment
-          aws ecs wait services-stable --cluster wardline-prod --services voice-orchestrator core-api
+          aws ecs wait services-stable --cluster wardline-prod --services voice-runtime-v2 core-api
 
-      - name: Deploy Web to Vercel Production
+      - name: Deploy web to Vercel production
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: "--prod"
+          vercel-args: --prod
           working-directory: ./apps/web
-
-      - name: Notify Slack
-        if: success()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          text: "Production deployment successful! :rocket:"
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

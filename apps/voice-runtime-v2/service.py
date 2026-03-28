@@ -35,7 +35,13 @@ from models import (
     SpecialistResult,
     SupervisorDecision,
 )
-from providers import DeepgramSttAdapter, LiveKitTransportAdapter, ManagedTtsAdapter, ReasoningAdapter
+from providers import (
+    DeepgramSttAdapter,
+    LiveKitTransportAdapter,
+    ManagedTtsAdapter,
+    ReasoningAdapter,
+    TwilioTelephonyAdapter,
+)
 
 
 def _normalize(text: str) -> str:
@@ -52,6 +58,7 @@ class VoiceRuntimeV2:
         self.api_client = api_client or CoreApiClient()
         self.sessions: Dict[str, SessionState] = {}
         self.livekit = LiveKitTransportAdapter()
+        self.twilio = TwilioTelephonyAdapter()
         self.deepgram = DeepgramSttAdapter()
         self.tts = ManagedTtsAdapter()
         self.reasoning = ReasoningAdapter()
@@ -66,6 +73,23 @@ class VoiceRuntimeV2:
 
     async def close(self):
         await self.api_client.close()
+
+    def build_twilio_bootstrap_response(self, session_id: str) -> str:
+        session = self.get_session(session_id)
+        if not session.transport.twilioMediaStreamUrl:
+            raise ValueError("WEBHOOK_BASE_URL or VOICE_RUNTIME_V2_PUBLIC_URL must be configured for Twilio cutover")
+
+        return self.twilio.build_stream_twiml(
+            stream_url=session.transport.twilioMediaStreamUrl,
+            parameters={
+                "sessionId": session.sessionId,
+                "callId": session.callId or "",
+                "businessId": session.businessId,
+                "roomName": session.transport.roomName,
+                "participantIdentity": session.transport.participantIdentity,
+                "providerSessionId": session.transport.providerSessionId or "",
+            },
+        )
 
     async def start_session(self, call_sid: str, caller_phone: str, called_phone: str) -> SessionState:
         business = await self.api_client.get_business_by_phone(called_phone)
@@ -116,7 +140,7 @@ class VoiceRuntimeV2:
             f"Thank you for calling {runtime_config.business.name}. "
             "I'm Wardline, your virtual receptionist. How can I help you today?"
         )
-        self._append_assistant_message(session, greeting)
+        await self._append_and_persist_assistant_message(session, greeting)
         session.events.append(
             SessionEvent(
                 type="session_bootstrap",
@@ -125,7 +149,7 @@ class VoiceRuntimeV2:
                 integrationCategory="TRANSPORT",
                 operatorSummary="Voice Runtime V2 session started.",
                 data={
-                    "transport": transport.model_dump(),
+                    "transport": self._transport_event_snapshot(transport),
                     "providers": self.readiness(),
                 },
             )
@@ -140,6 +164,13 @@ class VoiceRuntimeV2:
             raise KeyError(f"Unknown session: {session_id}")
         return session
 
+    def update_transport_metadata(self, session_id: str, **updates: Any) -> SessionState:
+        session = self.get_session(session_id)
+        transport_update = {key: value for key, value in updates.items() if value is not None}
+        if transport_update:
+            session.transport = session.transport.model_copy(update=transport_update)
+        return session
+
     def readiness(self) -> Dict[str, Dict[str, str | bool]]:
         return {
             "livekit": self.livekit.validate(),
@@ -148,11 +179,33 @@ class VoiceRuntimeV2:
             "reasoning": self.reasoning.validate(),
         }
 
+    async def synthesize_reply(self, text: str) -> bytes:
+        return await self.tts.synthesize(text)
+
+    async def persist_transcript_segment(
+        self,
+        session_id: str,
+        *,
+        speaker: str,
+        text: str,
+        confidence: float | None = None,
+    ) -> None:
+        session = self.get_session(session_id)
+        await self._persist_transcript_segment(session, speaker=speaker, text=text, confidence=confidence)
+
+    async def finalize_session(self, session_id: str) -> None:
+        session = self.get_session(session_id)
+        session.awaitingAnythingElse = False
+        if session.stage != "completed":
+            session.stage = "completed"
+        await self._sync_call_state(session, status="COMPLETED")
+
     async def process_text_turn(self, session_id: str, text: str) -> Dict[str, Any]:
         session = self.get_session(session_id)
         cleaned_text = text.strip()
         session.turns += 1
         session.messages.append(SessionMessage(role="caller", text=cleaned_text))
+        await self._persist_transcript_segment(session, speaker="CALLER", text=cleaned_text)
 
         if session.awaitingAnythingElse:
             continuation = await self._handle_anything_else(session, cleaned_text)
@@ -161,7 +214,7 @@ class VoiceRuntimeV2:
 
         if session.awaitingVoicemail:
             reply = "I'm ready to capture your voicemail whenever you're ready. Please leave your message after the tone."
-            self._append_assistant_message(session, reply)
+            await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session, tag="VOICEMAIL")
             return self._build_turn_response(session, reply, "handoff", False, awaiting_voicemail=True)
 
@@ -185,7 +238,7 @@ class VoiceRuntimeV2:
 
         if decision.mode == "clarify":
             reply = decision.clarificationPrompt or "How can I help you today?"
-            self._append_assistant_message(session, reply)
+            await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session)
             return self._build_turn_response(session, reply, "knowledge", False)
 
@@ -270,7 +323,12 @@ class VoiceRuntimeV2:
     ) -> Dict[str, Any]:
         session = self.get_session(session_id)
         if provider_session_id and session.transport.providerSessionId != provider_session_id:
-            session.transport.providerSessionId = provider_session_id
+            session.transport = session.transport.model_copy(
+                update={
+                    "providerSessionId": provider_session_id,
+                    "deepgramRequestId": provider_session_id,
+                }
+            )
 
         if not final:
             session.events.append(
@@ -298,13 +356,25 @@ class VoiceRuntimeV2:
         payload: Dict[str, Any] | None = None,
     ) -> Dict[str, Any]:
         session = self.get_session(session_id)
+        payload = payload or {}
+        transport_updates: Dict[str, Any] = {}
+        if isinstance(payload.get("providerSessionId"), str):
+            transport_updates["providerSessionId"] = payload["providerSessionId"]
+        if isinstance(payload.get("twilioStreamSid"), str):
+            transport_updates["twilioStreamSid"] = payload["twilioStreamSid"]
+        if isinstance(payload.get("deepgramRequestId"), str):
+            transport_updates["deepgramRequestId"] = payload["deepgramRequestId"]
+            transport_updates["providerSessionId"] = payload["deepgramRequestId"]
+        if transport_updates:
+            session.transport = session.transport.model_copy(update=transport_updates)
+
         session.events.append(
             SessionEvent(
                 type="transport_event",
                 actionName=event_type,
                 domain=session.activeDomain,
                 integrationCategory="TRANSPORT",
-                data=payload or {},
+                data=payload,
             )
         )
         return {
@@ -320,7 +390,7 @@ class VoiceRuntimeV2:
             session.awaitingAnythingElse = False
             session.stage = "completed"
             reply = f"Thanks for calling {session.businessName}. Take care."
-            self._append_assistant_message(session, reply)
+            await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session, status="COMPLETED")
             return self._build_turn_response(session, reply, "knowledge", False)
 
@@ -328,7 +398,7 @@ class VoiceRuntimeV2:
             session.awaitingAnythingElse = False
             session.stage = "intake"
             reply = "Of course. What else can I help you with today?"
-            self._append_assistant_message(session, reply)
+            await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session)
             return self._build_turn_response(session, reply, "knowledge", False)
 
@@ -388,7 +458,7 @@ class VoiceRuntimeV2:
         else:
             session.awaitingAnythingElse = False
 
-        self._append_assistant_message(session, reply)
+        await self._append_and_persist_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
         return self._build_turn_response(
             session,
@@ -407,7 +477,7 @@ class VoiceRuntimeV2:
         if any(keyword in lowered for keyword in ["repeat", "summarize", "what are you confirming", "say that again"]):
             pending.confirmAttempts += 1
             reply = f"To confirm, {pending.summary}. Say yes to submit it, or tell me what you want to change."
-            self._append_assistant_message(session, reply)
+            await self._append_and_persist_assistant_message(session, reply)
             return self._build_turn_response(session, reply, pending.domain, True)
 
         if any(keyword in lowered for keyword in ["actually", "change", "wrong", "not that", "wait"]):
@@ -416,7 +486,7 @@ class VoiceRuntimeV2:
             session.activeDomain = pending.domain
             session.stage = "intake"
             reply = f"Okay, let's update that {pending.domain} request. Tell me the corrected details."
-            self._append_assistant_message(session, reply)
+            await self._append_and_persist_assistant_message(session, reply)
             return self._build_turn_response(session, reply, pending.domain, False)
 
         if any(keyword in lowered for keyword in ["yes", "yeah", "yep", "correct", "confirm"]):
@@ -426,13 +496,13 @@ class VoiceRuntimeV2:
             session.pendingAction = None
             session.stage = "intake"
             reply = self._offer_anything_else(session, "Okay, I won't submit that.", pending.domain)
-            self._append_assistant_message(session, reply)
+            await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session)
             return self._build_turn_response(session, reply, pending.domain, False)
 
         pending.confirmAttempts += 1
         reply = f"Please say yes to confirm, or tell me what you want to change about {pending.summary}."
-        self._append_assistant_message(session, reply)
+        await self._append_and_persist_assistant_message(session, reply)
         return self._build_turn_response(session, reply, pending.domain, True)
 
     async def _execute_pending_action(self, session: SessionState) -> Dict[str, Any]:
@@ -455,7 +525,7 @@ class VoiceRuntimeV2:
         )
         self._record_runtime_action_outcome(session, pending.domain, pending.actionName, outcome, enriched_summary)
         reply = self._offer_anything_else(session, outcome.message, pending.domain)
-        self._append_assistant_message(session, reply)
+        await self._append_and_persist_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(pending.domain))
         return self._build_turn_response(session, reply, pending.domain, False)
 
@@ -477,7 +547,7 @@ class VoiceRuntimeV2:
         )
         self._record_runtime_action_outcome(session, result.domain, result.runtimeAction, outcome, enriched_summary)
         reply = self._offer_anything_else(session, outcome.message, result.domain)
-        self._append_assistant_message(session, reply)
+        await self._append_and_persist_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
         return self._build_turn_response(session, reply, result.domain, False)
 
@@ -671,8 +741,52 @@ class VoiceRuntimeV2:
             fallbackReason=outcome.fallbackReason,
         )
 
+    async def _append_and_persist_assistant_message(self, session: SessionState, reply: str):
+        self._append_assistant_message(session, reply)
+        await self._persist_transcript_segment(session, speaker="AGENT", text=reply)
+
     def _append_assistant_message(self, session: SessionState, reply: str):
         session.messages.append(SessionMessage(role="assistant", text=reply))
+
+    async def _persist_transcript_segment(
+        self,
+        session: SessionState,
+        *,
+        speaker: str,
+        text: str,
+        confidence: float | None = None,
+    ):
+        clean_text = text.strip()
+        if not session.callId or not clean_text:
+            return
+
+        start_ms = session.transcriptCursorMs
+        duration_ms = max(1200, min(12000, len(clean_text) * 45))
+        end_ms = start_ms + duration_ms
+        session.transcriptCursorMs = end_ms
+
+        try:
+            await self.api_client.save_transcript(
+                session.callId,
+                [
+                    {
+                        "speaker": speaker,
+                        "text": clean_text,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "startTimeMs": start_ms,
+                        "endTimeMs": end_ms,
+                        "confidence": confidence,
+                    }
+                ],
+            )
+        except Exception:
+            # Transcript persistence should not break the live call loop.
+            return
+
+    def _transport_event_snapshot(self, transport: SessionTransportMetadata) -> Dict[str, Any]:
+        snapshot = transport.model_dump()
+        snapshot.pop("livekitAccessToken", None)
+        return snapshot
 
     def _offer_anything_else(self, session: SessionState, reply: str, domain: DomainName) -> str:
         if domain in {"safety", "handoff"} and (session.isEmergency or session.awaitingVoicemail):

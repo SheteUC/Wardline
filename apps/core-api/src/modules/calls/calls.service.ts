@@ -126,8 +126,10 @@ export class CallsService {
                 });
                 if (!call) throw new NotFoundException(`Call not found: ${id}`);
                 const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
+                const transportSummary = this.extractTransportSummary(call.turnsJson);
                 return {
                     ...call,
+                    transportSummary,
                     runtimeActionEvents,
                     operatorSummary: this.buildOperatorSummary(call, runtimeActionEvents),
                 };
@@ -188,6 +190,76 @@ export class CallsService {
                         : new Date().toISOString(),
             }))
             .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    }
+
+    private extractTransportSummary(turnsJson: unknown) {
+        if (!Array.isArray(turnsJson)) {
+            return undefined;
+        }
+
+        const bootstrapEvent = turnsJson.find(
+            (entry): entry is Record<string, any> =>
+                Boolean(entry) &&
+                typeof entry === 'object' &&
+                entry.type === 'session_bootstrap' &&
+                entry.data &&
+                typeof entry.data === 'object' &&
+                entry.data.transport &&
+                typeof entry.data.transport === 'object',
+        );
+
+        if (!bootstrapEvent) {
+            return undefined;
+        }
+
+        const transport = bootstrapEvent.data.transport as Record<string, unknown>;
+        const transportEvents = turnsJson.filter(
+            (entry): entry is Record<string, any> =>
+                Boolean(entry) &&
+                typeof entry === 'object' &&
+                entry.type === 'transport_event',
+        );
+        const latestProviderEvent = [...transportEvents]
+            .reverse()
+            .find(
+                (entry) =>
+                    typeof entry.data?.providerSessionId === 'string' ||
+                    typeof entry.data?.deepgramRequestId === 'string' ||
+                    typeof entry.data?.twilioStreamSid === 'string',
+            );
+        const transcriptEventCount = turnsJson.filter(
+            (entry): entry is Record<string, any> =>
+                Boolean(entry) &&
+                typeof entry === 'object' &&
+                (entry.type === 'transcript_partial' ||
+                    (entry.type === 'transport_event' && entry.actionName === 'deepgram_transcript')),
+        ).length;
+
+        return {
+            runtime: typeof transport.runtime === 'string' ? transport.runtime : 'voice-runtime-v2',
+            transport: typeof transport.transport === 'string' ? transport.transport : 'livekit',
+            roomName: typeof transport.roomName === 'string' ? transport.roomName : undefined,
+            participantIdentity:
+                typeof transport.participantIdentity === 'string' ? transport.participantIdentity : undefined,
+            livekitUrl: typeof transport.livekitUrl === 'string' ? transport.livekitUrl : undefined,
+            twilioMediaStreamUrl:
+                typeof transport.twilioMediaStreamUrl === 'string' ? transport.twilioMediaStreamUrl : undefined,
+            twilioStreamSid:
+                typeof latestProviderEvent?.data?.twilioStreamSid === 'string'
+                    ? latestProviderEvent.data.twilioStreamSid
+                    : typeof transport.twilioStreamSid === 'string'
+                      ? transport.twilioStreamSid
+                      : undefined,
+            providerSessionId:
+                typeof latestProviderEvent?.data?.providerSessionId === 'string'
+                    ? latestProviderEvent.data.providerSessionId
+                    : typeof latestProviderEvent?.data?.deepgramRequestId === 'string'
+                      ? latestProviderEvent.data.deepgramRequestId
+                      : typeof transport.providerSessionId === 'string'
+                        ? transport.providerSessionId
+                        : undefined,
+            transcriptEventCount,
+        };
     }
 
     private buildOperatorSummary(

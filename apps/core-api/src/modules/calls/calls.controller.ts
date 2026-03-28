@@ -102,6 +102,8 @@ export class CallsController {
                 text: seg.text,
                 timestamp: new Date(seg.timestamp),
                 confidence: seg.confidence,
+                startTimeMs: seg.startTimeMs,
+                endTimeMs: seg.endTimeMs,
             }));
             return await this.callsService.saveTranscript(id, segments);
         } catch (err: unknown) {

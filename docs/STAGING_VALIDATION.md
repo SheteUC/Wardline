@@ -1,6 +1,6 @@
 # Staging Validation
 
-Use this document as the launch-readiness checklist during the Voice Runtime V2 migration.
+Use this document as the launch-readiness checklist after the first provider-backed Voice Runtime V2 call is already working.
 
 ## Goal
 
@@ -10,6 +10,7 @@ Current defaults:
 
 - Voice Runtime V2 is the only supported runtime target for staging and pilot validation.
 - Practice Setup remains the only customer-facing configuration surface.
+- The first real Twilio/LiveKit/Deepgram proof should be completed before treating this full staging gate as the next milestone.
 
 ## Preconditions
 
@@ -134,6 +135,16 @@ Before or alongside full telephony cutover, validate the V2 local/session harnes
    - complete scheduling confirmation
    - continue an in-progress refill intake across turns
    - persist runtime-action outcomes without relying on workflow graphs
+
+### Voice Runtime V2 telephony cutover
+
+Before the full staging gate, verify one provider-backed V2 call:
+
+1. `VOICE_RUNTIME_V2_PUBLIC_URL` or `WEBHOOK_BASE_URL` points at the public V2 service URL
+2. the Twilio number webhook targets `/telephony/twilio/bootstrap`
+3. one inbound call reaches the V2 media websocket
+4. the caller hears the greeting and completes at least one specialist flow
+5. the resulting call detail page shows operator summary plus transport metadata
 
 ### Operator review
 
