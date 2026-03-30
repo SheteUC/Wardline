@@ -19,6 +19,9 @@ describe('CallsService', () => {
         phoneNumber: {
             findFirst: jest.fn(),
         },
+        caller: {
+            upsert: jest.fn(),
+        },
         transcriptSegment: {
             createMany: jest.fn(),
         },
@@ -80,6 +83,16 @@ describe('CallsService', () => {
                     caller: { id: 'caller-1', name: 'Jane Doe', phone: '+15557654321' },
                     voicemails: [],
                     followUpTasks: [{ id: 'task-1', priority: 'HIGH', status: 'OPEN' }],
+                    turnsJson: [
+                        {
+                            type: 'runtime_action_outcome',
+                            actionName: 'appointment-request',
+                            domain: 'scheduling',
+                            handledLive: true,
+                            operatorSummary: 'Appointment request sent',
+                            createdAt: '2026-03-24T12:04:00.000Z',
+                        },
+                    ],
                 },
             ]);
             mockPrisma.callSession.count.mockResolvedValue(1);
@@ -87,12 +100,15 @@ describe('CallsService', () => {
             const result = await service.findAllByBusiness('business-1');
 
             expect(result.total).toBe(1);
+            expect(mockCache.getOrSet).not.toHaveBeenCalled();
             expect(result.data[0]).toEqual(
                 expect.objectContaining({
                     id: 'call-1',
                     businessId: 'business-1',
                     callerName: 'Jane Doe',
                     followUpTaskCount: 1,
+                    resolution: 'LIVE_RESOLVED',
+                    latestRuntimeAction: 'appointment-request',
                 }),
             );
         });
@@ -114,6 +130,7 @@ describe('CallsService', () => {
                             transport: {
                                 runtime: 'voice-runtime-v2',
                                 transport: 'livekit',
+                                twilioCallSid: 'CA123',
                                 roomName: 'wardline-business-call',
                                 participantIdentity: 'wardline-session-session-1',
                                 livekitUrl: 'wss://livekit.example.com',
@@ -159,6 +176,7 @@ describe('CallsService', () => {
             const result = await service.findOne('call-1');
 
             expect(result.id).toBe('call-1');
+            expect(mockCache.getOrSet).not.toHaveBeenCalled();
             expect(result.runtimeActionEvents).toEqual([
                 expect.objectContaining({
                     actionName: 'billing-request',
@@ -181,9 +199,55 @@ describe('CallsService', () => {
                 expect.objectContaining({
                     runtime: 'voice-runtime-v2',
                     transport: 'livekit',
+                    twilioCallSid: 'CA123',
                     roomName: 'wardline-business-call',
                     twilioStreamSid: 'MZ123',
                     providerSessionId: 'dg-123',
+                    deepgramRequestId: 'dg-123',
+                }),
+            );
+        });
+
+        it('builds an operator fallback summary for abandoned calls with transport events', async () => {
+            mockPrisma.callSession.findUnique.mockResolvedValue({
+                id: 'call-2',
+                businessId: 'business-1',
+                isEmergency: false,
+                tag: null,
+                status: 'ABANDONED',
+                turnsJson: [
+                    {
+                        type: 'session_bootstrap',
+                        actionName: 'voice-runtime-v2',
+                        data: {
+                            transport: {
+                                runtime: 'voice-runtime-v2',
+                                transport: 'livekit',
+                                twilioCallSid: 'CA999',
+                            },
+                        },
+                    },
+                    {
+                        type: 'transport_event',
+                        actionName: 'twilio_stream_started',
+                        data: {
+                            twilioStreamSid: 'MZ999',
+                        },
+                    },
+                ],
+                transcriptSegments: [],
+                handoffs: [],
+                voicemails: [],
+                followUpTasks: [],
+            });
+
+            const result = await service.findOne('call-2');
+
+            expect(mockCache.getOrSet).not.toHaveBeenCalled();
+            expect(result.operatorSummary).toEqual(
+                expect.objectContaining({
+                    resolution: 'CALL_ABANDONED',
+                    label: 'Caller disconnected before completion',
                 }),
             );
         });
@@ -197,11 +261,13 @@ describe('CallsService', () => {
 
     describe('create', () => {
         it('creates a call session from the matched business phone number', async () => {
+            mockPrisma.callSession.findUnique.mockResolvedValue(null);
             mockPrisma.phoneNumber.findFirst.mockResolvedValue({
                 id: 'phone-1',
                 businessId: 'business-1',
                 twilioPhoneNumber: '+15554321',
             });
+            mockPrisma.caller.upsert.mockResolvedValue({ id: 'caller-1' });
             mockPrisma.callSession.create.mockResolvedValue({ id: 'call-1', status: 'INITIATED' });
 
             const result = await service.create({
@@ -216,9 +282,86 @@ describe('CallsService', () => {
                 data: expect.objectContaining({
                     businessId: 'business-1',
                     phoneNumberId: 'phone-1',
+                    callerId: 'caller-1',
                     twilioCallSid: 'CA_test',
                 }),
             });
+        });
+
+        it('matches the Twilio number even when formatting differs', async () => {
+            mockPrisma.callSession.findUnique.mockResolvedValue(null);
+            mockPrisma.phoneNumber.findFirst.mockResolvedValue({
+                id: 'phone-1',
+                businessId: 'business-1',
+                twilioPhoneNumber: '+15551239999',
+            });
+            mockPrisma.caller.upsert.mockResolvedValue({ id: 'caller-1' });
+            mockPrisma.callSession.create.mockResolvedValue({ id: 'call-1', status: 'INITIATED' });
+
+            const result = await service.create({
+                twilioCallSid: 'CA_test',
+                direction: 'INBOUND',
+                fromNumber: '+15557654321',
+                toNumber: '+1 (555) 123-9999',
+            });
+
+            expect(result.id).toBe('call-1');
+            expect(mockPrisma.phoneNumber.findFirst).toHaveBeenCalledWith({
+                where: expect.objectContaining({
+                    OR: expect.arrayContaining([
+                        { twilioPhoneNumber: '+1 (555) 123-9999' },
+                        { twilioPhoneNumber: '15551239999' },
+                        { twilioPhoneNumber: '5551239999' },
+                        { twilioPhoneNumber: '+15551239999' },
+                        { twilioPhoneNumber: { endsWith: '5551239999' } },
+                    ]),
+                }),
+            });
+        });
+
+        it('returns the existing call when the same Twilio call SID is created twice', async () => {
+            mockPrisma.callSession.findUnique.mockResolvedValue({
+                id: 'call-existing',
+                businessId: 'business-1',
+                twilioCallSid: 'CA_repeat',
+            });
+
+            const result = await service.create({
+                twilioCallSid: 'CA_repeat',
+                direction: 'INBOUND',
+                fromNumber: '+15557654321',
+                toNumber: '+15551239999',
+            });
+
+            expect(result.id).toBe('call-existing');
+            expect(mockPrisma.callSession.create).not.toHaveBeenCalled();
+            expect(mockPrisma.phoneNumber.findFirst).not.toHaveBeenCalled();
+        });
+
+        it('recovers from a duplicate create race by returning the existing call', async () => {
+            mockPrisma.callSession.findUnique
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce({
+                    id: 'call-existing',
+                    businessId: 'business-1',
+                    twilioCallSid: 'CA_race',
+                });
+            mockPrisma.phoneNumber.findFirst.mockResolvedValue({
+                id: 'phone-1',
+                businessId: 'business-1',
+                twilioPhoneNumber: '+15551239999',
+            });
+            mockPrisma.caller.upsert.mockResolvedValue({ id: 'caller-1' });
+            mockPrisma.callSession.create.mockRejectedValue({ code: 'P2002' });
+
+            const result = await service.create({
+                twilioCallSid: 'CA_race',
+                direction: 'INBOUND',
+                fromNumber: '+15557654321',
+                toNumber: '+15551239999',
+            });
+
+            expect(result.id).toBe('call-existing');
         });
     });
 
@@ -271,6 +414,32 @@ describe('CallsService', () => {
                     urgencyKeywords: ['urgent'],
                 }),
             );
+        });
+    });
+
+    describe('getVoicemails', () => {
+        it('loads voicemail records directly without caching PHI-bearing payloads', async () => {
+            mockPrisma.voicemailRecord.findMany.mockResolvedValue([
+                {
+                    id: 'voicemail-1',
+                    callerName: 'Jane Doe',
+                    callerPhone: '+15551234',
+                    transcription: 'Please call me back.',
+                },
+            ]);
+
+            const result = await service.getVoicemails('business-1', true);
+
+            expect(mockCache.getOrSet).not.toHaveBeenCalled();
+            expect(mockPrisma.voicemailRecord.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        businessId: 'business-1',
+                        isListened: false,
+                    }),
+                }),
+            );
+            expect(result).toHaveLength(1);
         });
     });
 });

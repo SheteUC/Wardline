@@ -20,7 +20,7 @@ def build_voice_policy():
         "writeActionsRequiringConfirmation": ["appointment-request", "refill-request", "billing-request"],
         "afterHoursPolicy": {
             "mode": "urgent_voicemail",
-            "greeting": "After hours, leave a voicemail and the practice will call you back.",
+            "greeting": "The office is currently closed, but I can take a message for the staff.",
             "sendUrgentToVoicemail": True,
         },
         "knowledgeConfig": {
@@ -182,11 +182,36 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(session.transport.transport, "livekit")
         self.assertEqual(session.transport.sessionId, session.sessionId)
+        self.assertEqual(session.transport.twilioCallSid, "CA_test")
         self.assertTrue(session.transport.roomName.startswith("wardline-"))
         self.assertIn("/telephony/twilio/media", session.transport.twilioMediaStreamUrl)
         twiml = runtime.build_twilio_bootstrap_response(session.sessionId)
         self.assertIn("<Stream", twiml)
         self.assertIn(session.sessionId, twiml)
+
+    async def test_session_bootstrap_persists_initiated_status(self):
+        _runtime, api_client, _session = await self.create_runtime()
+
+        self.assertEqual(api_client.updated_calls[0]["status"], "INITIATED")
+
+    async def test_transport_start_persists_ongoing_status(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        await runtime.persist_transport_event(
+            session.sessionId,
+            "twilio_stream_started",
+            {
+                "twilioStreamSid": "MZ123",
+                "providerSessionId": "MZ123",
+            },
+            status="ONGOING",
+        )
+
+        self.assertEqual(api_client.updated_calls[-1]["status"], "ONGOING")
+        self.assertEqual(
+            api_client.updated_calls[-1]["turnsJson"][-1]["actionName"],
+            "twilio_stream_started",
+        )
 
     async def test_partial_transcript_is_recorded_without_triggering_reasoning(self):
         runtime, api_client, session = await self.create_runtime()
@@ -229,16 +254,67 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(response["awaitingVoicemail"])
         self.assertEqual(response["stage"], "voicemail")
-        self.assertIn("leave a message", response["reply"].lower())
+        self.assertIn("say the message", response["reply"].lower())
 
-    async def test_after_hours_standard_request_routes_to_voicemail(self):
+    async def test_after_hours_scheduling_still_reaches_confirmation(self):
         runtime, _api_client, session = await self.create_runtime(after_hours=True)
 
-        response = await runtime.process_text_turn(session.sessionId, "I need to schedule an appointment")
+        response = await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
 
-        self.assertTrue(response["awaitingVoicemail"])
-        self.assertEqual(response["domain"], "handoff")
-        self.assertIn("business hours", response["reply"].lower())
+        self.assertFalse(response["awaitingVoicemail"])
+        self.assertEqual(response["domain"], "scheduling")
+        self.assertTrue(response["requiresConfirmation"])
+        self.assertEqual(response["pendingAction"]["actionName"], "appointment-request")
+        self.assertEqual(
+            response["reply"],
+            "I have a request for a physical on Tuesday at 10:00 AM. Should I send that to the practice?",
+        )
+
+    async def test_after_hours_voicemail_is_captured_from_next_turn(self):
+        runtime, api_client, session = await self.create_runtime(after_hours=True)
+
+        first_response = await runtime.process_text_turn(session.sessionId, "I need a staff callback after hours")
+        self.assertTrue(first_response["awaitingVoicemail"])
+
+        second_response = await runtime.process_text_turn(
+            session.sessionId,
+            "Please ask the office to call me tomorrow morning about an appointment.",
+        )
+
+        self.assertFalse(second_response["awaitingVoicemail"])
+        self.assertEqual(second_response["domain"], "handoff")
+        self.assertEqual(session.stage, "closing")
+        self.assertEqual(len(api_client.created_voicemails), 1)
+        self.assertEqual(api_client.created_voicemails[0][0], "call-1")
+        self.assertEqual(
+            api_client.created_voicemails[0][1]["transcription"],
+            "Please ask the office to call me tomorrow morning about an appointment.",
+        )
+        self.assertEqual(second_response["operatorSummary"]["headline"], "Voicemail captured")
+        self.assertIn("captured your message", second_response["reply"].lower())
+
+    async def test_completed_session_ignores_late_transcripts_after_voicemail_capture(self):
+        runtime, api_client, session = await self.create_runtime(after_hours=True)
+
+        first_response = await runtime.process_text_turn(session.sessionId, "I need a staff callback after hours")
+        second_response = await runtime.process_text_turn(session.sessionId, "Please ask the office to call me tomorrow morning.")
+        runtime.record_transport_event(
+            session.sessionId,
+            "twilio_mark",
+            {"assistantMessageId": second_response["assistantMessageId"]},
+        )
+        ignored = await runtime.process_text_turn(session.sessionId, "Bye.")
+
+        self.assertEqual(len(api_client.created_voicemails), 1)
+        self.assertEqual(ignored["reply"], "")
+        self.assertEqual(ignored["stage"], "completed")
+
+    async def test_finalize_without_meaningful_interaction_marks_call_abandoned(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        await runtime.finalize_session(session.sessionId)
+
+        self.assertEqual(api_client.updated_calls[-1]["status"], "ABANDONED")
 
     async def test_scheduling_flow_requires_confirmation_then_executes(self):
         runtime, api_client, session = await self.create_runtime()
@@ -246,29 +322,52 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         response = await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
         self.assertTrue(response["requiresConfirmation"])
         self.assertEqual(response["pendingAction"]["actionName"], "appointment-request")
+        self.assertEqual(
+            response["reply"],
+            "I have a request for a physical on Tuesday at 10:00 AM. Should I send that to the practice?",
+        )
+        self.assertNotIn("appointment appointment", response["reply"])
 
         confirmed = await runtime.process_text_turn(session.sessionId, "yes")
-        self.assertIn("appointment-request completed", confirmed["reply"])
+        self.assertIn("I sent that appointment request to the practice.", confirmed["reply"])
         self.assertIn("What else can I help you with today?", confirmed["reply"])
         self.assertEqual(api_client.runtime_action_calls[-1][1], "appointment-request")
         self.assertTrue(confirmed["awaitingAnythingElse"])
+        self.assertTrue(confirmed["assistantMessageId"])
         self.assertGreaterEqual(len(api_client.saved_transcripts), 3)
 
     async def test_confirmation_change_flow_returns_to_the_same_domain(self):
         runtime, _api_client, session = await self.create_runtime()
 
-        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical")
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
         changed = await runtime.process_text_turn(session.sessionId, "Actually, make it a follow-up instead")
 
-        self.assertFalse(changed["requiresConfirmation"])
+        self.assertTrue(changed["requiresConfirmation"])
         self.assertEqual(changed["domain"], "scheduling")
-        self.assertIn("corrected details", changed["reply"])
+        self.assertEqual(
+            changed["reply"],
+            "I have a request for a follow-up on Tuesday at 10:00 AM. Should I send that to the practice?",
+        )
+
+    async def test_generic_appointment_request_asks_for_visit_type_without_duplication(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(session.sessionId, "I want to schedule an appointment for Tuesday at 10")
+
+        self.assertEqual(response["domain"], "scheduling")
+        self.assertFalse(response["requiresConfirmation"])
+        self.assertEqual(response["missingSlots"], ["visitType"])
+        self.assertEqual(
+            response["reply"],
+            "What kind of appointment do you need, like a physical, follow-up, or consultation?",
+        )
+        self.assertNotIn("appointment appointment", response["reply"])
 
     async def test_refill_flow_continues_across_turns(self):
         runtime, _api_client, session = await self.create_runtime()
 
         response = await runtime.process_text_turn(session.sessionId, "I need a refill")
-        self.assertIn("What medication", response["reply"])
+        self.assertEqual(response["reply"], "Which medication would you like refilled?")
 
         next_response = await runtime.process_text_turn(session.sessionId, "It's for lisinopril")
         self.assertTrue(next_response["requiresConfirmation"])
@@ -306,12 +405,12 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         confirmed = await runtime.process_text_turn(session.sessionId, "yes")
         self.assertEqual(confirmed["operatorSummary"]["fallbackReason"], "timeout")
         self.assertTrue(confirmed["operatorSummary"]["followUpRequired"])
-        self.assertIn("staff follow up", confirmed["reply"].lower())
+        self.assertIn("passed the billing request to the staff", confirmed["reply"].lower())
 
     async def test_anything_else_continuation_supports_second_domain(self):
         runtime, _api_client, session = await self.create_runtime()
 
-        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical")
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
         await runtime.process_text_turn(session.sessionId, "yes")
 
         next_response = await runtime.process_text_turn(session.sessionId, "I also need a refill for lisinopril")
@@ -319,6 +418,44 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(next_response["domain"], "refill")
         self.assertTrue(next_response["requiresConfirmation"])
         self.assertEqual(next_response["pendingAction"]["actionName"], "refill-request")
+
+    async def test_final_close_waits_for_mark_then_ignores_late_transcripts(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
+        await runtime.process_text_turn(session.sessionId, "yes")
+        close_response = await runtime.process_text_turn(session.sessionId, "no")
+
+        self.assertEqual(close_response["stage"], "closing")
+        self.assertTrue(close_response["closeState"]["active"])
+        self.assertFalse(close_response["closeState"]["playbackCompleted"])
+
+        runtime.record_transport_event(
+            session.sessionId,
+            "twilio_mark",
+            {"assistantMessageId": close_response["assistantMessageId"]},
+        )
+        ignored = await runtime.process_text_turn(session.sessionId, "Actually I also need a refill")
+
+        self.assertEqual(ignored["reply"], "")
+        self.assertEqual(ignored["stage"], "completed")
+        self.assertTrue(ignored["closeState"]["playbackCompleted"])
+
+    async def test_disconnect_after_final_close_marks_call_completed(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
+        await runtime.process_text_turn(session.sessionId, "yes")
+        close_response = await runtime.process_text_turn(session.sessionId, "no")
+        await runtime.persist_transport_event(
+            session.sessionId,
+            "twilio_mark",
+            {"assistantMessageId": close_response["assistantMessageId"]},
+        )
+
+        await runtime.finalize_session(session.sessionId)
+
+        self.assertEqual(api_client.updated_calls[-1]["status"], "COMPLETED")
 
 
 if __name__ == "__main__":

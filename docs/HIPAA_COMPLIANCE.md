@@ -1,164 +1,140 @@
-# HIPAA Compliance Guide — Wardline
+# HIPAA Compliance Guide - Wardline
 
-This document records Wardline's technical and administrative safeguards for HIPAA compliance. Update this file whenever infrastructure, data flows, or vendor relationships change.
+This document records Wardline's current HIPAA-relevant technical safeguards and operational boundaries. Update it whenever data flows, vendors, runtime behavior, or infrastructure change.
 
----
+## 1. Business Associate Agreements
 
-## 1. Business Associate Agreements (BAAs)
+All third-party vendors that process, transmit, or store PHI must have a signed BAA before production PHI is sent to them.
 
-All third-party vendors that process, transmit, or store Protected Health Information (PHI) must have a signed BAA before PHI is sent to them.
-
-| Vendor | Purpose | BAA Status |
-|--------|---------|-----------|
-| **Twilio** | PSTN telephony, call recording, Media Streams | ✅ Available via Twilio's HIPAA-compliant edition. Must be enabled per Twilio docs. |
-| **Microsoft Azure** | Speech-to-Text, Text-to-Speech, OpenAI (GPT-4), AI Foundry | ✅ Azure signs BAAs as part of the Microsoft Products and Services BAA. Activate from the Azure Portal → Compliance → HIPAA. |
-| **Vercel** | Next.js hosting | ⚠️ Vercel does **not** sign BAAs. PHI must not be stored or logged in the Next.js app. Web-layer PHI (patient names, phone numbers in UI) must be treated as transient. |
-| **Clerk** | Authentication, user metadata | ⚠️ Clerk does not sign BAAs. `publicMetadata.agentId` is non-PHI (internal ID). Do not store patient identifiers in Clerk user records. |
-| **Neon / Supabase (PostgreSQL)** | Primary database | ✅ HIPAA-compliant hosting available. Ensure SSL mode is required (`DATABASE_URL` must include `?sslmode=require`). Enable at-rest encryption (AES-256). |
-| **Redis / Upstash** | Caching (call lists, business data) | ⚠️ PHI is **never** cached (call transcript content is excluded from Redis cache). Only aggregate counts and non-PHI metadata are cached. Verify with cache key inventory below. |
-| **LangSmith** | LLM tracing | ⚠️ If enabled, LangSmith receives conversation text. Enable `LANGSMITH_ANONYMIZE=true` or disable in production until a BAA is in place. |
-
-### Cache Key Inventory (Redis)
-The following keys are used. PHI-containing data is explicitly excluded from caching:
-
-```
-calls:list:{businessId}:{filterHash}     — call metadata (no transcript text)
-calls:detail:{callId}                    — call metadata (no transcript text)
-businesses:{businessId}                  — business config (no patient data)
-```
-
-Transcript text (`TranscriptSegment.text`) is **never** placed in cache.
-
----
+| Vendor | Purpose | BAA status | Notes |
+| --- | --- | --- | --- |
+| Twilio | PSTN telephony, call recording, Media Streams | Available | Must be enabled on the HIPAA-compliant Twilio account used for pilot and production numbers. |
+| Microsoft Azure | Speech, OpenAI, AI Foundry | Available | Azure services used by Wardline must remain inside the covered subscription boundary. |
+| Vercel | Next.js hosting | Not available | Do not treat the web tier as a PHI system of record. Keep PHI transient in the browser and server-rendered app. |
+| Clerk | Authentication and user metadata | Not available | Store only Wardline business/user identifiers. Never store patient identifiers in Clerk metadata. |
+| PostgreSQL host | Primary application database | Available from covered providers | `DATABASE_URL` must use SSL in deployed environments. |
+| Redis host | Shared cache | Provider-dependent | Cache is limited to non-PHI config and aggregate analytics only. |
+| LangSmith | LLM tracing | Not approved by default | Keep disabled in production until a BAA is in place, or enable anonymization explicitly. |
 
 ## 2. Encryption
 
-### In Transit
-- All HTTP traffic must be served over TLS 1.2+ (enforced by Vercel / Azure App Service).
-- WebSocket connections (Twilio Media Streams, Agent Console) use WSS (TLS).
-- Internal service-to-service calls between `core-api` and Voice Runtime V2 must use HTTPS in production (`NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL` / the deployed voice runtime URL must be an `https://` URL).
+### In transit
 
-### At Rest
-- PostgreSQL: Enable at-rest encryption at the provider level (Neon/Supabase both support AES-256).
-- Ensure `DATABASE_URL` includes `?sslmode=require`.
-- Redis: Use TLS-enabled Redis (Upstash enforces TLS by default).
-- Azure Speech / OpenAI: Data in transit is encrypted; Azure does not persist audio or transcripts beyond the API call lifetime for the standard tier.
+- All HTTP traffic must be served over TLS 1.2+.
+- Voice Runtime V2 webhooks and media ingress must use `https://` and `wss://`.
+- Service-to-service calls between `core-api` and Voice Runtime V2 must use HTTPS in deployed environments.
 
----
+### At rest
+
+- PostgreSQL must use provider-managed encryption at rest.
+- Redis must use TLS when deployed.
+- Azure speech and model providers must stay within the covered Azure account boundary.
 
 ## 3. Audit Logging
 
-### AuditInterceptor Coverage
-The `AuditInterceptor` (`apps/core-api/src/audit/audit.interceptor.ts`) is applied globally in `AppModule`. It logs requests decorated with `@Auditable(...)`.
+### AuditInterceptor coverage
 
-**Endpoints currently decorated with `@Auditable`:**
+`AuditInterceptor` is registered globally in [apps/core-api/src/app.module.ts](../apps/core-api/src/app.module.ts). It logs requests decorated with `@Auditable(...)`.
 
-| Endpoint | Action Logged |
-|----------|--------------|
-| `POST /api/businesses/:id/calls` | `CREATE_CALL` |
-| `PATCH /api/businesses/:id/calls/:callId` | `UPDATE_CALL` |
-| `POST /api/calls/:id/transcript` | `SAVE_TRANSCRIPT` |
-| `POST /api/calls/:id/escalate` | `ESCALATE_CALL` |
-| `POST /api/workflows` | `CREATE_WORKFLOW` |
-| `PUT /api/workflows/:id` | `UPDATE_WORKFLOW` |
-| `POST /api/workflows/:id/publish` | `PUBLISH_WORKFLOW` |
-| `GET /api/businesses/:id/patients` | `ACCESS_PATIENT_LIST` |
-| `GET /api/businesses/:id/patients/:patientId` | `ACCESS_PATIENT_RECORD` |
-| `POST /api/agents` | `CREATE_AGENT` |
-| `DELETE /api/agents/:id` | `DELETE_AGENT` |
+Current decorated endpoints:
 
-**Additional actions logged via AuditService directly:**
-- `ROUTING_DECISION` — logged by `WorkflowExecutionService.logRoutingDecision`
-- `SAFETY_CHECK` — logged by `WorkflowExecutionService.logSafetyCheck`
-- `SAFETY_EVENT` — logged by `MedicalTriageGuardService.enforceHumanEscalation`
+| Endpoint | Action |
+| --- | --- |
+| `POST /businesses/:businessId/workflows` | `CREATE` |
+| `POST /businesses/:businessId/workflows/:id/versions` | `CREATE_VERSION` |
+| `POST /businesses/:businessId/workflows/versions/:versionId/publish` | `PUBLISH_VERSION` |
+| `POST /businesses/:businessId/workflows/:id/simulate` | `SIMULATE` |
+| `POST /users/:userId/businesses/:businessId` | `ADD_TO_BUSINESS` |
+| `PATCH /users/:userId/businesses/:businessId/role` | `UPDATE_ROLE` |
+| `DELETE /users/:userId/businesses/:businessId` | `REMOVE_FROM_BUSINESS` |
 
-### AuditLog Schema
-```prisma
-model AuditLog {
-  id          String   @id @default(cuid())
-  businessId  String
-  userId      String?
-  action      String
-  entityType  String
-  entityId    String?
-  metadata    Json
-  createdAt   DateTime @default(now())
-}
-```
+Failed interceptor-backed requests are also logged as `${action}_FAILED`.
 
-Audit logs are append-only. No update or delete operations should be permitted on `AuditLog` records.
+### Direct audit actions
 
-**TODO:** Add a database-level check that prevents `DELETE` on `AuditLog` (trigger or row-level security policy in PostgreSQL).
+These actions are logged through `AuditService.logAction(...)`:
 
----
+| Source | Actions |
+| --- | --- |
+| Integrations service | `integration.upserted`, `integration.health_check_passed`, `integration.health_check_failed` |
+| Runtime actions service | `runtime_action.executed_live`, `runtime_action.downgraded_to_follow_up` |
+| Transcript retention task | `TRANSCRIPT_RETENTION_CLEANUP` |
 
-## 4. PHI Access Control
+### Append-only enforcement
 
-### Role-Based Access (RBAC)
-Roles are stored in Clerk's `publicMetadata.role`. The `RbacGuard` enforces them on every API request.
+`AuditLog` rows are append-only by database policy. The migration [packages/db/prisma/migrations/20260330_audit_log_immutability/migration.sql](../packages/db/prisma/migrations/20260330_audit_log_immutability/migration.sql) installs PostgreSQL triggers that reject `UPDATE` and `DELETE` against `audit_logs`.
 
-| Role | PHI Access |
-|------|-----------|
-| `ADMIN` | Full access to all business data |
-| `SUPERVISOR` | Read call recordings, transcripts, escalations for their business |
-| `AGENT` | Read/update assigned calls only |
-| `CALLER` | No API access (voice-only interaction via Twilio) |
+Validation path:
 
-### Minimum Necessary Principle
-- AI agents receive only the fields they need (`business_id`, detected intent, collected fields). Full patient records are never sent to Azure OpenAI.
-- `CallContext.extractedFields` stores only form-field-level data (name, phone, service type). Full medical histories are not collected via voice AI.
+- `pnpm test:smoke:db`
 
----
+## 4. Access Control
 
-## 5. Data Retention
+- RBAC is enforced in the Core API through `AuthGuard` and `RbacGuard`.
+- Clerk user records must only contain Wardline user and business identifiers.
+- Patient identity and call content remain inside the Core API database and Voice Runtime V2 data path, not Clerk metadata.
 
-### Configuration
-`transcriptRetentionDays` is stored per business in `BusinessSettings` (default: 30 days). See `apps/core-api/src/modules/businesses/businesses.service.ts`.
+## 5. Caching and PHI Boundaries
 
-### Automated Cleanup
-A NestJS scheduled task (`TranscriptRetentionTask`) runs nightly to delete transcript segments older than the business's configured retention window.
+Operational PHI payloads bypass Redis and the in-memory fallback cache.
 
-> **Status: TODO** — The retention scheduler is not yet implemented. See `apps/core-api/src/tasks/transcript-retention.task.ts` (to be created).
+Not cached:
 
-Until the cron task is implemented, the following manual query can be run to clean up transcripts:
+- call list responses
+- call detail responses
+- transcript segments
+- voicemail queues and voicemail transcriptions
+- follow-up task queues
+
+Currently cached server-side:
+
+- `businesses:list:{userId}:{includeSettings}`
+- `businesses:{businessId}:true|false`
+- `businesses:by-phone:{normalizedPhone}`
+- `businesses:{businessId}:runtime-config`
+- `workflows:active:{businessId}:{phoneNumberId|default}`
+- `calls:analytics:{businessId}:{dateKey}`
+
+The cached call analytics payload is aggregate-only. Caller names, caller phone numbers, transcript text, voicemail transcriptions, and follow-up summaries are not cached.
+
+## 6. Data Retention
+
+`transcriptRetentionDays` is stored per business in `BusinessSettings`.
+
+Automated cleanup is implemented in [transcript-retention.task.ts](../apps/core-api/src/tasks/transcript-retention.task.ts) and registered in [app.module.ts](../apps/core-api/src/app.module.ts). The task runs nightly at `02:00 UTC`, deletes transcript segments older than the business-specific retention window, and writes an audit log for each business with deleted rows.
+
+Validation path:
+
+- `pnpm --filter @wardline/core-api test -- --runInBand tasks/transcript-retention.task.spec.ts`
+
+Fallback manual cleanup when the scheduler is unavailable:
 
 ```sql
--- Delete transcript segments older than 30 days
-DELETE FROM "TranscriptSegment"
-WHERE "createdAt" < NOW() - INTERVAL '30 days'
-  AND "callId" IN (
-    SELECT id FROM "CallSession" WHERE "businessId" = '<businessId>'
+DELETE FROM "transcript_segments"
+WHERE "created_at" < NOW() - INTERVAL '30 days'
+  AND "call_id" IN (
+    SELECT "id" FROM "call_sessions" WHERE "business_id" = '<businessId>'
   );
 ```
 
-**TODO:** Implement `TranscriptRetentionTask` using `@nestjs/schedule` and `@Cron` decorators. Task should:
-1. Query all businesses with their `transcriptRetentionDays` setting
-2. Delete `TranscriptSegment` records older than the retention window
-3. Log deletion counts to `AuditLog`
-4. Run nightly at 02:00 UTC
+## 7. Incident Response
 
----
+In the event of a suspected PHI breach:
 
-## 6. Incident Response
+1. Revoke the affected provider credentials immediately.
+2. Disable the affected pilot or business path.
+3. Preserve all `audit_logs` rows.
+4. Review the operational runbook in [docs/OPERATIONS_RUNBOOK.md](./OPERATIONS_RUNBOOK.md).
+5. Notify the business privacy contact and escalate per legal requirements.
 
-In the event of a potential PHI breach:
-1. Immediately revoke the affected API keys (Twilio, Azure, Clerk).
-2. Disable the affected business account in the Wardline admin panel.
-3. Preserve all `AuditLog` records — do not delete.
-4. Notify the business's Privacy Officer within 24 hours.
-5. If PHI of 500+ individuals is involved, notify HHS within 60 days per the Breach Notification Rule.
+## 8. Pre-Pilot Checklist
 
----
-
-## 7. Checklist Before Go-Live
-
-- [ ] Twilio HIPAA-compliant account enabled and BAA countersigned
-- [ ] Azure BAA accepted in Azure Portal for all subscriptions used
-- [ ] `DATABASE_URL` includes `?sslmode=require`
-- [ ] Redis TLS enabled
-- [ ] `VOICE_ORCHESTRATOR_URL` is `https://`
-- [ ] LangSmith disabled or anonymized in production
-- [ ] `TranscriptRetentionTask` implemented and scheduled
-- [ ] Penetration test completed by a HIPAA-specialized firm
-- [ ] Staff security awareness training documented
-- [ ] Privacy Policy and Terms of Service reviewed by legal counsel
+- Twilio HIPAA-compliant account enabled for the production-grade number
+- Azure subscription remains inside the covered BAA boundary
+- PostgreSQL SSL enforced in deployed environments
+- Redis TLS enabled in deployed environments
+- Voice Runtime V2 callback URLs are HTTPS/WSS
+- LangSmith disabled or explicitly anonymized before pilot traffic
+- `pnpm test:smoke:db` passes
+- Transcript retention task is deployed with the Core API
+- Pilot operations owners are assigned using [docs/PILOT_READINESS.md](./PILOT_READINESS.md)

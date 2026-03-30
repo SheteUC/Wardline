@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../../cache/cache.service';
 import { Logger } from '@wardline/utils';
-import * as crypto from 'crypto';
 import { FollowUpTasksService } from '../follow-up-tasks/follow-up-tasks.service';
 
 @Injectable()
@@ -25,73 +24,77 @@ export class CallsService {
         const pageSize = parseInt(filters?.pageSize) || 20;
         const skip = (page - 1) * pageSize;
 
-        const filterHash = crypto
-            .createHash('md5')
-            .update(JSON.stringify({ ...filters, page, pageSize }))
-            .digest('hex')
-            .substring(0, 8);
+        // Dashboard call rows include caller-identifying fields, so they bypass Redis.
+        const where: any = { businessId };
 
-        const response = await this.cache.getOrSet(
-            `calls:list:${businessId}:${filterHash}`,
-            async () => {
-                const where: any = { businessId };
+        if (filters?.status) where.status = filters.status.toUpperCase();
+        if (filters?.tag) where.tag = filters.tag.toUpperCase();
+        if (filters?.isEmergency) where.isEmergency = filters.isEmergency === 'true';
+        if (filters?.search) {
+            where.OR = [
+                { phoneNumber: { twilioPhoneNumber: { contains: filters.search } } },
+                { caller: { name: { contains: filters.search, mode: 'insensitive' } } },
+                { caller: { phone: { contains: filters.search } } },
+            ];
+        }
 
-                if (filters?.status) where.status = filters.status.toUpperCase();
-                if (filters?.tag) where.tag = filters.tag.toUpperCase();
-                if (filters?.isEmergency) where.isEmergency = filters.isEmergency === 'true';
-                if (filters?.search) {
-                    where.OR = [
-                        { phoneNumber: { twilioPhoneNumber: { contains: filters.search } } },
-                        { caller: { name: { contains: filters.search, mode: 'insensitive' } } },
-                    ];
-                }
+        const [calls, total] = await Promise.all([
+            this.prisma.callSession.findMany({
+                where,
+                include: {
+                    phoneNumber: { select: { twilioPhoneNumber: true, label: true } },
+                    caller: { select: { id: true, name: true, phone: true } },
+                    voicemails: { select: { id: true, isListened: true } },
+                    followUpTasks: {
+                        where: { status: { in: ['OPEN', 'IN_PROGRESS'] as any } },
+                        select: { id: true, priority: true, status: true, type: true },
+                    },
+                },
+                orderBy: { startedAt: 'desc' },
+                skip,
+                take: pageSize,
+            }),
+            this.prisma.callSession.count({ where }),
+        ]);
 
-                const [calls, total] = await Promise.all([
-                    this.prisma.callSession.findMany({
-                        where,
-                        include: {
-                            phoneNumber: { select: { twilioPhoneNumber: true, label: true } },
-                            caller: { select: { id: true, name: true, phone: true } },
-                            voicemails: { select: { id: true, isListened: true } },
-                            followUpTasks: {
-                                where: { status: { in: ['OPEN', 'IN_PROGRESS'] as any } },
-                                select: { id: true, priority: true, status: true },
-                            },
-                        },
-                        orderBy: { startedAt: 'desc' },
-                        skip,
-                        take: pageSize,
-                    }),
-                    this.prisma.callSession.count({ where }),
-                ]);
+        const data = calls.map((call) => {
+            const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
+            const operatorSummary = this.buildOperatorSummary(call, runtimeActionEvents, call.turnsJson);
+            const latestRuntimeAction = runtimeActionEvents[0];
 
-                const data = calls.map(call => ({
-                    id: call.id,
-                    businessId: call.businessId,
-                    twilioCallSid: call.twilioCallSid,
-                    direction: call.direction,
-                    status: call.status,
-                    tag: call.tag,
-                    callerPhone: call.caller?.phone ?? call.phoneNumber.twilioPhoneNumber,
-                    callerName: call.caller?.name,
-                    lineLabel: call.phoneNumber.label,
-                    isEmergency: call.isEmergency,
-                    turnCount: call.turnCount,
-                    hasVoicemail: call.voicemails.length > 0,
-                    voicemailListened: call.voicemails.every(v => v.isListened),
-                    followUpTaskCount: call.followUpTasks.length,
-                    duration: call.endedAt
-                        ? Math.floor((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000)
-                        : 0,
-                    sentimentScore: call.sentimentScore ? Number(call.sentimentScore) : undefined,
-                    startedAt: call.startedAt.toISOString(),
-                    endedAt: call.endedAt?.toISOString(),
-                }));
+            return {
+                id: call.id,
+                businessId: call.businessId,
+                twilioCallSid: call.twilioCallSid,
+                direction: call.direction,
+                status: call.status,
+                tag: call.tag,
+                latestDomain: this.extractLatestDomain(call.turnsJson, call.tag),
+                callerPhone: this.canonicalizePhone(call.caller?.phone) ?? call.phoneNumber.twilioPhoneNumber,
+                callerName: call.caller?.name,
+                lineLabel: call.phoneNumber.label,
+                isEmergency: call.isEmergency,
+                turnCount: call.turnCount,
+                hasVoicemail: call.voicemails.length > 0,
+                voicemailListened: call.voicemails.every(v => v.isListened),
+                followUpTaskCount: call.followUpTasks.length,
+                hasFollowUp: call.followUpTasks.length > 0,
+                resolution: operatorSummary.resolution,
+                resolutionLabel: operatorSummary.label,
+                operatorNextStep: operatorSummary.nextStep,
+                latestRuntimeAction: latestRuntimeAction?.actionName,
+                handledLive: latestRuntimeAction?.handledLive,
+                fallbackReason: latestRuntimeAction?.fallbackReason,
+                duration: call.endedAt
+                    ? Math.floor((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000)
+                    : 0,
+                sentimentScore: call.sentimentScore ? Number(call.sentimentScore) : undefined,
+                startedAt: call.startedAt.toISOString(),
+                endedAt: call.endedAt?.toISOString(),
+            };
+        });
 
-                return { data, total, page, pageSize };
-            },
-            { ttl: CacheTTL.SHORT, tags: [`business:${businessId}`, 'calls'] },
-        );
+        const response = { data, total, page, pageSize };
 
         this.logger.info('Dashboard calls query completed', {
             businessId,
@@ -107,43 +110,38 @@ export class CallsService {
 
     async findOne(id: string): Promise<any> {
         const startedAt = Date.now();
-        const call = await this.cache.getOrSet(
-            `calls:detail:${id}`,
-            async () => {
-                const call = await this.prisma.callSession.findUnique({
-                    where: { id },
-                    include: {
-                        phoneNumber: true,
-                        caller: true,
-                        transcriptSegments: { orderBy: { startTimeMs: 'asc' } },
-                        handoffs: true,
-                        voicemails: true,
-                        appointments: { select: { id: true, callerName: true, scheduledAt: true, status: true } },
-                        prescriptionRefills: { select: { id: true, medicationName: true, status: true } },
-                        insuranceInquiries: { select: { id: true, inquiryType: true, resolved: true } },
-                        followUpTasks: { orderBy: { createdAt: 'desc' } },
-                    },
-                });
-                if (!call) throw new NotFoundException(`Call not found: ${id}`);
-                const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
-                const transportSummary = this.extractTransportSummary(call.turnsJson);
-                return {
-                    ...call,
-                    transportSummary,
-                    runtimeActionEvents,
-                    operatorSummary: this.buildOperatorSummary(call, runtimeActionEvents),
-                };
+        // Call detail includes transcript text and caller fields, so it bypasses Redis.
+        const call = await this.prisma.callSession.findUnique({
+            where: { id },
+            include: {
+                phoneNumber: true,
+                caller: true,
+                transcriptSegments: { orderBy: { startTimeMs: 'asc' } },
+                handoffs: true,
+                voicemails: true,
+                appointments: { select: { id: true, callerName: true, scheduledAt: true, status: true } },
+                prescriptionRefills: { select: { id: true, medicationName: true, status: true } },
+                insuranceInquiries: { select: { id: true, inquiryType: true, resolved: true } },
+                followUpTasks: { orderBy: { createdAt: 'desc' } },
             },
-            { ttl: CacheTTL.MEDIUM, tags: ['calls', `call:${id}`] },
-        );
+        });
+        if (!call) throw new NotFoundException(`Call not found: ${id}`);
+        const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
+        const transportSummary = this.extractTransportSummary(call.turnsJson);
+        const response = {
+            ...call,
+            transportSummary,
+            runtimeActionEvents,
+            operatorSummary: this.buildOperatorSummary(call, runtimeActionEvents, call.turnsJson),
+        };
 
         this.logger.info('Call detail query completed', {
             callId: id,
-            businessId: call.businessId,
+            businessId: response.businessId,
             durationMs: Date.now() - startedAt,
         });
 
-        return call;
+        return response;
     }
 
     private extractRuntimeActionEvents(turnsJson: unknown) {
@@ -238,6 +236,7 @@ export class CallsService {
         return {
             runtime: typeof transport.runtime === 'string' ? transport.runtime : 'voice-runtime-v2',
             transport: typeof transport.transport === 'string' ? transport.transport : 'livekit',
+            twilioCallSid: typeof transport.twilioCallSid === 'string' ? transport.twilioCallSid : undefined,
             roomName: typeof transport.roomName === 'string' ? transport.roomName : undefined,
             participantIdentity:
                 typeof transport.participantIdentity === 'string' ? transport.participantIdentity : undefined,
@@ -258,8 +257,47 @@ export class CallsService {
                       : typeof transport.providerSessionId === 'string'
                         ? transport.providerSessionId
                         : undefined,
+            deepgramRequestId:
+                typeof latestProviderEvent?.data?.deepgramRequestId === 'string'
+                    ? latestProviderEvent.data.deepgramRequestId
+                    : typeof transport.deepgramRequestId === 'string'
+                      ? transport.deepgramRequestId
+                      : undefined,
             transcriptEventCount,
         };
+    }
+
+    private extractLatestDomain(turnsJson: unknown, tag?: string | null) {
+        if (tag) {
+            return tag.toLowerCase();
+        }
+
+        if (!Array.isArray(turnsJson)) {
+            return undefined;
+        }
+
+        const latestDomainEvent = [...turnsJson].reverse().find(
+            (entry): entry is Record<string, any> =>
+                Boolean(entry) &&
+                typeof entry === 'object' &&
+                typeof entry.domain === 'string',
+        );
+
+        return typeof latestDomainEvent?.domain === 'string' ? latestDomainEvent.domain : undefined;
+    }
+
+    private hasTransportEvent(turnsJson: unknown, ...eventNames: string[]) {
+        if (!Array.isArray(turnsJson)) {
+            return false;
+        }
+
+        return turnsJson.some(
+            (entry): entry is Record<string, any> =>
+                Boolean(entry) &&
+                typeof entry === 'object' &&
+                entry.type === 'transport_event' &&
+                (eventNames.length === 0 || eventNames.includes(entry.actionName)),
+        );
     }
 
     private buildOperatorSummary(
@@ -283,6 +321,7 @@ export class CallsService {
             fallbackReason?: string;
             operatorSummary?: string;
         }>,
+        turnsJson?: unknown,
     ) {
         const openFollowUpTask = (call.followUpTasks ?? []).find(
             (task) => task.status === 'OPEN' || task.status === 'IN_PROGRESS',
@@ -345,17 +384,105 @@ export class CallsService {
             };
         }
 
+        if (call.status === 'ABANDONED') {
+            return {
+                resolution: 'CALL_ABANDONED',
+                label: 'Caller disconnected before completion',
+                nextStep: openFollowUpTask
+                    ? 'Review the open follow-up task and confirm whether staff outreach is still needed.'
+                    : 'No completed request was captured before the caller disconnected.',
+            };
+        }
+
+        if (call.status === 'FAILED') {
+            return {
+                resolution: 'CALL_FAILED',
+                label: 'Call failed before voice session initialized',
+                nextStep: openFollowUpTask
+                    ? 'Review the open follow-up task and the provider logs before retrying.'
+                    : 'Review the bootstrap or provider logs before attempting another live call.',
+            };
+        }
+
+        const connectedToTransport = this.hasTransportEvent(
+            turnsJson,
+            'twilio_stream_connected',
+            'twilio_stream_started',
+            'deepgram_connected',
+        );
+
         return {
-            resolution: call.status === 'COMPLETED' ? 'CALL_COMPLETED' : 'CALL_IN_PROGRESS',
-            label: call.status === 'COMPLETED' ? 'Call completed' : 'Call in progress',
+            resolution:
+                call.status === 'COMPLETED'
+                    ? 'CALL_COMPLETED_NO_ACTION'
+                    : call.status === 'INITIATED'
+                      ? 'CALL_INITIATED'
+                      : 'CALL_IN_PROGRESS',
+            label:
+                call.status === 'COMPLETED'
+                    ? connectedToTransport
+                        ? 'Call connected, no request completed'
+                        : 'Call completed without action'
+                    : call.status === 'INITIATED'
+                      ? 'Voice session starting'
+                      : 'Call in progress',
             nextStep: openFollowUpTask
                 ? 'A follow-up task is open for this call.'
-                : 'Review the transcript only if the caller needs additional follow-up.',
+                : call.status === 'COMPLETED'
+                  ? 'Review the transport events and transcript if the caller needs additional follow-up.'
+                  : 'Review live transport events while the call is still active.',
         };
     }
 
     private humanizeTaskType(type: string) {
         return type.toLowerCase().replaceAll('_', ' ');
+    }
+
+    private buildPhoneCandidates(phoneNumber?: string) {
+        const normalized = String(phoneNumber ?? '').replace(/\D/g, '');
+        const last10 = normalized.slice(-10);
+
+        return Array.from(
+            new Set(
+                [
+                    phoneNumber?.trim?.(),
+                    normalized,
+                    last10,
+                    last10 ? `+1${last10}` : null,
+                    last10 ? `1${last10}` : null,
+                ].filter((value): value is string => Boolean(value)),
+            ),
+        );
+    }
+
+    private canonicalizePhone(phoneNumber?: string) {
+        const candidates = this.buildPhoneCandidates(phoneNumber);
+        if (candidates.length === 0) {
+            return undefined;
+        }
+
+        return candidates.find(candidate => candidate.startsWith('+')) ?? candidates[0];
+    }
+
+    private async upsertCaller(businessId: string, phoneNumber?: string) {
+        const canonicalPhone = this.canonicalizePhone(phoneNumber);
+        if (!canonicalPhone) {
+            return null;
+        }
+
+        return this.prisma.caller.upsert({
+            where: {
+                businessId_phone: {
+                    businessId,
+                    phone: canonicalPhone,
+                },
+            },
+            update: {},
+            create: {
+                businessId,
+                phone: canonicalPhone,
+            },
+        });
     }
 
     async findByTwilioSid(twilioCallSid: string): Promise<any[]> {
@@ -425,30 +552,26 @@ export class CallsService {
 
     async getVoicemails(businessId: string, unlistenedOnly = false): Promise<any[]> {
         const startedAt = Date.now();
-        const voicemails = await this.cache.getOrSet(
-            `voicemails:${businessId}:${unlistenedOnly ? 'unlistened' : 'all'}`,
-            async () =>
-                this.prisma.voicemailRecord.findMany({
-                    where: {
-                        businessId,
-                        ...(unlistenedOnly && { isListened: false }),
+        // Voicemail records contain caller-identifying data and transcriptions.
+        const voicemails = await this.prisma.voicemailRecord.findMany({
+            where: {
+                businessId,
+                ...(unlistenedOnly && { isListened: false }),
+            },
+            include: {
+                call: { select: { tag: true, startedAt: true, isEmergency: true } },
+                followUpTask: {
+                    select: {
+                        id: true,
+                        type: true,
+                        priority: true,
+                        status: true,
+                        metadata: true,
                     },
-                    include: {
-                        call: { select: { tag: true, startedAt: true, isEmergency: true } },
-                        followUpTask: {
-                            select: {
-                                id: true,
-                                type: true,
-                                priority: true,
-                                status: true,
-                                metadata: true,
-                            },
-                        },
-                    },
-                    orderBy: { createdAt: 'desc' },
-                }),
-            { ttl: CacheTTL.SHORT, tags: [`business:${businessId}`, 'voicemails'] },
-        );
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
 
         this.logger.info('Dashboard voicemail query completed', {
             businessId,
@@ -528,11 +651,24 @@ export class CallsService {
     // -------------------------------------------------------------------------
 
     async create(dto: any): Promise<any> {
+        const existing = dto.twilioCallSid
+            ? await this.prisma.callSession.findUnique({ where: { twilioCallSid: dto.twilioCallSid } })
+            : null;
+        if (existing) {
+            await this.invalidateOperationalCaches(existing.businessId, existing.id);
+            return existing;
+        }
+
+        const candidates = this.buildPhoneCandidates(dto.toNumber);
+
         const phoneNumber = await this.prisma.phoneNumber.findFirst({
             where: {
                 OR: [
-                    { twilioSid: dto.twilioPhoneNumberSid },
-                    { twilioPhoneNumber: dto.toNumber },
+                    ...(dto.twilioPhoneNumberSid ? [{ twilioSid: dto.twilioPhoneNumberSid }] : []),
+                    ...candidates.flatMap((candidate) => [
+                        { twilioPhoneNumber: candidate },
+                        { twilioPhoneNumber: { endsWith: candidate } },
+                    ]),
                 ],
             },
         });
@@ -541,16 +677,35 @@ export class CallsService {
             throw new Error(`Phone number not found: ${dto.toNumber || dto.twilioPhoneNumberSid}`);
         }
 
-        return this.prisma.callSession.create({
-            data: {
-                businessId: phoneNumber.businessId,
-                phoneNumberId: phoneNumber.id,
-                twilioCallSid: dto.twilioCallSid,
-                direction: dto.direction || 'INBOUND',
-                status: 'INITIATED',
-                turnCount: 0,
-            },
-        });
+        const caller = await this.upsertCaller(phoneNumber.businessId, dto.fromNumber);
+
+        try {
+            const created = await this.prisma.callSession.create({
+                data: {
+                    businessId: phoneNumber.businessId,
+                    phoneNumberId: phoneNumber.id,
+                    callerId: caller?.id,
+                    twilioCallSid: dto.twilioCallSid,
+                    direction: dto.direction || 'INBOUND',
+                    status: 'INITIATED',
+                    turnCount: 0,
+                },
+            });
+            await this.invalidateOperationalCaches(created.businessId, created.id);
+            return created;
+        } catch (error: unknown) {
+            const prismaError = error as Error & { code?: string };
+            if (prismaError.code === 'P2002' && dto.twilioCallSid) {
+                const duplicate = await this.prisma.callSession.findUnique({
+                    where: { twilioCallSid: dto.twilioCallSid },
+                });
+                if (duplicate) {
+                    await this.invalidateOperationalCaches(duplicate.businessId, duplicate.id);
+                    return duplicate;
+                }
+            }
+            throw error;
+        }
     }
 
     async update(id: string, dto: any): Promise<any> {
@@ -564,8 +719,6 @@ export class CallsService {
         if (dto.turnCount !== undefined) data.turnCount = dto.turnCount;
         if (dto.turnsJson !== undefined) data.turnsJson = dto.turnsJson;
         if (dto.callerId !== undefined) data.callerId = dto.callerId;
-        if (dto.detectedIntent !== undefined) data.detectedIntent = dto.detectedIntent;
-
         await this.cache.delete(`calls:detail:${id}`);
         const updated = await this.prisma.callSession.update({ where: { id }, data });
         await this.invalidateOperationalCaches(updated.businessId, id);
@@ -591,10 +744,10 @@ export class CallsService {
         return { success: true, segmentsAdded: segments.length };
     }
 
-    private async invalidateOperationalCaches(businessId: string, callId?: string) {
-        await this.cache.invalidateByTag(`business:${businessId}`);
+    private async invalidateOperationalCaches(_businessId: string, callId?: string) {
         await this.cache.invalidateByTag('calls');
         await this.cache.invalidateByTag('voicemails');
+        await this.cache.invalidateByTag('calls:analytics');
         if (callId) {
             await this.cache.delete(`calls:detail:${callId}`);
         }

@@ -72,6 +72,18 @@ export interface VoicePolicyV2 {
         escalationMessage: string;
         notifyStaffImmediately: boolean;
     };
+    dialoguePolicies: Record<
+        SpecialistDomain,
+        {
+            callerIntro: string;
+            clarificationStyle: string;
+            slotPrompts: Record<string, string>;
+            confirmationTemplate: string;
+            successTemplate: string;
+            fallbackTemplate: string;
+            closeTemplate: string;
+        }
+    >;
     emergencyKeywords: string[];
     outOfScopeKeywords: string[];
     fallbackRuntimeAction: 'manual-follow-up';
@@ -152,6 +164,90 @@ export function buildVoicePolicyV2(input: {
             },
         },
         escalationConfig: practiceSetup.escalationConfig,
+        dialoguePolicies: {
+            safety: {
+                callerIntro: 'I can help make sure urgent medical concerns get to the right place quickly.',
+                clarificationStyle: 'direct',
+                slotPrompts: {},
+                confirmationTemplate: '',
+                successTemplate: '',
+                fallbackTemplate: '',
+                closeTemplate: 'Thanks for calling the practice. Take care.',
+            },
+            knowledge: {
+                callerIntro: 'I can answer common practice questions and help route requests.',
+                clarificationStyle: 'friendly',
+                slotPrompts: {},
+                confirmationTemplate: '',
+                successTemplate: '',
+                fallbackTemplate: '',
+                closeTemplate: 'Thanks for calling. Have a good day.',
+            },
+            scheduling: {
+                callerIntro: 'I can help with scheduling requests.',
+                clarificationStyle: 'friendly',
+                slotPrompts: {
+                    visitType: 'What kind of appointment do you need, like a physical, follow-up, or consultation?',
+                    preferredDate: 'What day would you like that?',
+                    preferredTime: 'What time works best for you?',
+                },
+                confirmationTemplate:
+                    'I have a request for {visitPhrase}{datePhrase}{timePhrase}. Should I send that to the practice?',
+                successTemplate: 'Okay, I sent that appointment request to the practice.',
+                fallbackTemplate:
+                    'Okay, I could not send that live, but I passed the appointment request to the practice.',
+                closeTemplate: 'Thanks for calling the practice. Take care.',
+            },
+            refill: {
+                callerIntro: 'I can help with prescription refill requests.',
+                clarificationStyle: 'friendly',
+                slotPrompts: {
+                    medicationName: 'Which medication would you like refilled?',
+                },
+                confirmationTemplate:
+                    'I have a refill request for {medicationName}. Should I send that to the practice?',
+                successTemplate: 'Okay, I sent that refill request to the practice.',
+                fallbackTemplate:
+                    'Okay, I could not send that live, but I passed the refill request to the staff.',
+                closeTemplate: 'Thanks for calling the practice. Take care.',
+            },
+            insurance: {
+                callerIntro: 'I can help with basic insurance questions.',
+                clarificationStyle: 'friendly',
+                slotPrompts: {
+                    carrierName: 'Which insurance carrier would you like me to check?',
+                },
+                confirmationTemplate: '',
+                successTemplate: 'Okay, I checked that for you.',
+                fallbackTemplate:
+                    'Okay, I could not check that live, but I passed the insurance question to the staff.',
+                closeTemplate: 'Thanks for calling the practice. Take care.',
+            },
+            billing: {
+                callerIntro: 'I can help with billing questions.',
+                clarificationStyle: 'friendly',
+                slotPrompts: {
+                    billingTopic: 'What billing question would you like me to pass along?',
+                },
+                confirmationTemplate:
+                    'I have a billing request about {billingTopic}. Should I send that to the practice?',
+                successTemplate: 'Okay, I sent that billing request to the practice.',
+                fallbackTemplate:
+                    'Okay, I could not send that live, but I passed the billing request to the staff.',
+                closeTemplate: 'Thanks for calling the practice. Take care.',
+            },
+            handoff: {
+                callerIntro: 'I can take a message for the staff when needed.',
+                clarificationStyle: 'friendly',
+                slotPrompts: {
+                    voicemail: 'Please say the message you would like me to pass along.',
+                },
+                confirmationTemplate: '',
+                successTemplate: 'Okay, I passed that request to the staff.',
+                fallbackTemplate: 'Okay, I can take a message for the staff to review.',
+                closeTemplate: 'Thanks for calling the practice. Take care.',
+            },
+        },
         emergencyKeywords: Array.isArray(input.settings?.emergencyKeywords)
             ? input.settings?.emergencyKeywords.filter((entry): entry is string => typeof entry === 'string')
             : [],

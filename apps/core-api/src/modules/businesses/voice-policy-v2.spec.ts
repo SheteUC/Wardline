@@ -22,5 +22,7 @@ describe('buildVoicePolicyV2', () => {
         expect(result.servicePolicies.refill.liveEnabled).toBe(false);
         expect(result.servicePolicies.insurance.liveEnabled).toBe(true);
         expect(result.servicePolicies.billing.liveEnabled).toBe(false);
+        expect(result.dialoguePolicies.scheduling.slotPrompts.visitType).toContain('What kind of appointment');
+        expect(result.dialoguePolicies.scheduling.confirmationTemplate).toContain('Should I send that to the practice');
     });
 });

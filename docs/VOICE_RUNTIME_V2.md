@@ -47,7 +47,12 @@ The legacy Python voice runtime is now archived code, not a supported product di
 
 The next provider-backed proof target is:
 
+- `pnpm voice:v2:preflight` passes with real Twilio, LiveKit, and Deepgram env
+- `pnpm voice:v2:proof` prints the tunnel-derived bootstrap URL and dashboard review path
 - one real Twilio inbound call
+- one scheduling flow with caller confirmation before the mock appointment request executes
 - Voice Runtime V2 as the only live runtime
 - mock-backed business actions
 - operator review through the existing dashboard call detail page
+
+Use [docs/PILOT_READINESS.md](./PILOT_READINESS.md) as the canonical gate after this first real-call proof succeeds.

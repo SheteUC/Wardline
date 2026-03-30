@@ -124,10 +124,6 @@ export class UpdateCallDto {
     @IsString()
     callerId?: string;
 
-    @ApiPropertyOptional({ description: 'Detected intent/domain key' })
-    @IsOptional()
-    @IsString()
-    detectedIntent?: string;
 }
 
 // DTO for a single transcript segment

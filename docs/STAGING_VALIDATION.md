@@ -1,6 +1,8 @@
 # Staging Validation
 
-Use this document as the launch-readiness checklist after the first provider-backed Voice Runtime V2 call is already working.
+This document covers the staging-validation slice of the broader pilot gate.
+
+Use [docs/PILOT_READINESS.md](./PILOT_READINESS.md) as the canonical go/no-go checklist. This file is the detailed staging matrix that must pass after the first provider-backed Voice Runtime V2 call is already working.
 
 ## Goal
 
@@ -16,9 +18,11 @@ Current defaults:
 
 1. Local smoke is green:
    - `pnpm test:smoke`
-2. Staging environment variables are present:
+2. Database immutability smoke is green:
+   - `pnpm test:smoke:db`
+3. Staging environment variables are present:
    - `pnpm test:staging:env`
-3. The staging validation tenant exists:
+4. The staging validation tenant exists:
    - `pnpm db:seed:staging`
 
 ## Canonical Staging Tenant
@@ -140,11 +144,13 @@ Before or alongside full telephony cutover, validate the V2 local/session harnes
 
 Before the full staging gate, verify one provider-backed V2 call:
 
-1. `VOICE_RUNTIME_V2_PUBLIC_URL` or `WEBHOOK_BASE_URL` points at the public V2 service URL
-2. the Twilio number webhook targets `/telephony/twilio/bootstrap`
-3. one inbound call reaches the V2 media websocket
-4. the caller hears the greeting and completes at least one specialist flow
-5. the resulting call detail page shows operator summary plus transport metadata
+1. a local HTTPS tunnel exposes port `3003`, and both `VOICE_RUNTIME_V2_PUBLIC_URL` and `WEBHOOK_BASE_URL` point at that tunnel URL
+2. `pnpm voice:v2:preflight` passes
+3. `pnpm voice:v2:proof` prints the expected bootstrap URL and dashboard review path
+4. the Twilio number webhook targets the printed `/telephony/twilio/bootstrap` URL
+5. one inbound scheduling call reaches the V2 media websocket
+6. the caller hears the greeting, confirms an appointment request, and the mock action completes live
+7. the resulting call detail page shows operator summary plus transport metadata
 
 ### Operator review
 
@@ -192,3 +198,5 @@ Wardline is staging-ready only when all of the following are true:
 - call detail pages clearly explain what happened and what staff should do next
 
 If any of the above fail, fix staging trust and responsiveness before resuming broader feature work.
+
+For pilot rollout ownership and incident handling, pair this checklist with [docs/OPERATIONS_RUNBOOK.md](./OPERATIONS_RUNBOOK.md).

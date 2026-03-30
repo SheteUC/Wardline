@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CacheService, CacheTTL } from '../../cache/cache.service';
+import { CacheService } from '../../cache/cache.service';
 import { Logger } from '@wardline/utils';
 
 type FollowUpTaskType =
@@ -54,69 +54,59 @@ export class FollowUpTasksService {
         search?: string;
     }): Promise<any[]> {
         const startedAt = Date.now();
-        const cacheKey = `follow-up-tasks:${businessId}:${JSON.stringify(filters ?? {})}`;
+        const where: Record<string, unknown> = { businessId };
 
-        const tasks = await this.cache.getOrSet(
-            cacheKey,
-            async () => {
-                const where: Record<string, unknown> = { businessId };
+        if (filters?.type) where.type = filters.type.toUpperCase();
+        if (filters?.status) where.status = filters.status.toUpperCase();
+        if (filters?.priority) where.priority = filters.priority.toUpperCase();
+        if (filters?.search) {
+            where.OR = [
+                { title: { contains: filters.search, mode: 'insensitive' } },
+                { summary: { contains: filters.search, mode: 'insensitive' } },
+                { callerName: { contains: filters.search, mode: 'insensitive' } },
+                { callerPhone: { contains: filters.search } },
+            ];
+        }
 
-                if (filters?.type) where.type = filters.type.toUpperCase();
-                if (filters?.status) where.status = filters.status.toUpperCase();
-                if (filters?.priority) where.priority = filters.priority.toUpperCase();
-                if (filters?.search) {
-                    where.OR = [
-                        { title: { contains: filters.search, mode: 'insensitive' } },
-                        { summary: { contains: filters.search, mode: 'insensitive' } },
-                        { callerName: { contains: filters.search, mode: 'insensitive' } },
-                        { callerPhone: { contains: filters.search } },
-                    ];
-                }
-
-                const tasks = await this.prisma.followUpTask.findMany({
-                    where,
-                    include: {
-                        call: {
-                            select: {
-                                id: true,
-                                tag: true,
-                                startedAt: true,
-                                isEmergency: true,
-                            },
-                        },
-                        voicemail: {
-                            select: {
-                                id: true,
-                                isListened: true,
-                                createdAt: true,
-                                recordingUrl: true,
-                            },
-                        },
+        // Follow-up queues include caller-identifying data and bypass Redis.
+        const tasks = await this.prisma.followUpTask.findMany({
+            where,
+            include: {
+                call: {
+                    select: {
+                        id: true,
+                        tag: true,
+                        startedAt: true,
+                        isEmergency: true,
                     },
-                    orderBy: [{ createdAt: 'desc' }],
-                });
+                },
+                voicemail: {
+                    select: {
+                        id: true,
+                        isListened: true,
+                        createdAt: true,
+                        recordingUrl: true,
+                    },
+                },
+            },
+            orderBy: [{ createdAt: 'desc' }],
+        });
 
-                return tasks.sort((left, right) => {
-                    const leftWeight = priorityWeight[left.priority as FollowUpTaskPriority] ?? 0;
-                    const rightWeight = priorityWeight[right.priority as FollowUpTaskPriority] ?? 0;
-                    if (leftWeight !== rightWeight) return rightWeight - leftWeight;
-                    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
-                });
-            },
-            {
-                ttl: CacheTTL.SHORT,
-                tags: [`business:${businessId}`, 'follow-up-tasks'],
-            },
-        );
+        const sortedTasks = tasks.sort((left, right) => {
+            const leftWeight = priorityWeight[left.priority as FollowUpTaskPriority] ?? 0;
+            const rightWeight = priorityWeight[right.priority as FollowUpTaskPriority] ?? 0;
+            if (leftWeight !== rightWeight) return rightWeight - leftWeight;
+            return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        });
 
         this.logger.info('Dashboard follow-up query completed', {
             businessId,
             durationMs: Date.now() - startedAt,
-            count: tasks.length,
+            count: sortedTasks.length,
             filters: filters ?? {},
         });
 
-        return tasks;
+        return sortedTasks;
     }
 
     async create(input: CreateFollowUpTaskInput): Promise<any> {
@@ -164,8 +154,7 @@ export class FollowUpTasksService {
         return task;
     }
 
-    private async invalidate(businessId: string) {
+    private async invalidate(_businessId: string) {
         await this.cache.invalidateByTag('follow-up-tasks');
-        await this.cache.invalidateByTag(`business:${businessId}`);
     }
 }

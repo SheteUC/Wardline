@@ -19,7 +19,7 @@ export class TranscriptRetentionTask {
         private readonly auditService: AuditService,
     ) {}
 
-    @Cron(CronExpression.EVERY_DAY_AT_2AM)
+    @Cron(CronExpression.EVERY_DAY_AT_2AM, { timeZone: 'UTC' })
     async runRetentionCleanup(): Promise<void> {
         this.logger.log('Starting nightly transcript retention cleanup');
         let totalDeleted = 0;

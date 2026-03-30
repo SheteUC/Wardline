@@ -23,7 +23,11 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
         session.businessId = "business-1"
         session.messages = [type("Message", (), {"text": "Hello there"})()]
 
-        with patch.object(server.runtime, "start_session", AsyncMock(return_value=session)), patch.object(
+        with patch.object(
+            server.runtime,
+            "real_call_preflight",
+            return_value={"ok": True, "errors": [], "callbackUrl": "https://voice.example.com"},
+        ), patch.object(server.runtime, "start_session", AsyncMock(return_value=session)), patch.object(
             server.runtime,
             "build_twilio_bootstrap_response",
             return_value='<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://voice.example.com/telephony/twilio/media"><Parameter name="sessionId" value="session-1" /></Stream></Connect></Response>',
@@ -38,11 +42,27 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
         self.assertIn("<Stream", response.text)
         self.assertIn('sessionId" value="session-1"', response.text)
 
+    def test_twilio_bootstrap_returns_error_twiml_when_preflight_fails(self):
+        with patch.object(
+            server.runtime,
+            "real_call_preflight",
+            return_value={"ok": False, "errors": ["missing callback url"], "callbackUrl": ""},
+        ):
+            response = self.client.post(
+                "/telephony/twilio/bootstrap",
+                data={"CallSid": "CA123", "From": "+15550000001", "To": "+15551230001"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"].split(";")[0], "text/xml")
+        self.assertIn("<Say>", response.text)
+        self.assertIn("<Hangup", response.text)
+
     def test_transport_event_endpoint_records_events(self):
         with patch.object(
             server.runtime,
-            "record_transport_event",
-            return_value={"accepted": True, "eventType": "participant_joined"},
+            "persist_transport_event",
+            AsyncMock(return_value={"accepted": True, "eventType": "participant_joined"}),
         ):
             response = self.client.post(
                 "/sessions/session-1/events",

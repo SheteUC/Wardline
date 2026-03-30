@@ -7,6 +7,7 @@ provide the real provider-backed cutover path for V2.
 """
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,10 +16,12 @@ from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
 from pydantic import BaseModel, Field
 
 from config import settings
+from preflight import default_bootstrap_error_message
 from service import VoiceRuntimeV2
 from telephony import TwilioMediaSession
 
 runtime = VoiceRuntimeV2()
+logger = logging.getLogger(__name__)
 
 
 class StartSessionRequest(BaseModel):
@@ -75,6 +78,7 @@ async def ready():
     return {
         "ready": True,
         "providers": runtime.readiness(),
+        "preflight": runtime.real_call_preflight(),
     }
 
 
@@ -106,15 +110,64 @@ async def bootstrap_twilio_session(request: Request):
     caller_phone = str(form_data.get("From") or "")
     called_phone = str(form_data.get("To") or "")
 
-    if not call_sid or not caller_phone or not called_phone:
-        raise HTTPException(status_code=400, detail="Missing Twilio bootstrap fields")
+    preflight = runtime.real_call_preflight()
+    if not preflight["ok"]:
+        logger.error(
+            "Voice Runtime V2 bootstrap preflight failed",
+            extra={"errors": preflight["errors"], "callbackUrl": preflight["callbackUrl"]},
+        )
+        return Response(
+            content=runtime.twilio.build_error_twiml(default_bootstrap_error_message()),
+            media_type="text/xml",
+        )
 
-    session = await runtime.start_session(
-        call_sid=call_sid,
-        caller_phone=caller_phone,
-        called_phone=called_phone,
-    )
-    twiml = runtime.build_twilio_bootstrap_response(session.sessionId)
+    if not call_sid or not caller_phone or not called_phone:
+        logger.error(
+            "Voice Runtime V2 bootstrap request was missing Twilio fields",
+            extra={"callSid": call_sid, "fromNumber": caller_phone, "toNumber": called_phone},
+        )
+        return Response(
+            content=runtime.twilio.build_error_twiml(
+                "We're sorry, but we could not connect your call. Please try again shortly."
+            ),
+            media_type="text/xml",
+        )
+
+    try:
+        session = await runtime.start_session(
+            call_sid=call_sid,
+            caller_phone=caller_phone,
+            called_phone=called_phone,
+        )
+        twiml = runtime.build_twilio_bootstrap_response(session.sessionId)
+    except ValueError as error:
+        logger.error(
+            "Voice Runtime V2 bootstrap rejected the inbound call",
+            extra={
+                "callSid": call_sid,
+                "fromNumber": caller_phone,
+                "toNumber": called_phone,
+                "error": str(error),
+            },
+        )
+        return Response(
+            content=runtime.twilio.build_error_twiml(
+                "We're sorry, but we could not connect your call to the virtual receptionist right now."
+            ),
+            media_type="text/xml",
+        )
+    except Exception:
+        logger.exception(
+            "Voice Runtime V2 bootstrap failed unexpectedly",
+            extra={"callSid": call_sid, "fromNumber": caller_phone, "toNumber": called_phone},
+        )
+        return Response(
+            content=runtime.twilio.build_error_twiml(
+                "We're sorry, but we're having trouble connecting your call right now."
+            ),
+            media_type="text/xml",
+        )
+
     return Response(content=twiml, media_type="text/xml")
 
 
@@ -157,7 +210,7 @@ async def process_transcript_turn(session_id: str, request: TranscriptTurnReques
 @app.post("/sessions/{session_id}/events")
 async def record_session_event(session_id: str, request: SessionEventRequest):
     try:
-        return runtime.record_transport_event(session_id, request.type, request.payload)
+        return await runtime.persist_transport_event(session_id, request.type, request.payload)
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 

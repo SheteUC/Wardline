@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Button, Card } from '@/components/dashboard/shared';
+import { labelRuntimeAction } from '@/lib/operator-insights';
 import { cn } from '@/lib/utils';
 import { useCalls, usePrefetchCallsPage } from '@/lib/hooks/query-hooks';
 
@@ -55,15 +56,28 @@ function formatDuration(seconds: number) {
 }
 
 function getCallResolution(call: {
+    resolution?: string;
+    handledLive?: boolean;
     isEmergency: boolean;
     tag?: string;
     followUpTaskCount?: number;
 }): CallResolution {
-    if (call.isEmergency || call.tag === 'EMERGENCY') return 'EMERGENCY';
-    if (call.tag === 'VOICEMAIL') return 'VOICEMAIL';
-    if ((call.followUpTaskCount ?? 0) > 0) return 'STAFF_FOLLOW_UP';
-    if (call.tag === 'HUMAN_TRANSFER') return 'ESCALATED';
-    return 'AI_RESOLVED';
+    if (call.isEmergency || call.tag === 'EMERGENCY' || call.resolution === 'EMERGENCY_ESCALATION') {
+        return 'EMERGENCY';
+    }
+    if (call.tag === 'VOICEMAIL' || call.resolution === 'VOICEMAIL_CAPTURED') {
+        return 'VOICEMAIL';
+    }
+    if (call.tag === 'HUMAN_TRANSFER' || call.resolution === 'HUMAN_ESCALATION') {
+        return 'ESCALATED';
+    }
+    if (call.resolution === 'FOLLOW_UP_REQUIRED' || (call.followUpTaskCount ?? 0) > 0) {
+        return 'STAFF_FOLLOW_UP';
+    }
+    if (call.resolution === 'CALL_INITIATED' || call.resolution === 'CALL_IN_PROGRESS') {
+        return 'AI_RESOLVED';
+    }
+    return call.handledLive ? 'AI_RESOLVED' : 'STAFF_FOLLOW_UP';
 }
 
 function OutcomeIcon({
@@ -118,8 +132,8 @@ export default function CallLogsPage() {
         }
     }, [filters, page, prefetchCallsPage, totalPages]);
 
-    const resolvedByAI = calls.filter((call) => getCallResolution(call) === 'AI_RESOLVED').length;
-    const escalated = calls.filter((call) => getCallResolution(call) !== 'AI_RESOLVED').length;
+    const resolvedByAI = calls.filter((call) => call.resolution === 'LIVE_RESOLVED').length;
+    const escalated = calls.filter((call) => call.resolution !== 'LIVE_RESOLVED').length;
 
     return (
         <div className="space-y-5">
@@ -170,11 +184,11 @@ export default function CallLogsPage() {
                 <span><strong className="text-foreground">{total}</strong> calls</span>
                 <span className="text-muted-foreground/50">&bull;</span>
                 <span className="text-emerald-700">
-                    <strong>{resolvedByAI}</strong> resolved by AI
+                    <strong>{resolvedByAI}</strong> handled live
                 </span>
                 <span className="text-muted-foreground/50">&bull;</span>
                 <span className="text-orange-700">
-                    <strong>{escalated}</strong> escalated, follow-up, or voicemail
+                    <strong>{escalated}</strong> still need review
                 </span>
             </div>
 
@@ -194,7 +208,7 @@ export default function CallLogsPage() {
                                 <thead>
                                     <tr className="border-b border-border/60 bg-[var(--background)] neo-inset">
                                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Caller</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Line</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Route</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Turns</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Outcome</th>
                                         <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:table-cell">Duration</th>
@@ -233,38 +247,61 @@ export default function CallLogsPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    {call.tag ? (
-                                                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TAG_COLOR[call.tag] ?? 'bg-muted text-muted-foreground'}`}>
-                                                            {TAG_LABEL[call.tag] ?? call.tag}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-xs text-muted-foreground">—</span>
-                                                    )}
+                                                    <div className="space-y-1">
+                                                        {(call.tag || call.latestDomain) ? (
+                                                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TAG_COLOR[call.tag ?? ''] ?? 'bg-muted text-muted-foreground'}`}>
+                                                                {call.tag
+                                                                    ? (TAG_LABEL[call.tag] ?? call.tag)
+                                                                    : call.latestDomain}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-xs text-muted-foreground">No route yet</span>
+                                                        )}
+                                                        <div className="text-xs text-muted-foreground">{call.lineLabel}</div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <span className="text-xs text-muted-foreground">{call.turnCount}</span>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <span
-                                                        className={cn(
-                                                            'rounded-full px-2 py-0.5 text-xs font-semibold',
-                                                            resolution === 'AI_RESOLVED'
-                                                                ? 'bg-emerald-500/12 text-emerald-800'
-                                                                : resolution === 'STAFF_FOLLOW_UP'
-                                                                  ? 'bg-amber-500/12 text-amber-900'
-                                                                  : 'bg-orange-500/12 text-orange-900',
+                                                    <div className="space-y-1">
+                                                        <span
+                                                            className={cn(
+                                                                'rounded-full px-2 py-0.5 text-xs font-semibold',
+                                                                resolution === 'AI_RESOLVED'
+                                                                    ? 'bg-emerald-500/12 text-emerald-800'
+                                                                    : resolution === 'VOICEMAIL'
+                                                                      ? 'bg-red-500/12 text-red-800'
+                                                                      : resolution === 'EMERGENCY'
+                                                                        ? 'bg-red-500/18 text-red-900'
+                                                                        : resolution === 'ESCALATED'
+                                                                          ? 'bg-orange-500/12 text-orange-900'
+                                                                          : 'bg-amber-500/12 text-amber-900',
+                                                            )}
+                                                        >
+                                                            {call.resolutionLabel ?? (
+                                                                resolution === 'AI_RESOLVED'
+                                                                    ? 'AI resolved'
+                                                                    : resolution === 'STAFF_FOLLOW_UP'
+                                                                      ? 'Staff follow-up'
+                                                                      : resolution === 'VOICEMAIL'
+                                                                        ? 'Voicemail'
+                                                                        : resolution === 'EMERGENCY'
+                                                                          ? 'Emergency'
+                                                                          : 'Escalated'
+                                                            )}
+                                                        </span>
+                                                        {call.latestRuntimeAction && (
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {labelRuntimeAction(call.latestRuntimeAction)}
+                                                                {call.handledLive === true
+                                                                    ? ' handled live'
+                                                                    : call.handledLive === false
+                                                                      ? ' needs staff follow-up'
+                                                                      : ''}
+                                                            </div>
                                                         )}
-                                                    >
-                                                        {resolution === 'AI_RESOLVED'
-                                                            ? 'AI resolved'
-                                                            : resolution === 'STAFF_FOLLOW_UP'
-                                                              ? 'Staff follow-up'
-                                                              : resolution === 'VOICEMAIL'
-                                                                ? 'Voicemail'
-                                                                : resolution === 'EMERGENCY'
-                                                                  ? 'Emergency'
-                                                                  : 'Escalated'}
-                                                    </span>
+                                                    </div>
                                                 </td>
                                                 <td className="hidden px-4 py-3 sm:table-cell">
                                                     <span className="flex items-center gap-1 text-xs text-muted-foreground">

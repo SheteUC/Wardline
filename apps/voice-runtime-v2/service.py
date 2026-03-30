@@ -3,6 +3,7 @@ Voice Runtime V2 orchestration service.
 """
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -23,6 +24,7 @@ from agents import (
 )
 from core_api_client import CoreApiClient
 from models import (
+    CallLifecycleStatus,
     DomainName,
     OperatorSummary,
     PendingAction,
@@ -35,6 +37,7 @@ from models import (
     SpecialistResult,
     SupervisorDecision,
 )
+from preflight import build_real_call_preflight_report
 from providers import (
     DeepgramSttAdapter,
     LiveKitTransportAdapter,
@@ -51,6 +54,16 @@ def _normalize(text: str) -> str:
 def _contains(text: str, keywords: list[str]) -> bool:
     lowered = _normalize(text)
     return any(keyword in lowered for keyword in keywords)
+
+
+def _strip_change_prefix(text: str) -> str:
+    updated = re.sub(
+        r"^(?:actually|wait|hold on|sorry|no|not that|change it to|make it|instead)\b[ ,.-]*",
+        "",
+        text.strip(),
+        flags=re.IGNORECASE,
+    )
+    return updated.strip() or text.strip()
 
 
 class VoiceRuntimeV2:
@@ -73,6 +86,9 @@ class VoiceRuntimeV2:
 
     async def close(self):
         await self.api_client.close()
+
+    def real_call_preflight(self) -> Dict[str, Any]:
+        return build_real_call_preflight_report()
 
     def build_twilio_bootstrap_response(self, session_id: str) -> str:
         session = self.get_session(session_id)
@@ -115,6 +131,8 @@ class VoiceRuntimeV2:
                 "twilioCallSid": call_sid,
             }
         )
+        if not call_data or not call_data.get("id"):
+            raise ValueError(f"Unable to create a call session for phone {called_phone}")
         session_id = str(uuid.uuid4())
         transport = SessionTransportMetadata.model_validate(
             self.livekit.build_dispatch_metadata(
@@ -155,7 +173,7 @@ class VoiceRuntimeV2:
             )
         )
         self.sessions[session.sessionId] = session
-        await self._sync_call_state(session)
+        await self._sync_call_state(session, status="INITIATED")
         return session
 
     def get_session(self, session_id: str) -> SessionState:
@@ -193,16 +211,57 @@ class VoiceRuntimeV2:
         session = self.get_session(session_id)
         await self._persist_transcript_segment(session, speaker=speaker, text=text, confidence=confidence)
 
-    async def finalize_session(self, session_id: str) -> None:
+    async def finalize_session(self, session_id: str, failure_reason: str | None = None) -> None:
         session = self.get_session(session_id)
         session.awaitingAnythingElse = False
+        session.awaitingVoicemail = False
+        session.pendingConfirmation = None
         if session.stage != "completed":
             session.stage = "completed"
-        await self._sync_call_state(session, status="COMPLETED")
+        if failure_reason:
+            session.runtimeFailureReason = failure_reason
+        await self._sync_call_state(
+            session,
+            tag=self._current_call_tag(session),
+            status=self._determine_terminal_status(session, failure_reason),
+        )
 
     async def process_text_turn(self, session_id: str, text: str) -> Dict[str, Any]:
         session = self.get_session(session_id)
         cleaned_text = text.strip()
+        if session.stage in {"closing", "completed"} or session.finalCloseState.active:
+            if cleaned_text:
+                session.events.append(
+                    SessionEvent(
+                        type="late_transcript_ignored",
+                        actionName="ignored-after-close",
+                        domain=session.activeDomain,
+                        integrationCategory="TRANSPORT",
+                        data={"text": cleaned_text},
+                    )
+                )
+                await self._sync_call_state(
+                    session,
+                    tag=self._current_call_tag(session),
+                    status=session.lifecycleStatus,
+                )
+            return self._build_turn_response(
+                session,
+                "",
+                session.activeDomain or session.intent or "handoff",
+                False,
+            )
+
+        if not cleaned_text:
+            reply = "I didn't catch that. Could you say that again?"
+            await self._append_and_persist_assistant_message(session, reply)
+            return self._build_turn_response(
+                session,
+                reply,
+                session.activeDomain or session.intent or "knowledge",
+                False,
+            )
+
         session.turns += 1
         session.messages.append(SessionMessage(role="caller", text=cleaned_text))
         await self._persist_transcript_segment(session, speaker="CALLER", text=cleaned_text)
@@ -213,10 +272,7 @@ class VoiceRuntimeV2:
                 return continuation
 
         if session.awaitingVoicemail:
-            reply = "I'm ready to capture your voicemail whenever you're ready. Please leave your message after the tone."
-            await self._append_and_persist_assistant_message(session, reply)
-            await self._sync_call_state(session, tag="VOICEMAIL")
-            return self._build_turn_response(session, reply, "handoff", False, awaiting_voicemail=True)
+            return await self._capture_transcribed_voicemail(session, cleaned_text)
 
         safety_result = self.safety.evaluate(session, cleaned_text)
         if safety_result:
@@ -228,11 +284,12 @@ class VoiceRuntimeV2:
                 session.lastOperatorSummary = safety_result.operatorSummary
             return await self._finalize_specialist_result(session, safety_result)
 
-        if session.pendingAction:
+        if session.pendingConfirmation:
             return await self._handle_pending_action(session, cleaned_text)
 
         decision = self.supervisor.choose_domain(session, cleaned_text)
         session.lastDecision = decision
+        session.intent = decision.domain
         session.activeDomain = decision.domain if decision.mode != "clarify" else None
         self._record_supervisor_decision(session, decision, cleaned_text)
 
@@ -248,7 +305,7 @@ class VoiceRuntimeV2:
                 session.activeDomain = None
                 return await self._finalize_specialist_result(session, knowledge_result)
 
-        if session.isAfterHours and decision.domain not in {"knowledge", "safety"}:
+        if session.isAfterHours and decision.domain == "handoff":
             if _contains(cleaned_text, URGENT_AFTER_HOURS_KEYWORDS) and session.runtimeConfig.voicePolicyV2.afterHoursPolicy.sendUrgentToVoicemail:
                 session.activeDomain = "handoff"
                 return await self._handle_specialist_result(
@@ -292,7 +349,10 @@ class VoiceRuntimeV2:
             },
         )
         session.awaitingVoicemail = False
-        session.stage = "completed"
+        session.voicemailCaptureState.active = False
+        session.voicemailCaptureState.captured = True
+        session.voicemailCaptureState.captureCount += 1
+        session.voicemailCaptureState.transcription = transcription
         session.lastOperatorSummary = OperatorSummary(
             headline="Voicemail captured",
             nextStep="Review the voicemail and linked follow-up in the dashboard.",
@@ -311,7 +371,7 @@ class VoiceRuntimeV2:
                 data={"recordingUrl": recording_url, "transcription": transcription},
             )
         )
-        await self._sync_call_state(session, tag="VOICEMAIL", status="COMPLETED")
+        await self._sync_call_state(session, tag="VOICEMAIL")
         return result or {"accepted": True}
 
     async def process_transcript_turn(
@@ -330,6 +390,31 @@ class VoiceRuntimeV2:
                 }
             )
 
+        if session.stage in {"closing", "completed"} or session.finalCloseState.active:
+            if final and text.strip():
+                session.events.append(
+                    SessionEvent(
+                        type="late_transcript_ignored",
+                        actionName="ignored-after-close",
+                        domain=session.activeDomain,
+                        integrationCategory="TRANSPORT",
+                        data={"text": text, "providerSessionId": provider_session_id},
+                    )
+                )
+                await self._sync_call_state(
+                    session,
+                    tag=self._current_call_tag(session),
+                    status=session.lifecycleStatus,
+                )
+            return {
+                "sessionId": session.sessionId,
+                "accepted": True,
+                "final": final,
+                "ignored": True,
+                "reply": "",
+                "transport": session.transport.model_dump(),
+            }
+
         if not final:
             session.events.append(
                 SessionEvent(
@@ -340,6 +425,11 @@ class VoiceRuntimeV2:
                     data={"text": text, "providerSessionId": provider_session_id},
                 )
             )
+            await self._sync_call_state(
+                session,
+                tag=self._current_call_tag(session),
+                status=session.lifecycleStatus,
+            )
             return {
                 "sessionId": session.sessionId,
                 "accepted": True,
@@ -348,6 +438,28 @@ class VoiceRuntimeV2:
             }
 
         return await self.process_text_turn(session_id, text)
+
+    async def _capture_transcribed_voicemail(self, session: SessionState, text: str) -> Dict[str, Any]:
+        transcription = text.strip()
+        if not transcription:
+            reply = "I'm ready to capture your voicemail. Please say the message you'd like me to pass along."
+            await self._append_and_persist_assistant_message(session, reply)
+            await self._sync_call_state(session, tag="VOICEMAIL")
+            return self._build_turn_response(session, reply, "handoff", False, awaiting_voicemail=True)
+
+        recording_url = f"voice-runtime-v2://transcript/{session.sessionId}"
+        await self.capture_voicemail(
+            session.sessionId,
+            recording_url=recording_url,
+            transcription=transcription,
+        )
+        return await self._begin_final_close(
+            session,
+            "Thanks, I've captured your message for the practice. The staff will review it and follow up during business hours.",
+            domain="handoff",
+            reason="voicemail-complete",
+            tag="VOICEMAIL",
+        )
 
     def record_transport_event(
         self,
@@ -377,6 +489,25 @@ class VoiceRuntimeV2:
                 data=payload,
             )
         )
+        if event_type == "twilio_mark":
+            assistant_message_id = payload.get("assistantMessageId")
+            if (
+                assistant_message_id
+                and session.finalCloseState.active
+                and assistant_message_id == session.finalCloseState.finalMessageId
+            ):
+                session.finalCloseState.playbackCompleted = True
+                session.finalCloseState.passiveSince = datetime.now(timezone.utc).isoformat()
+                session.stage = "completed"
+                session.events.append(
+                    SessionEvent(
+                        type="transport_event",
+                        actionName="final_close_passive",
+                        domain=session.activeDomain,
+                        integrationCategory="TRANSPORT",
+                        data={"assistantMessageId": assistant_message_id},
+                    )
+                )
         return {
             "sessionId": session.sessionId,
             "accepted": True,
@@ -384,19 +515,38 @@ class VoiceRuntimeV2:
             "transport": session.transport.model_dump(),
         }
 
+    async def persist_transport_event(
+        self,
+        session_id: str,
+        event_type: str,
+        payload: Dict[str, Any] | None = None,
+        *,
+        status: CallLifecycleStatus | None = None,
+    ) -> Dict[str, Any]:
+        snapshot = self.record_transport_event(session_id, event_type, payload)
+        session = self.get_session(session_id)
+        await self._sync_call_state(
+            session,
+            tag=self._current_call_tag(session),
+            status=status or self._transport_checkpoint_status(session, event_type),
+        )
+        return snapshot
+
     async def _handle_anything_else(self, session: SessionState, text: str) -> Optional[Dict[str, Any]]:
         lowered = _normalize(text)
         if lowered in {"no", "nope", "nothing else", "that's all", "that is all", "thanks", "thank you"}:
-            session.awaitingAnythingElse = False
-            session.stage = "completed"
-            reply = f"Thanks for calling {session.businessName}. Take care."
-            await self._append_and_persist_assistant_message(session, reply)
-            await self._sync_call_state(session, status="COMPLETED")
-            return self._build_turn_response(session, reply, "knowledge", False)
+            return await self._begin_final_close(
+                session,
+                f"Thanks for calling {session.businessName}. Take care.",
+                domain=session.activeDomain or "knowledge",
+                reason="caller-finished",
+            )
 
         if lowered in {"yes", "yeah", "yep", "sure", "okay"}:
             session.awaitingAnythingElse = False
             session.stage = "intake"
+            session.activeDomain = None
+            session.intent = None
             reply = "Of course. What else can I help you with today?"
             await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session)
@@ -409,6 +559,11 @@ class VoiceRuntimeV2:
     async def _handle_specialist_result(self, session: SessionState, result: SpecialistResult) -> Dict[str, Any]:
         session.lastSpecialistResult = result
         session.lastOperatorSummary = result.operatorSummary
+        session.intent = result.domain
+        session.activeDomain = result.domain
+        session.missingSlots = list(result.missingFields)
+        if result.extractedFields:
+            session.slotState[result.domain] = dict(result.extractedFields)
         self._record_specialist_result(session, result)
 
         if result.status == "needs_information":
@@ -416,13 +571,15 @@ class VoiceRuntimeV2:
             return await self._finalize_specialist_result(session, result)
 
         if result.status == "ready_for_confirmation":
-            session.pendingAction = PendingAction(
+            session.pendingConfirmation = PendingAction(
                 actionName=result.runtimeAction or "",
                 summary=result.confirmationSummary or result.nextPrompt,
                 payload=result.runtimePayload,
                 domain=result.domain,
                 callerRequestSummary=result.callerRequestSummary or result.confirmationSummary or result.nextPrompt,
                 fallbackRecommendation=result.fallbackRecommendation,
+                slotState=dict(result.extractedFields),
+                repairPrompt="Tell me the updated details and I'll refresh that request.",
             )
             session.stage = "confirmation"
             return await self._finalize_specialist_result(
@@ -436,6 +593,8 @@ class VoiceRuntimeV2:
 
         if result.status == "voicemail":
             session.awaitingVoicemail = True
+            session.voicemailCaptureState.active = True
+            session.voicemailCaptureState.captured = False
             session.stage = "voicemail"
             return await self._finalize_specialist_result(
                 session,
@@ -469,44 +628,47 @@ class VoiceRuntimeV2:
         )
 
     async def _handle_pending_action(self, session: SessionState, text: str) -> Dict[str, Any]:
-        pending = session.pendingAction
+        pending = session.pendingConfirmation
         if not pending:
             return self._build_turn_response(session, "What would you like to do next?", "knowledge", False)
 
         lowered = _normalize(text)
         if any(keyword in lowered for keyword in ["repeat", "summarize", "what are you confirming", "say that again"]):
             pending.confirmAttempts += 1
-            reply = f"To confirm, {pending.summary}. Say yes to submit it, or tell me what you want to change."
+            reply = f"I have {pending.summary}. Should I send that to the practice?"
             await self._append_and_persist_assistant_message(session, reply)
             return self._build_turn_response(session, reply, pending.domain, True)
 
         if any(keyword in lowered for keyword in ["actually", "change", "wrong", "not that", "wait"]):
             pending.requestedChanges.append(text.strip())
-            session.pendingAction = None
+            session.pendingConfirmation = None
             session.activeDomain = pending.domain
             session.stage = "intake"
-            reply = f"Okay, let's update that {pending.domain} request. Tell me the corrected details."
-            await self._append_and_persist_assistant_message(session, reply)
-            return self._build_turn_response(session, reply, pending.domain, False)
+            session.missingSlots = []
+            specialist = self._select_specialist(pending.domain)
+            result = specialist.handle(session, _strip_change_prefix(text))
+            return await self._handle_specialist_result(session, result)
 
         if any(keyword in lowered for keyword in ["yes", "yeah", "yep", "correct", "confirm"]):
             return await self._execute_pending_action(session)
 
         if any(keyword in lowered for keyword in ["no", "cancel", "stop", "not now"]):
-            session.pendingAction = None
+            session.pendingConfirmation = None
             session.stage = "intake"
+            session.slotState.pop(pending.domain, None)
+            session.missingSlots = []
             reply = self._offer_anything_else(session, "Okay, I won't submit that.", pending.domain)
             await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session)
             return self._build_turn_response(session, reply, pending.domain, False)
 
         pending.confirmAttempts += 1
-        reply = f"Please say yes to confirm, or tell me what you want to change about {pending.summary}."
+        reply = f"Please say yes to send it, or tell me what you want to change about {pending.summary}."
         await self._append_and_persist_assistant_message(session, reply)
         return self._build_turn_response(session, reply, pending.domain, True)
 
     async def _execute_pending_action(self, session: SessionState) -> Dict[str, Any]:
-        pending = session.pendingAction
+        pending = session.pendingConfirmation
         if not pending:
             raise ValueError("No pending action to execute")
 
@@ -515,8 +677,11 @@ class VoiceRuntimeV2:
             pending.actionName,
             {**pending.payload, "callId": session.callId},
         )
-        session.pendingAction = None
+        session.pendingConfirmation = None
         session.completedDomains.append(pending.domain)
+        session.slotState.pop(pending.domain, None)
+        session.missingSlots = []
+        session.activeDomain = pending.domain
         enriched_summary = self._combine_operator_summary(
             base=session.lastOperatorSummary,
             outcome=outcome,
@@ -524,7 +689,8 @@ class VoiceRuntimeV2:
             caller_request=pending.callerRequestSummary,
         )
         self._record_runtime_action_outcome(session, pending.domain, pending.actionName, outcome, enriched_summary)
-        reply = self._offer_anything_else(session, outcome.message, pending.domain)
+        caller_reply = self._build_caller_outcome_reply(session, pending.domain, outcome)
+        reply = self._offer_anything_else(session, caller_reply, pending.domain)
         await self._append_and_persist_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(pending.domain))
         return self._build_turn_response(session, reply, pending.domain, False)
@@ -539,6 +705,9 @@ class VoiceRuntimeV2:
             {**result.runtimePayload, "callId": session.callId},
         )
         session.completedDomains.append(result.domain)
+        session.slotState.pop(result.domain, None)
+        session.missingSlots = []
+        session.activeDomain = result.domain
         enriched_summary = self._combine_operator_summary(
             base=result.operatorSummary,
             outcome=outcome,
@@ -546,7 +715,8 @@ class VoiceRuntimeV2:
             caller_request=result.callerRequestSummary or result.nextPrompt,
         )
         self._record_runtime_action_outcome(session, result.domain, result.runtimeAction, outcome, enriched_summary)
-        reply = self._offer_anything_else(session, outcome.message, result.domain)
+        caller_reply = self._build_caller_outcome_reply(session, result.domain, outcome)
+        reply = self._offer_anything_else(session, caller_reply, result.domain)
         await self._append_and_persist_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
         return self._build_turn_response(session, reply, result.domain, False)
@@ -601,21 +771,26 @@ class VoiceRuntimeV2:
         self,
         session: SessionState,
         tag: Optional[str] = None,
-        status: str = "ONGOING",
+        status: CallLifecycleStatus | None = None,
     ):
         if not session.callId:
             return
+
+        resolved_status = self._resolve_lifecycle_status(session, status)
+        payload: Dict[str, Any] = {
+            "status": resolved_status,
+            "isEmergency": session.isEmergency,
+            "turnCount": session.turns,
+            "turnsJson": [event.model_dump() for event in session.events],
+        }
+        if tag is not None:
+            payload["tag"] = tag
+        if resolved_status in {"COMPLETED", "ABANDONED", "FAILED"}:
+            payload["endedAt"] = datetime.now(timezone.utc).isoformat()
+
         await self.api_client.update_call_session(
             session.callId,
-            {
-                "status": status,
-                "tag": tag,
-                "isEmergency": session.isEmergency,
-                "detectedIntent": session.activeDomain.upper() if session.activeDomain else None,
-                "turnCount": session.turns,
-                "turnsJson": [event.model_dump() for event in session.events],
-                "endedAt": datetime.now(timezone.utc).isoformat() if status == "COMPLETED" else None,
-            },
+            payload,
         )
 
     def _build_turn_response(
@@ -631,14 +806,43 @@ class VoiceRuntimeV2:
             "reply": reply,
             "domain": domain,
             "stage": session.stage,
+            "intent": session.intent,
             "activeDomain": session.activeDomain,
             "requiresConfirmation": requires_confirmation,
-            "awaitingVoicemail": awaiting_voicemail,
+            "awaitingVoicemail": awaiting_voicemail or session.awaitingVoicemail,
             "awaitingAnythingElse": session.awaitingAnythingElse,
-            "pendingAction": session.pendingAction.model_dump() if session.pendingAction else None,
+            "missingSlots": list(session.missingSlots),
+            "slotState": dict(session.slotState),
+            "pendingAction": session.pendingConfirmation.model_dump() if session.pendingConfirmation else None,
+            "assistantMessageId": self._latest_assistant_message_id(session),
             "operatorSummary": session.lastOperatorSummary.model_dump() if session.lastOperatorSummary else None,
+            "closeState": session.finalCloseState.model_dump(),
             "transport": session.transport.model_dump(),
         }
+
+    async def _begin_final_close(
+        self,
+        session: SessionState,
+        reply: str,
+        *,
+        domain: DomainName,
+        reason: str,
+        tag: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        session.awaitingAnythingElse = False
+        session.awaitingVoicemail = False
+        session.pendingConfirmation = None
+        session.missingSlots = []
+        session.stage = "closing"
+        session.activeDomain = domain
+        session.finalCloseState.active = True
+        session.finalCloseState.playbackCompleted = False
+        session.finalCloseState.reason = reason
+        session.finalCloseState.passiveSince = None
+        message = await self._append_and_persist_assistant_message(session, reply)
+        session.finalCloseState.finalMessageId = message.messageId
+        await self._sync_call_state(session, tag=tag or self._domain_to_tag(domain))
+        return self._build_turn_response(session, reply, domain, False)
 
     def _record_supervisor_decision(self, session: SessionState, decision: SupervisorDecision, caller_text: str):
         session.events.append(
@@ -741,12 +945,59 @@ class VoiceRuntimeV2:
             fallbackReason=outcome.fallbackReason,
         )
 
-    async def _append_and_persist_assistant_message(self, session: SessionState, reply: str):
-        self._append_assistant_message(session, reply)
-        await self._persist_transcript_segment(session, speaker="AGENT", text=reply)
+    def _build_caller_outcome_reply(
+        self,
+        session: SessionState,
+        domain: DomainName,
+        outcome: RuntimeActionOutcome,
+    ) -> str:
+        handled_live = outcome.handledLive
+        if domain == "scheduling":
+            return (
+                "Okay, I sent that appointment request to the practice."
+                if handled_live
+                else "Okay, I couldn't send that live, but I passed the appointment request to the practice."
+            )
+        if domain == "refill":
+            return (
+                "Okay, I sent that refill request to the practice."
+                if handled_live
+                else "Okay, I couldn't send that live, but I passed the refill request to the staff."
+            )
+        if domain == "billing":
+            return (
+                "Okay, I sent that billing request to the practice."
+                if handled_live
+                else "Okay, I couldn't send that live, but I passed the billing request to the staff."
+            )
+        if domain == "insurance":
+            return (
+                "Okay, I checked that for you."
+                if handled_live
+                else "Okay, I couldn't check that live, but I passed the insurance question to the staff."
+            )
+        if domain == "handoff":
+            return (
+                "Okay, I passed that request to the staff."
+                if handled_live
+                else "Okay, I captured that request for the staff to review."
+            )
+        return outcome.message or f"Okay, I handled that for {session.businessName}."
 
-    def _append_assistant_message(self, session: SessionState, reply: str):
-        session.messages.append(SessionMessage(role="assistant", text=reply))
+    async def _append_and_persist_assistant_message(self, session: SessionState, reply: str):
+        message = self._append_assistant_message(session, reply)
+        await self._persist_transcript_segment(session, speaker="AGENT", text=reply)
+        return message
+
+    def _append_assistant_message(self, session: SessionState, reply: str) -> SessionMessage:
+        message = SessionMessage(role="assistant", text=reply)
+        session.messages.append(message)
+        return message
+
+    def _latest_assistant_message_id(self, session: SessionState) -> Optional[str]:
+        if session.messages and session.messages[-1].role == "assistant":
+            return session.messages[-1].messageId
+        return None
 
     async def _persist_transcript_segment(
         self,
@@ -795,6 +1046,8 @@ class VoiceRuntimeV2:
 
         session.awaitingAnythingElse = True
         session.stage = "intake"
+        session.activeDomain = None
+        session.intent = None
         return f"{reply} What else can I help you with today?"
 
     def _select_specialist(self, domain: DomainName):
@@ -815,6 +1068,63 @@ class VoiceRuntimeV2:
             "billing": "BILLING",
             "handoff": "HUMAN_TRANSFER",
         }.get(domain)
+
+    def _current_call_tag(self, session: SessionState) -> Optional[str]:
+        if session.isEmergency:
+            return "EMERGENCY"
+        if session.voicemailCaptureState.captured:
+            return "VOICEMAIL"
+        if session.lastSpecialistResult and session.lastSpecialistResult.status == "voicemail":
+            return "VOICEMAIL"
+        if session.activeDomain:
+            return self._domain_to_tag(session.activeDomain)
+        if session.completedDomains:
+            return self._domain_to_tag(session.completedDomains[-1])
+        return None
+
+    def _resolve_lifecycle_status(
+        self,
+        session: SessionState,
+        status: CallLifecycleStatus | None,
+    ) -> CallLifecycleStatus:
+        final_statuses = {"COMPLETED", "ABANDONED", "FAILED"}
+        if session.lifecycleStatus in final_statuses and status not in final_statuses:
+            return session.lifecycleStatus
+        if status is not None:
+            session.lifecycleStatus = status
+        return session.lifecycleStatus
+
+    def _transport_checkpoint_status(
+        self,
+        session: SessionState,
+        event_type: str,
+    ) -> CallLifecycleStatus:
+        if session.lifecycleStatus in {"COMPLETED", "ABANDONED", "FAILED"}:
+            return session.lifecycleStatus
+        if event_type == "twilio_stream_started":
+            return "ONGOING"
+        return session.lifecycleStatus
+
+    def _has_meaningful_interaction(self, session: SessionState) -> bool:
+        if session.turns > 0 or session.completedDomains or session.voicemailCaptureState.captured:
+            return True
+        if session.pendingConfirmation or session.lastSpecialistResult:
+            return True
+        return any(
+            event.type in {"runtime_action_outcome", "voicemail_captured", "specialist_result"}
+            for event in session.events
+        )
+
+    def _determine_terminal_status(
+        self,
+        session: SessionState,
+        failure_reason: str | None,
+    ) -> CallLifecycleStatus:
+        if failure_reason:
+            return "FAILED"
+        if not self._has_meaningful_interaction(session):
+            return "ABANDONED"
+        return "COMPLETED"
 
     def _integration_category_for_action(self, action_name: Optional[str]) -> str:
         return {

@@ -28,7 +28,7 @@ const SMOKE_PRACTICE_SETUP = {
     afterHoursPolicy: {
         mode: 'urgent_voicemail' as const,
         greeting:
-            'After hours, acknowledge urgent needs, capture a voicemail, and promise a next-business-day callback.',
+            'The office is currently closed, but I can take a message for the staff and they will follow up on the next business day.',
         sendUrgentToVoicemail: true,
     },
     refillPolicy: {
@@ -87,6 +87,80 @@ async function ensureBusiness() {
             slug: DEFAULT_BUSINESS_SLUG,
             timeZone: 'America/New_York',
             status: 'ACTIVE',
+        },
+    });
+}
+
+async function ensurePhoneNumberLine(input: {
+    businessId: string;
+    workflowId: string;
+    twilioPhoneNumber: string;
+    twilioSid: string;
+    label: string;
+}) {
+    const [existingByPhone, existingBySid] = await Promise.all([
+        prisma.phoneNumber.findUnique({
+            where: { twilioPhoneNumber: input.twilioPhoneNumber },
+        }),
+        prisma.phoneNumber.findUnique({
+            where: { twilioSid: input.twilioSid },
+        }),
+    ]);
+
+    if (existingByPhone && existingBySid && existingByPhone.id !== existingBySid.id) {
+        const legacySid = `${input.twilioSid}__legacy_${existingBySid.id.slice(0, 8)}`;
+        console.warn(
+            `Reconciling smoke phone record conflict between ${input.twilioPhoneNumber} and ${input.twilioSid}; preserving the current phone number record and retiring the stale SID on ${existingBySid.id}.`,
+        );
+        await prisma.phoneNumber.update({
+            where: { id: existingBySid.id },
+            data: {
+                twilioSid: legacySid,
+                label: existingBySid.label.startsWith('Legacy ') ? existingBySid.label : `Legacy ${existingBySid.label}`,
+            },
+        });
+        return prisma.phoneNumber.update({
+            where: { id: existingByPhone.id },
+            data: {
+                businessId: input.businessId,
+                workflowId: input.workflowId,
+                twilioSid: input.twilioSid,
+                label: input.label,
+            },
+        });
+    }
+
+    if (existingByPhone) {
+        return prisma.phoneNumber.update({
+            where: { id: existingByPhone.id },
+            data: {
+                businessId: input.businessId,
+                workflowId: input.workflowId,
+                twilioSid: input.twilioSid,
+                label: input.label,
+            },
+        });
+    }
+
+    if (existingBySid) {
+        return prisma.phoneNumber.update({
+            where: { id: existingBySid.id },
+            data: {
+                businessId: input.businessId,
+                workflowId: input.workflowId,
+                twilioPhoneNumber: input.twilioPhoneNumber,
+                label: input.label,
+            },
+        });
+    }
+
+    return prisma.phoneNumber.create({
+        data: {
+            businessId: input.businessId,
+            workflowId: input.workflowId,
+            twilioPhoneNumber: input.twilioPhoneNumber,
+            twilioSid: input.twilioSid,
+            label: input.label,
         },
     });
 }
@@ -333,21 +407,12 @@ async function main() {
         },
     });
 
-    await prisma.phoneNumber.upsert({
-        where: { twilioPhoneNumber: DEFAULT_PHONE_NUMBER },
-        update: {
-            businessId: business.id,
-            workflowId: workflow.id,
-            twilioSid: DEFAULT_TWILIO_SID,
-            label: 'Smoke Main Line',
-        },
-        create: {
-            businessId: business.id,
-            workflowId: workflow.id,
-            twilioPhoneNumber: DEFAULT_PHONE_NUMBER,
-            twilioSid: DEFAULT_TWILIO_SID,
-            label: 'Smoke Main Line',
-        },
+    await ensurePhoneNumberLine({
+        businessId: business.id,
+        workflowId: workflow.id,
+        twilioPhoneNumber: DEFAULT_PHONE_NUMBER,
+        twilioSid: DEFAULT_TWILIO_SID,
+        label: 'Smoke Main Line',
     });
 
     console.log('Smoke fixture ready.');

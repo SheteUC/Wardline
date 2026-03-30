@@ -14,11 +14,19 @@ for (const envPath of rootEnvPaths) {
 }
 
 const existingDeprecatedWebEnvPaths = deprecatedWebEnvPaths.filter((envPath) => existsSync(envPath));
-if (existingDeprecatedWebEnvPaths.length > 0) {
+const shouldWarnOnDeprecatedEnvFiles =
+  process.env.WARDLINE_WARN_ON_DEPRECATED_ENV_FILES === "true" ||
+  (
+    process.env.WARDLINE_WARN_ON_DEPRECATED_ENV_FILES !== "false" &&
+    (process.env.NODE_ENV ?? "development") !== "test" &&
+    process.env.CI !== "true"
+  );
+
+if (shouldWarnOnDeprecatedEnvFiles && existingDeprecatedWebEnvPaths.length > 0) {
   console.warn(
     `[wardline] Deprecated web env file(s) detected: ${existingDeprecatedWebEnvPaths.join(
       ", ",
-    )}. Use the repo-root .env.local/.env files instead.`,
+    )}. These files are ignored; keep runtime values in the repo-root .env.local/.env files instead.`,
   );
 }
 

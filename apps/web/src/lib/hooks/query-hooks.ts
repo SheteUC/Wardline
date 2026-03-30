@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CallStatus } from '@wardline/types';
 import { useApiClient } from '../api-client';
 import { useBusiness } from '../business-context';
 import {
@@ -69,6 +70,8 @@ export function useCalls(filters?: {
         },
         enabled: !!businessId,
         placeholderData: (prev) => prev,
+        staleTime: 1000 * 5,
+        refetchInterval: 1000 * 10,
     });
 }
 
@@ -83,7 +86,13 @@ export function useCall(callId: string | null) {
             return createCallsService(client, businessId).getCallById(callId);
         },
         enabled: !!businessId && !!callId,
-        staleTime: 1000 * 60 * 5,
+        staleTime: 1000 * 15,
+        refetchInterval: (query) => {
+            const status = query.state.data?.status;
+            return status === CallStatus.INITIATED || status === CallStatus.ONGOING
+                ? 1000 * 5
+                : 1000 * 15;
+        },
     });
 }
 

@@ -79,6 +79,16 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
     const openFollowUps = (call.followUpTasks ?? []).filter(
         (task) => task.status !== 'COMPLETED' && task.status !== 'CANCELLED',
     );
+    const transcriptPending =
+        call.transcriptSegments.length === 0 &&
+        (
+            (call.transportSummary?.transcriptEventCount ?? 0) > 0 ||
+            call.runtimeActionEvents.length > 0 ||
+            call.voicemails.length > 0 ||
+            call.status === CallStatus.INITIATED ||
+            call.status === CallStatus.ONGOING ||
+            call.status === CallStatus.COMPLETED
+        );
 
     return (
         <div className="flex h-[calc(100vh-100px)] flex-col gap-6 lg:flex-row">
@@ -129,7 +139,7 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                                     type={
                                         call.status === CallStatus.COMPLETED
                                             ? 'success'
-                                            : call.status === CallStatus.FAILED
+                                            : call.status === CallStatus.FAILED || call.status === CallStatus.ABANDONED
                                               ? 'warning'
                                               : 'neutral'
                                     }
@@ -182,24 +192,46 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                                 <Badge type="neutral" text={call.transportSummary.runtime} />
                                 <Badge type="neutral" text={call.transportSummary.transport} />
                             </div>
-                            {call.transportSummary.roomName && (
-                                <div>
-                                    <div className="text-xs font-medium uppercase text-muted-foreground">LiveKit room</div>
-                                    <div>{call.transportSummary.roomName}</div>
-                                </div>
-                            )}
-                            {(call.transportSummary.twilioStreamSid || call.transportSummary.providerSessionId) && (
+                            {(call.transportSummary.twilioCallSid || call.transportSummary.twilioStreamSid) && (
                                 <div className="grid gap-3 sm:grid-cols-2">
+                                    {call.transportSummary.twilioCallSid && (
+                                        <div>
+                                            <div className="text-xs font-medium uppercase text-muted-foreground">Twilio call</div>
+                                            <div>{call.transportSummary.twilioCallSid}</div>
+                                        </div>
+                                    )}
                                     {call.transportSummary.twilioStreamSid && (
                                         <div>
                                             <div className="text-xs font-medium uppercase text-muted-foreground">Twilio stream</div>
                                             <div>{call.transportSummary.twilioStreamSid}</div>
                                         </div>
                                     )}
+                                </div>
+                            )}
+                            {call.transportSummary.roomName && (
+                                <div>
+                                    <div className="text-xs font-medium uppercase text-muted-foreground">LiveKit room</div>
+                                    <div>{call.transportSummary.roomName}</div>
+                                </div>
+                            )}
+                            {(call.transportSummary.participantIdentity || call.transportSummary.providerSessionId || call.transportSummary.deepgramRequestId) && (
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    {call.transportSummary.participantIdentity && (
+                                        <div>
+                                            <div className="text-xs font-medium uppercase text-muted-foreground">LiveKit participant</div>
+                                            <div>{call.transportSummary.participantIdentity}</div>
+                                        </div>
+                                    )}
                                     {call.transportSummary.providerSessionId && (
                                         <div>
                                             <div className="text-xs font-medium uppercase text-muted-foreground">Provider session</div>
                                             <div>{call.transportSummary.providerSessionId}</div>
+                                        </div>
+                                    )}
+                                    {call.transportSummary.deepgramRequestId && (
+                                        <div>
+                                            <div className="text-xs font-medium uppercase text-muted-foreground">Deepgram request</div>
+                                            <div>{call.transportSummary.deepgramRequestId}</div>
                                         </div>
                                     )}
                                 </div>
@@ -358,8 +390,10 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                             );
                         })
                     ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                            No transcript is available for this call yet.
+                        <div className="flex h-full items-center justify-center text-center text-muted-foreground">
+                            {transcriptPending
+                                ? 'Voice runtime events were captured for this call, but transcript text is still processing or was not saved.'
+                                : 'No transcript is available for this call yet.'}
                         </div>
                     )}
                 </div>
@@ -371,7 +405,7 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                     </span>
                     {call.endedAt && (
                         <span className="text-xs text-muted-foreground">
-                            • Ended {new Date(call.endedAt).toLocaleString()}
+                            | Ended {new Date(call.endedAt).toLocaleString()}
                         </span>
                     )}
                 </div>

@@ -140,6 +140,14 @@ export interface CallListItem {
     hasVoicemail: boolean;
     voicemailListened: boolean;
     followUpTaskCount?: number;
+    hasFollowUp?: boolean;
+    latestDomain?: string;
+    resolution?: string;
+    resolutionLabel?: string;
+    operatorNextStep?: string;
+    latestRuntimeAction?: string;
+    handledLive?: boolean;
+    fallbackReason?: string;
     duration: number;
     sentimentScore?: number;
     startedAt: string;
@@ -196,12 +204,14 @@ export interface CallDetail {
     transportSummary?: {
         runtime: string;
         transport: string;
+        twilioCallSid?: string;
         roomName?: string;
         participantIdentity?: string;
         livekitUrl?: string;
         twilioMediaStreamUrl?: string;
         twilioStreamSid?: string;
         providerSessionId?: string;
+        deepgramRequestId?: string;
         transcriptEventCount?: number;
     };
     runtimeActionEvents: Array<{

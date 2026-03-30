@@ -1,4 +1,4 @@
-const { existsSync } = require('fs');
+const { existsSync, readdirSync } = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -41,11 +41,51 @@ function resolvePythonBinary() {
   return process.platform === 'win32' ? 'python' : 'python3';
 }
 
+function appendUserSitePackages(env) {
+  if (process.platform !== 'win32') {
+    return env;
+  }
+
+  const appData = process.env.APPDATA;
+  if (!appData) {
+    return env;
+  }
+
+  const pythonRoot = path.join(appData, 'Python');
+  if (!existsSync(pythonRoot)) {
+    return env;
+  }
+
+  let sitePackageDirs = [];
+  try {
+    sitePackageDirs = readdirSync(pythonRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith('Python'))
+      .map((entry) => path.join(pythonRoot, entry.name, 'site-packages'))
+      .filter((candidate) => existsSync(candidate));
+  } catch {
+    return env;
+  }
+
+  if (sitePackageDirs.length === 0) {
+    return env;
+  }
+
+  const existingPythonPath = env.PYTHONPATH ? env.PYTHONPATH.split(path.delimiter) : [];
+  const merged = [...sitePackageDirs, ...existingPythonPath].filter(
+    (value, index, values) => value && values.indexOf(value) === index,
+  );
+
+  return {
+    ...env,
+    PYTHONPATH: merged.join(path.delimiter),
+  };
+}
+
 const pythonBinary = resolvePythonBinary();
 const result = spawnSync(pythonBinary, requestedArgs, {
   cwd: repoRoot,
   stdio: 'inherit',
-  env: process.env,
+  env: appendUserSitePackages(process.env),
   shell: false,
 });
 

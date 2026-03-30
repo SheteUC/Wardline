@@ -270,10 +270,11 @@ python -m pip install -r apps/voice-runtime-v2/requirements.txt
 
 Use the repo-root `.env.local` or `.env` as the canonical local configuration file.
 
-- `apps/core-api/.env`, `apps/web/.env.local`, and `packages/db/.env` are deprecated for local development.
+- `apps/core-api/.env`, `apps/web/.env.local`, and `packages/db/.env` are deprecated for local development and ignored by the loaders.
 - The Core API and Prisma now load only the root env files.
 - The web app injects its public runtime variables from the root env files.
 - Voice Runtime V2 loads from the root env files.
+- Set `WARDLINE_WARN_ON_DEPRECATED_ENV_FILES=true` locally if you want explicit warnings while those ignored files still exist.
 
 ### Database
 
@@ -314,6 +315,8 @@ pnpm voice:v2:dev
 Current validation for the V2 service uses its session/bootstrap harness:
 
 ```bash
+pnpm voice:v2:preflight
+pnpm voice:v2:proof
 pnpm test:voice:v2
 ```
 
@@ -362,7 +365,9 @@ pnpm test:staging:preflight
 pnpm db:seed:staging
 ```
 
-The full staging checklist lives in [docs/STAGING_VALIDATION.md](./docs/STAGING_VALIDATION.md).
+The canonical pilot gate lives in [docs/PILOT_READINESS.md](./docs/PILOT_READINESS.md).
+The full staging matrix lives in [docs/STAGING_VALIDATION.md](./docs/STAGING_VALIDATION.md).
+Operational response steps live in [docs/OPERATIONS_RUNBOOK.md](./docs/OPERATIONS_RUNBOOK.md).
 Pilot proof now includes both technical validation and receptionist-quality review:
 
 - voice confirmation repair and caller recovery
@@ -447,6 +452,7 @@ These are the main checks for the supported V2 runtime:
 
 ```bash
 pnpm test:smoke:typecheck
+pnpm test:smoke:db
 python -m py_compile \
   apps/voice-runtime-v2/config.py \
   apps/voice-runtime-v2/core_api_client.py \
@@ -472,6 +478,7 @@ For staging preflight, verify the required environment variables first:
 
 ```bash
 pnpm test:staging:env
+pnpm voice:v2:preflight
 ```
 
 Focused voice runtime tests are:
@@ -486,36 +493,42 @@ Use this sequence as the local release gate until broader end-to-end automation 
 
 1. Start Docker Postgres and Redis.
 2. Run `pnpm db:migrate`.
-3. Start the mock integration server with `pnpm mock:integrations`.
-4. Run `pnpm db:seed:smoke`.
-5. Start the web app, Core API, and Voice Runtime V2.
-6. Sign in and let the first authenticated request auto-provision the local user.
-7. Confirm the smoke business is visible and selected automatically, or create a business manually if you are not using the smoke seed.
-8. Open `/dashboard/integration-failures`, run a health check, and confirm the integration status becomes `CONNECTED`.
-9. Open `/dashboard/settings` and confirm the Practice Setup readiness checklist reflects the configured hours, policies, integrations, and knowledge content.
-10. Run the Voice Runtime V2 validation flow, then confirm:
+3. Run `pnpm test:smoke:db`.
+4. Start the mock integration server with `pnpm mock:integrations`.
+5. Run `pnpm db:seed:smoke`.
+6. Start the web app, Core API, and Voice Runtime V2.
+7. Sign in and let the first authenticated request auto-provision the local user.
+8. Confirm the smoke business is visible and selected automatically, or create a business manually if you are not using the smoke seed.
+9. Open `/dashboard/integration-failures`, run a health check, and confirm the integration status becomes `CONNECTED`.
+10. Open `/dashboard/settings` and confirm the Practice Setup readiness checklist reflects the configured hours, policies, integrations, and knowledge content.
+11. Run the Voice Runtime V2 validation flow, then confirm:
    - the call appears in call logs
    - live runtime actions record their outcomes
    - fallback scenarios create follow-up tasks with the correct fallback reason
    - voicemail links to the follow-up task when after-hours behavior is triggered
    - the V2 session bootstrap exposes transport metadata for LiveKit / Twilio cutover
    - the inbound Twilio bootstrap endpoint returns TwiML that points at the V2 media websocket
-11. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard reflects the mock outcomes cleanly.
+12. Open the `Urgent Calls`, `Follow-ups`, and `Voicemails` queues and confirm the dashboard reflects the mock outcomes cleanly.
 
 ### Telephony Cutover Checklist
 
 Use this sequence for the first provider-backed V2 call:
 
-1. Set `VOICE_RUNTIME_V2_PUBLIC_URL` or `WEBHOOK_BASE_URL` to the public HTTPS URL that Twilio can reach.
-2. Confirm `TWILIO_*`, `LIVEKIT_*`, and `DEEPGRAM_*` env vars are present.
-3. Start `pnpm mock:integrations`.
-4. Start `pnpm voice:v2:dev`.
-5. Point the Twilio number voice webhook at `POST {public_url}/telephony/twilio/bootstrap`.
-6. Seed a business with `voicePolicyV2` and confirm the business phone number matches the Twilio number.
-7. Place one real inbound call and confirm:
+1. Start a local HTTPS tunnel to port `3003`. Example:
+   - `ngrok http 3003`
+2. Set both `VOICE_RUNTIME_V2_PUBLIC_URL` and `WEBHOOK_BASE_URL` to the tunnel URL.
+3. Seed a business with `voicePolicyV2` and confirm the business phone number matches the Twilio number.
+4. Start `pnpm mock:integrations`.
+5. Run `pnpm voice:v2:preflight`.
+6. Run `pnpm voice:v2:proof` to print the exact Twilio bootstrap URL and dashboard review path.
+7. Start `pnpm voice:v2:dev`.
+8. Point the Twilio number voice webhook at the printed bootstrap URL.
+9. Place one real inbound scheduling call and confirm:
    - the call reaches V2
    - the caller hears the greeting
-   - one domain flow completes with confirmation before a write action
+   - the supervisor routes to scheduling
+   - the caller confirms an appointment request
+   - the mock scheduling action succeeds live
    - call detail shows operator summary plus transport metadata
 
 ## Known V2 Constraints
@@ -525,7 +538,7 @@ Use this sequence for the first provider-backed V2 call:
 - No multi-vendor routing within a category
 - No live human queueing or staff presence management yet
 - Manual integration credential provisioning only
-- Active web, Core API, and voice runtime paths are `Business`-native; live connector validation is the next milestone
+- Active web, Core API, and voice runtime paths are `Business`-native; the next milestone after one real call is the full staging gate
 
 ## License
 

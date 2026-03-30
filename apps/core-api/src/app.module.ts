@@ -33,12 +33,19 @@ const deprecatedEnvFilePaths = [
 ];
 
 const deprecatedCoreApiEnvPaths = deprecatedEnvFilePaths.filter((envPath) => existsSync(envPath));
+const shouldWarnOnDeprecatedEnvFiles =
+    process.env.WARDLINE_WARN_ON_DEPRECATED_ENV_FILES === 'true' ||
+    (
+        process.env.WARDLINE_WARN_ON_DEPRECATED_ENV_FILES !== 'false' &&
+        (process.env.NODE_ENV ?? 'development') !== 'test' &&
+        process.env.CI !== 'true'
+    );
 
-if (deprecatedCoreApiEnvPaths.length > 0) {
+if (shouldWarnOnDeprecatedEnvFiles && deprecatedCoreApiEnvPaths.length > 0) {
     console.warn(
         `[wardline] Deprecated core-api env file(s) detected: ${deprecatedCoreApiEnvPaths.join(
             ', ',
-        )}. Use the repo-root .env.local/.env files instead.`,
+        )}. These files are ignored; keep runtime values in the repo-root .env.local/.env files instead.`,
     );
 }
 

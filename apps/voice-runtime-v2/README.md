@@ -54,15 +54,21 @@ These endpoints validate:
 - voicemail and manual handoff packaging
 - operator-summary persistence
 
-`pnpm test:voice:v2` is the authoritative voice proof gate for this phase.
+`pnpm test:voice:v2` is the authoritative local voice proof gate for this phase.
 
 ## First real call
 
-1. Set `VOICE_RUNTIME_V2_PUBLIC_URL` or `WEBHOOK_BASE_URL` to the public URL Twilio can reach.
-2. Start `pnpm mock:integrations`.
-3. Start `pnpm voice:v2:dev`.
-4. Point the Twilio number voice webhook at `POST /telephony/twilio/bootstrap`.
-5. Place one inbound call and confirm:
+1. Start a local HTTPS tunnel to port `3003`. Example:
+   - `ngrok http 3003`
+2. Set both `VOICE_RUNTIME_V2_PUBLIC_URL` and `WEBHOOK_BASE_URL` to the tunnel URL.
+3. Run `pnpm voice:v2:proof` to print the exact bootstrap URL and dashboard review path.
+4. Start `pnpm mock:integrations`.
+5. Run `pnpm voice:v2:preflight`.
+6. Start `pnpm voice:v2:dev`.
+7. Point the Twilio number voice webhook at the printed bootstrap URL.
+8. Place one inbound scheduling call and confirm:
    - the caller hears the V2 greeting
-   - one specialist path runs end to end
+   - the supervisor routes to scheduling
+   - the caller confirms an appointment request
+   - the mock scheduling action succeeds live
    - the dashboard call detail page shows operator summary and transport metadata

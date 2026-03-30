@@ -14,6 +14,7 @@
     "seed:smoke": "tsx src/seed-smoke.ts",
     "seed:staging": "tsx src/seed-staging.ts",
     "seed:test": "tsx src/seed-test-data.ts",
+    "check:audit-log-immutability": "tsx src/check-audit-log-immutability.ts",
     "add-user": "tsx src/add-user.ts",
     "clean": "rm -rf dist"
   },

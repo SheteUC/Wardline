@@ -43,7 +43,7 @@ export interface NormalizedPracticeSetup {
 export const DEFAULT_AFTER_HOURS_POLICY: AfterHoursPolicy = {
     mode: 'urgent_voicemail',
     greeting:
-        'After hours, capture the request, acknowledge urgent needs, and promise staff follow-up on the next business day.',
+        'The office is currently closed, but I can take a message for the staff and they will follow up on the next business day.',
     sendUrgentToVoicemail: true,
 };
 

@@ -115,6 +115,9 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @wardline/db generate
 
+      - name: Apply DB migrations and verify AuditLog immutability
+        run: pnpm test:smoke:db
+
       - name: Run smoke validation
         run: pnpm test:smoke
 

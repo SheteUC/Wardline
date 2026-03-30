@@ -8,7 +8,11 @@ import {
 
 const STAGING_BUSINESS_NAME = process.env.STAGING_BUSINESS_NAME || 'Wardline Family Medicine Staging';
 const STAGING_BUSINESS_SLUG = process.env.STAGING_BUSINESS_SLUG || 'wardline-family-medicine-staging';
-const STAGING_PHONE_NUMBER = process.env.STAGING_PHONE_NUMBER || '+15551239999';
+const DEFAULT_STAGING_PHONE_NUMBER = '+15551239999';
+const STAGING_PHONE_NUMBER =
+    process.env.STAGING_PHONE_NUMBER && process.env.STAGING_PHONE_NUMBER !== DEFAULT_STAGING_PHONE_NUMBER
+        ? process.env.STAGING_PHONE_NUMBER
+        : process.env.TWILIO_PHONE_NUMBER || process.env.STAGING_PHONE_NUMBER || DEFAULT_STAGING_PHONE_NUMBER;
 const STAGING_TWILIO_SID = process.env.STAGING_TWILIO_SID || 'PN_STAGING_0001';
 const STAGING_CLERK_USER_ID = process.env.STAGING_CLERK_USER_ID || 'user_staging_owner';
 const STAGING_USER_EMAIL = process.env.STAGING_USER_EMAIL || 'staging.owner@wardline.local';
@@ -32,7 +36,7 @@ const STAGING_PRACTICE_SETUP = {
     afterHoursPolicy: {
         mode: 'urgent_voicemail' as const,
         greeting:
-            'After hours, capture urgent messages, reassure the caller, and promise next-business-day staff follow-up.',
+            'The office is currently closed, but I can take a message for the staff and they will follow up on the next business day.',
         sendUrgentToVoicemail: true,
     },
     refillPolicy: {
@@ -131,6 +135,80 @@ async function ensureBusiness() {
             slug: STAGING_BUSINESS_SLUG,
             timeZone: 'America/New_York',
             status: 'ACTIVE',
+        },
+    });
+}
+
+async function ensurePhoneNumberLine(input: {
+    businessId: string;
+    workflowId: string;
+    twilioPhoneNumber: string;
+    twilioSid: string;
+    label: string;
+}) {
+    const [existingByPhone, existingBySid] = await Promise.all([
+        prisma.phoneNumber.findUnique({
+            where: { twilioPhoneNumber: input.twilioPhoneNumber },
+        }),
+        prisma.phoneNumber.findUnique({
+            where: { twilioSid: input.twilioSid },
+        }),
+    ]);
+
+    if (existingByPhone && existingBySid && existingByPhone.id !== existingBySid.id) {
+        const legacySid = `${input.twilioSid}__legacy_${existingBySid.id.slice(0, 8)}`;
+        console.warn(
+            `Reconciling staging phone record conflict between ${input.twilioPhoneNumber} and ${input.twilioSid}; preserving the current phone number record and retiring the stale SID on ${existingBySid.id}.`,
+        );
+        await prisma.phoneNumber.update({
+            where: { id: existingBySid.id },
+            data: {
+                twilioSid: legacySid,
+                label: existingBySid.label.startsWith('Legacy ') ? existingBySid.label : `Legacy ${existingBySid.label}`,
+            },
+        });
+        return prisma.phoneNumber.update({
+            where: { id: existingByPhone.id },
+            data: {
+                businessId: input.businessId,
+                workflowId: input.workflowId,
+                twilioSid: input.twilioSid,
+                label: input.label,
+            },
+        });
+    }
+
+    if (existingByPhone) {
+        return prisma.phoneNumber.update({
+            where: { id: existingByPhone.id },
+            data: {
+                businessId: input.businessId,
+                workflowId: input.workflowId,
+                twilioSid: input.twilioSid,
+                label: input.label,
+            },
+        });
+    }
+
+    if (existingBySid) {
+        return prisma.phoneNumber.update({
+            where: { id: existingBySid.id },
+            data: {
+                businessId: input.businessId,
+                workflowId: input.workflowId,
+                twilioPhoneNumber: input.twilioPhoneNumber,
+                label: input.label,
+            },
+        });
+    }
+
+    return prisma.phoneNumber.create({
+        data: {
+            businessId: input.businessId,
+            workflowId: input.workflowId,
+            twilioPhoneNumber: input.twilioPhoneNumber,
+            twilioSid: input.twilioSid,
+            label: input.label,
         },
     });
 }
@@ -323,21 +401,12 @@ async function main() {
         },
     });
 
-    await prisma.phoneNumber.upsert({
-        where: { twilioPhoneNumber: STAGING_PHONE_NUMBER },
-        update: {
-            businessId: business.id,
-            workflowId: workflow.id,
-            twilioSid: STAGING_TWILIO_SID,
-            label: 'Staging Main Line',
-        },
-        create: {
-            businessId: business.id,
-            workflowId: workflow.id,
-            twilioPhoneNumber: STAGING_PHONE_NUMBER,
-            twilioSid: STAGING_TWILIO_SID,
-            label: 'Staging Main Line',
-        },
+    await ensurePhoneNumberLine({
+        businessId: business.id,
+        workflowId: workflow.id,
+        twilioPhoneNumber: STAGING_PHONE_NUMBER,
+        twilioSid: STAGING_TWILIO_SID,
+        label: 'Staging Main Line',
     });
 
     console.log('Staging fixture ready.');

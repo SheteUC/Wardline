@@ -27,7 +27,7 @@ def _base64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
-def _build_public_websocket_url(path: str) -> str:
+def build_public_websocket_url(path: str) -> str:
     base_url = settings.webhook_base_url.rstrip("/") or f"http://127.0.0.1:{settings.port}"
     if not base_url:
         return ""
@@ -36,6 +36,11 @@ def _build_public_websocket_url(path: str) -> str:
     parsed = urlparse(joined)
     scheme = "wss" if parsed.scheme == "https" else "ws"
     return urlunparse(parsed._replace(scheme=scheme))
+
+
+def public_callback_url_is_secure(base_url: str) -> bool:
+    parsed = urlparse(base_url.strip())
+    return parsed.scheme == "https" and bool(parsed.netloc)
 
 
 @dataclass(slots=True)
@@ -114,12 +119,13 @@ class LiveKitTransportAdapter:
             "roomName": room_name,
             "participantIdentity": participant_identity,
             "livekitUrl": settings.livekit_url,
+            "twilioCallSid": call_sid,
             "livekitAccessToken": self.build_room_token(
                 participant_identity=participant_identity,
                 room_name=room_name,
                 metadata=metadata,
             ),
-            "twilioMediaStreamUrl": _build_public_websocket_url(settings.twilio_media_stream_path),
+            "twilioMediaStreamUrl": build_public_websocket_url(settings.twilio_media_stream_path),
         }
 
 
@@ -136,6 +142,16 @@ class TwilioTelephonyAdapter:
             "<Connect>"
             f'<Stream url="{escape(stream_url)}">{parameter_markup}</Stream>'
             "</Connect>"
+            "</Response>"
+        )
+
+    def build_error_twiml(self, message: str) -> str:
+        safe_message = escape(message)
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            "<Response>"
+            f"<Say>{safe_message}</Say>"
+            "<Hangup />"
             "</Response>"
         )
 
@@ -196,8 +212,14 @@ class DeepgramSttAdapter:
 
 class ManagedTtsAdapter:
     def validate(self) -> Dict[str, Any]:
+        configured = False
+        if settings.managed_tts_provider == "deepgram":
+            configured = bool(settings.deepgram_api_key)
+        elif settings.managed_tts_provider:
+            configured = True
+
         return {
-            "configured": bool(settings.managed_tts_provider),
+            "configured": configured,
             "provider": settings.managed_tts_provider,
             "model": settings.deepgram_tts_model if settings.managed_tts_provider == "deepgram" else None,
         }

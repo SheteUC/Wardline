@@ -24,64 +24,102 @@ class TwilioMediaSession:
         self._deepgram_socket: Any = None
         self._deepgram_task: Optional[asyncio.Task[None]] = None
         self._greeting_sent = False
+        self._assistant_playback_ready = asyncio.Event()
+        self._assistant_playback_ready.set()
+        self._mark_to_assistant_message: dict[str, str] = {}
+        self._mark_counter = 0
+        self._closed = False
+        self._failure_reason: Optional[str] = None
 
     async def run(self):
         await self.websocket.accept()
         try:
             while True:
-                raw_message = await self.websocket.receive_text()
+                try:
+                    raw_message = await self.websocket.receive_text()
+                except WebSocketDisconnect:
+                    await self._record_disconnect_event()
+                    break
+                except RuntimeError as error:
+                    if 'WebSocket is not connected' in str(error):
+                        await self._record_disconnect_event(reason="not_connected")
+                        break
+                    raise
                 payload = json.loads(raw_message)
-                await self._handle_payload(payload)
-        except WebSocketDisconnect:
-            if self.session_id:
-                self.runtime.record_transport_event(
-                    self.session_id,
-                    "twilio_stream_disconnected",
-                    {"twilioStreamSid": self.stream_sid},
-                )
+                should_continue = await self._handle_payload(payload)
+                if not should_continue or self._closed:
+                    break
+        except Exception as error:
+            self._failure_reason = self._failure_reason or f"{type(error).__name__}: {error}"
+            await self._record_disconnect_event(reason="runtime_error")
+            raise
         finally:
             await self._shutdown()
 
-    async def _handle_payload(self, payload: dict[str, Any]):
+    async def _record_disconnect_event(self, *, reason: Optional[str] = None):
+        if self.session_id:
+            metadata: dict[str, Any] = {"twilioStreamSid": self.stream_sid}
+            if reason:
+                metadata["reason"] = reason
+            await self.runtime.persist_transport_event(
+                self.session_id,
+                "twilio_stream_disconnected",
+                metadata,
+            )
+
+    async def _handle_payload(self, payload: dict[str, Any]) -> bool:
         event_type = payload.get("event")
         if event_type == "connected":
             if self.session_id:
-                self.runtime.record_transport_event(self.session_id, "twilio_stream_connected", {})
-            return
+                await self.runtime.persist_transport_event(
+                    self.session_id,
+                    "twilio_stream_connected",
+                    {},
+                )
+            return True
 
         if event_type == "start":
             await self._handle_start(payload.get("start") or {})
-            return
+            return not self._closed
 
         if event_type == "media":
             await self._handle_media(payload.get("media") or {})
-            return
+            return True
 
         if event_type == "mark":
+            mark_name = (payload.get("mark") or {}).get("name")
+            assistant_message_id = self._mark_to_assistant_message.pop(str(mark_name), None) if mark_name else None
+            self._assistant_playback_ready.set()
             if self.session_id:
-                self.runtime.record_transport_event(
+                await self.runtime.persist_transport_event(
                     self.session_id,
                     "twilio_mark",
-                    {"twilioStreamSid": self.stream_sid, "name": (payload.get("mark") or {}).get("name")},
+                    {
+                        "twilioStreamSid": self.stream_sid,
+                        "name": mark_name,
+                        "assistantMessageId": assistant_message_id,
+                    },
                 )
-            return
+            return True
 
         if event_type == "stop":
             if self.session_id:
-                self.runtime.record_transport_event(
+                await self.runtime.persist_transport_event(
                     self.session_id,
                     "twilio_stream_stopped",
                     {"twilioStreamSid": self.stream_sid},
                 )
             await self.websocket.close()
-            return
+            self._closed = True
+            return False
 
         if self.session_id:
-            self.runtime.record_transport_event(
+            await self.runtime.persist_transport_event(
                 self.session_id,
                 "twilio_stream_event",
                 {"twilioStreamSid": self.stream_sid, "eventType": str(event_type or "unknown")},
             )
+        return True
 
     async def _handle_start(self, start_payload: dict[str, Any]):
         custom_parameters = start_payload.get("customParameters") or {}
@@ -98,6 +136,7 @@ class TwilioMediaSession:
 
         if not self.session_id:
             await self.websocket.close(code=4400, reason="Missing sessionId")
+            self._closed = True
             return
 
         self.runtime.update_transport_metadata(
@@ -105,7 +144,7 @@ class TwilioMediaSession:
             providerSessionId=self.stream_sid or self.call_sid,
             twilioStreamSid=self.stream_sid or None,
         )
-        self.runtime.record_transport_event(
+        await self.runtime.persist_transport_event(
             self.session_id,
             "twilio_stream_started",
             {
@@ -115,12 +154,17 @@ class TwilioMediaSession:
                 "track": start_payload.get("track"),
                 "mediaFormat": start_payload.get("mediaFormat"),
             },
+            status="ONGOING",
         )
 
         await self._ensure_deepgram_socket()
         if not self._greeting_sent:
-            greeting = self.runtime.get_session(self.session_id).messages[-1].text
-            await self._speak(greeting, mark_name="greeting")
+            greeting_message = self.runtime.get_session(self.session_id).messages[-1]
+            await self._speak(
+                greeting_message.text,
+                assistant_message_id=getattr(greeting_message, "messageId", None),
+                mark_name_prefix="greeting",
+            )
             self._greeting_sent = True
 
     async def _handle_media(self, media_payload: dict[str, Any]):
@@ -143,7 +187,7 @@ class TwilioMediaSession:
             return
 
         if not self.runtime.deepgram.validate().get("configured"):
-            self.runtime.record_transport_event(
+            await self.runtime.persist_transport_event(
                 self.session_id,
                 "deepgram_unavailable",
                 {"reason": "DEEPGRAM_API_KEY is not configured"},
@@ -153,7 +197,7 @@ class TwilioMediaSession:
         try:
             import websockets
         except ImportError:
-            self.runtime.record_transport_event(
+            await self.runtime.persist_transport_event(
                 self.session_id,
                 "deepgram_unavailable",
                 {"reason": "websockets dependency is not installed"},
@@ -172,7 +216,7 @@ class TwilioMediaSession:
                 extra_headers=headers,
             )
 
-        self.runtime.record_transport_event(
+        await self.runtime.persist_transport_event(
             self.session_id,
             "deepgram_connected",
             {"provider": "deepgram"},
@@ -201,7 +245,7 @@ class TwilioMediaSession:
                     provider_session_id=transcript.provider_session_id or self.stream_sid,
                 )
                 if transcript.provider_session_id:
-                    self.runtime.record_transport_event(
+                    await self.runtime.persist_transport_event(
                         self.session_id,
                         "deepgram_transcript",
                         {
@@ -213,45 +257,75 @@ class TwilioMediaSession:
                     )
 
                 if transcript.final and response.get("reply"):
-                    await self._speak(str(response["reply"]), mark_name="assistant-reply")
+                    await self._speak(
+                        str(response["reply"]),
+                        assistant_message_id=response.get("assistantMessageId"),
+                        mark_name_prefix="assistant-reply",
+                    )
         except Exception:
             if self.session_id:
-                self.runtime.record_transport_event(
+                await self.runtime.persist_transport_event(
                     self.session_id,
                     "deepgram_stream_closed",
                     {"twilioStreamSid": self.stream_sid},
                 )
 
-    async def _speak(self, text: str, *, mark_name: str):
+    async def _speak(
+        self,
+        text: str,
+        *,
+        assistant_message_id: Optional[str],
+        mark_name_prefix: str,
+    ):
         if not self.stream_sid or not text.strip():
             return
 
+        await self._assistant_playback_ready.wait()
+        self._assistant_playback_ready.clear()
+
         audio = await self.runtime.synthesize_reply(text)
         if not audio:
+            self._assistant_playback_ready.set()
             if self.session_id:
-                self.runtime.record_transport_event(
+                await self.runtime.persist_transport_event(
                     self.session_id,
                     "tts_unavailable",
                     {"provider": settings.managed_tts_provider},
                 )
             return
 
-        await self.websocket.send_json(
-            {
-                "event": "media",
-                "streamSid": self.stream_sid,
-                "media": {
-                    "payload": base64.b64encode(audio).decode("ascii"),
-                },
-            }
-        )
-        await self.websocket.send_json(
-            {
-                "event": "mark",
-                "streamSid": self.stream_sid,
-                "mark": {"name": mark_name},
-            }
-        )
+        self._mark_counter += 1
+        mark_name = f"{mark_name_prefix}-{self._mark_counter}"
+        if assistant_message_id:
+            self._mark_to_assistant_message[mark_name] = assistant_message_id
+
+        try:
+            await self.websocket.send_json(
+                {
+                    "event": "media",
+                    "streamSid": self.stream_sid,
+                    "media": {
+                        "payload": base64.b64encode(audio).decode("ascii"),
+                    },
+                }
+            )
+            await self.websocket.send_json(
+                {
+                    "event": "mark",
+                    "streamSid": self.stream_sid,
+                    "mark": {"name": mark_name},
+                }
+            )
+        except Exception:
+            self._mark_to_assistant_message.pop(mark_name, None)
+            self._assistant_playback_ready.set()
+            if self.session_id:
+                await self.runtime.persist_transport_event(
+                    self.session_id,
+                    "tts_send_failed",
+                    {"provider": settings.managed_tts_provider, "markName": mark_name},
+                )
+            raise
 
     async def _shutdown(self):
         if self._deepgram_task:
@@ -261,6 +335,8 @@ class TwilioMediaSession:
             except asyncio.CancelledError:
                 pass
 
+        self._assistant_playback_ready.set()
+
         if self._deepgram_socket:
             try:
                 await self._deepgram_socket.close()
@@ -269,6 +345,9 @@ class TwilioMediaSession:
 
         if self.session_id:
             try:
-                await self.runtime.finalize_session(self.session_id)
+                await self.runtime.finalize_session(
+                    self.session_id,
+                    failure_reason=self._failure_reason,
+                )
             except Exception:
                 return

@@ -21,15 +21,22 @@ for (const envPath of rootEnvPaths) {
 const globalForEnvWarnings = globalThis as typeof globalThis & {
     __wardlineDeprecatedEnvWarningShown?: boolean;
 };
+const shouldWarnOnDeprecatedEnvFiles =
+    process.env.WARDLINE_WARN_ON_DEPRECATED_ENV_FILES === 'true' ||
+    (
+        process.env.WARDLINE_WARN_ON_DEPRECATED_ENV_FILES !== 'false' &&
+        (process.env.NODE_ENV ?? 'development') !== 'test' &&
+        process.env.CI !== 'true'
+    );
 
-if (!globalForEnvWarnings.__wardlineDeprecatedEnvWarningShown) {
+if (shouldWarnOnDeprecatedEnvFiles && !globalForEnvWarnings.__wardlineDeprecatedEnvWarningShown) {
     const existingDeprecatedEnvPaths = deprecatedEnvPaths.filter((envPath) => existsSync(envPath));
 
     if (existingDeprecatedEnvPaths.length > 0) {
         console.warn(
             `[wardline] Deprecated local env file(s) detected: ${existingDeprecatedEnvPaths.join(
                 ', ',
-            )}. Use the repo-root .env.local/.env files instead.`,
+            )}. These files are ignored; keep runtime values in the repo-root .env.local/.env files instead.`,
         );
         globalForEnvWarnings.__wardlineDeprecatedEnvWarningShown = true;
     }
