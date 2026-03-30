@@ -54,9 +54,29 @@ export interface ServicePolicy {
     fallbackSummary: string;
 }
 
+export type KnowledgeRouteTarget =
+    | 'knowledge'
+    | 'scheduling'
+    | 'refill'
+    | 'insurance'
+    | 'billing'
+    | 'handoff';
+
+export interface KnowledgeFaqItem {
+    question: string;
+    answer: string;
+    routeTo?: KnowledgeRouteTarget;
+}
+
 export interface KnowledgeConfig {
     faqSummary: string;
     commonQuestions: string[];
+    servicesSummary: string;
+    appointmentSummary: string;
+    refillSummary: string;
+    insuranceSummary: string;
+    billingSummary: string;
+    customFaqs: KnowledgeFaqItem[];
 }
 
 export interface EscalationConfig {

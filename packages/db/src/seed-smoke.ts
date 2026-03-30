@@ -33,7 +33,8 @@ const SMOKE_PRACTICE_SETUP = {
     },
     refillPolicy: {
         liveEnabled: true,
-        intakeNotes: 'Collect medication name, pharmacy, and caller date of birth before submitting refill requests.',
+        intakeNotes:
+            'Collect medication name, caller date of birth, pharmacy name, and pharmacy phone before submitting refill requests.',
         fallbackSummary: 'Create a refill follow-up for staff if live refill automation is unavailable.',
     },
     billingPolicy: {
@@ -50,6 +51,28 @@ const SMOKE_PRACTICE_SETUP = {
         faqSummary:
             'Smoke Family Medicine handles routine appointments, refill requests, insurance checks, and billing questions.',
         commonQuestions: ['Office hours', 'Prescription refills', 'Insurance acceptance', 'Billing support'],
+        servicesSummary:
+            'Smoke Family Medicine helps with routine appointments, prescription refills, insurance questions, and billing support.',
+        appointmentSummary:
+            'We can help capture routine visits, follow-ups, annual physicals, and new patient appointment requests.',
+        refillSummary:
+            'We can capture refill requests for the practice. Please have the medication name, date of birth, pharmacy name, and pharmacy phone ready.',
+        insuranceSummary:
+            'We can answer basic insurance acceptance questions, but plan-specific coverage questions may still need staff review.',
+        billingSummary:
+            'We can capture billing questions about balances, statements, and payment issues for the staff to review.',
+        customFaqs: [
+            {
+                question: 'Do you take walk-ins?',
+                answer: 'We usually schedule visits in advance, but the staff can help find the soonest available appointment.',
+                routeTo: 'scheduling',
+            },
+            {
+                question: 'How quickly will someone call me back after hours?',
+                answer: 'After-hours messages are reviewed during business hours, and urgent callbacks are prioritized for the next staffed window.',
+                routeTo: 'handoff',
+            },
+        ],
     },
     escalationConfig: {
         urgentCallbackWindowMinutes: 30,

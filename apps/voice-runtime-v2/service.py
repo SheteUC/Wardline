@@ -287,7 +287,7 @@ class VoiceRuntimeV2:
         if session.pendingConfirmation:
             return await self._handle_pending_action(session, cleaned_text)
 
-        decision = self.supervisor.choose_domain(session, cleaned_text)
+        decision = self.supervisor.choose_domain(session, cleaned_text, knowledge_agent=self.knowledge)
         session.lastDecision = decision
         session.intent = decision.domain
         session.activeDomain = decision.domain if decision.mode != "clarify" else None
@@ -300,28 +300,15 @@ class VoiceRuntimeV2:
             return self._build_turn_response(session, reply, "knowledge", False)
 
         if decision.mode == "knowledge":
-            knowledge_result = self.knowledge.handle(session, cleaned_text)
+            if decision.followOnIntent:
+                return await self._handle_compound_knowledge_follow_on(session, cleaned_text, decision)
+
+            knowledge_result = self.knowledge.handle(session, decision.fragmentText or cleaned_text)
             if knowledge_result:
                 session.activeDomain = None
                 return await self._finalize_specialist_result(session, knowledge_result)
 
-        if session.isAfterHours and decision.domain == "handoff":
-            if _contains(cleaned_text, URGENT_AFTER_HOURS_KEYWORDS) and session.runtimeConfig.voicePolicyV2.afterHoursPolicy.sendUrgentToVoicemail:
-                session.activeDomain = "handoff"
-                return await self._handle_specialist_result(
-                    session,
-                    self.handoff.build_after_hours_urgent_reply(session, cleaned_text),
-                )
-
-            after_hours_result = self.handoff.build_after_hours_standard_reply(session, cleaned_text)
-            if after_hours_result.status == "execute_now":
-                return await self._handle_specialist_result(session, after_hours_result)
-
-            session.activeDomain = "handoff"
-            return await self._handle_specialist_result(session, after_hours_result)
-
-        specialist = self._select_specialist(decision.domain)
-        result = specialist.handle(session, cleaned_text)
+        result = self._run_domain_specialist(session, decision.domain, cleaned_text)
         return await self._handle_specialist_result(session, result)
 
     async def capture_voicemail(
@@ -556,7 +543,12 @@ class VoiceRuntimeV2:
         session.stage = "intake"
         return None
 
-    async def _handle_specialist_result(self, session: SessionState, result: SpecialistResult) -> Dict[str, Any]:
+    async def _handle_specialist_result(
+        self,
+        session: SessionState,
+        result: SpecialistResult,
+        reply_prefix: str = "",
+    ) -> Dict[str, Any]:
         session.lastSpecialistResult = result
         session.lastOperatorSummary = result.operatorSummary
         session.intent = result.domain
@@ -568,12 +560,13 @@ class VoiceRuntimeV2:
 
         if result.status == "needs_information":
             session.stage = "intake"
-            return await self._finalize_specialist_result(session, result)
+            return await self._finalize_specialist_result(session, result, reply_prefix=reply_prefix)
 
         if result.status == "ready_for_confirmation":
             session.pendingConfirmation = PendingAction(
                 actionName=result.runtimeAction or "",
                 summary=result.confirmationSummary or result.nextPrompt,
+                confirmationPrompt=result.nextPrompt,
                 payload=result.runtimePayload,
                 domain=result.domain,
                 callerRequestSummary=result.callerRequestSummary or result.confirmationSummary or result.nextPrompt,
@@ -586,10 +579,11 @@ class VoiceRuntimeV2:
                 session,
                 result,
                 requires_confirmation=True,
+                reply_prefix=reply_prefix,
             )
 
         if result.status == "execute_now":
-            return await self._execute_specialist_result(session, result)
+            return await self._execute_specialist_result(session, result, reply_prefix=reply_prefix)
 
         if result.status == "voicemail":
             session.awaitingVoicemail = True
@@ -600,9 +594,10 @@ class VoiceRuntimeV2:
                 session,
                 result,
                 awaiting_voicemail=True,
+                reply_prefix=reply_prefix,
             )
 
-        return await self._finalize_specialist_result(session, result)
+        return await self._finalize_specialist_result(session, result, reply_prefix=reply_prefix)
 
     async def _finalize_specialist_result(
         self,
@@ -610,8 +605,11 @@ class VoiceRuntimeV2:
         result: SpecialistResult,
         requires_confirmation: bool = False,
         awaiting_voicemail: bool = False,
+        reply_prefix: str = "",
     ) -> Dict[str, Any]:
         reply = result.nextPrompt
+        if reply_prefix:
+            reply = f"{reply_prefix} {reply}".strip()
         if result.resolved and not awaiting_voicemail and not session.isEmergency:
             reply = self._offer_anything_else(session, reply, result.domain)
         else:
@@ -635,7 +633,7 @@ class VoiceRuntimeV2:
         lowered = _normalize(text)
         if any(keyword in lowered for keyword in ["repeat", "summarize", "what are you confirming", "say that again"]):
             pending.confirmAttempts += 1
-            reply = f"I have {pending.summary}. Should I send that to the practice?"
+            reply = pending.confirmationPrompt or f"I have {pending.summary}. Should I send that to the practice?"
             await self._append_and_persist_assistant_message(session, reply)
             return self._build_turn_response(session, reply, pending.domain, True)
 
@@ -645,6 +643,7 @@ class VoiceRuntimeV2:
             session.activeDomain = pending.domain
             session.stage = "intake"
             session.missingSlots = []
+            self._clear_domain_slot_retries(session, pending.domain)
             specialist = self._select_specialist(pending.domain)
             result = specialist.handle(session, _strip_change_prefix(text))
             return await self._handle_specialist_result(session, result)
@@ -657,6 +656,7 @@ class VoiceRuntimeV2:
             session.stage = "intake"
             session.slotState.pop(pending.domain, None)
             session.missingSlots = []
+            self._clear_domain_slot_retries(session, pending.domain)
             reply = self._offer_anything_else(session, "Okay, I won't submit that.", pending.domain)
             await self._append_and_persist_assistant_message(session, reply)
             await self._sync_call_state(session)
@@ -682,6 +682,7 @@ class VoiceRuntimeV2:
         session.slotState.pop(pending.domain, None)
         session.missingSlots = []
         session.activeDomain = pending.domain
+        self._clear_domain_slot_retries(session, pending.domain)
         enriched_summary = self._combine_operator_summary(
             base=session.lastOperatorSummary,
             outcome=outcome,
@@ -689,15 +690,20 @@ class VoiceRuntimeV2:
             caller_request=pending.callerRequestSummary,
         )
         self._record_runtime_action_outcome(session, pending.domain, pending.actionName, outcome, enriched_summary)
-        caller_reply = self._build_caller_outcome_reply(session, pending.domain, outcome)
+        caller_reply = self._build_caller_outcome_reply(session, pending.domain, pending.actionName, outcome)
         reply = self._offer_anything_else(session, caller_reply, pending.domain)
         await self._append_and_persist_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(pending.domain))
         return self._build_turn_response(session, reply, pending.domain, False)
 
-    async def _execute_specialist_result(self, session: SessionState, result: SpecialistResult) -> Dict[str, Any]:
+    async def _execute_specialist_result(
+        self,
+        session: SessionState,
+        result: SpecialistResult,
+        reply_prefix: str = "",
+    ) -> Dict[str, Any]:
         if not result.runtimeAction:
-            return await self._finalize_specialist_result(session, result)
+            return await self._finalize_specialist_result(session, result, reply_prefix=reply_prefix)
 
         outcome = await self._run_runtime_action(
             session,
@@ -708,6 +714,7 @@ class VoiceRuntimeV2:
         session.slotState.pop(result.domain, None)
         session.missingSlots = []
         session.activeDomain = result.domain
+        self._clear_domain_slot_retries(session, result.domain)
         enriched_summary = self._combine_operator_summary(
             base=result.operatorSummary,
             outcome=outcome,
@@ -715,11 +722,43 @@ class VoiceRuntimeV2:
             caller_request=result.callerRequestSummary or result.nextPrompt,
         )
         self._record_runtime_action_outcome(session, result.domain, result.runtimeAction, outcome, enriched_summary)
-        caller_reply = self._build_caller_outcome_reply(session, result.domain, outcome)
+        caller_reply = self._build_caller_outcome_reply(session, result.domain, result.runtimeAction, outcome)
+        if reply_prefix:
+            caller_reply = f"{reply_prefix} {caller_reply}".strip()
         reply = self._offer_anything_else(session, caller_reply, result.domain)
         await self._append_and_persist_assistant_message(session, reply)
         await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
         return self._build_turn_response(session, reply, result.domain, False)
+
+    async def _handle_compound_knowledge_follow_on(
+        self,
+        session: SessionState,
+        caller_text: str,
+        decision: SupervisorDecision,
+    ) -> Dict[str, Any]:
+        knowledge_text = decision.fragmentText or caller_text
+        follow_on = decision.followOnIntent
+        knowledge_match = self.knowledge.match(session, knowledge_text)
+        knowledge_result = self.knowledge.handle(session, knowledge_text)
+
+        if knowledge_result and knowledge_match:
+            self._record_knowledge_result(session, knowledge_result, knowledge_match, knowledge_text)
+
+        if not follow_on:
+            if knowledge_result:
+                session.activeDomain = None
+                return await self._finalize_specialist_result(session, knowledge_result)
+            reply = decision.clarificationPrompt or "How can I help you today?"
+            await self._append_and_persist_assistant_message(session, reply)
+            await self._sync_call_state(session)
+            return self._build_turn_response(session, reply, "knowledge", False)
+
+        result = self._run_domain_specialist(session, follow_on.domain, follow_on.text)
+        return await self._handle_specialist_result(
+            session,
+            result,
+            reply_prefix=knowledge_result.nextPrompt if knowledge_result else "",
+        )
 
     async def _run_runtime_action(
         self,
@@ -856,6 +895,35 @@ class VoiceRuntimeV2:
                     "reason": decision.reason,
                     "continuation": decision.continuation,
                     "callerText": caller_text,
+                    "knowledgeTopic": decision.knowledgeTopic,
+                    "matchedKeywords": decision.matchedKeywords,
+                    "fragmentText": decision.fragmentText,
+                    "followOnIntent": decision.followOnIntent.model_dump() if decision.followOnIntent else None,
+                },
+            )
+        )
+
+    def _record_knowledge_result(
+        self,
+        session: SessionState,
+        result: SpecialistResult,
+        knowledge_match: Any,
+        caller_text: str,
+    ):
+        session.events.append(
+            SessionEvent(
+                type="knowledge_result",
+                actionName="knowledge",
+                domain="knowledge",
+                status=result.status,
+                operatorSummary=result.operatorSummary.headline if result.operatorSummary else None,
+                data={
+                    "callerText": caller_text,
+                    "topic": knowledge_match.topic,
+                    "source": knowledge_match.source,
+                    "matchedKeywords": knowledge_match.matchedKeywords,
+                    "routeToDomain": knowledge_match.routeToDomain,
+                    "answer": result.nextPrompt,
                 },
             )
         )
@@ -949,6 +1017,7 @@ class VoiceRuntimeV2:
         self,
         session: SessionState,
         domain: DomainName,
+        action_name: str,
         outcome: RuntimeActionOutcome,
     ) -> str:
         handled_live = outcome.handledLive
@@ -959,12 +1028,16 @@ class VoiceRuntimeV2:
                 else "Okay, I couldn't send that live, but I passed the appointment request to the practice."
             )
         if domain == "refill":
+            if action_name == "manual-follow-up":
+                return "Okay, I passed that refill request to the staff so they can complete it manually."
             return (
                 "Okay, I sent that refill request to the practice."
                 if handled_live
                 else "Okay, I couldn't send that live, but I passed the refill request to the staff."
             )
         if domain == "billing":
+            if action_name == "manual-follow-up":
+                return "Okay, I passed that billing request to the staff so they can complete it manually."
             return (
                 "Okay, I sent that billing request to the practice."
                 if handled_live
@@ -983,6 +1056,12 @@ class VoiceRuntimeV2:
                 else "Okay, I captured that request for the staff to review."
             )
         return outcome.message or f"Okay, I handled that for {session.businessName}."
+
+    def _clear_domain_slot_retries(self, session: SessionState, domain: DomainName):
+        prefix = f"{domain}."
+        for key in list(session.slotRetryCounts.keys()):
+            if key.startswith(prefix):
+                session.slotRetryCounts.pop(key, None)
 
     async def _append_and_persist_assistant_message(self, session: SessionState, reply: str):
         message = self._append_assistant_message(session, reply)
@@ -1059,6 +1138,17 @@ class VoiceRuntimeV2:
             "billing": self.billing,
             "handoff": self.handoff,
         }.get(domain, self.knowledge)
+
+    def _run_domain_specialist(self, session: SessionState, domain: DomainName, text: str) -> SpecialistResult:
+        if domain == "handoff":
+            if session.isAfterHours:
+                if _contains(text, URGENT_AFTER_HOURS_KEYWORDS) and session.runtimeConfig.voicePolicyV2.afterHoursPolicy.sendUrgentToVoicemail:
+                    return self.handoff.build_after_hours_urgent_reply(session, text)
+                return self.handoff.build_after_hours_standard_reply(session, text)
+            return self.handoff.build_manual_follow_up(text)
+
+        specialist = self._select_specialist(domain)
+        return specialist.handle(session, text)
 
     def _domain_to_tag(self, domain: DomainName) -> Optional[str]:
         return {

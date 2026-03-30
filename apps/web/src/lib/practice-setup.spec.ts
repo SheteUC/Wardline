@@ -1,4 +1,4 @@
-import { buildPracticeReadiness, normalizePracticeSetup } from './practice-setup';
+import { buildPracticeReadiness, normalizeKnowledgeConfig, normalizePracticeSetup } from './practice-setup';
 import { IntegrationCategory, IntegrationStatus } from '@wardline/types';
 
 describe('practice setup helpers', () => {
@@ -8,6 +8,45 @@ describe('practice setup helpers', () => {
         expect(result.enabledActions.includes('appointment-request')).toBe(true);
         expect(result.afterHoursPolicy.mode).toBe('urgent_voicemail');
         expect(result.knowledgeConfig.commonQuestions.length > 0).toBe(true);
+        expect(result.knowledgeConfig.servicesSummary.length > 0).toBe(true);
+        expect(result.knowledgeConfig.customFaqs.length).toBe(0);
+    });
+
+    it('hydrates legacy minimal knowledge config into the expanded shape', () => {
+        const result = normalizePracticeSetup({
+            knowledgeConfig: {
+                faqSummary: 'Family medicine',
+                commonQuestions: ['Office hours'],
+            },
+        } as any);
+
+        expect(result.knowledgeConfig.faqSummary).toBe('Family medicine');
+        expect(result.knowledgeConfig.commonQuestions[0]).toBe('Office hours');
+        expect(result.knowledgeConfig.servicesSummary).toBe('Family medicine');
+        expect(result.knowledgeConfig.appointmentSummary.length > 0).toBe(true);
+        expect(result.knowledgeConfig.customFaqs.length).toBe(0);
+    });
+
+    it('omits blank custom FAQ rows when normalizing knowledge config for save', () => {
+        const result = normalizeKnowledgeConfig({
+            faqSummary: 'Family medicine',
+            commonQuestions: ['Office hours'],
+            servicesSummary: 'We help with routine visits.',
+            appointmentSummary: 'Appointments summary',
+            refillSummary: 'Refill summary',
+            insuranceSummary: 'Insurance summary',
+            billingSummary: 'Billing summary',
+            customFaqs: [
+                { question: 'Do you take walk-ins?', answer: 'Limited walk-ins may be available.', routeTo: 'scheduling' },
+                { question: '  ', answer: 'Should be dropped' },
+                { question: 'Missing answer', answer: '   ' },
+            ],
+        });
+
+        expect(result.customFaqs.length).toBe(1);
+        expect(result.customFaqs[0].question).toBe('Do you take walk-ins?');
+        expect(result.customFaqs[0].answer).toBe('Limited walk-ins may be available.');
+        expect(result.customFaqs[0].routeTo).toBe('scheduling');
     });
 
     it('marks required integrations as ready only when enabled categories are connected', () => {
@@ -46,6 +85,12 @@ describe('practice setup helpers', () => {
                 knowledgeConfig: {
                     faqSummary: 'Family medicine',
                     commonQuestions: ['Office hours'],
+                    servicesSummary: 'Services summary',
+                    appointmentSummary: 'Appointments summary',
+                    refillSummary: 'Refill summary',
+                    insuranceSummary: 'Insurance summary',
+                    billingSummary: 'Billing summary',
+                    customFaqs: [],
                 },
                 escalationConfig: {
                     urgentCallbackWindowMinutes: 30,

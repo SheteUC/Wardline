@@ -7,7 +7,7 @@ import { Button, Card, Toggle, neoFieldClass, neoSelectClass } from "@/component
 import { useApiClient } from '@/lib/api-client';
 import { useBusiness } from '@/lib/business-context';
 import { useBusinesses, useBusinessSettings, useIntegrations, useUpdateBusiness, useUpdateBusinessSettings } from '@/lib/hooks/query-hooks';
-import type { BusinessSettings, OperatingHoursSlot, PracticeAction } from '@/lib/api-types';
+import type { BusinessSettings, KnowledgeFaqItem, KnowledgeRouteTarget, OperatingHoursSlot, PracticeAction } from '@/lib/api-types';
 import {
     buildPracticeReadiness,
     DEFAULT_AFTER_HOURS_POLICY,
@@ -17,6 +17,7 @@ import {
     DEFAULT_INSURANCE_POLICY,
     DEFAULT_KNOWLEDGE_CONFIG,
     DEFAULT_REFILL_POLICY,
+    normalizeKnowledgeConfig,
     normalizePracticeSetup,
 } from '@/lib/practice-setup';
 
@@ -52,6 +53,18 @@ function textList(value: string[] | undefined) {
 function parseTextList(value: string) {
     return value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
 }
+
+const FAQ_ROUTE_OPTIONS: Array<{
+    label: string;
+    value: '' | Exclude<KnowledgeRouteTarget, 'knowledge'>;
+}> = [
+    { label: 'None', value: '' },
+    { label: 'Scheduling', value: 'scheduling' },
+    { label: 'Refill', value: 'refill' },
+    { label: 'Insurance', value: 'insurance' },
+    { label: 'Billing', value: 'billing' },
+    { label: 'Staff follow-up', value: 'handoff' },
+];
 
 function actionLabel(action: PracticeAction) {
     return {
@@ -106,6 +119,12 @@ export default function PracticeSetupPage() {
     const [insurancePolicyNotes, setInsurancePolicyNotes] = useState(DEFAULT_INSURANCE_POLICY.intakeNotes);
     const [faqSummary, setFaqSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.faqSummary);
     const [commonQuestions, setCommonQuestions] = useState(DEFAULT_KNOWLEDGE_CONFIG.commonQuestions.join('\n'));
+    const [servicesSummary, setServicesSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.servicesSummary);
+    const [appointmentSummary, setAppointmentSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.appointmentSummary);
+    const [refillSummary, setRefillSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.refillSummary);
+    const [insuranceSummary, setInsuranceSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.insuranceSummary);
+    const [billingSummary, setBillingSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.billingSummary);
+    const [customFaqs, setCustomFaqs] = useState<KnowledgeFaqItem[]>([]);
     const [escalationMessage, setEscalationMessage] = useState(DEFAULT_ESCALATION_CONFIG.escalationMessage);
     const [urgentCallbackWindowMinutes, setUrgentCallbackWindowMinutes] = useState(DEFAULT_ESCALATION_CONFIG.urgentCallbackWindowMinutes);
     const [emergencyKeywords, setEmergencyKeywords] = useState('');
@@ -134,6 +153,12 @@ export default function PracticeSetupPage() {
         setInsurancePolicyNotes(practiceSetup.insurancePolicy.intakeNotes);
         setFaqSummary(practiceSetup.knowledgeConfig.faqSummary);
         setCommonQuestions(practiceSetup.knowledgeConfig.commonQuestions.join('\n'));
+        setServicesSummary(practiceSetup.knowledgeConfig.servicesSummary);
+        setAppointmentSummary(practiceSetup.knowledgeConfig.appointmentSummary);
+        setRefillSummary(practiceSetup.knowledgeConfig.refillSummary);
+        setInsuranceSummary(practiceSetup.knowledgeConfig.insuranceSummary);
+        setBillingSummary(practiceSetup.knowledgeConfig.billingSummary);
+        setCustomFaqs(practiceSetup.knowledgeConfig.customFaqs);
         setEscalationMessage(practiceSetup.escalationConfig.escalationMessage);
         setUrgentCallbackWindowMinutes(practiceSetup.escalationConfig.urgentCallbackWindowMinutes);
         setEmergencyKeywords(textList(business.settings?.emergencyKeywords));
@@ -141,6 +166,30 @@ export default function PracticeSetupPage() {
         setHasChanges(false);
         setSaveMessage(null);
     }, [businessQuery.data]);
+
+    const knowledgeConfig = useMemo(
+        () =>
+            normalizeKnowledgeConfig({
+                faqSummary,
+                commonQuestions: parseTextList(commonQuestions),
+                servicesSummary,
+                appointmentSummary,
+                refillSummary,
+                insuranceSummary,
+                billingSummary,
+                customFaqs,
+            }),
+        [
+            appointmentSummary,
+            billingSummary,
+            commonQuestions,
+            customFaqs,
+            faqSummary,
+            insuranceSummary,
+            refillSummary,
+            servicesSummary,
+        ],
+    );
 
     const integrations = integrationsQuery.data ?? [];
     const readiness = useMemo(() => buildPracticeReadiness({
@@ -159,29 +208,36 @@ export default function PracticeSetupPage() {
             refillPolicy: { liveEnabled: enabledActions.includes('refill-request'), intakeNotes: refillPolicyNotes, fallbackSummary: DEFAULT_REFILL_POLICY.fallbackSummary },
             billingPolicy: { liveEnabled: enabledActions.includes('billing-request'), intakeNotes: billingPolicyNotes, fallbackSummary: DEFAULT_BILLING_POLICY.fallbackSummary },
             insurancePolicy: { liveEnabled: enabledActions.includes('insurance-check'), intakeNotes: insurancePolicyNotes, fallbackSummary: DEFAULT_INSURANCE_POLICY.fallbackSummary },
-            knowledgeConfig: { faqSummary, commonQuestions: parseTextList(commonQuestions) },
+            knowledgeConfig,
             escalationConfig: { escalationMessage, urgentCallbackWindowMinutes, notifyStaffImmediately: true },
             emergencyKeywords: parseTextList(emergencyKeywords),
             outOfScopeKeywords: parseTextList(outOfScopeKeywords),
         },
     }), [
+        appointmentSummary,
         afterHoursGreeting,
         afterHoursMode,
+        billingSummary,
         billingPolicyNotes,
         businessId,
         commonQuestions,
+        customFaqs,
         emergencyKeywords,
         enabledActions,
         escalationMessage,
         faqSummary,
         integrations,
+        insuranceSummary,
         insurancePolicyNotes,
         operatingHours,
         outOfScopeKeywords,
         recordingDefault,
+        refillSummary,
         refillPolicyNotes,
+        servicesSummary,
         transcriptRetentionDays,
         urgentCallbackWindowMinutes,
+        knowledgeConfig,
     ]);
 
     const handleCreateBusiness = async () => {
@@ -223,7 +279,7 @@ export default function PracticeSetupPage() {
                 refillPolicy: { liveEnabled: enabledActions.includes('refill-request'), intakeNotes: refillPolicyNotes, fallbackSummary: DEFAULT_REFILL_POLICY.fallbackSummary },
                 billingPolicy: { liveEnabled: enabledActions.includes('billing-request'), intakeNotes: billingPolicyNotes, fallbackSummary: DEFAULT_BILLING_POLICY.fallbackSummary },
                 insurancePolicy: { liveEnabled: enabledActions.includes('insurance-check'), intakeNotes: insurancePolicyNotes, fallbackSummary: DEFAULT_INSURANCE_POLICY.fallbackSummary },
-                knowledgeConfig: { faqSummary, commonQuestions: parseTextList(commonQuestions) },
+                knowledgeConfig,
                 escalationConfig: { escalationMessage, urgentCallbackWindowMinutes, notifyStaffImmediately: true },
                 emergencyKeywords: parseTextList(emergencyKeywords),
                 outOfScopeKeywords: parseTextList(outOfScopeKeywords),
@@ -239,6 +295,23 @@ export default function PracticeSetupPage() {
 
     const updateOperatingHour = (dayOfWeek: number, patch: Partial<OperatingHoursSlot>) => {
         setOperatingHours((current) => current.map((entry) => entry.dayOfWeek === dayOfWeek ? { ...entry, ...patch } : entry));
+        setHasChanges(true);
+    };
+
+    const updateCustomFaq = (index: number, patch: Partial<KnowledgeFaqItem>) => {
+        setCustomFaqs((current) =>
+            current.map((entry, entryIndex) => (entryIndex === index ? { ...entry, ...patch } : entry)),
+        );
+        setHasChanges(true);
+    };
+
+    const removeCustomFaq = (index: number) => {
+        setCustomFaqs((current) => current.filter((_, entryIndex) => entryIndex !== index));
+        setHasChanges(true);
+    };
+
+    const addCustomFaq = () => {
+        setCustomFaqs((current) => [...current, { question: '', answer: '' }]);
         setHasChanges(true);
     };
 
@@ -312,9 +385,78 @@ export default function PracticeSetupPage() {
                             </Card>
 
                             <Card title="FAQ / Knowledge">
-                                <div className="grid gap-4 lg:grid-cols-2">
-                                    <SetupField label="FAQ summary"><SetupTextarea value={faqSummary} onChange={(event) => { setFaqSummary(event.target.value); setHasChanges(true); }} /></SetupField>
-                                    <SetupField label="Common questions"><SetupTextarea value={commonQuestions} onChange={(event) => { setCommonQuestions(event.target.value); setHasChanges(true); }} placeholder={'Office hours\nInsurance accepted\nRefill requests'} /></SetupField>
+                                <div className="space-y-4">
+                                    <div className="grid gap-4 lg:grid-cols-2">
+                                        <SetupField label="FAQ summary"><SetupTextarea value={faqSummary} onChange={(event) => { setFaqSummary(event.target.value); setHasChanges(true); }} /></SetupField>
+                                        <SetupField label="Common questions"><SetupTextarea value={commonQuestions} onChange={(event) => { setCommonQuestions(event.target.value); setHasChanges(true); }} placeholder={'Office hours\nInsurance accepted\nRefill requests'} /></SetupField>
+                                        <SetupField label="Services summary"><SetupTextarea value={servicesSummary} onChange={(event) => { setServicesSummary(event.target.value); setHasChanges(true); }} /></SetupField>
+                                        <SetupField label="Appointment help summary"><SetupTextarea value={appointmentSummary} onChange={(event) => { setAppointmentSummary(event.target.value); setHasChanges(true); }} /></SetupField>
+                                        <SetupField label="Refill help summary"><SetupTextarea value={refillSummary} onChange={(event) => { setRefillSummary(event.target.value); setHasChanges(true); }} /></SetupField>
+                                        <SetupField label="Insurance help summary"><SetupTextarea value={insuranceSummary} onChange={(event) => { setInsuranceSummary(event.target.value); setHasChanges(true); }} /></SetupField>
+                                        <SetupField label="Billing help summary"><SetupTextarea value={billingSummary} onChange={(event) => { setBillingSummary(event.target.value); setHasChanges(true); }} /></SetupField>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="text-xs font-semibold uppercase text-muted-foreground">Custom FAQs</div>
+                                                <div className="text-sm text-muted-foreground">Add receptionist-safe answers and optionally route the caller to a next step after the answer.</div>
+                                            </div>
+                                            <Button variant="filled" onClick={addCustomFaq} icon={Plus}>Add FAQ</Button>
+                                        </div>
+                                        {customFaqs.length === 0 && (
+                                            <div className="rounded-2xl bg-[var(--background)] p-4 text-sm text-muted-foreground neo-inset">
+                                                No custom FAQs yet.
+                                            </div>
+                                        )}
+                                        {customFaqs.map((faq, index) => (
+                                            <div key={`custom-faq-${index}`} className="space-y-3 rounded-2xl bg-[var(--background)] p-4 neo-inset">
+                                                <div className="grid gap-3 lg:grid-cols-[1.15fr_1.35fr_220px]">
+                                                    <SetupField label="Question">
+                                                        <input
+                                                            value={faq.question}
+                                                            onChange={(event) => updateCustomFaq(index, { question: event.target.value })}
+                                                            className={neoFieldClass}
+                                                            placeholder="Do you take walk-ins?"
+                                                        />
+                                                    </SetupField>
+                                                    <SetupField label="Answer">
+                                                        <SetupTextarea
+                                                            value={faq.answer}
+                                                            onChange={(event) => updateCustomFaq(index, { answer: event.target.value })}
+                                                            className="min-h-[88px]"
+                                                            placeholder="We usually schedule visits in advance, but I can help request the soonest available appointment."
+                                                        />
+                                                    </SetupField>
+                                                    <div className="space-y-3">
+                                                        <SetupField label="Route after answer">
+                                                            <select
+                                                                value={faq.routeTo ?? ''}
+                                                                onChange={(event) =>
+                                                                    updateCustomFaq(index, {
+                                                                        routeTo: (event.target.value || undefined) as KnowledgeRouteTarget | undefined,
+                                                                    })
+                                                                }
+                                                                className={neoSelectClass}
+                                                            >
+                                                                {FAQ_ROUTE_OPTIONS.map((option) => (
+                                                                    <option key={option.label} value={option.value}>
+                                                                        {option.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </SetupField>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeCustomFaq(index)}
+                                                            className="inline-flex h-10 items-center justify-center rounded-2xl border border-border/60 px-4 text-sm font-semibold text-foreground transition hover:bg-black/5"
+                                                        >
+                                                            Remove FAQ
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </Card>
 

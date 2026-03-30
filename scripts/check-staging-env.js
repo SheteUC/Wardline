@@ -10,6 +10,8 @@ for (const envPath of rootEnvPaths) {
   dotenv.config({ path: envPath, override: false, quiet: true });
 }
 
+const proofIntegrationCategories = ['SCHEDULING', 'EHR_REFILL', 'INSURANCE', 'BILLING'];
+
 const required = [
   { label: 'DATABASE_URL', keys: ['DATABASE_URL'] },
   { label: 'REDIS_URL', keys: ['REDIS_URL'] },
@@ -34,10 +36,6 @@ const recommended = [
   { label: 'LIVEKIT_API_KEY', keys: ['LIVEKIT_API_KEY'] },
   { label: 'LIVEKIT_API_SECRET', keys: ['LIVEKIT_API_SECRET'] },
   { label: 'DEEPGRAM_API_KEY', keys: ['DEEPGRAM_API_KEY'] },
-  { label: 'ATHENAHEALTH_SCHEDULING_TOKEN', keys: ['ATHENAHEALTH_SCHEDULING_TOKEN'] },
-  { label: 'ATHENAHEALTH_REFILL_TOKEN', keys: ['ATHENAHEALTH_REFILL_TOKEN'] },
-  { label: 'ATHENAHEALTH_INSURANCE_TOKEN', keys: ['ATHENAHEALTH_INSURANCE_TOKEN'] },
-  { label: 'ATHENAHEALTH_BILLING_TOKEN', keys: ['ATHENAHEALTH_BILLING_TOKEN'] },
   { label: 'STAGING_BUSINESS_NAME', keys: ['STAGING_BUSINESS_NAME'] },
   { label: 'STAGING_BUSINESS_SLUG', keys: ['STAGING_BUSINESS_SLUG'] },
   { label: 'STAGING_PHONE_NUMBER', keys: ['STAGING_PHONE_NUMBER'] },
@@ -47,18 +45,54 @@ function hasValue(keys) {
   return keys.some((key) => process.env[key]?.trim());
 }
 
+function effectiveIntegrationBaseUrl(category) {
+  return (
+    process.env[`STAGING_${category}_BASE_URL`]?.trim() ||
+    process.env.STAGING_INTEGRATION_BASE_URL?.trim() ||
+    process.env.ATHENAHEALTH_BASE_URL?.trim() ||
+    ''
+  );
+}
+
+function effectiveIntegrationCredentialRef(category) {
+  return (
+    process.env[`STAGING_${category}_CREDENTIALS_REF`]?.trim() ||
+    process.env.MOCK_CREDENTIALS_REF?.trim() ||
+    'MOCK_ATHENAHEALTH_TOKEN'
+  );
+}
+
 const missingRequired = required.filter(({ keys }) => !hasValue(keys));
 const missingRecommended = recommended.filter(({ keys }) => !hasValue(keys));
+const integrationProofIssues = proofIntegrationCategories.flatMap((category) => {
+  const issues = [];
+  const baseUrl = effectiveIntegrationBaseUrl(category);
+  const credentialRef = effectiveIntegrationCredentialRef(category);
 
-if (missingRequired.length > 0) {
+  if (!baseUrl) {
+    issues.push(`${category} base URL (set STAGING_${category}_BASE_URL, STAGING_INTEGRATION_BASE_URL, or ATHENAHEALTH_BASE_URL)`);
+  }
+
+  if (!process.env[credentialRef]?.trim()) {
+    issues.push(`${category} credential secret (${credentialRef})`);
+  }
+
+  return issues;
+});
+
+if (missingRequired.length > 0 || integrationProofIssues.length > 0) {
   console.error('Missing required staging environment variables:');
   for (const entry of missingRequired) {
     console.error(`- ${entry.label}`);
+  }
+  for (const issue of integrationProofIssues) {
+    console.error(`- ${issue}`);
   }
   process.exit(1);
 }
 
 console.log('Required staging environment variables are present.');
+console.log('Mock/live staging connector inputs are present for SCHEDULING, EHR_REFILL, INSURANCE, and BILLING.');
 
 if (missingRecommended.length > 0) {
   console.warn('Recommended staging environment variables not set:');

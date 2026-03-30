@@ -123,6 +123,18 @@ describe('BusinessesService', () => {
                 knowledgeConfig: {
                     faqSummary: 'Practice summary',
                     commonQuestions: ['Hours'],
+                    servicesSummary: 'Services summary',
+                    appointmentSummary: 'Appointments summary',
+                    refillSummary: 'Refill summary',
+                    insuranceSummary: 'Insurance summary',
+                    billingSummary: 'Billing summary',
+                    customFaqs: [
+                        {
+                            question: 'Do you take walk-ins?',
+                            answer: 'Walk-ins are limited.',
+                            routeTo: 'scheduling',
+                        },
+                    ],
                 },
                 escalationConfig: {
                     urgentCallbackWindowMinutes: 30,
@@ -160,6 +172,14 @@ describe('BusinessesService', () => {
             }),
         );
         expect(result.voicePolicyV2.servicePolicies.billing.liveEnabled).toBe(false);
+        expect(result.voicePolicyV2.knowledgeConfig.servicesSummary).toBe('Services summary');
+        expect(result.voicePolicyV2.knowledgeConfig.customFaqs).toEqual([
+            {
+                question: 'Do you take walk-ins?',
+                answer: 'Walk-ins are limited.',
+                routeTo: 'scheduling',
+            },
+        ]);
         expect(result.voicePolicyV2.writeActionsRequiringConfirmation).toEqual([
             'appointment-request',
             'refill-request',

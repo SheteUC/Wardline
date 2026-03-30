@@ -161,13 +161,28 @@ describe('RuntimeActionsService', () => {
         const result = await service.requestRefill('business-1', {
             callerName: 'Refill Caller',
             callerPhone: '+15550000003',
+            callerDob: '1980-01-05',
             medicationName: 'Metformin',
+            prescriberName: 'Dr. Patel',
+            pharmacyName: 'CVS',
+            pharmacyPhone: '555-123-4567',
             confirmed: true,
         });
 
         expect(result.recordId).toBe('refill-1');
         expect(result.fallbackCreated).toBe(true);
         expect(result.followUpTaskId).toBe('task-1');
+        expect(followUpTasksService.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    callerDob: '1980-01-05',
+                    medicationName: 'Metformin',
+                    prescriberName: 'Dr. Patel',
+                    pharmacyName: 'CVS',
+                    pharmacyPhone: '555-123-4567',
+                }),
+            }),
+        );
         expect(prisma.prescriptionRefill.update).toHaveBeenCalledWith(
             expect.objectContaining({
                 data: expect.objectContaining({
@@ -222,5 +237,101 @@ describe('RuntimeActionsService', () => {
                 confirmed: false,
             }),
         ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('passes billing account reference through execution and fallback metadata', async () => {
+        integrationsService.findResolvedIntegration.mockResolvedValue({
+            businessId: 'business-1',
+            category: 'BILLING',
+            vendor: 'athenahealth',
+            status: 'CONNECTED',
+            capabilities: {
+                canCreateBillingCase: true,
+            },
+            settings: {},
+        });
+        integrationConnectors.execute.mockResolvedValue({
+            ok: false,
+            handledLive: false,
+            message: 'Billing connector timed out.',
+            fallbackReason: 'timeout',
+        });
+
+        const result = await service.requestBilling('business-1', {
+            callerName: 'Billing Caller',
+            callerPhone: '+15550000005',
+            billingTopic: 'outstanding balance',
+            accountReference: 'AB-1234',
+            confirmed: true,
+        });
+
+        expect(result.fallbackCreated).toBe(true);
+        expect(integrationConnectors.execute).toHaveBeenCalledWith(
+            expect.objectContaining({
+                payload: expect.objectContaining({
+                    billingTopic: 'outstanding balance',
+                    accountReference: 'AB-1234',
+                }),
+            }),
+        );
+        expect(followUpTasksService.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    billingTopic: 'outstanding balance',
+                    accountReference: 'AB-1234',
+                }),
+            }),
+        );
+    });
+
+    it('persists manual follow-up metadata and records it in the action outcome', async () => {
+        prisma.callSession.findUnique.mockResolvedValue({ turnsJson: [] });
+
+        const result = await service.captureManualFollowUp('business-1', {
+            callId: 'call-1',
+            callerName: 'Refill Caller',
+            callerPhone: '+15550000003',
+            title: 'Refill request needs manual completion',
+            summary: 'a refill request for Metformin. Missing pharmacy phone number.',
+            priority: 'HIGH',
+            metadata: {
+                originatingDomain: 'refill',
+                missingRequiredFields: ['pharmacyPhone'],
+                capturedFields: {
+                    medicationName: 'Metformin',
+                    callerDob: '1980-01-05',
+                    pharmacyName: 'CVS',
+                },
+            },
+        });
+
+        expect(result.followUpTaskId).toBe('task-1');
+        expect(followUpTasksService.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    source: 'runtime_action',
+                    originatingAction: 'manual-follow-up',
+                    originatingDomain: 'refill',
+                    missingRequiredFields: ['pharmacyPhone'],
+                }),
+            }),
+        );
+        expect(prisma.callSession.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: expect.objectContaining({
+                    turnsJson: expect.arrayContaining([
+                        expect.objectContaining({
+                            actionName: 'manual-follow-up',
+                            data: expect.objectContaining({
+                                metadata: expect.objectContaining({
+                                    originatingDomain: 'refill',
+                                    missingRequiredFields: ['pharmacyPhone'],
+                                }),
+                            }),
+                        }),
+                    ]),
+                }),
+            }),
+        );
     });
 });

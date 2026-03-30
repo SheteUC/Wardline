@@ -85,6 +85,7 @@ export class RuntimeActionsController {
             summary: string;
             priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
             urgencyKeywords?: string[];
+            metadata?: Record<string, unknown>;
         },
     ) {
         return this.runtimeActionsService.captureManualFollowUp(businessId, body);

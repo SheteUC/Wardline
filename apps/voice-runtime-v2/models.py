@@ -18,6 +18,18 @@ DomainName = Literal[
     "billing",
     "handoff",
 ]
+KnowledgeTopic = Literal[
+    "office_hours",
+    "services",
+    "after_hours",
+    "appointment_policy",
+    "refill_policy",
+    "insurance_policy",
+    "billing_policy",
+    "recording_policy",
+    "transcript_retention",
+    "custom_faq",
+]
 CallLifecycleStatus = Literal[
     "INITIATED",
     "ONGOING",
@@ -44,9 +56,21 @@ class AfterHoursPolicy(BaseModel):
     sendUrgentToVoicemail: bool
 
 
+class KnowledgeFaqItem(BaseModel):
+    question: str = ""
+    answer: str = ""
+    routeTo: Optional[Literal["knowledge", "scheduling", "refill", "insurance", "billing", "handoff"]] = None
+
+
 class KnowledgeConfig(BaseModel):
     faqSummary: str = ""
     commonQuestions: List[str] = Field(default_factory=list)
+    servicesSummary: str = ""
+    appointmentSummary: str = ""
+    refillSummary: str = ""
+    insuranceSummary: str = ""
+    billingSummary: str = ""
+    customFaqs: List[KnowledgeFaqItem] = Field(default_factory=list)
 
 
 class ServicePolicy(BaseModel):
@@ -111,6 +135,21 @@ class RuntimeConfigBootstrap(BaseModel):
     connectedIntegrationCategories: List[str] = Field(default_factory=list)
 
 
+class KnowledgeMatch(BaseModel):
+    topic: KnowledgeTopic
+    answer: str
+    matchedKeywords: List[str] = Field(default_factory=list)
+    source: str = ""
+    routeToDomain: Optional[DomainName] = None
+
+
+class FollowOnIntent(BaseModel):
+    domain: DomainName
+    text: str
+    knowledgeTopic: Optional[KnowledgeTopic] = None
+    reason: str
+
+
 class SupervisorDecision(BaseModel):
     mode: SupervisorMode
     domain: DomainName
@@ -118,6 +157,10 @@ class SupervisorDecision(BaseModel):
     reason: str
     continuation: bool = False
     clarificationPrompt: Optional[str] = None
+    knowledgeTopic: Optional[KnowledgeTopic] = None
+    matchedKeywords: List[str] = Field(default_factory=list)
+    followOnIntent: Optional[FollowOnIntent] = None
+    fragmentText: Optional[str] = None
 
 
 class OperatorSummary(BaseModel):
@@ -181,6 +224,7 @@ class SessionEvent(BaseModel):
 class PendingAction(BaseModel):
     actionName: str
     summary: str
+    confirmationPrompt: Optional[str] = None
     payload: Dict[str, Any] = Field(default_factory=dict)
     domain: DomainName
     callerRequestSummary: str = ""
@@ -196,6 +240,21 @@ class SchedulingSlotState(BaseModel):
     visitType: Optional[str] = None
     preferredDate: Optional[str] = None
     preferredTime: Optional[str] = None
+    notes: List[str] = Field(default_factory=list)
+
+
+class RefillSlotState(BaseModel):
+    medicationName: Optional[str] = None
+    callerDob: Optional[str] = None
+    pharmacyName: Optional[str] = None
+    pharmacyPhone: Optional[str] = None
+    prescriberName: Optional[str] = None
+    notes: List[str] = Field(default_factory=list)
+
+
+class BillingSlotState(BaseModel):
+    billingTopic: Optional[str] = None
+    accountReference: Optional[str] = None
     notes: List[str] = Field(default_factory=list)
 
 
@@ -253,6 +312,7 @@ class SessionState(BaseModel):
     lifecycleStatus: CallLifecycleStatus = "INITIATED"
     stage: TurnStage = "intake"
     slotState: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    slotRetryCounts: Dict[str, int] = Field(default_factory=dict)
     missingSlots: List[str] = Field(default_factory=list)
     pendingConfirmation: Optional[PendingAction] = None
     awaitingVoicemail: bool = False

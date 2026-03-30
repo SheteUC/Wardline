@@ -3,7 +3,9 @@ import type {
     BusinessIntegration,
     BusinessSettings,
     EscalationConfig,
+    KnowledgeFaqItem,
     KnowledgeConfig,
+    KnowledgeRouteTarget,
     PracticeAction,
     ServicePolicy,
 } from './api-types';
@@ -25,7 +27,8 @@ export const DEFAULT_AFTER_HOURS_POLICY: AfterHoursPolicy = {
 
 export const DEFAULT_REFILL_POLICY: ServicePolicy = {
     liveEnabled: true,
-    intakeNotes: 'Collect medication name, pharmacy, and caller date of birth before submitting refill requests.',
+    intakeNotes:
+        'Collect medication name, caller date of birth, pharmacy name, and pharmacy phone before submitting refill requests.',
     fallbackSummary: 'If refill automation is unavailable, create a refill follow-up task for staff.',
 };
 
@@ -50,6 +53,17 @@ export const DEFAULT_KNOWLEDGE_CONFIG: KnowledgeConfig = {
         'Insurance acceptance',
         'Billing support',
     ],
+    servicesSummary:
+        'Family medicine practice that handles routine appointments, prescription refill requests, billing questions, and insurance acceptance checks.',
+    appointmentSummary:
+        'We can help capture routine appointments, follow-ups, physicals, and new patient scheduling requests for the practice.',
+    refillSummary:
+        'We can capture refill requests for the practice. Please have the medication name, date of birth, pharmacy name, and pharmacy phone number ready.',
+    insuranceSummary:
+        'We can answer basic insurance acceptance questions. Plan-specific coverage or copay questions may still need staff follow-up.',
+    billingSummary:
+        'We can capture billing questions about balances, statements, and payment issues for the practice staff to review.',
+    customFaqs: [],
 };
 
 export const DEFAULT_ESCALATION_CONFIG: EscalationConfig = {
@@ -72,6 +86,82 @@ function normalizeStringList(value: unknown): string[] {
         .filter((entry): entry is string => typeof entry === 'string')
         .map((entry) => entry.trim())
         .filter(Boolean);
+}
+
+function cloneKnowledgeConfig(config: KnowledgeConfig): KnowledgeConfig {
+    return {
+        ...config,
+        commonQuestions: [...config.commonQuestions],
+        customFaqs: config.customFaqs.map((item) => ({ ...item })),
+    };
+}
+
+function normalizeCustomFaqs(value: unknown): KnowledgeFaqItem[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    const allowedRoutes = new Set<KnowledgeRouteTarget>([
+        'knowledge',
+        'scheduling',
+        'refill',
+        'insurance',
+        'billing',
+        'handoff',
+    ]);
+
+    return value
+        .filter((entry): entry is Record<string, unknown> => isObject(entry))
+        .map((entry) => {
+            const question = typeof entry.question === 'string' ? entry.question.trim() : '';
+            const answer = typeof entry.answer === 'string' ? entry.answer.trim() : '';
+            const routeTo =
+                typeof entry.routeTo === 'string' && allowedRoutes.has(entry.routeTo as KnowledgeRouteTarget)
+                    ? (entry.routeTo as KnowledgeRouteTarget)
+                    : undefined;
+            return question && answer ? { question, answer, ...(routeTo ? { routeTo } : {}) } : null;
+        })
+        .filter((entry): entry is KnowledgeFaqItem => entry !== null);
+}
+
+export function normalizeKnowledgeConfig(value: unknown): KnowledgeConfig {
+    if (!isObject(value)) {
+        return cloneKnowledgeConfig(DEFAULT_KNOWLEDGE_CONFIG);
+    }
+
+    const faqSummary =
+        typeof value.faqSummary === 'string' && value.faqSummary.trim()
+            ? value.faqSummary.trim()
+            : DEFAULT_KNOWLEDGE_CONFIG.faqSummary;
+
+    return {
+        faqSummary,
+        commonQuestions:
+            normalizeStringList(value.commonQuestions).length > 0
+                ? normalizeStringList(value.commonQuestions)
+                : [...DEFAULT_KNOWLEDGE_CONFIG.commonQuestions],
+        servicesSummary:
+            typeof value.servicesSummary === 'string' && value.servicesSummary.trim()
+                ? value.servicesSummary.trim()
+                : faqSummary || DEFAULT_KNOWLEDGE_CONFIG.servicesSummary,
+        appointmentSummary:
+            typeof value.appointmentSummary === 'string' && value.appointmentSummary.trim()
+                ? value.appointmentSummary.trim()
+                : DEFAULT_KNOWLEDGE_CONFIG.appointmentSummary,
+        refillSummary:
+            typeof value.refillSummary === 'string' && value.refillSummary.trim()
+                ? value.refillSummary.trim()
+                : DEFAULT_KNOWLEDGE_CONFIG.refillSummary,
+        insuranceSummary:
+            typeof value.insuranceSummary === 'string' && value.insuranceSummary.trim()
+                ? value.insuranceSummary.trim()
+                : DEFAULT_KNOWLEDGE_CONFIG.insuranceSummary,
+        billingSummary:
+            typeof value.billingSummary === 'string' && value.billingSummary.trim()
+                ? value.billingSummary.trim()
+                : DEFAULT_KNOWLEDGE_CONFIG.billingSummary,
+        customFaqs: normalizeCustomFaqs(value.customFaqs),
+    };
 }
 
 function normalizeServicePolicy(value: unknown, fallback: ServicePolicy): ServicePolicy {
@@ -123,19 +213,7 @@ export function normalizePracticeSetup(settings?: BusinessSettings['settings']) 
           }
         : { ...DEFAULT_AFTER_HOURS_POLICY };
 
-    const knowledgeConfig = isObject(settings?.knowledgeConfig)
-        ? {
-              faqSummary:
-                  typeof settings.knowledgeConfig.faqSummary === 'string' &&
-                  settings.knowledgeConfig.faqSummary.trim()
-                      ? settings.knowledgeConfig.faqSummary.trim()
-                      : DEFAULT_KNOWLEDGE_CONFIG.faqSummary,
-              commonQuestions:
-                  normalizeStringList(settings.knowledgeConfig.commonQuestions).length > 0
-                      ? normalizeStringList(settings.knowledgeConfig.commonQuestions)
-                      : [...DEFAULT_KNOWLEDGE_CONFIG.commonQuestions],
-          }
-        : { ...DEFAULT_KNOWLEDGE_CONFIG };
+    const knowledgeConfig = normalizeKnowledgeConfig(settings?.knowledgeConfig);
 
     const escalationConfig = isObject(settings?.escalationConfig)
         ? {

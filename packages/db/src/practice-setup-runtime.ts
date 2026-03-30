@@ -28,6 +28,16 @@ export interface PracticeSetupRuntimeConfig {
     knowledgeConfig: {
         faqSummary: string;
         commonQuestions: string[];
+        servicesSummary: string;
+        appointmentSummary: string;
+        refillSummary: string;
+        insuranceSummary: string;
+        billingSummary: string;
+        customFaqs: Array<{
+            question: string;
+            answer: string;
+            routeTo?: 'knowledge' | 'scheduling' | 'refill' | 'insurance' | 'billing' | 'handoff';
+        }>;
     };
     escalationConfig: {
         urgentCallbackWindowMinutes: number;
@@ -96,6 +106,18 @@ function buildPracticeSystemPrompt(options: PracticeSetupRuntimeConfig) {
         `After-hours policy: ${options.afterHoursPolicy.greeting}`,
         `FAQ summary: ${options.knowledgeConfig.faqSummary}`,
         `Common questions: ${options.knowledgeConfig.commonQuestions.join(', ')}.`,
+        `Services summary: ${options.knowledgeConfig.servicesSummary}`,
+        `Appointment help summary: ${options.knowledgeConfig.appointmentSummary}`,
+        `Refill help summary: ${options.knowledgeConfig.refillSummary}`,
+        `Insurance help summary: ${options.knowledgeConfig.insuranceSummary}`,
+        `Billing help summary: ${options.knowledgeConfig.billingSummary}`,
+        options.knowledgeConfig.customFaqs.length
+            ? `Custom FAQs: ${options.knowledgeConfig.customFaqs
+                  .map((item) =>
+                      `Q: ${item.question} A: ${item.answer}${item.routeTo ? ` Route after answer: ${item.routeTo}.` : ''}`,
+                  )
+                  .join(' ')}`
+            : '',
         `Escalation guidance: ${options.escalationConfig.escalationMessage}`,
         `Connected live integrations: ${Array.from(connectedCategories).join(', ') || 'none'}.`,
         'Never provide diagnosis or clinical advice.',

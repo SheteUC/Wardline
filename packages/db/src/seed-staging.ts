@@ -41,7 +41,8 @@ const STAGING_PRACTICE_SETUP = {
     },
     refillPolicy: {
         liveEnabled: true,
-        intakeNotes: 'Collect medication name, pharmacy, and caller date of birth before creating a refill request.',
+        intakeNotes:
+            'Collect medication name, caller date of birth, pharmacy name, and pharmacy phone before creating a refill request.',
         fallbackSummary: 'Create a refill follow-up when live refill execution is unavailable.',
     },
     billingPolicy: {
@@ -58,6 +59,28 @@ const STAGING_PRACTICE_SETUP = {
         faqSummary:
             'Wardline Family Medicine offers routine appointments, refill support, insurance checks, and billing help.',
         commonQuestions: ['Office hours', 'Appointments', 'Refill requests', 'Insurance acceptance'],
+        servicesSummary:
+            'Wardline Family Medicine helps with routine appointments, refill support, insurance checks, and billing questions.',
+        appointmentSummary:
+            'We can help capture routine visits, follow-ups, physicals, and new patient appointment requests for the practice.',
+        refillSummary:
+            'We can capture refill requests for the practice. Please have the medication name, date of birth, pharmacy name, and pharmacy phone ready.',
+        insuranceSummary:
+            'We can answer basic insurance acceptance questions, but plan-specific coverage questions may still need staff follow-up.',
+        billingSummary:
+            'We can capture billing questions about statements, balances, and payment issues for the billing staff to review.',
+        customFaqs: [
+            {
+                question: 'Do you take walk-ins?',
+                answer: 'Walk-ins are limited, but we can help request the soonest available appointment.',
+                routeTo: 'scheduling',
+            },
+            {
+                question: 'How quickly will someone call me back after hours?',
+                answer: 'After-hours messages are reviewed on the next staffed shift, and urgent callbacks are prioritized.',
+                routeTo: 'handoff',
+            },
+        ],
     },
     escalationConfig: {
         urgentCallbackWindowMinutes: 30,
@@ -93,8 +116,10 @@ function buildIntegrationSettings(category: 'SCHEDULING' | 'EHR_REFILL' | 'BILLI
 
 const DEFAULT_STAGING_CREDENTIALS_REF =
     process.env.MOCK_CREDENTIALS_REF || 'MOCK_ATHENAHEALTH_TOKEN';
+const STAGING_INTEGRATION_CATEGORIES = ['SCHEDULING', 'EHR_REFILL', 'BILLING', 'INSURANCE'] as const;
+type StagingIntegrationCategory = (typeof STAGING_INTEGRATION_CATEGORIES)[number];
 
-function credentialsRefFor(category: 'SCHEDULING' | 'EHR_REFILL' | 'BILLING' | 'INSURANCE') {
+function credentialsRefFor(category: StagingIntegrationCategory) {
     switch (category) {
         case 'SCHEDULING':
             return process.env.STAGING_SCHEDULING_CREDENTIALS_REF || DEFAULT_STAGING_CREDENTIALS_REF;
@@ -105,6 +130,28 @@ function credentialsRefFor(category: 'SCHEDULING' | 'EHR_REFILL' | 'BILLING' | '
         case 'BILLING':
             return process.env.STAGING_BILLING_CREDENTIALS_REF || DEFAULT_STAGING_CREDENTIALS_REF;
     }
+}
+
+function buildIntegrationSeed(category: StagingIntegrationCategory) {
+    const settings = buildIntegrationSettings(category);
+    const credentialsRef = credentialsRefFor(category);
+    const hasBaseUrl = typeof settings.baseUrl === 'string' && settings.baseUrl.trim().length > 0;
+    const hasCredential = Boolean(credentialsRef && process.env[credentialsRef]?.trim());
+    const proofReady = hasBaseUrl && hasCredential;
+
+    return {
+        category,
+        status: proofReady ? 'CONNECTED' : 'DISCONNECTED',
+        credentialsRef,
+        settings,
+        capabilities: {
+            vendor: 'athenahealth',
+            category,
+            liveExecution: proofReady,
+            healthChecked: false,
+            proofMode: proofReady ? 'mock-or-staging-configured' : 'missing_base_url_or_credentials',
+        },
+    } as const;
 }
 
 async function ensureOwnerUser() {
@@ -269,30 +316,32 @@ async function main() {
         },
     });
 
-    for (const category of ['SCHEDULING', 'EHR_REFILL', 'BILLING', 'INSURANCE'] as const) {
+    const seededIntegrations = STAGING_INTEGRATION_CATEGORIES.map(buildIntegrationSeed);
+
+    for (const integration of seededIntegrations) {
         await prisma.businessIntegration.upsert({
             where: {
                 businessId_category: {
                     businessId: business.id,
-                    category,
+                    category: integration.category,
                 },
             },
             update: {
                 vendor: 'athenahealth',
-                status: 'DISCONNECTED',
-                credentialsRef: credentialsRefFor(category),
-                settings: buildIntegrationSettings(category) as any,
-                capabilities: {} as any,
+                status: integration.status,
+                credentialsRef: integration.credentialsRef,
+                settings: integration.settings as any,
+                capabilities: integration.capabilities as any,
                 lastHealthCheckAt: null,
             },
             create: {
                 businessId: business.id,
-                category,
+                category: integration.category,
                 vendor: 'athenahealth',
-                status: 'DISCONNECTED',
-                credentialsRef: credentialsRefFor(category),
-                settings: buildIntegrationSettings(category) as any,
-                capabilities: {} as any,
+                status: integration.status,
+                credentialsRef: integration.credentialsRef,
+                settings: integration.settings as any,
+                capabilities: integration.capabilities as any,
             },
         });
     }
@@ -343,6 +392,13 @@ async function main() {
         },
     });
 
+    const connectedRuntimeCategories = [
+        'KNOWLEDGE',
+        ...seededIntegrations
+            .filter((integration) => integration.status === 'CONNECTED')
+            .map((integration) => integration.category),
+    ];
+
     const graphJson = buildPracticeSetupRuntimeGraph({
         businessId: business.id,
         businessName: business.name,
@@ -356,7 +412,7 @@ async function main() {
         escalationConfig: STAGING_PRACTICE_SETUP.escalationConfig,
         emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
         outOfScopeKeywords: ['legal advice', 'diagnosis'],
-        connectedCategories: ['KNOWLEDGE'],
+        connectedCategories: connectedRuntimeCategories,
     });
 
     let workflow = await prisma.workflow.findFirst({
@@ -414,6 +470,9 @@ async function main() {
     console.log(`Owner Clerk user: ${owner.clerkUserId}`);
     console.log(`Phone number: ${STAGING_PHONE_NUMBER}`);
     console.log(`Generated runtime workflow: ${GENERATED_PRACTICE_WORKFLOW_NAME}`);
+    console.log(
+        `Connected runtime categories: ${connectedRuntimeCategories.join(', ')}`,
+    );
     console.log('Next steps:');
     console.log('1. Open /dashboard/settings and confirm the Practice Setup readiness checklist is populated.');
     console.log('2. Run integration health checks from /dashboard/integration-failures.');

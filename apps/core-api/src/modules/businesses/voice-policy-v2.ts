@@ -32,6 +32,16 @@ export interface VoicePolicyV2 {
     knowledgeConfig: {
         faqSummary: string;
         commonQuestions: string[];
+        servicesSummary: string;
+        appointmentSummary: string;
+        refillSummary: string;
+        insuranceSummary: string;
+        billingSummary: string;
+        customFaqs: Array<{
+            question: string;
+            answer: string;
+            routeTo?: 'knowledge' | 'scheduling' | 'refill' | 'insurance' | 'billing' | 'handoff';
+        }>;
     };
     servicePolicies: {
         scheduling: {
@@ -203,9 +213,12 @@ export function buildVoicePolicyV2(input: {
                 clarificationStyle: 'friendly',
                 slotPrompts: {
                     medicationName: 'Which medication would you like refilled?',
+                    callerDob: 'What is the caller\'s date of birth?',
+                    pharmacyName: 'Which pharmacy should I include?',
+                    pharmacyPhone: 'What is the pharmacy phone number?',
                 },
                 confirmationTemplate:
-                    'I have a refill request for {medicationName}. Should I send that to the practice?',
+                    'I have a refill request for {medicationName}, date of birth {callerDob}, pharmacy {pharmacyName}, phone {pharmacyPhone}. Should I send that to the practice?',
                 successTemplate: 'Okay, I sent that refill request to the practice.',
                 fallbackTemplate:
                     'Okay, I could not send that live, but I passed the refill request to the staff.',
@@ -227,10 +240,11 @@ export function buildVoicePolicyV2(input: {
                 callerIntro: 'I can help with billing questions.',
                 clarificationStyle: 'friendly',
                 slotPrompts: {
-                    billingTopic: 'What billing question would you like me to pass along?',
+                    billingTopic: 'What billing issue are you calling about?',
+                    accountReference: 'What account or statement reference should I include?',
                 },
                 confirmationTemplate:
-                    'I have a billing request about {billingTopic}. Should I send that to the practice?',
+                    'I have a billing request about {billingTopic} for account {accountReference}. Should I send that to the practice?',
                 successTemplate: 'Okay, I sent that billing request to the practice.',
                 fallbackTemplate:
                     'Okay, I could not send that live, but I passed the billing request to the staff.',

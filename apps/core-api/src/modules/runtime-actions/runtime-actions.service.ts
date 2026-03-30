@@ -181,8 +181,11 @@ export class RuntimeActionsService {
                 callerPhone: body.callerPhone,
                 metadata: {
                     refillId: refill.id,
+                    callerDob: body.callerDob,
                     medicationName: body.medicationName,
+                    prescriberName: body.prescriberName,
                     pharmacyName: body.pharmacyName,
+                    pharmacyPhone: body.pharmacyPhone,
                     liveAttemptMessage: execution.message,
                 },
             });
@@ -464,6 +467,7 @@ export class RuntimeActionsService {
             summary: string;
             priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
             urgencyKeywords?: string[];
+            metadata?: Record<string, unknown>;
         },
     ): Promise<RuntimeActionResult> {
         const task = await this.followUpTasksService.create({
@@ -479,6 +483,7 @@ export class RuntimeActionsService {
             metadata: {
                 source: 'runtime_action',
                 originatingAction: 'manual-follow-up',
+                ...body.metadata,
             },
         });
 
@@ -492,6 +497,7 @@ export class RuntimeActionsService {
             data: {
                 title: body.title,
                 summary: body.summary,
+                metadata: body.metadata,
             },
             fallbackReason: 'manual_follow_up',
             callerName: body.callerName,
@@ -513,6 +519,7 @@ export class RuntimeActionsService {
             data: {
                 title: body.title,
                 summary: body.summary,
+                metadata: body.metadata,
             },
         };
     }
