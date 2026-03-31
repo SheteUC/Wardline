@@ -53,6 +53,14 @@ export class RuntimeActionsController {
             carrierName: string;
             planName?: string;
             inquiryType?: string;
+            patientName?: string;
+            patientDob?: string;
+            memberId?: string;
+            groupNumber?: string;
+            subscriberRelation?: string;
+            serviceType?: string;
+            callbackPhone?: string;
+            notes?: string;
         },
     ) {
         return this.runtimeActionsService.checkInsurance(businessId, body);

@@ -128,10 +128,12 @@ export class CallsService {
         if (!call) throw new NotFoundException(`Call not found: ${id}`);
         const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
         const transportSummary = this.extractTransportSummary(call.turnsJson);
+        const intentTimeline = this.extractIntentTimeline(call.turnsJson);
         const response = {
             ...call,
             transportSummary,
             runtimeActionEvents,
+            intentTimeline,
             operatorSummary: this.buildOperatorSummary(call, runtimeActionEvents, call.turnsJson),
         };
 
@@ -265,6 +267,220 @@ export class CallsService {
                       : undefined,
             transcriptEventCount,
         };
+    }
+
+    private extractIntentTimeline(turnsJson: unknown) {
+        if (!Array.isArray(turnsJson)) {
+            return undefined;
+        }
+
+        type IntentTimelineEntry = {
+            intentId: string;
+            domain?: string;
+            summary: string;
+            status: string;
+            detectedOrder?: number;
+            selectedOrder?: number;
+            actionName?: string;
+            handledLive?: boolean;
+            followUpTaskId?: string;
+            fallbackReason?: string;
+            transferStatus?: string;
+            transferTargetLabel?: string;
+            createdAt?: string;
+        };
+
+        const timeline = new Map<string, IntentTimelineEntry>();
+
+        const intentStatusByEvent: Record<string, string> = {
+            intent_detected: 'detected',
+            intent_selected: 'active',
+            intent_resumed: 'active',
+            intent_paused: 'paused',
+            intent_resolved: 'resolved',
+            intent_cancelled: 'cancelled',
+            intent_dropped: 'dropped',
+        };
+
+        for (const entry of turnsJson) {
+            if (!entry || typeof entry !== 'object') {
+                continue;
+            }
+
+            if (typeof entry.type === 'string' && entry.type.startsWith('intent_')) {
+                const data =
+                    entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)
+                        ? entry.data
+                        : {};
+                const intentId = typeof data.intentId === 'string' ? data.intentId : undefined;
+                if (!intentId) {
+                    continue;
+                }
+
+                const existing: IntentTimelineEntry = timeline.get(intentId) ?? {
+                    intentId,
+                    domain: typeof entry.domain === 'string' ? entry.domain : undefined,
+                    summary:
+                        typeof data.summary === 'string'
+                            ? data.summary
+                            : typeof entry.operatorSummary === 'string'
+                              ? entry.operatorSummary
+                              : 'Call issue',
+                    status: typeof data.status === 'string' ? data.status : 'detected',
+                    createdAt: typeof entry.createdAt === 'string' ? entry.createdAt : undefined,
+                };
+
+                existing.domain =
+                    typeof entry.domain === 'string'
+                        ? entry.domain
+                        : typeof existing.domain === 'string'
+                          ? existing.domain
+                          : undefined;
+                existing.summary =
+                    typeof data.summary === 'string' && data.summary.length > 0
+                        ? data.summary
+                        : existing.summary;
+                existing.status = intentStatusByEvent[entry.type] ?? existing.status;
+                existing.detectedOrder =
+                    typeof data.detectedOrder === 'number' ? data.detectedOrder : existing.detectedOrder;
+                existing.selectedOrder =
+                    typeof data.selectedOrder === 'number' ? data.selectedOrder : existing.selectedOrder;
+                existing.followUpTaskId =
+                    typeof data.followUpTaskId === 'string' ? data.followUpTaskId : existing.followUpTaskId;
+                existing.fallbackReason =
+                    typeof data.fallbackReason === 'string' ? data.fallbackReason : existing.fallbackReason;
+                existing.actionName =
+                    typeof data.actionName === 'string' ? data.actionName : existing.actionName;
+                timeline.set(intentId, existing);
+                continue;
+            }
+
+            if (entry.type !== 'runtime_action_outcome') {
+                if (
+                    entry.type !== 'handoff_transfer_requested' &&
+                    entry.type !== 'handoff_transfer_connected' &&
+                    entry.type !== 'handoff_transfer_failed' &&
+                    entry.type !== 'handoff_callback_requested'
+                ) {
+                    continue;
+                }
+
+                const data =
+                    entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data) ? entry.data : {};
+                const intentId = typeof data.intentId === 'string' ? data.intentId : undefined;
+                if (!intentId) {
+                    continue;
+                }
+
+                const existing: IntentTimelineEntry = timeline.get(intentId) ?? {
+                    intentId,
+                    domain: typeof entry.domain === 'string' ? entry.domain : undefined,
+                    summary:
+                        typeof data.reasonSummary === 'string'
+                            ? data.reasonSummary
+                            : typeof data.summary === 'string'
+                              ? data.summary
+                              : typeof entry.operatorSummary === 'string'
+                                ? entry.operatorSummary
+                                : 'Call issue',
+                    status: 'active',
+                    createdAt: typeof entry.createdAt === 'string' ? entry.createdAt : undefined,
+                };
+
+                existing.domain =
+                    typeof entry.domain === 'string'
+                        ? entry.domain
+                        : typeof existing.domain === 'string'
+                          ? existing.domain
+                          : undefined;
+                existing.summary =
+                    typeof data.reasonSummary === 'string' && data.reasonSummary.length > 0
+                        ? data.reasonSummary
+                        : typeof existing.summary === 'string'
+                          ? existing.summary
+                          : 'Call issue';
+                existing.actionName =
+                    entry.type === 'handoff_callback_requested'
+                        ? 'manual-follow-up'
+                        : typeof entry.actionName === 'string'
+                          ? entry.actionName
+                          : existing.actionName;
+                existing.transferStatus =
+                    entry.type === 'handoff_transfer_requested'
+                        ? 'requested'
+                        : entry.type === 'handoff_transfer_connected'
+                          ? 'connected'
+                          : entry.type === 'handoff_transfer_failed'
+                            ? 'failed'
+                            : 'callback_requested';
+                existing.transferTargetLabel =
+                    typeof data.transferTargetLabel === 'string'
+                        ? data.transferTargetLabel
+                        : existing.transferTargetLabel;
+                existing.handledLive =
+                    entry.type === 'handoff_transfer_connected'
+                        ? true
+                        : entry.type === 'handoff_transfer_failed'
+                          ? false
+                          : existing.handledLive;
+                existing.followUpTaskId =
+                    typeof entry.followUpTaskId === 'string'
+                        ? entry.followUpTaskId
+                        : typeof data.followUpTaskId === 'string'
+                          ? data.followUpTaskId
+                          : existing.followUpTaskId;
+                existing.fallbackReason =
+                    typeof entry.fallbackReason === 'string'
+                        ? entry.fallbackReason
+                        : typeof data.fallbackReason === 'string'
+                          ? data.fallbackReason
+                          : existing.fallbackReason;
+                existing.status =
+                    entry.type === 'handoff_transfer_connected' || entry.type === 'handoff_callback_requested'
+                        ? 'resolved'
+                        : existing.status;
+                timeline.set(intentId, existing);
+                continue;
+            }
+
+            const data =
+                entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data) ? entry.data : {};
+            const intentId = typeof data.intentId === 'string' ? data.intentId : undefined;
+            if (!intentId) {
+                continue;
+            }
+
+            const existing = timeline.get(intentId);
+            if (!existing) {
+                continue;
+            }
+
+            existing.actionName = typeof entry.actionName === 'string' ? entry.actionName : existing.actionName;
+            existing.handledLive = Boolean(entry.handledLive);
+            existing.followUpTaskId =
+                typeof entry.followUpTaskId === 'string' ? entry.followUpTaskId : existing.followUpTaskId;
+            existing.fallbackReason =
+                typeof entry.fallbackReason === 'string' ? entry.fallbackReason : existing.fallbackReason;
+            if (existing.status !== 'cancelled' && existing.status !== 'dropped') {
+                existing.status = 'resolved';
+            }
+            timeline.set(intentId, existing);
+        }
+
+        if (timeline.size === 0) {
+            return undefined;
+        }
+
+        return Array.from(timeline.values()).sort((left, right) => {
+            const leftDetected = left.detectedOrder ?? Number.MAX_SAFE_INTEGER;
+            const rightDetected = right.detectedOrder ?? Number.MAX_SAFE_INTEGER;
+            if (leftDetected !== rightDetected) {
+                return leftDetected - rightDetected;
+            }
+            const leftSelected = left.selectedOrder ?? Number.MAX_SAFE_INTEGER;
+            const rightSelected = right.selectedOrder ?? Number.MAX_SAFE_INTEGER;
+            return leftSelected - rightSelected;
+        });
     }
 
     private extractLatestDomain(turnsJson: unknown, tag?: string | null) {

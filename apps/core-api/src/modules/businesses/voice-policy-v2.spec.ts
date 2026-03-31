@@ -25,8 +25,11 @@ describe('buildVoicePolicyV2', () => {
         expect(result.dialoguePolicies.scheduling.slotPrompts.visitType).toContain('What kind of appointment');
         expect(result.dialoguePolicies.refill.slotPrompts.callerDob).toContain("date of birth");
         expect(result.dialoguePolicies.refill.slotPrompts.pharmacyPhone).toContain("phone number");
+        expect(result.dialoguePolicies.insurance.slotPrompts.memberId).toContain('member ID');
+        expect(result.dialoguePolicies.handoff.slotPrompts.reasonSummary).toContain('tell the staff');
         expect(result.dialoguePolicies.billing.slotPrompts.accountReference).toContain("account or statement reference");
         expect(result.dialoguePolicies.scheduling.confirmationTemplate).toContain('Should I send that to the practice');
+        expect(result.daytimeHandoffPolicy.mode).toBe('hybrid_transfer');
     });
 
     it('uses strict refill and billing defaults when practice settings do not override them', () => {
@@ -39,6 +42,7 @@ describe('buildVoicePolicyV2', () => {
 
         expect(result.servicePolicies.refill.intakeNotes).toContain('pharmacy phone');
         expect(result.servicePolicies.billing.intakeNotes).toContain('account reference');
+        expect(result.servicePolicies.insurance.intakeNotes).toContain('Member ID');
     });
 
     it('normalizes legacy minimal knowledge config into the expanded runtime knowledge shape', () => {

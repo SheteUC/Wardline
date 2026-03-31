@@ -12,6 +12,7 @@ import {
     buildPracticeReadiness,
     DEFAULT_AFTER_HOURS_POLICY,
     DEFAULT_BILLING_POLICY,
+    DEFAULT_DAYTIME_HANDOFF_POLICY,
     DEFAULT_ENABLED_ACTIONS,
     DEFAULT_ESCALATION_CONFIG,
     DEFAULT_INSURANCE_POLICY,
@@ -117,6 +118,13 @@ export default function PracticeSetupPage() {
     const [refillPolicyNotes, setRefillPolicyNotes] = useState(DEFAULT_REFILL_POLICY.intakeNotes);
     const [billingPolicyNotes, setBillingPolicyNotes] = useState(DEFAULT_BILLING_POLICY.intakeNotes);
     const [insurancePolicyNotes, setInsurancePolicyNotes] = useState(DEFAULT_INSURANCE_POLICY.intakeNotes);
+    const [daytimeHandoffMode, setDaytimeHandoffMode] = useState(DEFAULT_DAYTIME_HANDOFF_POLICY.mode);
+    const [transferTargetLabel, setTransferTargetLabel] = useState(DEFAULT_DAYTIME_HANDOFF_POLICY.transferTargetLabel);
+    const [transferPhone, setTransferPhone] = useState(DEFAULT_DAYTIME_HANDOFF_POLICY.transferPhone);
+    const [ringTimeoutSeconds, setRingTimeoutSeconds] = useState(DEFAULT_DAYTIME_HANDOFF_POLICY.ringTimeoutSeconds);
+    const [daytimeHandoffFallbackSummary, setDaytimeHandoffFallbackSummary] = useState(
+        DEFAULT_DAYTIME_HANDOFF_POLICY.fallbackSummary,
+    );
     const [faqSummary, setFaqSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.faqSummary);
     const [commonQuestions, setCommonQuestions] = useState(DEFAULT_KNOWLEDGE_CONFIG.commonQuestions.join('\n'));
     const [servicesSummary, setServicesSummary] = useState(DEFAULT_KNOWLEDGE_CONFIG.servicesSummary);
@@ -151,6 +159,11 @@ export default function PracticeSetupPage() {
         setRefillPolicyNotes(practiceSetup.refillPolicy.intakeNotes);
         setBillingPolicyNotes(practiceSetup.billingPolicy.intakeNotes);
         setInsurancePolicyNotes(practiceSetup.insurancePolicy.intakeNotes);
+        setDaytimeHandoffMode(practiceSetup.daytimeHandoffPolicy.mode);
+        setTransferTargetLabel(practiceSetup.daytimeHandoffPolicy.transferTargetLabel);
+        setTransferPhone(practiceSetup.daytimeHandoffPolicy.transferPhone);
+        setRingTimeoutSeconds(practiceSetup.daytimeHandoffPolicy.ringTimeoutSeconds);
+        setDaytimeHandoffFallbackSummary(practiceSetup.daytimeHandoffPolicy.fallbackSummary);
         setFaqSummary(practiceSetup.knowledgeConfig.faqSummary);
         setCommonQuestions(practiceSetup.knowledgeConfig.commonQuestions.join('\n'));
         setServicesSummary(practiceSetup.knowledgeConfig.servicesSummary);
@@ -208,6 +221,14 @@ export default function PracticeSetupPage() {
             refillPolicy: { liveEnabled: enabledActions.includes('refill-request'), intakeNotes: refillPolicyNotes, fallbackSummary: DEFAULT_REFILL_POLICY.fallbackSummary },
             billingPolicy: { liveEnabled: enabledActions.includes('billing-request'), intakeNotes: billingPolicyNotes, fallbackSummary: DEFAULT_BILLING_POLICY.fallbackSummary },
             insurancePolicy: { liveEnabled: enabledActions.includes('insurance-check'), intakeNotes: insurancePolicyNotes, fallbackSummary: DEFAULT_INSURANCE_POLICY.fallbackSummary },
+            daytimeHandoffPolicy: {
+                mode: daytimeHandoffMode,
+                transferTargetLabel,
+                transferPhone,
+                ringTimeoutSeconds,
+                collectReasonFirst: true,
+                fallbackSummary: daytimeHandoffFallbackSummary,
+            },
             knowledgeConfig,
             escalationConfig: { escalationMessage, urgentCallbackWindowMinutes, notifyStaffImmediately: true },
             emergencyKeywords: parseTextList(emergencyKeywords),
@@ -222,6 +243,8 @@ export default function PracticeSetupPage() {
         businessId,
         commonQuestions,
         customFaqs,
+        daytimeHandoffFallbackSummary,
+        daytimeHandoffMode,
         emergencyKeywords,
         enabledActions,
         escalationMessage,
@@ -234,7 +257,10 @@ export default function PracticeSetupPage() {
         recordingDefault,
         refillSummary,
         refillPolicyNotes,
+        ringTimeoutSeconds,
         servicesSummary,
+        transferPhone,
+        transferTargetLabel,
         transcriptRetentionDays,
         urgentCallbackWindowMinutes,
         knowledgeConfig,
@@ -279,6 +305,14 @@ export default function PracticeSetupPage() {
                 refillPolicy: { liveEnabled: enabledActions.includes('refill-request'), intakeNotes: refillPolicyNotes, fallbackSummary: DEFAULT_REFILL_POLICY.fallbackSummary },
                 billingPolicy: { liveEnabled: enabledActions.includes('billing-request'), intakeNotes: billingPolicyNotes, fallbackSummary: DEFAULT_BILLING_POLICY.fallbackSummary },
                 insurancePolicy: { liveEnabled: enabledActions.includes('insurance-check'), intakeNotes: insurancePolicyNotes, fallbackSummary: DEFAULT_INSURANCE_POLICY.fallbackSummary },
+                daytimeHandoffPolicy: {
+                    mode: daytimeHandoffMode,
+                    transferTargetLabel,
+                    transferPhone,
+                    ringTimeoutSeconds,
+                    collectReasonFirst: true,
+                    fallbackSummary: daytimeHandoffFallbackSummary,
+                },
                 knowledgeConfig,
                 escalationConfig: { escalationMessage, urgentCallbackWindowMinutes, notifyStaffImmediately: true },
                 emergencyKeywords: parseTextList(emergencyKeywords),
@@ -380,6 +414,32 @@ export default function PracticeSetupPage() {
                                         <SetupField label="Refill policy"><SetupTextarea value={refillPolicyNotes} onChange={(event) => { setRefillPolicyNotes(event.target.value); setHasChanges(true); }} /></SetupField>
                                         <SetupField label="Insurance policy"><SetupTextarea value={insurancePolicyNotes} onChange={(event) => { setInsurancePolicyNotes(event.target.value); setHasChanges(true); }} /></SetupField>
                                         <SetupField label="Billing policy"><SetupTextarea value={billingPolicyNotes} onChange={(event) => { setBillingPolicyNotes(event.target.value); setHasChanges(true); }} /></SetupField>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card title="Daytime Handoff">
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    <SetupField label="Daytime handoff mode">
+                                        <select value={daytimeHandoffMode} onChange={(event) => { setDaytimeHandoffMode(event.target.value as typeof daytimeHandoffMode); setHasChanges(true); }} className={neoSelectClass}>
+                                            <option value="hybrid_transfer">Hybrid transfer</option>
+                                            <option value="callback_only">Callback only</option>
+                                            <option value="transfer_first">Transfer first</option>
+                                        </select>
+                                    </SetupField>
+                                    <SetupField label="Transfer target label">
+                                        <input value={transferTargetLabel} onChange={(event) => { setTransferTargetLabel(event.target.value); setHasChanges(true); }} className={neoFieldClass} placeholder="front desk" />
+                                    </SetupField>
+                                    <SetupField label="Transfer phone number">
+                                        <input value={transferPhone} onChange={(event) => { setTransferPhone(event.target.value); setHasChanges(true); }} className={neoFieldClass} placeholder="+15551234567" />
+                                    </SetupField>
+                                    <SetupField label="Ring timeout (seconds)">
+                                        <input type="number" min={10} max={45} value={ringTimeoutSeconds} onChange={(event) => { setRingTimeoutSeconds(Math.max(10, Math.min(45, parseInt(event.target.value, 10) || 20))); setHasChanges(true); }} className={neoFieldClass} />
+                                    </SetupField>
+                                    <div className="lg:col-span-2">
+                                        <SetupField label="Fallback summary">
+                                            <SetupTextarea value={daytimeHandoffFallbackSummary} onChange={(event) => { setDaytimeHandoffFallbackSummary(event.target.value); setHasChanges(true); }} />
+                                        </SetupField>
                                     </div>
                                 </div>
                             </Card>

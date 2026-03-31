@@ -19,6 +19,15 @@ export interface ServicePolicy {
     fallbackSummary: string;
 }
 
+export interface DaytimeHandoffPolicy {
+    mode: 'hybrid_transfer' | 'callback_only' | 'transfer_first';
+    transferTargetLabel: string;
+    transferPhone: string;
+    ringTimeoutSeconds: number;
+    collectReasonFirst: boolean;
+    fallbackSummary: string;
+}
+
 export const KNOWLEDGE_ROUTE_TARGETS = [
     'knowledge',
     'scheduling',
@@ -59,6 +68,7 @@ export interface NormalizedPracticeSetup {
     refillPolicy: ServicePolicy;
     billingPolicy: ServicePolicy;
     insurancePolicy: ServicePolicy;
+    daytimeHandoffPolicy: DaytimeHandoffPolicy;
     knowledgeConfig: KnowledgeConfig;
     escalationConfig: EscalationConfig;
 }
@@ -85,8 +95,18 @@ export const DEFAULT_BILLING_POLICY: ServicePolicy = {
 
 export const DEFAULT_INSURANCE_POLICY: ServicePolicy = {
     liveEnabled: true,
-    intakeNotes: 'Answer acceptance and basic eligibility questions when supported by the connected payer workflow.',
+    intakeNotes:
+        'Answer acceptance and basic eligibility questions when supported by the connected payer workflow. Member ID and patient date of birth are required for eligibility checks, while benefits, claim status, and prior authorization requests may need staff follow-up.',
     fallbackSummary: 'If insurance automation is unavailable, create an insurance follow-up task for staff.',
+};
+
+export const DEFAULT_DAYTIME_HANDOFF_POLICY: DaytimeHandoffPolicy = {
+    mode: 'hybrid_transfer',
+    transferTargetLabel: 'front desk',
+    transferPhone: '',
+    ringTimeoutSeconds: 20,
+    collectReasonFirst: true,
+    fallbackSummary: 'If nobody is available to take the call live, create a same-day callback task for staff.',
 };
 
 export const DEFAULT_KNOWLEDGE_CONFIG: KnowledgeConfig = {
@@ -178,6 +198,42 @@ function normalizeServicePolicy(value: unknown, fallback: ServicePolicy): Servic
             typeof value.fallbackSummary === 'string' && value.fallbackSummary.trim()
                 ? value.fallbackSummary.trim()
                 : fallback.fallbackSummary,
+    };
+}
+
+function normalizeDaytimeHandoffPolicy(value: unknown): DaytimeHandoffPolicy {
+    if (!isObject(value)) {
+        return { ...DEFAULT_DAYTIME_HANDOFF_POLICY };
+    }
+
+    const mode =
+        value.mode === 'callback_only' ||
+        value.mode === 'transfer_first' ||
+        value.mode === 'hybrid_transfer'
+            ? value.mode
+            : DEFAULT_DAYTIME_HANDOFF_POLICY.mode;
+    const ringTimeoutSeconds =
+        typeof value.ringTimeoutSeconds === 'number' && Number.isFinite(value.ringTimeoutSeconds)
+            ? Math.max(10, Math.min(45, Math.round(value.ringTimeoutSeconds)))
+            : DEFAULT_DAYTIME_HANDOFF_POLICY.ringTimeoutSeconds;
+
+    return {
+        mode,
+        transferTargetLabel:
+            typeof value.transferTargetLabel === 'string' && value.transferTargetLabel.trim()
+                ? value.transferTargetLabel.trim()
+                : DEFAULT_DAYTIME_HANDOFF_POLICY.transferTargetLabel,
+        transferPhone:
+            typeof value.transferPhone === 'string' ? value.transferPhone.trim() : DEFAULT_DAYTIME_HANDOFF_POLICY.transferPhone,
+        ringTimeoutSeconds,
+        collectReasonFirst:
+            typeof value.collectReasonFirst === 'boolean'
+                ? value.collectReasonFirst
+                : DEFAULT_DAYTIME_HANDOFF_POLICY.collectReasonFirst,
+        fallbackSummary:
+            typeof value.fallbackSummary === 'string' && value.fallbackSummary.trim()
+                ? value.fallbackSummary.trim()
+                : DEFAULT_DAYTIME_HANDOFF_POLICY.fallbackSummary,
     };
 }
 
@@ -282,6 +338,7 @@ export function normalizePracticeSetup(settings?: {
     refillPolicy?: unknown;
     billingPolicy?: unknown;
     insurancePolicy?: unknown;
+    daytimeHandoffPolicy?: unknown;
     knowledgeConfig?: unknown;
     escalationConfig?: unknown;
 }): NormalizedPracticeSetup {
@@ -291,6 +348,7 @@ export function normalizePracticeSetup(settings?: {
         refillPolicy: normalizeServicePolicy(settings?.refillPolicy, DEFAULT_REFILL_POLICY),
         billingPolicy: normalizeServicePolicy(settings?.billingPolicy, DEFAULT_BILLING_POLICY),
         insurancePolicy: normalizeServicePolicy(settings?.insurancePolicy, DEFAULT_INSURANCE_POLICY),
+        daytimeHandoffPolicy: normalizeDaytimeHandoffPolicy(settings?.daytimeHandoffPolicy),
         knowledgeConfig: normalizeKnowledgeConfig(settings?.knowledgeConfig),
         escalationConfig: normalizeEscalationConfig(settings?.escalationConfig),
     };

@@ -56,6 +56,9 @@ class CoreApiClient:
     async def save_transcript(self, call_id: str, segments: list[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         return await self._post_json(f"/api/calls/{call_id}/transcript", {"segments": segments})
 
+    async def escalate_to_human(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        return await self._post_json("/api/escalations/human-transfer", payload)
+
     async def execute_runtime_action(
         self,
         business_id: str,

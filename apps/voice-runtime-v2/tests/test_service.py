@@ -2,6 +2,7 @@ import asyncio
 import pathlib
 import sys
 import unittest
+from unittest.mock import AsyncMock, patch
 
 APP_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(APP_ROOT) not in sys.path:
@@ -31,6 +32,14 @@ def build_voice_policy(overrides=None):
             "mode": "urgent_voicemail",
             "greeting": "The office is currently closed, but I can take a message for the staff.",
             "sendUrgentToVoicemail": True,
+        },
+        "daytimeHandoffPolicy": {
+            "mode": "hybrid_transfer",
+            "transferTargetLabel": "front desk",
+            "transferPhone": "+15551239999",
+            "ringTimeoutSeconds": 20,
+            "collectReasonFirst": True,
+            "fallbackSummary": "If nobody is available to take the call live, create a same-day callback task for staff.",
         },
         "knowledgeConfig": {
             "faqSummary": "We help with appointments, refills, insurance, and billing.",
@@ -75,7 +84,7 @@ def build_voice_policy(overrides=None):
                 "runtimeAction": "insurance-check",
                 "integrationCategory": "INSURANCE",
                 "liveEnabled": True,
-                "intakeNotes": "Collect the carrier name.",
+                "intakeNotes": "Collect the carrier name. Acceptance and basic eligibility are supported live. Member ID and date of birth are required for eligibility checks. Benefits, claim status, and prior auth may require staff follow-up.",
                 "fallbackSummary": "Create an insurance follow-up.",
             },
             "billing": {
@@ -142,7 +151,16 @@ def build_voice_policy(overrides=None):
                 "callerIntro": "",
                 "clarificationStyle": "friendly",
                 "slotPrompts": {
-                    "carrierName": "Which insurance carrier would you like me to check?",
+                    "inquiryType": "Are you asking whether the practice accepts the plan, or whether coverage looks active for a patient?",
+                    "carrierName": "Which insurance carrier should I check?",
+                    "planName": "Do you know the plan name, like PPO or HMO?",
+                    "memberId": "What is the member ID on the insurance card?",
+                    "groupNumber": "Do you know the group number?",
+                    "patientName": "What is the patient's full name?",
+                    "patientDob": "What is the patient's date of birth?",
+                    "subscriberRelation": "Is the patient the subscriber, or are they covered through someone else?",
+                    "serviceType": "What type of visit or service is this for?",
+                    "callbackPhone": "What callback number should the staff use if they need to follow up?",
                 },
                 "confirmationTemplate": "",
                 "successTemplate": "Okay, I checked that for you.",
@@ -166,6 +184,10 @@ def build_voice_policy(overrides=None):
                 "clarificationStyle": "friendly",
                 "slotPrompts": {
                     "voicemail": "Please say the message you would like me to pass along.",
+                    "reasonSummary": "What should I tell the staff this is about?",
+                    "callbackPhone": "What callback number should the staff use if they need to follow up?",
+                    "preferredCallbackWindow": "Is there a preferred time window for a callback?",
+                    "transferConsent": "I can try to connect you now. Would you like me to try the live transfer?",
                 },
                 "confirmationTemplate": "",
                 "successTemplate": "Okay, I passed that request to the staff.",
@@ -200,6 +222,7 @@ class FakeCoreApiClient:
         self.updated_calls = []
         self.created_voicemails = []
         self.saved_transcripts = []
+        self.escalation_calls = []
 
     async def close(self):
         return None
@@ -246,6 +269,10 @@ class FakeCoreApiClient:
     async def save_transcript(self, call_id, payload):
         self.saved_transcripts.append((call_id, payload))
         return {"success": True}
+
+    async def escalate_to_human(self, payload):
+        self.escalation_calls.append(payload)
+        return {"outcome": "transferred", "transferPhone": payload.get("transferPhone")}
 
     async def execute_runtime_action(self, business_id, action_name, payload):
         self.runtime_action_calls.append((business_id, action_name, payload))
@@ -675,8 +702,127 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(response["requiresConfirmation"])
         self.assertEqual(api_client.runtime_action_calls[-1][1], "insurance-check")
-        self.assertEqual(response["operatorSummary"]["headline"], "Insurance check ready")
+        self.assertEqual(response["operatorSummary"]["headline"], "Insurance acceptance check ready")
         self.assertTrue(response["awaitingAnythingElse"])
+
+    async def test_insurance_eligibility_collects_member_id_and_dob_before_live_execution(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        first = await runtime.process_text_turn(
+            session.sessionId,
+            "I need an eligibility check with Blue Cross",
+        )
+        self.assertEqual(first["reply"], "What is the member ID on the insurance card?")
+
+        second = await runtime.process_text_turn(session.sessionId, "Member ID A12345")
+        self.assertEqual(second["reply"], "What is the patient's date of birth?")
+
+        third = await runtime.process_text_turn(session.sessionId, "01/05/1980")
+        self.assertEqual(third["reply"], "What is the patient's full name?")
+
+        fourth = await runtime.process_text_turn(session.sessionId, "John Doe")
+        self.assertFalse(fourth["requiresConfirmation"])
+        self.assertEqual(api_client.runtime_action_calls[-1][1], "insurance-check")
+        self.assertEqual(api_client.runtime_action_calls[-1][2]["inquiryType"], "eligibility")
+        self.assertEqual(api_client.runtime_action_calls[-1][2]["memberId"], "A12345")
+        self.assertEqual(api_client.runtime_action_calls[-1][2]["patientDob"], "1980-01-05")
+        self.assertEqual(api_client.runtime_action_calls[-1][2]["patientName"], "John Doe")
+        self.assertEqual(fourth["operatorSummary"]["headline"], "Insurance eligibility check ready")
+
+    async def test_insurance_claim_status_downgrades_to_staff_follow_up(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(
+            session.sessionId,
+            "I need claim status for Aetna member ID A12345 patient John Doe date of birth 01/05/1980",
+        )
+
+        self.assertTrue(response["requiresConfirmation"])
+        self.assertEqual(response["pendingAction"]["actionName"], "manual-follow-up")
+        self.assertEqual(response["operatorSummary"]["headline"], "Insurance request needs staff review")
+        self.assertIn("needs staff review", response["reply"].lower())
+
+    async def test_insurance_missing_member_id_escalates_to_manual_follow_up(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need an eligibility check with Aetna")
+        first_retry = await runtime.process_text_turn(session.sessionId, "I don't have it")
+        self.assertTrue(first_retry["requiresConfirmation"])
+        self.assertEqual(first_retry["pendingAction"]["actionName"], "manual-follow-up")
+
+        confirmed = await runtime.process_text_turn(session.sessionId, "yes")
+        self.assertEqual(api_client.runtime_action_calls[-1][1], "manual-follow-up")
+        self.assertIn("insurance request to the staff", confirmed["reply"].lower())
+
+    async def test_daytime_handoff_asks_for_reason_then_offers_transfer(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        first = await runtime.process_text_turn(session.sessionId, "Transfer me")
+        self.assertEqual(first["reply"], "What should I tell the staff this is about?")
+
+        second = await runtime.process_text_turn(session.sessionId, "It's about my medication")
+        self.assertTrue(second["requiresConfirmation"])
+        self.assertEqual(second["pendingAction"]["actionName"], "handoff-transfer")
+        self.assertIn("connect you to the front desk", second["reply"].lower())
+
+    async def test_daytime_handoff_transfer_me_now_attempts_live_transfer(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        with patch.object(runtime.twilio, "redirect_live_call", AsyncMock(return_value={"sid": "CA_test"})):
+            await runtime.process_text_turn(session.sessionId, "Transfer me")
+            response = await runtime.process_text_turn(
+                session.sessionId,
+                "It's about my medication and transfer me now",
+            )
+
+        self.assertEqual(response["domain"], "handoff")
+        self.assertEqual(response["stage"], "handoff")
+        self.assertEqual(len(api_client.escalation_calls), 1)
+        self.assertEqual(len(api_client.runtime_action_calls), 0)
+        self.assertTrue(any(event.type == "handoff_transfer_requested" for event in session.events))
+
+    async def test_daytime_handoff_callback_only_mode_skips_live_transfer(self):
+        runtime, api_client, session = await self.create_runtime(
+            voice_policy=build_voice_policy(
+                {
+                    "daytimeHandoffPolicy": {
+                        "mode": "callback_only",
+                        "transferTargetLabel": "front desk",
+                        "transferPhone": "",
+                        "ringTimeoutSeconds": 20,
+                        "collectReasonFirst": True,
+                        "fallbackSummary": "Create a same-day callback task for staff.",
+                    }
+                }
+            )
+        )
+
+        response = await runtime.process_text_turn(session.sessionId, "I need to speak to someone about my medication")
+
+        self.assertEqual(api_client.runtime_action_calls[-1][1], "manual-follow-up")
+        self.assertEqual(len(api_client.escalation_calls), 0)
+        self.assertEqual(response["stage"], "closing")
+        self.assertIn("call you back", response["reply"].lower())
+
+    async def test_transfer_action_no_answer_creates_callback_follow_up(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        with patch.object(runtime.twilio, "redirect_live_call", AsyncMock(return_value={"sid": "CA_test"})):
+            await runtime.process_text_turn(session.sessionId, "Transfer me")
+            await runtime.process_text_turn(
+                session.sessionId,
+                "It's about my medication and transfer me now",
+            )
+
+        twiml = await runtime.handle_transfer_action_callback(
+            session.sessionId,
+            {"DialCallStatus": "no-answer"},
+        )
+
+        self.assertIn("<Say>", twiml)
+        self.assertEqual(api_client.runtime_action_calls[-1][1], "manual-follow-up")
+        self.assertEqual(session.stage, "completed")
+        self.assertTrue(any(event.type == "handoff_transfer_failed" for event in session.events))
 
     async def test_billing_flow_collects_required_slots_before_confirmation(self):
         runtime, _api_client, session = await self.create_runtime()
@@ -765,7 +911,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         supervisor_event = [event for event in session.events if event.type == "supervisor_decision"][-1]
         self.assertEqual(supervisor_event.operatorSummary, "compound-knowledge-plus-action")
         self.assertEqual(supervisor_event.data["followOnIntent"]["domain"], "scheduling")
-        self.assertEqual(session.events[-2].type, "knowledge_result")
+        self.assertTrue(any(event.type == "knowledge_result" for event in session.events))
 
     async def test_custom_faq_with_route_to_scheduling_works_in_compound_turn(self):
         runtime, _api_client, session = await self.create_runtime()
@@ -792,9 +938,9 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         response = await runtime.process_text_turn(session.sessionId, "What are your hours and can someone call me back?")
 
         self.assertEqual(response["domain"], "handoff")
-        self.assertEqual(api_client.runtime_action_calls[-1][1], "manual-follow-up")
         self.assertIn("office is open today", response["reply"].lower())
-        self.assertIn("captured that request for the staff", response["reply"].lower())
+        self.assertIn("connect you to the front desk", response["reply"].lower())
+        self.assertEqual(len(api_client.runtime_action_calls), 0)
         supervisor_event = [event for event in session.events if event.type == "supervisor_decision"][-1]
         self.assertEqual(supervisor_event.operatorSummary, "compound-knowledge-plus-handoff")
 
@@ -826,7 +972,10 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         response = await runtime.process_text_turn(session.sessionId, "Can someone from the staff call me back about your hours?")
 
         self.assertEqual(response["domain"], "handoff")
-        self.assertEqual(api_client.runtime_action_calls[-1][1], "manual-follow-up")
+        self.assertTrue(response["requiresConfirmation"])
+        self.assertEqual(response["pendingAction"]["actionName"], "handoff-transfer")
+        self.assertIn("connect you to the front desk", response["reply"].lower())
+        self.assertEqual(len(api_client.runtime_action_calls), 0)
         supervisor_event = [event for event in session.events if event.type == "supervisor_decision"][-1]
         self.assertEqual(supervisor_event.operatorSummary, "explicit-human-request")
 
@@ -852,6 +1001,125 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(next_response["domain"], "refill")
         self.assertFalse(next_response["requiresConfirmation"])
         self.assertEqual(next_response["reply"], "What is the caller's date of birth?")
+
+    async def test_multiple_action_issues_prompt_for_priority(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(
+            session.sessionId,
+            "I need billing help and a refill for lisinopril",
+        )
+
+        self.assertTrue(response["awaitingIntentPriority"])
+        self.assertIn("Which should I handle first?", response["reply"])
+        self.assertIn("billing request", response["reply"].lower())
+        self.assertIn("refill request", response["reply"].lower())
+        supervisor_event = [event for event in session.events if event.type == "supervisor_decision"][-1]
+        self.assertEqual(supervisor_event.operatorSummary, "multi-intent-priority-prompt")
+
+    async def test_knowledge_plus_multiple_actions_answers_then_prompts_for_priority(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(
+            session.sessionId,
+            "What are your hours today, and I need billing help and a refill for lisinopril",
+        )
+
+        self.assertTrue(response["awaitingIntentPriority"])
+        self.assertIn("office is open today", response["reply"].lower())
+        self.assertIn("Which should I handle first?", response["reply"])
+
+    async def test_selected_issue_completes_then_prompts_for_remaining_issue(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(
+            session.sessionId,
+            "I need billing help and a refill for lisinopril",
+        )
+        first = await runtime.process_text_turn(session.sessionId, "refill first")
+        self.assertEqual(first["domain"], "refill")
+        self.assertEqual(first["reply"], "What is the caller's date of birth?")
+
+        await runtime.process_text_turn(session.sessionId, "01/05/1980")
+        await runtime.process_text_turn(session.sessionId, "CVS")
+        await runtime.process_text_turn(session.sessionId, "555-123-4567")
+        confirmed = await runtime.process_text_turn(session.sessionId, "yes")
+
+        self.assertTrue(confirmed["awaitingIntentPriority"])
+        self.assertIn("You also asked about", confirmed["reply"])
+        self.assertIn("billing request", confirmed["reply"].lower())
+
+        next_issue = await runtime.process_text_turn(session.sessionId, "yes")
+        self.assertEqual(next_issue["domain"], "billing")
+        self.assertEqual(next_issue["reply"], "What account or statement reference should I include?")
+
+    async def test_new_issue_during_active_intake_can_switch_and_resume(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        first = await runtime.process_text_turn(session.sessionId, "I want to schedule an appointment")
+        self.assertEqual(first["reply"], "What kind of appointment do you need, like a physical, follow-up, or consultation?")
+
+        switch_prompt = await runtime.process_text_turn(session.sessionId, "I also need billing help")
+        self.assertTrue(switch_prompt["awaitingIntentPriority"])
+        self.assertIn("switch to billing request", switch_prompt["reply"].lower())
+
+        billing = await runtime.process_text_turn(session.sessionId, "billing first")
+        self.assertEqual(billing["domain"], "billing")
+        self.assertEqual(billing["reply"], "What account or statement reference should I include?")
+
+        await runtime.process_text_turn(session.sessionId, "It's about my statement")
+        await runtime.process_text_turn(session.sessionId, "statement number AB-1234")
+        resolved = await runtime.process_text_turn(session.sessionId, "yes")
+
+        self.assertTrue(resolved["awaitingIntentPriority"])
+        self.assertIn("you also asked about", resolved["reply"].lower())
+        self.assertIn("scheduling request", resolved["reply"].lower())
+
+        resumed = await runtime.process_text_turn(session.sessionId, "yes")
+        self.assertEqual(resumed["domain"], "scheduling")
+        self.assertEqual(
+            resumed["reply"],
+            "What kind of appointment do you need, like a physical, follow-up, or consultation?",
+        )
+
+    async def test_new_issue_during_confirmation_can_switch_and_resume_confirmation(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
+        switch_prompt = await runtime.process_text_turn(session.sessionId, "I also need billing help")
+
+        self.assertTrue(switch_prompt["awaitingIntentPriority"])
+        self.assertIn("keep working on a physical on tuesday at 10:00 am", switch_prompt["reply"].lower())
+
+        billing = await runtime.process_text_turn(session.sessionId, "billing first")
+        self.assertEqual(billing["domain"], "billing")
+        self.assertEqual(billing["reply"], "What account or statement reference should I include?")
+
+        await runtime.process_text_turn(session.sessionId, "It's about my statement")
+        await runtime.process_text_turn(session.sessionId, "statement number AB-1234")
+        resolved = await runtime.process_text_turn(session.sessionId, "yes")
+
+        self.assertTrue(resolved["awaitingIntentPriority"])
+        self.assertIn("physical on tuesday at 10:00 am", resolved["reply"].lower())
+
+        resumed = await runtime.process_text_turn(session.sessionId, "yes")
+        self.assertTrue(resumed["requiresConfirmation"])
+        self.assertEqual(resumed["domain"], "scheduling")
+        self.assertEqual(
+            resumed["reply"],
+            "I have a request for a physical on Tuesday at 10:00 AM. Should I send that to the practice?",
+        )
+
+    async def test_rejects_more_than_three_actionable_issues_in_one_turn(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(
+            session.sessionId,
+            "I need to schedule a physical and I need a refill for lisinopril and I need billing help and I need someone from the staff to call me back",
+        )
+
+        self.assertIn("top three things", response["reply"].lower())
+        self.assertFalse(response["awaitingIntentPriority"])
 
     async def test_final_close_waits_for_mark_then_ignores_late_transcripts(self):
         runtime, _api_client, session = await self.create_runtime()

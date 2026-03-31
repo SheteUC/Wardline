@@ -242,20 +242,32 @@ export class RuntimeActionsService {
             carrierName: string;
             planName?: string;
             inquiryType?: string;
+            patientName?: string;
+            patientDob?: string;
+            memberId?: string;
+            groupNumber?: string;
+            subscriberRelation?: string;
+            serviceType?: string;
+            callbackPhone?: string;
+            notes?: string;
         },
     ): Promise<RuntimeActionResult> {
         const integration = await this.integrationsService.findResolvedIntegration(businessId, 'INSURANCE');
+        const inquiryType = body.inquiryType ?? 'acceptance';
 
-        const matchedPlan = await this.prisma.insurancePlan.findFirst({
-            where: {
-                businessId,
-                carrierName: { contains: body.carrierName, mode: 'insensitive' },
-                ...(body.planName
-                    ? { planName: { contains: body.planName, mode: 'insensitive' } }
-                    : {}),
-            },
-            orderBy: { updatedAt: 'desc' },
-        });
+        const matchedPlan =
+            inquiryType === 'acceptance'
+                ? await this.prisma.insurancePlan.findFirst({
+                      where: {
+                          businessId,
+                          carrierName: { contains: body.carrierName, mode: 'insensitive' },
+                          ...(body.planName
+                              ? { planName: { contains: body.planName, mode: 'insensitive' } }
+                              : {}),
+                      },
+                      orderBy: { updatedAt: 'desc' },
+                  })
+                : null;
 
         const inquiry = await this.prisma.insuranceInquiry.create({
             data: {
@@ -263,10 +275,10 @@ export class RuntimeActionsService {
                 callId: body.callId,
                 insurancePlanId: matchedPlan?.id,
                 callerName: body.callerName,
-                callerPhone: body.callerPhone,
+                callerPhone: body.callbackPhone ?? body.callerPhone,
                 carrierName: body.carrierName,
                 planName: body.planName,
-                inquiryType: body.inquiryType ?? 'acceptance',
+                inquiryType,
                 resolved: !!matchedPlan,
                 outcome: matchedPlan
                     ? matchedPlan.isAccepted
@@ -289,9 +301,17 @@ export class RuntimeActionsService {
                     planName: matchedPlan.planName,
                     carrierName: matchedPlan.carrierName,
                     source: 'local_plan_lookup',
+                    inquiryType,
+                    patientName: body.patientName,
+                    patientDob: body.patientDob,
+                    memberId: body.memberId,
+                    groupNumber: body.groupNumber,
+                    subscriberRelation: body.subscriberRelation,
+                    serviceType: body.serviceType,
+                    callbackPhone: body.callbackPhone,
                 },
                 callerName: body.callerName,
-                callerPhone: body.callerPhone,
+                callerPhone: body.callbackPhone ?? body.callerPhone,
             });
 
             return {
@@ -310,6 +330,7 @@ export class RuntimeActionsService {
                     planName: matchedPlan.planName,
                     carrierName: matchedPlan.carrierName,
                     source: 'local_plan_lookup',
+                    inquiryType,
                 },
             };
         }
@@ -324,6 +345,7 @@ export class RuntimeActionsService {
             },
         });
 
+        let verificationId: string | undefined;
         let followUpTaskId: string | undefined;
         if (!execution.handledLive) {
             followUpTaskId = await this.createFallbackTask({
@@ -337,15 +359,30 @@ export class RuntimeActionsService {
                 title: `Insurance check: ${body.carrierName}`,
                 summary: `Insurance verification request captured for ${body.carrierName}.`,
                 callerName: body.callerName,
-                callerPhone: body.callerPhone,
+                callerPhone: body.callbackPhone ?? body.callerPhone,
                 metadata: {
                     inquiryId: inquiry.id,
+                    inquiryType,
                     carrierName: body.carrierName,
                     planName: body.planName,
+                    patientName: body.patientName,
+                    patientDob: body.patientDob,
+                    memberId: body.memberId,
+                    groupNumber: body.groupNumber,
+                    subscriberRelation: body.subscriberRelation,
+                    serviceType: body.serviceType,
+                    callbackPhone: body.callbackPhone,
+                    notes: body.notes,
                     liveAttemptMessage: execution.message,
                 },
             });
         } else {
+            verificationId = await this.maybeCreateInsuranceVerification({
+                businessId,
+                body,
+                matchedPlanId: matchedPlan?.id,
+                executionData: execution.data ?? {},
+            });
             await this.prisma.insuranceInquiry.update({
                 where: { id: inquiry.id },
                 data: {
@@ -364,11 +401,20 @@ export class RuntimeActionsService {
             followUpTaskId,
             data: {
                 inquiryId: inquiry.id,
+                verificationId,
+                inquiryType,
+                patientName: body.patientName,
+                patientDob: body.patientDob,
+                memberId: body.memberId,
+                groupNumber: body.groupNumber,
+                subscriberRelation: body.subscriberRelation,
+                serviceType: body.serviceType,
+                callbackPhone: body.callbackPhone,
                 ...execution.data,
             },
             fallbackReason: execution.fallbackReason,
             callerName: body.callerName,
-            callerPhone: body.callerPhone,
+            callerPhone: body.callbackPhone ?? body.callerPhone,
         });
 
         return {
@@ -384,6 +430,15 @@ export class RuntimeActionsService {
                 : 'I have captured your insurance question and the office will follow up after checking coverage.',
             data: {
                 inquiryId: inquiry.id,
+                verificationId,
+                inquiryType,
+                patientName: body.patientName,
+                patientDob: body.patientDob,
+                memberId: body.memberId,
+                groupNumber: body.groupNumber,
+                subscriberRelation: body.subscriberRelation,
+                serviceType: body.serviceType,
+                callbackPhone: body.callbackPhone,
                 ...execution.data,
             },
         };
@@ -660,6 +715,100 @@ export class RuntimeActionsService {
             : `[Wardline runtime] Follow-up required${details.followUpTaskId ? ` (task ${details.followUpTaskId})` : ''}${details.fallbackReason ? ` because ${details.fallbackReason}` : ''}.`;
 
         return [existingNotes, suffix].filter(Boolean).join('\n');
+    }
+
+    private async maybeCreateInsuranceVerification(input: {
+        businessId: string;
+        body: {
+            callerName?: string;
+            callerPhone?: string;
+            carrierName: string;
+            planName?: string;
+            patientName?: string;
+            patientDob?: string;
+            memberId?: string;
+            groupNumber?: string;
+        };
+        matchedPlanId?: string;
+        executionData: Record<string, unknown>;
+    }): Promise<string | undefined> {
+        const eligibilityStatus =
+            typeof input.executionData.eligibilityStatus === 'string'
+                ? input.executionData.eligibilityStatus.toUpperCase()
+                : undefined;
+        const memberNumber =
+            typeof input.executionData.memberNumber === 'string'
+                ? input.executionData.memberNumber
+                : input.body.memberId;
+
+        if (!eligibilityStatus || !memberNumber) {
+            return undefined;
+        }
+
+        let insurancePlanId = input.matchedPlanId;
+        if (!insurancePlanId) {
+            const createdPlan = await this.prisma.insurancePlan.create({
+                data: {
+                    businessId: input.businessId,
+                    planName: input.body.planName || 'Eligibility check plan',
+                    carrierId: input.body.carrierName.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+                    carrierName: input.body.carrierName,
+                    isAccepted:
+                        eligibilityStatus === 'ELIGIBLE' || eligibilityStatus === 'PENDING',
+                },
+            });
+            insurancePlanId = createdPlan.id;
+        }
+
+        const caller =
+            input.body.callerPhone && (input.body.patientName || input.body.patientDob)
+                ? await this.upsertCaller(
+                      input.businessId,
+                      input.body.callerPhone,
+                      input.body.patientName || input.body.callerName,
+                      input.body.patientDob,
+                  )
+                : undefined;
+
+        const verification = await this.prisma.insuranceVerification.create({
+            data: {
+                businessId: input.businessId,
+                insurancePlanId,
+                callerId: caller?.id,
+                callerName: input.body.patientName || input.body.callerName || 'Caller',
+                memberNumber,
+                groupNumber:
+                    typeof input.executionData.groupNumber === 'string'
+                        ? input.executionData.groupNumber
+                        : input.body.groupNumber,
+                eligibilityStatus: eligibilityStatus as any,
+                authorizationRequired: Boolean(input.executionData.authorizationRequired),
+                authorizationNumber:
+                    typeof input.executionData.authorizationNumber === 'string'
+                        ? input.executionData.authorizationNumber
+                        : undefined,
+                coverageDetails:
+                    input.executionData.coverageDetails &&
+                    typeof input.executionData.coverageDetails === 'object' &&
+                    !Array.isArray(input.executionData.coverageDetails)
+                        ? (input.executionData.coverageDetails as any)
+                        : undefined,
+                copay:
+                    typeof input.executionData.copay === 'number'
+                        ? input.executionData.copay
+                        : undefined,
+                deductible:
+                    typeof input.executionData.deductible === 'number'
+                        ? input.executionData.deductible
+                        : undefined,
+                deductibleMet:
+                    typeof input.executionData.deductibleMet === 'number'
+                        ? input.executionData.deductibleMet
+                        : undefined,
+            },
+        });
+
+        return verification.id;
     }
 
     private async upsertCaller(

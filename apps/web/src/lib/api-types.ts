@@ -54,6 +54,15 @@ export interface ServicePolicy {
     fallbackSummary: string;
 }
 
+export interface DaytimeHandoffPolicy {
+    mode: 'hybrid_transfer' | 'callback_only' | 'transfer_first';
+    transferTargetLabel: string;
+    transferPhone: string;
+    ringTimeoutSeconds: number;
+    collectReasonFirst: boolean;
+    fallbackSummary: string;
+}
+
 export type KnowledgeRouteTarget =
     | 'knowledge'
     | 'scheduling'
@@ -250,6 +259,20 @@ export interface CallDetail {
         latencyMs?: number;
         createdAt: string;
     }>;
+    intentTimeline?: Array<{
+        intentId: string;
+        domain?: string;
+        summary: string;
+        status: string;
+        detectedOrder?: number;
+        selectedOrder?: number;
+        actionName?: string;
+        handledLive?: boolean;
+        followUpTaskId?: string;
+        fallbackReason?: string;
+        transferStatus?: string;
+        transferTargetLabel?: string;
+    }>;
     operatorSummary?: {
         resolution: string;
         label: string;
@@ -302,6 +325,7 @@ export interface BusinessSettings {
         refillPolicy: ServicePolicy;
         billingPolicy: ServicePolicy;
         insurancePolicy: ServicePolicy;
+        daytimeHandoffPolicy: DaytimeHandoffPolicy;
         knowledgeConfig: KnowledgeConfig;
         escalationConfig: EscalationConfig;
         outOfScopeKeywords: string[];
@@ -364,6 +388,7 @@ export interface BusinessRuntimeConfig {
         connectedCategories: string[];
         writeActionsRequiringConfirmation: Array<'appointment-request' | 'refill-request' | 'billing-request'>;
         afterHoursPolicy: AfterHoursPolicy;
+        daytimeHandoffPolicy: DaytimeHandoffPolicy;
         knowledgeConfig: KnowledgeConfig;
         servicePolicies: {
             scheduling: ServicePolicy & {

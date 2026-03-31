@@ -171,6 +171,36 @@ async def bootstrap_twilio_session(request: Request):
     return Response(content=twiml, media_type="text/xml")
 
 
+@app.post("/telephony/twilio/transfer-action")
+async def twilio_transfer_action(request: Request):
+    form_data = await request.form()
+    session_id = str(request.query_params.get("sessionId") or form_data.get("sessionId") or "")
+    if not session_id:
+        return Response(
+            content=runtime.twilio.build_error_twiml(
+                "We're sorry, but we could not finish that transfer request."
+            ),
+            media_type="text/xml",
+        )
+
+    try:
+        twiml = await runtime.handle_transfer_action_callback(
+            session_id,
+            {key: value for key, value in form_data.items()},
+        )
+    except KeyError:
+        twiml = runtime.twilio.build_error_twiml(
+            "We're sorry, but we could not match that transfer request to the live call."
+        )
+    except Exception:
+        logger.exception("Voice Runtime V2 transfer action failed", extra={"sessionId": session_id})
+        twiml = runtime.twilio.build_error_twiml(
+            "We're sorry, but we could not complete that transfer request."
+        )
+
+    return Response(content=twiml, media_type="text/xml")
+
+
 @app.websocket("/telephony/twilio/media")
 async def twilio_media_stream(websocket: WebSocket):
     bridge = TwilioMediaSession(websocket, runtime)

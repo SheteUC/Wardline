@@ -13,6 +13,14 @@ export interface EscalationContext {
     collectedFields: Record<string, unknown>;
     resolvedTurns: unknown[];
     escalationReason: string;
+    transferTargetLabel?: string;
+    transferPhone?: string;
+    attemptMode?: 'hybrid_transfer' | 'callback_only' | 'transfer_first';
+    reasonCategory?: string;
+    callbackPhone?: string;
+    pendingIssues?: string[];
+    queueSnapshot?: Array<Record<string, unknown>>;
+    handoffSummary?: string;
 }
 
 export type EscalationOutcome = 'transferred' | 'voicemail' | 'emergency';
@@ -50,6 +58,14 @@ export class EscalationsService {
                     collectedFields: context.collectedFields,
                     resolvedTurns: context.resolvedTurns,
                     escalationReason: context.escalationReason,
+                    transferTargetLabel: context.transferTargetLabel,
+                    transferPhone: context.transferPhone,
+                    attemptMode: context.attemptMode,
+                    reasonCategory: context.reasonCategory,
+                    callbackPhone: context.callbackPhone,
+                    pendingIssues: context.pendingIssues,
+                    queueSnapshot: context.queueSnapshot,
+                    summary: context.handoffSummary,
                     escalatedAt: new Date().toISOString(),
                 } as any,
             },
@@ -61,7 +77,7 @@ export class EscalationsService {
             data: { tag: context.isEmergency ? 'EMERGENCY' : 'HUMAN_TRANSFER' },
         }).catch(() => { /* ignore if call not found */ });
 
-        return { outcome: 'transferred' };
+        return { outcome: 'transferred', transferPhone: context.transferPhone };
     }
 
     /**

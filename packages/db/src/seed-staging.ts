@@ -52,8 +52,17 @@ const STAGING_PRACTICE_SETUP = {
     },
     insurancePolicy: {
         liveEnabled: true,
-        intakeNotes: 'Answer insurance acceptance and basic eligibility questions when supported by the connected system.',
+        intakeNotes:
+            'Answer insurance acceptance and basic eligibility questions when supported by the connected system. Member ID and patient date of birth are required for eligibility checks, while benefits, claim status, and prior authorization requests may need staff follow-up.',
         fallbackSummary: 'Create an insurance follow-up when live eligibility verification is unavailable.',
+    },
+    daytimeHandoffPolicy: {
+        mode: 'hybrid_transfer' as const,
+        transferTargetLabel: 'front desk',
+        transferPhone: process.env.STAGING_TRANSFER_PHONE || '',
+        ringTimeoutSeconds: 20,
+        collectReasonFirst: true,
+        fallbackSummary: 'If nobody is available to take the call live, create a same-day callback task for staff.',
     },
     knowledgeConfig: {
         faqSummary:
@@ -294,6 +303,7 @@ async function main() {
             refillPolicy: STAGING_PRACTICE_SETUP.refillPolicy as any,
             billingPolicy: STAGING_PRACTICE_SETUP.billingPolicy as any,
             insurancePolicy: STAGING_PRACTICE_SETUP.insurancePolicy as any,
+            daytimeHandoffPolicy: STAGING_PRACTICE_SETUP.daytimeHandoffPolicy as any,
             knowledgeConfig: STAGING_PRACTICE_SETUP.knowledgeConfig as any,
             escalationConfig: STAGING_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
@@ -309,6 +319,7 @@ async function main() {
             refillPolicy: STAGING_PRACTICE_SETUP.refillPolicy as any,
             billingPolicy: STAGING_PRACTICE_SETUP.billingPolicy as any,
             insurancePolicy: STAGING_PRACTICE_SETUP.insurancePolicy as any,
+            daytimeHandoffPolicy: STAGING_PRACTICE_SETUP.daytimeHandoffPolicy as any,
             knowledgeConfig: STAGING_PRACTICE_SETUP.knowledgeConfig as any,
             escalationConfig: STAGING_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
@@ -408,6 +419,7 @@ async function main() {
         refillPolicy: STAGING_PRACTICE_SETUP.refillPolicy,
         billingPolicy: STAGING_PRACTICE_SETUP.billingPolicy,
         insurancePolicy: STAGING_PRACTICE_SETUP.insurancePolicy,
+        daytimeHandoffPolicy: STAGING_PRACTICE_SETUP.daytimeHandoffPolicy,
         knowledgeConfig: STAGING_PRACTICE_SETUP.knowledgeConfig,
         escalationConfig: STAGING_PRACTICE_SETUP.escalationConfig,
         emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],

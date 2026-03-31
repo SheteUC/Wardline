@@ -72,6 +72,24 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["eventType"], "participant_joined")
 
+    def test_transfer_action_endpoint_returns_twiml(self):
+        with patch.object(
+            server.runtime,
+            "handle_transfer_action_callback",
+            AsyncMock(
+                return_value='<?xml version="1.0" encoding="UTF-8"?><Response><Hangup /></Response>',
+            ),
+        ) as mocked:
+            response = self.client.post(
+                "/telephony/twilio/transfer-action?sessionId=session-1",
+                data={"DialCallStatus": "completed"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"].split(";")[0], "text/xml")
+        mocked.assert_awaited_once()
+        self.assertIn("<Hangup", response.text)
+
     def test_turn_endpoint_returns_operator_summary(self):
         with patch.object(
             server.runtime,

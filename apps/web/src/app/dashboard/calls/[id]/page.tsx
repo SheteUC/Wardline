@@ -13,6 +13,7 @@ import {
 import { Button, Card, Badge } from "@/components/dashboard/shared";
 import { useCall } from '@/lib/hooks/query-hooks';
 import { CallStatus } from '@wardline/types';
+import { getIntentTimelineCardState } from '@/lib/call-intent-timeline';
 import { humanizeFallbackReason, labelRuntimeAction } from '@/lib/operator-insights';
 
 const TAG_LABEL: Record<string, string> = {
@@ -79,6 +80,7 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
     const openFollowUps = (call.followUpTasks ?? []).filter(
         (task) => task.status !== 'COMPLETED' && task.status !== 'CANCELLED',
     );
+    const intentTimelineCard = getIntentTimelineCardState(call);
     const transcriptPending =
         call.transcriptSegments.length === 0 &&
         (
@@ -297,6 +299,45 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
                                     {event.fallbackReason && (
                                         <p className="mt-2 text-xs text-amber-700">
                                             Downgraded because {humanizeFallbackReason(event.fallbackReason)}.
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                )}
+
+                {intentTimelineCard.show && (
+                    <Card title="Intent Timeline">
+                        <div className="space-y-3">
+                            {intentTimelineCard.items.map((intent) => (
+                                <div key={intent.intentId} className="rounded-2xl bg-[var(--background)] p-3 neo-inset">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            {intent.summary}
+                                        </div>
+                                        <Badge
+                                            type={
+                                                intent.status === 'resolved'
+                                                    ? 'success'
+                                                    : intent.status === 'cancelled'
+                                                      ? 'warning'
+                                                      : 'neutral'
+                                            }
+                                            text={intent.statusLabel}
+                                        />
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                        <span>{intent.domainLabel}</span>
+                                        {typeof intent.detectedOrder === 'number' && <span>Detected #{intent.detectedOrder}</span>}
+                                        {typeof intent.selectedOrder === 'number' && <span>Selected #{intent.selectedOrder}</span>}
+                                        {intent.actionName && <span>{labelRuntimeAction(intent.actionName) ?? intent.actionName}</span>}
+                                        {intent.transferStatusLabel && <span>{intent.transferStatusLabel}</span>}
+                                        {intent.transferTargetLabel && <span>{intent.transferTargetLabel}</span>}
+                                    </div>
+                                    {intent.fallbackReason && (
+                                        <p className="mt-2 text-xs text-amber-700">
+                                            Downgraded because {humanizeFallbackReason(intent.fallbackReason)}.
                                         </p>
                                     )}
                                 </div>

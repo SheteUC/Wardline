@@ -10,6 +10,7 @@ describe('practice setup helpers', () => {
         expect(result.knowledgeConfig.commonQuestions.length > 0).toBe(true);
         expect(result.knowledgeConfig.servicesSummary.length > 0).toBe(true);
         expect(result.knowledgeConfig.customFaqs.length).toBe(0);
+        expect(result.daytimeHandoffPolicy.mode).toBe('hybrid_transfer');
     });
 
     it('hydrates legacy minimal knowledge config into the expanded shape', () => {
@@ -82,6 +83,14 @@ describe('practice setup helpers', () => {
                     intakeNotes: 'insurance',
                     fallbackSummary: 'fallback',
                 },
+                daytimeHandoffPolicy: {
+                    mode: 'hybrid_transfer',
+                    transferTargetLabel: 'front desk',
+                    transferPhone: '+15551239999',
+                    ringTimeoutSeconds: 20,
+                    collectReasonFirst: true,
+                    fallbackSummary: 'Create a callback task.',
+                },
                 knowledgeConfig: {
                     faqSummary: 'Family medicine',
                     commonQuestions: ['Office hours'],
@@ -126,5 +135,22 @@ describe('practice setup helpers', () => {
         expect(integrationReadiness?.complete).toBe(false);
         expect(readiness.find((item) => item.key === 'services')?.complete).toBe(true);
         expect(readiness.find((item) => item.key === 'policy')?.complete).toBe(true);
+    });
+
+    it('normalizes invalid daytime handoff transfer settings safely', () => {
+        const result = normalizePracticeSetup({
+            daytimeHandoffPolicy: {
+                mode: 'transfer_first',
+                transferTargetLabel: 'front desk',
+                transferPhone: '   ',
+                ringTimeoutSeconds: 0,
+                collectReasonFirst: true,
+                fallbackSummary: '',
+            },
+        } as any);
+
+        expect(result.daytimeHandoffPolicy.mode).toBe('transfer_first');
+        expect(result.daytimeHandoffPolicy.transferPhone).toBe('');
+        expect(result.daytimeHandoffPolicy.ringTimeoutSeconds).toBe(10);
     });
 });

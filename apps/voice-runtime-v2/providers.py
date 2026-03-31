@@ -38,6 +38,13 @@ def build_public_websocket_url(path: str) -> str:
     return urlunparse(parsed._replace(scheme=scheme))
 
 
+def build_public_callback_url(path: str) -> str:
+    base_url = settings.webhook_base_url.rstrip("/") or f"http://127.0.0.1:{settings.port}"
+    if not base_url:
+        return ""
+    return urljoin(f"{base_url}/", path.lstrip("/"))
+
+
 def public_callback_url_is_secure(base_url: str) -> bool:
     parsed = urlparse(base_url.strip())
     return parsed.scheme == "https" and bool(parsed.netloc)
@@ -154,6 +161,44 @@ class TwilioTelephonyAdapter:
             "<Hangup />"
             "</Response>"
         )
+
+    def build_transfer_twiml(
+        self,
+        *,
+        transfer_phone: str,
+        action_url: str,
+        timeout_seconds: int,
+        caller_id: str = "",
+        preamble_message: str = "",
+    ) -> str:
+        caller_id_markup = f' callerId="{escape(caller_id)}"' if caller_id else ""
+        say_markup = f"<Say>{escape(preamble_message)}</Say>" if preamble_message else ""
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            "<Response>"
+            f"{say_markup}"
+            f'<Dial timeout="{max(10, min(45, int(timeout_seconds or 20)))}" action="{escape(action_url)}" method="POST"{caller_id_markup}>'
+            f"<Number>{escape(transfer_phone)}</Number>"
+            "</Dial>"
+            "</Response>"
+        )
+
+    async def redirect_live_call(
+        self,
+        *,
+        call_sid: str,
+        transfer_twiml: str,
+    ) -> Dict[str, Any]:
+        if not settings.twilio_account_sid or not settings.twilio_auth_token:
+            raise ValueError("Twilio credentials are not configured for live transfer.")
+        if not call_sid:
+            raise ValueError("Call SID is required for live transfer.")
+
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.twilio_account_sid}/Calls/{call_sid}.json"
+        async with httpx.AsyncClient(timeout=20.0, auth=(settings.twilio_account_sid, settings.twilio_auth_token)) as client:
+            response = await client.post(url, data={"Twiml": transfer_twiml})
+            response.raise_for_status()
+            return response.json()
 
 
 class DeepgramSttAdapter:

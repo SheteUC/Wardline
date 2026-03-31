@@ -10,9 +10,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from models import (
     BillingSlotState,
+    DetectedIntent,
     DomainName,
     DialoguePolicy,
     FollowOnIntent,
+    HandoffSlotState,
+    InsuranceSlotState,
     KnowledgeMatch,
     KnowledgeTopic,
     OperatorSummary,
@@ -163,6 +166,9 @@ EXPLICIT_UNKNOWN_PHRASES = [
 
 REFILL_REQUIRED_FIELDS = ["medicationName", "callerDob", "pharmacyName", "pharmacyPhone"]
 BILLING_REQUIRED_FIELDS = ["billingTopic", "accountReference"]
+INSURANCE_ACCEPTANCE_REQUIRED_FIELDS = ["carrierName"]
+INSURANCE_ELIGIBILITY_REQUIRED_FIELDS = ["carrierName", "memberId", "patientDob"]
+INSURANCE_FOLLOW_UP_REQUIRED_FIELDS = ["carrierName", "memberId", "patientDob"]
 
 
 def _normalize(text: str) -> str:
@@ -442,6 +448,14 @@ def _humanize_slot_name(slot_name: str) -> str:
         "accountReference": "account or statement reference",
         "billingTopic": "billing issue",
         "medicationName": "medication name",
+        "memberId": "member ID",
+        "groupNumber": "group number",
+        "patientName": "patient name",
+        "patientDob": "patient date of birth",
+        "subscriberRelation": "subscriber relationship",
+        "serviceType": "visit or service type",
+        "callbackPhone": "callback number",
+        "reasonSummary": "reason for the handoff",
     }.get(slot_name, slot_name)
 
 
@@ -656,6 +670,193 @@ def _extract_insurance_carrier(text: str) -> str:
         if carrier in lowered:
             return carrier.title()
     return ""
+
+
+def _extract_insurance_inquiry_type(text: str) -> Optional[str]:
+    lowered = _normalize(text)
+    if any(token in lowered for token in ["prior auth", "prior authorization", "authorization status"]):
+        return "prior_auth_status"
+    if any(token in lowered for token in ["claim status", "claim", "appeal"]):
+        return "claim_status"
+    if any(token in lowered for token in ["copay", "co pay", "deductible", "benefits", "covered for", "coverage for"]):
+        return "coverage"
+    if any(token in lowered for token in ["eligibility", "eligible", "active coverage", "coverage active", "still active"]):
+        return "eligibility"
+    if any(token in lowered for token in ["take ", "accept", "accepted", "works with", "in network", "participate with"]):
+        return "acceptance"
+    return None
+
+
+def _extract_plan_name(text: str) -> str:
+    patterns = [
+        r"(?:plan(?: name)?|policy)\s*(?:is|:)?\s*(?P<value>[A-Za-z0-9][A-Za-z0-9 \-]{1,40})",
+        r"\b(?P<value>(?:ppo|hmo|epo|pos|medicare advantage|medicaid managed care))\b",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return _clean_phrase(match.group("value"))
+    return ""
+
+
+def _extract_member_id(text: str) -> str:
+    patterns = [
+        r"(?:member(?: id| number)?|subscriber(?: id| number)?|policy number)\s*(?:is|:|#)?\s*(?P<value>[A-Za-z0-9\-]{3,40})",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return _clean_phrase(match.group("value"))
+    cleaned = _clean_phrase(text)
+    if cleaned and len(cleaned.split()) <= 3 and re.fullmatch(r"[A-Za-z0-9\-]{3,40}", cleaned):
+        return cleaned
+    return ""
+
+
+def _extract_group_number(text: str) -> str:
+    match = re.search(r"(?:group(?: number)?|grp)\s*(?:is|:|#)?\s*(?P<value>[A-Za-z0-9\-]{2,40})", text, re.IGNORECASE)
+    if match:
+        return _clean_phrase(match.group("value"))
+    return ""
+
+
+def _extract_subscriber_relation(text: str) -> Optional[str]:
+    lowered = _normalize(text)
+    if any(token in lowered for token in ["my plan", "for me", "i am the subscriber", "self"]):
+        return "self"
+    if "spouse" in lowered or "husband" in lowered or "wife" in lowered:
+        return "spouse"
+    if "child" in lowered or "daughter" in lowered or "son" in lowered:
+        return "child"
+    if any(token in lowered for token in ["parent", "other family member", "other person"]):
+        return "other"
+    return None
+
+
+def _extract_patient_name(text: str) -> str:
+    patterns = [
+        r"(?:patient(?: name)?|for)\s*(?:is|:)?\s*(?P<value>[A-Z][a-z]+(?: [A-Z][a-z]+){1,2})",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            return _clean_phrase(match.group("value"))
+    return ""
+
+
+def _extract_service_type(text: str) -> str:
+    visit_type = _extract_visit_type(text)
+    if visit_type:
+        return visit_type
+    lowered = _normalize(text)
+    if "procedure" in lowered:
+        return "procedure"
+    if "lab" in lowered or "labs" in lowered:
+        return "lab work"
+    if "imaging" in lowered or "x-ray" in lowered or "x ray" in lowered:
+        return "imaging"
+    return ""
+
+
+def _extract_reason_summary(text: str) -> str:
+    cleaned = _clean_phrase(text)
+    generic_phrases = {
+        "i need to speak to someone",
+        "can a person help me",
+        "transfer me",
+        "i need a person",
+        "i need someone",
+        "someone please",
+        "staff please",
+        "human please",
+    }
+    if _normalize(cleaned) in generic_phrases:
+        return ""
+    return cleaned
+
+
+def _extract_reason_category(text: str, active_domain: Optional[str] = None) -> str:
+    lowered = _normalize(text)
+    if any(token in lowered for token in ["clinical", "nurse", "symptom", "medication issue"]):
+        return "clinical"
+    if any(token in lowered for token in ["appointment", "schedule", "physical", "follow-up"]):
+        return "appointments"
+    if any(token in lowered for token in ["refill", "prescription", "pharmacy"]):
+        return "refill"
+    if any(token in lowered for token in ["insurance", "coverage", "claim", "prior auth"]):
+        return "insurance"
+    if any(token in lowered for token in ["billing", "statement", "balance", "payment"]):
+        return "billing"
+    if active_domain in {"scheduling", "refill", "insurance", "billing"}:
+        return {
+            "scheduling": "appointments",
+            "refill": "refill",
+            "insurance": "insurance",
+            "billing": "billing",
+        }[active_domain]
+    return "general"
+
+
+def _extract_callback_window(text: str) -> str:
+    patterns = [
+        r"(?:after|around|at)\s+(?P<value>\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?)",
+        r"(?P<value>this afternoon|this morning|tomorrow morning|tomorrow afternoon|later today)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return _clean_phrase(match.group("value"))
+    return ""
+
+
+def _looks_like_transfer_request(text: str) -> bool:
+    lowered = _normalize(text)
+    return any(token in lowered for token in ["transfer me now", "connect me now", "put me through", "transfer me"])
+
+
+def _build_insurance_summary(slots: InsuranceSlotState) -> str:
+    inquiry_label = slots.inquiryType.replace("_", " ") if slots.inquiryType else "insurance"
+    parts = []
+    if slots.carrierName:
+        parts.append(slots.carrierName)
+    if slots.planName:
+        parts.append(slots.planName)
+    if slots.memberId:
+        parts.append(f"member ID {slots.memberId}")
+    if slots.patientDob:
+        parts.append(f"date of birth {slots.patientDob}")
+    if slots.serviceType:
+        parts.append(f"for {slots.serviceType}")
+    details = ", ".join(parts)
+    return f"{inquiry_label} request about {details}" if details else f"{inquiry_label} request"
+
+
+def _insurance_required_fields(slots: InsuranceSlotState, session: SessionState) -> List[str]:
+    inquiry_type = slots.inquiryType or "acceptance"
+    if inquiry_type == "eligibility":
+        missing = [
+            field
+            for field in INSURANCE_ELIGIBILITY_REQUIRED_FIELDS
+            if not getattr(slots, field)
+        ]
+        if not session.callerName and not slots.patientName:
+            missing.append("patientName")
+        return missing
+    if inquiry_type in {"coverage", "claim_status", "prior_auth_status"}:
+        missing = [
+            field
+            for field in INSURANCE_FOLLOW_UP_REQUIRED_FIELDS
+            if not getattr(slots, field)
+        ]
+        if not session.callerName and not slots.patientName:
+            missing.append("patientName")
+        return missing
+    return [field for field in INSURANCE_ACCEPTANCE_REQUIRED_FIELDS if not getattr(slots, field)]
+
+
+def _insurance_follow_up_only(slots: InsuranceSlotState, text: str) -> bool:
+    inquiry_type = slots.inquiryType or _extract_insurance_inquiry_type(text) or "acceptance"
+    return inquiry_type in {"coverage", "claim_status", "prior_auth_status"}
 
 
 def _meaningful_tokens(text: str) -> List[str]:
@@ -1440,51 +1641,235 @@ class RefillAgent:
 
 class InsuranceAgent:
     def handle(self, session: SessionState, text: str) -> SpecialistResult:
-        payload = dict(session.slotState.get("insurance", {}))
-        carrier_name = payload.get("carrierName") or _extract_insurance_carrier(text)
-        if carrier_name:
-            payload["carrierName"] = carrier_name
-        session.slotState["insurance"] = payload
+        existing = session.slotState.get("insurance", {})
+        slots = InsuranceSlotState.model_validate(existing or {})
+        prompted_slot = session.missingSlots[0] if session.activeDomain == "insurance" and session.missingSlots else None
 
-        if not payload.get("carrierName"):
-            return SpecialistResult(
-                domain="insurance",
-                status="needs_information",
-                confidence=0.8,
-                nextPrompt=_slot_prompt(
+        inquiry_type = _extract_insurance_inquiry_type(text)
+        if inquiry_type:
+            slots.inquiryType = inquiry_type  # type: ignore[assignment]
+            _clear_slot_retry(session, "insurance", "inquiryType")
+
+        carrier_name = _extract_insurance_carrier(text)
+        if carrier_name:
+            slots.carrierName = carrier_name
+            _clear_slot_retry(session, "insurance", "carrierName")
+
+        plan_name = _extract_plan_name(text)
+        if plan_name:
+            slots.planName = plan_name
+            _clear_slot_retry(session, "insurance", "planName")
+
+        member_id = _extract_member_id(text)
+        if member_id:
+            slots.memberId = member_id
+            _clear_slot_retry(session, "insurance", "memberId")
+
+        group_number = _extract_group_number(text)
+        if group_number:
+            slots.groupNumber = group_number
+            _clear_slot_retry(session, "insurance", "groupNumber")
+
+        patient_name = _extract_patient_name(text)
+        if patient_name:
+            slots.patientName = patient_name
+            _clear_slot_retry(session, "insurance", "patientName")
+
+        patient_dob = _extract_caller_dob(text)
+        if patient_dob:
+            slots.patientDob = patient_dob
+            _clear_slot_retry(session, "insurance", "patientDob")
+
+        subscriber_relation = _extract_subscriber_relation(text)
+        if subscriber_relation:
+            slots.subscriberRelation = subscriber_relation  # type: ignore[assignment]
+            _clear_slot_retry(session, "insurance", "subscriberRelation")
+
+        service_type = _extract_service_type(text)
+        if service_type:
+            slots.serviceType = service_type
+            _clear_slot_retry(session, "insurance", "serviceType")
+
+        callback_phone = _extract_phone_number(text)
+        if callback_phone:
+            slots.callbackPhone = callback_phone
+            _clear_slot_retry(session, "insurance", "callbackPhone")
+        elif not slots.callbackPhone and session.callerPhone:
+            slots.callbackPhone = session.callerPhone
+
+        if prompted_slot == "patientName" and not slots.patientName and _is_simple_slot_response(text, max_words=4):
+            cleaned = _clean_phrase(text)
+            if cleaned and len(cleaned.split()) <= 4:
+                slots.patientName = cleaned
+                _clear_slot_retry(session, "insurance", "patientName")
+
+        _append_note(
+            slots.notes,
+            text,
+            slots.carrierName,
+            slots.planName,
+            slots.memberId,
+            slots.groupNumber,
+            slots.patientName,
+            slots.patientDob,
+            slots.callbackPhone,
+            slots.serviceType,
+        )
+
+        if not slots.inquiryType:
+            slots.inquiryType = "acceptance"
+
+        payload = slots.model_dump(exclude_none=True)
+        session.slotState["insurance"] = payload
+        missing_fields = _insurance_required_fields(slots, session)
+        follow_up_only = _insurance_follow_up_only(slots, text)
+
+        if missing_fields:
+            next_field = missing_fields[0]
+            if _should_escalate_missing_slot(session, "insurance", next_field, text):
+                summary = f"{_build_insurance_summary(slots)}. Missing {_format_missing_labels(missing_fields)}."
+                return _build_manual_follow_up_result(
+                    session,
+                    domain="insurance",
+                    title="Insurance intake needs staff review",
+                    summary=summary,
+                    next_prompt=(
+                        f"I'm missing the {_humanize_slot_name(next_field)}. "
+                        "I can pass this insurance request to the staff to review manually. Should I do that?"
+                    ),
+                    extracted_fields=payload,
+                    missing_fields=missing_fields,
+                    operator_headline="Insurance intake incomplete",
+                    operator_next_step="Create a manual insurance follow-up after caller confirmation.",
+                )
+
+            prompt_map = {
+                "inquiryType": _slot_prompt(
+                    session,
+                    "insurance",
+                    "inquiryType",
+                    "Are you asking whether the practice accepts the plan, or whether coverage looks active for a patient?",
+                ),
+                "carrierName": _slot_prompt(
                     session,
                     "insurance",
                     "carrierName",
-                    "Which insurance carrier would you like me to check?",
+                    "Which insurance carrier should I check?",
                 ),
-                missingFields=["carrierName"],
+                "planName": _slot_prompt(
+                    session,
+                    "insurance",
+                    "planName",
+                    "Do you know the plan name, like PPO or HMO?",
+                ),
+                "memberId": _slot_prompt(
+                    session,
+                    "insurance",
+                    "memberId",
+                    "What is the member ID on the insurance card?",
+                ),
+                "groupNumber": _slot_prompt(
+                    session,
+                    "insurance",
+                    "groupNumber",
+                    "Do you know the group number?",
+                ),
+                "patientName": _slot_prompt(
+                    session,
+                    "insurance",
+                    "patientName",
+                    "What is the patient's full name?",
+                ),
+                "patientDob": _slot_prompt(
+                    session,
+                    "insurance",
+                    "patientDob",
+                    "What is the patient's date of birth?",
+                ),
+                "subscriberRelation": _slot_prompt(
+                    session,
+                    "insurance",
+                    "subscriberRelation",
+                    "Is the patient the subscriber, or are they covered through someone else?",
+                ),
+                "serviceType": _slot_prompt(
+                    session,
+                    "insurance",
+                    "serviceType",
+                    "What type of visit or service is this for?",
+                ),
+                "callbackPhone": _slot_prompt(
+                    session,
+                    "insurance",
+                    "callbackPhone",
+                    "What callback number should the staff use if they need to follow up?",
+                ),
+            }
+            return SpecialistResult(
+                domain="insurance",
+                status="needs_information",
+                confidence=0.87,
+                nextPrompt=prompt_map[next_field],
+                missingFields=missing_fields,
                 extractedFields=payload,
                 operatorSummary=OperatorSummary(
                     headline="Collecting insurance details",
-                    nextStep="Continue intake until the carrier name is captured.",
+                    nextStep=f"Continue intake until the {_humanize_slot_name(next_field)} is captured.",
                     specialist="insurance",
-                    callerRequest=text.strip() or "Insurance question",
+                    callerRequest=text.strip() or "Insurance request",
                 ),
+                callerRequestSummary=_build_insurance_summary(slots),
             )
 
-        caller_request = f"check whether the practice works with {payload['carrierName']}"
+        summary = _build_insurance_summary(slots)
+        if follow_up_only:
+            inquiry_label = (slots.inquiryType or "insurance").replace("_", " ")
+            return _build_manual_follow_up_result(
+                session,
+                domain="insurance",
+                title="Insurance request needs staff review",
+                summary=summary,
+                next_prompt=(
+                    f"This {inquiry_label} request needs staff review. "
+                    "Should I pass it to the staff for follow-up?"
+                ),
+                extracted_fields=payload,
+                missing_fields=[],
+                operator_headline="Insurance request needs staff review",
+                operator_next_step="Create a manual insurance follow-up after caller confirmation.",
+            )
+
+        caller_request = summary
+        headline = (
+            "Insurance eligibility check ready"
+            if slots.inquiryType == "eligibility"
+            else "Insurance acceptance check ready"
+        )
         return SpecialistResult(
             domain="insurance",
             status="execute_now",
-            confidence=0.9,
-            nextPrompt=f"I'll check {payload['carrierName']} for you now.",
+            confidence=0.91,
+            nextPrompt="I'll check that for you now.",
             extractedFields=payload,
             runtimeAction="insurance-check",
             runtimePayload={
-                "callerName": session.callerName or None,
-                "callerPhone": session.callerPhone or None,
-                "carrierName": payload["carrierName"],
-                "planName": payload.get("planName"),
-                "inquiryType": "acceptance",
+                "callerName": session.callerName or slots.patientName or None,
+                "callerPhone": session.callerPhone or slots.callbackPhone or None,
+                "carrierName": slots.carrierName,
+                "planName": slots.planName,
+                "inquiryType": slots.inquiryType,
+                "patientName": slots.patientName,
+                "patientDob": slots.patientDob,
+                "memberId": slots.memberId,
+                "groupNumber": slots.groupNumber,
+                "subscriberRelation": slots.subscriberRelation,
+                "serviceType": slots.serviceType,
+                "callbackPhone": slots.callbackPhone,
+                "notes": _condense_notes(slots.notes),
             },
             fallbackRecommendation=session.runtimeConfig.voicePolicyV2.servicePolicies["insurance"].fallbackSummary,
             operatorSummary=OperatorSummary(
-                headline="Insurance check ready",
+                headline=headline,
                 nextStep="Run the live insurance check now.",
                 specialist="insurance",
                 callerRequest=caller_request,
@@ -1670,12 +2055,146 @@ class HandoffAgent:
             resolved=True,
         )
 
+    def handle(self, session: SessionState, text: str) -> SpecialistResult:
+        existing = session.slotState.get("handoff", {})
+        slots = HandoffSlotState.model_validate(existing or {})
+        prompted_slot = session.missingSlots[0] if session.activeDomain == "handoff" and session.missingSlots else None
+        policy = session.runtimeConfig.voicePolicyV2.daytimeHandoffPolicy
+
+        reason_summary = _extract_reason_summary(text)
+        if reason_summary:
+            slots.reasonSummary = reason_summary
+            _clear_slot_retry(session, "handoff", "reasonSummary")
+        elif prompted_slot == "reasonSummary" and _is_simple_slot_response(text, max_words=12):
+            cleaned = _clean_phrase(text)
+            if cleaned:
+                slots.reasonSummary = cleaned
+                _clear_slot_retry(session, "handoff", "reasonSummary")
+
+        callback_phone = _extract_phone_number(text)
+        if callback_phone:
+            slots.callbackPhone = callback_phone
+            _clear_slot_retry(session, "handoff", "callbackPhone")
+        elif not slots.callbackPhone and session.callerPhone:
+            slots.callbackPhone = session.callerPhone
+
+        preferred_callback_window = _extract_callback_window(text)
+        if preferred_callback_window:
+            slots.preferredCallbackWindow = preferred_callback_window
+
+        if slots.reasonSummary or text.strip():
+            slots.reasonCategory = _extract_reason_category(slots.reasonSummary or text, session.activeDomain)  # type: ignore[assignment]
+
+        if _looks_like_transfer_request(text) and slots.reasonSummary:
+            slots.transferConsent = True
+
+        _append_note(slots.notes, text, slots.reasonSummary, slots.callbackPhone, slots.preferredCallbackWindow)
+
+        payload = slots.model_dump(exclude_none=True)
+        session.slotState["handoff"] = payload
+
+        if policy.collectReasonFirst and not slots.reasonSummary:
+            return SpecialistResult(
+                domain="handoff",
+                status="needs_information",
+                confidence=0.86,
+                nextPrompt=_slot_prompt(
+                    session,
+                    "handoff",
+                    "reasonSummary",
+                    "What should I tell the staff this is about?",
+                ),
+                missingFields=["reasonSummary"],
+                extractedFields=payload,
+                operatorSummary=OperatorSummary(
+                    headline="Collecting daytime handoff details",
+                    nextStep="Capture the reason for the transfer or callback request.",
+                    specialist="handoff",
+                    callerRequest=text.strip() or "Staff request",
+                    followUpRequired=True,
+                ),
+                callerRequestSummary="Staff follow-up requested.",
+            )
+
+        if policy.mode == "callback_only" or not policy.transferPhone.strip():
+            return self.build_daytime_callback_result(session, slots)
+
+        summary = slots.reasonSummary or "staff follow-up requested"
+        transfer_prompt = (
+            f"I can try to connect you to the {policy.transferTargetLabel} now. "
+            "If no one answers, I can create a callback request for the staff. "
+            "Would you like me to try the live transfer?"
+        )
+
+        if slots.transferConsent:
+            return SpecialistResult(
+                domain="handoff",
+                status="execute_now",
+                confidence=0.9,
+                nextPrompt=f"Okay, I'll try to connect you to the {policy.transferTargetLabel} now.",
+                extractedFields=payload,
+                runtimeAction="handoff-transfer",
+                runtimePayload={
+                    "reasonSummary": summary,
+                    "reasonCategory": slots.reasonCategory,
+                    "callbackPhone": slots.callbackPhone,
+                    "preferredCallbackWindow": slots.preferredCallbackWindow,
+                    "transferTargetLabel": policy.transferTargetLabel,
+                    "transferPhone": policy.transferPhone,
+                    "ringTimeoutSeconds": policy.ringTimeoutSeconds,
+                    "fallbackSummary": policy.fallbackSummary,
+                },
+                fallbackRecommendation=policy.fallbackSummary,
+                operatorSummary=OperatorSummary(
+                    headline="Daytime live transfer requested",
+                    nextStep=f"Attempt a live transfer to the {policy.transferTargetLabel}.",
+                    specialist="handoff",
+                    callerRequest=summary,
+                    followUpRequired=True,
+                ),
+                callerRequestSummary=summary,
+                requestHumanFollowUp=True,
+                resolved=True,
+            )
+
+        return SpecialistResult(
+            domain="handoff",
+            status="ready_for_confirmation",
+            confidence=0.88,
+            nextPrompt=transfer_prompt,
+            extractedFields=payload,
+            confirmationSummary=summary,
+            runtimeAction="handoff-transfer",
+            runtimePayload={
+                "reasonSummary": summary,
+                "reasonCategory": slots.reasonCategory,
+                "callbackPhone": slots.callbackPhone,
+                "preferredCallbackWindow": slots.preferredCallbackWindow,
+                "transferTargetLabel": policy.transferTargetLabel,
+                "transferPhone": policy.transferPhone,
+                "ringTimeoutSeconds": policy.ringTimeoutSeconds,
+                "fallbackSummary": policy.fallbackSummary,
+            },
+            fallbackRecommendation=policy.fallbackSummary,
+            operatorSummary=OperatorSummary(
+                headline="Daytime live transfer offered",
+                nextStep=f"Attempt a live transfer to the {policy.transferTargetLabel} after caller consent.",
+                specialist="handoff",
+                callerRequest=summary,
+                followUpRequired=True,
+            ),
+            callerRequestSummary=summary,
+            requestHumanFollowUp=True,
+            resolved=True,
+        )
+
     def build_manual_follow_up(
         self,
         text: str,
         headline: str = "Manual follow-up requested",
         next_step: str = "Create a staff follow-up task.",
         priority: str = "HIGH",
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> SpecialistResult:
         summary = text.strip() or "Staff follow-up requested by caller."
         return SpecialistResult(
@@ -1688,6 +2207,7 @@ class HandoffAgent:
                 "title": headline,
                 "summary": summary,
                 "priority": priority,
+                "metadata": metadata or {},
             },
             fallbackRecommendation="manual-follow-up",
             operatorSummary=OperatorSummary(
@@ -1702,9 +2222,84 @@ class HandoffAgent:
             resolved=True,
         )
 
+    def build_daytime_callback_follow_up(self, session: SessionState, slots: HandoffSlotState) -> SpecialistResult:
+        summary = slots.reasonSummary or "Staff callback requested by caller."
+        metadata = {
+            "originatingDomain": "handoff",
+            "reasonCategory": slots.reasonCategory,
+            "callbackPhone": slots.callbackPhone,
+            "preferredCallbackWindow": slots.preferredCallbackWindow,
+        }
+        return SpecialistResult(
+            domain="handoff",
+            status="execute_now",
+            confidence=0.86,
+            nextPrompt="Okay, I’ll pass that to the staff and ask them to call you back.",
+            extractedFields=slots.model_dump(exclude_none=True),
+            runtimeAction="manual-follow-up",
+            runtimePayload={
+                "title": "Daytime callback requested",
+                "summary": summary,
+                "priority": "HIGH",
+                "metadata": metadata,
+            },
+            fallbackRecommendation=session.runtimeConfig.voicePolicyV2.daytimeHandoffPolicy.fallbackSummary,
+            operatorSummary=OperatorSummary(
+                headline="Daytime callback requested",
+                nextStep="Review the callback request and contact the caller during staffed hours.",
+                specialist="handoff",
+                callerRequest=summary,
+                followUpRequired=True,
+            ),
+            callerRequestSummary=summary,
+            requestHumanFollowUp=True,
+            resolved=True,
+        )
+
+    def build_daytime_callback_result(
+        self,
+        session: SessionState,
+        slots: HandoffSlotState,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> SpecialistResult:
+        summary = slots.reasonSummary or "Staff callback requested by caller."
+        callback_metadata = {
+            "originatingDomain": "handoff",
+            "reasonCategory": slots.reasonCategory,
+            "callbackPhone": slots.callbackPhone,
+            "preferredCallbackWindow": slots.preferredCallbackWindow,
+        }
+        if metadata:
+            callback_metadata.update(metadata)
+        return SpecialistResult(
+            domain="handoff",
+            status="execute_now",
+            confidence=0.86,
+            nextPrompt="Okay, I'll pass that to the staff and ask them to call you back.",
+            extractedFields=slots.model_dump(exclude_none=True),
+            runtimeAction="manual-follow-up",
+            runtimePayload={
+                "title": "Daytime callback requested",
+                "summary": summary,
+                "priority": "HIGH",
+                "metadata": callback_metadata,
+            },
+            fallbackRecommendation=session.runtimeConfig.voicePolicyV2.daytimeHandoffPolicy.fallbackSummary,
+            operatorSummary=OperatorSummary(
+                headline="Daytime callback requested",
+                nextStep="Review the callback request and contact the caller during staffed hours.",
+                specialist="handoff",
+                callerRequest=summary,
+                followUpRequired=True,
+            ),
+            callerRequestSummary=summary,
+            requestHumanFollowUp=True,
+            resolved=True,
+        )
+
 
 class SupervisorAgent:
-    HANDOFF_PRIORITY_KEYWORDS = ["callback", "call back", "staff", "human", "representative", "someone"]
+    HANDOFF_PRIORITY_KEYWORDS = ["callback", "call back", "staff", "human", "representative", "someone", "transfer", "front desk"]
     ACTION_REQUEST_SIGNALS = [
         "i need",
         "i want",
@@ -1725,7 +2320,10 @@ class SupervisorAgent:
         "insurance": ["insurance", "coverage", "carrier", "plan", "copay", "accepted"],
         "billing": ["billing", "bill", "statement", "payment", "balance"],
     }
-    COMPOUND_SPLIT_PATTERN = re.compile(r"\?+|\b(?:and|also|plus|before that|but first)\b", re.IGNORECASE)
+    COMPOUND_SPLIT_PATTERN = re.compile(
+        r"\?+|,\s*(?=(?:i need|i want|can i|can you|please|help me|someone|staff|human|billing|refill|insurance|appointment))|\b(?:and|also|plus|then|after that|before that|but first)\b",
+        re.IGNORECASE,
+    )
 
     def choose_domain(
         self,
@@ -1736,13 +2334,135 @@ class SupervisorAgent:
         knowledge_agent = knowledge_agent or KnowledgeAgent()
         enabled_domains = set(session.runtimeConfig.voicePolicyV2.enabledDomains)
         lowered = _normalize(text)
-        compound_decision = self._extract_compound_intent(session, text, knowledge_agent, enabled_domains)
-        if compound_decision:
-            return compound_decision
-
+        extracted = self._extract_detected_intents(session, text, knowledge_agent, enabled_domains)
+        detected_intents: List[DetectedIntent] = extracted["detectedIntents"]
+        knowledge_intents: List[DetectedIntent] = extracted["knowledgeIntents"]
+        action_infos: List[Dict[str, Any]] = extracted["actionInfos"]
         handoff_keywords = (
             self._match_keywords(lowered, self.HANDOFF_PRIORITY_KEYWORDS) if "handoff" in enabled_domains else []
         )
+        out_of_scope_keywords = knowledge_agent.contains_out_of_scope_keywords(session, text)
+        knowledge_intent = knowledge_intents[0] if knowledge_intents else None
+        action_intents = [item["intent"] for item in action_infos]
+
+        if extracted["tooManyActions"]:
+            return SupervisorDecision(
+                mode="clarify",
+                domain="knowledge",
+                confidence=0.82,
+                reason="multi-intent-priority-prompt",
+                clarificationPrompt=(
+                    "I heard more than three issues. Please tell me the top three things you want help with first."
+                ),
+                knowledgeTopic=knowledge_intent.knowledgeTopic if knowledge_intent else None,
+                matchedKeywords=self._aggregate_detected_keywords(detected_intents),
+                fragmentText=knowledge_intent.sourceText if knowledge_intent else None,
+                detectedIntents=detected_intents,
+                priorityRequired=True,
+            )
+
+        if len(knowledge_intents) > 1 and not action_intents:
+            summaries = ", ".join(intent.summary for intent in knowledge_intents[:3])
+            return SupervisorDecision(
+                mode="knowledge",
+                domain="knowledge",
+                confidence=0.84,
+                reason="multi-intent-priority-prompt",
+                clarificationPrompt=f"I heard a few questions, including {summaries}. Which one should I answer first?",
+                knowledgeTopic=knowledge_intent.knowledgeTopic if knowledge_intent else None,
+                matchedKeywords=self._aggregate_detected_keywords(detected_intents),
+                fragmentText=knowledge_intent.sourceText if knowledge_intent else text.strip(),
+                detectedIntents=detected_intents,
+                priorityRequired=True,
+            )
+
+        if len(action_intents) > 1:
+            return SupervisorDecision(
+                mode="knowledge" if knowledge_intent else "delegate",
+                domain="knowledge" if knowledge_intent else action_intents[0].domain,
+                confidence=0.95,
+                reason="multi-intent-priority-prompt",
+                knowledgeTopic=knowledge_intent.knowledgeTopic if knowledge_intent else None,
+                matchedKeywords=self._aggregate_detected_keywords(detected_intents),
+                fragmentText=knowledge_intent.sourceText if knowledge_intent else None,
+                detectedIntents=detected_intents,
+                priorityRequired=True,
+            )
+
+        if knowledge_intent and len(action_intents) == 1:
+            follow_on = action_intents[0]
+            decision_reason = (
+                "compound-knowledge-plus-handoff" if follow_on.domain == "handoff" else "compound-knowledge-plus-action"
+            )
+            return SupervisorDecision(
+                mode="knowledge",
+                domain="knowledge",
+                confidence=0.94,
+                reason=decision_reason,
+                knowledgeTopic=knowledge_intent.knowledgeTopic,
+                matchedKeywords=self._aggregate_detected_keywords(detected_intents),
+                followOnIntent=FollowOnIntent(
+                    domain=follow_on.domain,
+                    text=follow_on.sourceText,
+                    knowledgeTopic=knowledge_intent.knowledgeTopic,
+                    reason=action_infos[0]["reason"],
+                ),
+                fragmentText=knowledge_intent.sourceText,
+                detectedIntents=detected_intents,
+            )
+
+        if len(action_intents) == 1:
+            selected = action_intents[0]
+            selected_info = action_infos[0]
+            reason = selected_info["reason"]
+            mode = "delegate" if session.activeDomain != selected.domain else "continue"
+            continuation = session.activeDomain == selected.domain
+            if (
+                session.activeDomain == "handoff"
+                and session.pendingConfirmation is None
+                and (session.activeDomain in session.slotState or session.missingSlots)
+                and self._looks_like_continuation(session, text)
+            ):
+                return SupervisorDecision(
+                    mode="continue",
+                    domain="handoff",
+                    confidence=0.84,
+                    reason="continue-active-intake",
+                    continuation=True,
+                    matchedKeywords=selected.matchedKeywords,
+                    fragmentText=text.strip(),
+                    detectedIntents=detected_intents,
+                )
+            if (
+                session.activeDomain == selected.domain
+                and session.pendingConfirmation is None
+                and (session.activeDomain in session.slotState or session.missingSlots)
+                and self._looks_like_continuation(session, text)
+            ):
+                reason = "continue-active-intake"
+                mode = "continue"
+                continuation = True
+            if (
+                session.activeDomain
+                and session.pendingConfirmation is None
+                and session.activeDomain in enabled_domains
+                and session.activeDomain not in {"knowledge", "safety"}
+                and (session.activeDomain in session.slotState or session.missingSlots)
+                and selected.domain != session.activeDomain
+            ):
+                reason = "switch-active-intent"
+            return SupervisorDecision(
+                mode=mode,
+                domain=selected.domain,
+                confidence=min(0.96, 0.74 + (selected_info["score"] * 0.05)),
+                reason=reason,
+                continuation=continuation,
+                matchedKeywords=selected.matchedKeywords,
+                fragmentText=selected.sourceText or text.strip(),
+                detectedIntents=detected_intents,
+                selectedIntentId=selected.intentId,
+            )
+
         if handoff_keywords:
             return SupervisorDecision(
                 mode="delegate" if session.activeDomain != "handoff" else "continue",
@@ -1754,7 +2474,6 @@ class SupervisorAgent:
                 fragmentText=text.strip(),
             )
 
-        out_of_scope_keywords = knowledge_agent.contains_out_of_scope_keywords(session, text)
         if out_of_scope_keywords:
             return SupervisorDecision(
                 mode="knowledge",
@@ -1773,14 +2492,15 @@ class SupervisorAgent:
             session.activeDomain
             and session.pendingConfirmation is None
             and session.activeDomain in enabled_domains
-            and session.activeDomain not in {"knowledge", "safety", "handoff"}
+            and session.activeDomain not in {"knowledge", "safety"}
             and (session.activeDomain in session.slotState or session.missingSlots)
         ):
             strong_other_domain = bool(best_domain and best_domain != session.activeDomain and best_score >= 3)
+            looks_like_continuation = self._looks_like_continuation(session, text)
             if (
-                not knowledge_match
+                (not knowledge_match or (looks_like_continuation and len(lowered.split()) <= 3))
                 and not strong_other_domain
-                and self._looks_like_continuation(session, text)
+                and looks_like_continuation
             ):
                 return SupervisorDecision(
                     mode="continue",
@@ -1861,7 +2581,7 @@ class SupervisorAgent:
                 account_reference, _ = _extract_account_reference(text)
                 if account_reference:
                     score += 2
-                if _normalize_billing_topic(text) and (matched_keywords or account_reference or request_signals):
+                if _normalize_billing_topic(text) and (matched_keywords or account_reference):
                     score += 1
             elif domain == "insurance":
                 carrier_name = _extract_insurance_carrier(text)
@@ -1925,6 +2645,13 @@ class SupervisorAgent:
             return bool(account_reference or _normalize_billing_topic(text) or len(lowered.split()) <= 8)
         if session.activeDomain == "insurance":
             return bool(_extract_insurance_carrier(text) or len(lowered.split()) <= 6)
+        if session.activeDomain == "handoff":
+            return bool(
+                _extract_reason_summary(text)
+                or _extract_phone_number(text)
+                or _extract_callback_window(text)
+                or len(lowered.split()) <= 12
+            )
         return False
 
     def _split_compound_fragments(self, text: str) -> List[str]:
@@ -1934,67 +2661,197 @@ class SupervisorAgent:
             if _clean_phrase(fragment)
         ]
 
-    def _extract_compound_intent(
+    def _extract_detected_intents(
         self,
         session: SessionState,
         text: str,
         knowledge_agent: KnowledgeAgent,
         enabled_domains: set[str],
-    ) -> Optional[SupervisorDecision]:
+    ) -> Dict[str, Any]:
         fragments = self._split_compound_fragments(text)
-        if len(fragments) < 2:
-            return None
+        if not fragments:
+            fragments = [_clean_phrase(text)]
 
-        knowledge_fragment: Optional[tuple[str, KnowledgeMatch]] = None
-        follow_on_fragment: Optional[tuple[str, DomainName, List[str], str]] = None
+        detected_intents: List[DetectedIntent] = []
+        knowledge_intents: List[DetectedIntent] = []
+        action_infos: List[Dict[str, Any]] = []
+        seen_action_domains: set[str] = set()
+        too_many_actions = False
 
-        for fragment in fragments:
+        for detected_order, fragment in enumerate(fragments, start=1):
             lowered_fragment = _normalize(fragment)
-            if not knowledge_fragment:
-                match = knowledge_agent.match(session, fragment)
-                if match:
-                    knowledge_fragment = (fragment, match)
-                    continue
-
-            if not follow_on_fragment and "handoff" in enabled_domains:
-                handoff_keywords = self._match_keywords(lowered_fragment, self.HANDOFF_PRIORITY_KEYWORDS)
-                if handoff_keywords:
-                    follow_on_fragment = (fragment, "handoff", handoff_keywords, "explicit-human-request")
-                    continue
-
-            if follow_on_fragment:
-                continue
-
             candidate_domain, candidate_score, candidate_keywords, candidate_reason = self._best_action_candidate(
                 self._score_action_domains(session, fragment, enabled_domains)
             )
-            if candidate_domain and candidate_score >= 2:
-                follow_on_fragment = (fragment, candidate_domain, candidate_keywords, candidate_reason)
+            handoff_keywords = (
+                self._match_keywords(lowered_fragment, self.HANDOFF_PRIORITY_KEYWORDS)
+                if "handoff" in enabled_domains
+                else []
+            )
+            knowledge_match = knowledge_agent.match(session, fragment)
+            question_like = (
+                fragment.strip().endswith("?")
+                or any(
+                    marker in lowered_fragment
+                    for marker in [
+                        "what ",
+                        "what's",
+                        "what are",
+                        "how ",
+                        "when ",
+                        "do you",
+                        "are you",
+                        "can you tell",
+                        "can i ask",
+                    ]
+                )
+            )
+            explicit_request_like = any(signal in lowered_fragment for signal in self.ACTION_REQUEST_SIGNALS)
 
-        if not knowledge_fragment or not follow_on_fragment:
-            return None
+            if handoff_keywords and "handoff" not in seen_action_domains:
+                if len(action_infos) >= 3:
+                    too_many_actions = True
+                else:
+                    intent = self._build_detected_intent(
+                        domain="handoff",
+                        kind="handoff",
+                        source_text=fragment,
+                        summary="staff callback request",
+                        detected_order=detected_order,
+                        matched_keywords=handoff_keywords,
+                    )
+                    detected_intents.append(intent)
+                    action_infos.append({"intent": intent, "score": 4, "reason": "explicit-human-request"})
+                    seen_action_domains.add("handoff")
+                continue
 
-        knowledge_text, knowledge_match = knowledge_fragment
-        follow_text, follow_domain, follow_keywords, follow_reason = follow_on_fragment
-        if knowledge_text == follow_text:
-            return None
+            if knowledge_match and question_like and not explicit_request_like:
+                intent = self._build_detected_intent(
+                    domain="knowledge",
+                    kind="knowledge",
+                    source_text=fragment,
+                    summary=self._build_knowledge_summary(knowledge_match),
+                    detected_order=detected_order,
+                    knowledge_topic=knowledge_match.topic,
+                    matched_keywords=knowledge_match.matchedKeywords,
+                )
+                detected_intents.append(intent)
+                knowledge_intents.append(intent)
+                continue
 
-        decision_reason = (
-            "compound-knowledge-plus-handoff" if follow_domain == "handoff" else "compound-knowledge-plus-action"
+            if candidate_domain and candidate_score >= 2 and candidate_domain not in seen_action_domains:
+                if len(action_infos) >= 3:
+                    too_many_actions = True
+                    continue
+                intent = self._build_detected_intent(
+                    domain=candidate_domain,
+                    kind="action",
+                    source_text=fragment,
+                    summary=self._build_intent_summary(candidate_domain, fragment),
+                    detected_order=detected_order,
+                    matched_keywords=candidate_keywords,
+                )
+                detected_intents.append(intent)
+                action_infos.append(
+                    {
+                        "intent": intent,
+                        "score": candidate_score,
+                        "reason": candidate_reason,
+                    }
+                )
+                seen_action_domains.add(candidate_domain)
+                continue
+
+            if knowledge_match:
+                intent = self._build_detected_intent(
+                    domain="knowledge",
+                    kind="knowledge",
+                    source_text=fragment,
+                    summary=self._build_knowledge_summary(knowledge_match),
+                    detected_order=detected_order,
+                    knowledge_topic=knowledge_match.topic,
+                    matched_keywords=knowledge_match.matchedKeywords,
+                )
+                detected_intents.append(intent)
+                knowledge_intents.append(intent)
+
+        return {
+            "detectedIntents": detected_intents,
+            "knowledgeIntents": knowledge_intents,
+            "actionInfos": action_infos,
+            "tooManyActions": too_many_actions,
+        }
+
+    def _build_detected_intent(
+        self,
+        *,
+        domain: DomainName,
+        kind: str,
+        source_text: str,
+        summary: str,
+        detected_order: int,
+        knowledge_topic: Optional[KnowledgeTopic] = None,
+        matched_keywords: Optional[List[str]] = None,
+    ) -> DetectedIntent:
+        return DetectedIntent(
+            domain=domain,
+            kind=kind,  # type: ignore[arg-type]
+            sourceText=source_text,
+            summary=summary,
+            status="detected",
+            detectedOrder=detected_order,
+            knowledgeTopic=knowledge_topic,
+            matchedKeywords=matched_keywords or [],
         )
-        matched_keywords = list(dict.fromkeys(knowledge_match.matchedKeywords + follow_keywords))
-        return SupervisorDecision(
-            mode="knowledge",
-            domain="knowledge",
-            confidence=0.94,
-            reason=decision_reason,
-            knowledgeTopic=knowledge_match.topic,
-            matchedKeywords=matched_keywords,
-            followOnIntent=FollowOnIntent(
-                domain=follow_domain,
-                text=follow_text,
-                knowledgeTopic=knowledge_match.topic,
-                reason=follow_reason,
-            ),
-            fragmentText=knowledge_text,
-        )
+
+    def _build_intent_summary(self, domain: DomainName, fragment: str) -> str:
+        if domain == "scheduling":
+            slots = SchedulingSlotState(
+                requestType=_extract_request_type(fragment) or "schedule",
+                visitType=_extract_visit_type(fragment),
+                preferredDate=_extract_preferred_date(fragment),
+                preferredTime=_extract_preferred_time(fragment),
+            )
+            return _build_scheduling_summary(slots)
+        if domain == "refill":
+            medication_name = _extract_medication_name(fragment)
+            return f"refill request for {medication_name}" if medication_name else "refill request"
+        if domain == "insurance":
+            carrier_name = _extract_insurance_carrier(fragment)
+            return f"insurance question about {carrier_name}" if carrier_name else "insurance question"
+        if domain == "billing":
+            account_reference, remaining = _extract_account_reference(fragment)
+            topic = _normalize_billing_topic(remaining)
+            if topic.lower() in {"billing help", "need billing help", "billing question", "billing issue"}:
+                topic = ""
+            if topic and account_reference:
+                return f"billing request about {topic} for account {account_reference}"
+            if topic:
+                return f"billing request about {topic}"
+            return "billing request"
+        if domain == "handoff":
+            return "staff callback request"
+        return f"{domain} request"
+
+    def _build_knowledge_summary(self, knowledge_match: KnowledgeMatch) -> str:
+        topic_labels = {
+            "office_hours": "office hours question",
+            "services": "services question",
+            "after_hours": "after-hours question",
+            "appointment_policy": "appointment policy question",
+            "refill_policy": "refill policy question",
+            "insurance_policy": "insurance policy question",
+            "billing_policy": "billing policy question",
+            "recording_policy": "call recording question",
+            "transcript_retention": "transcript retention question",
+            "custom_faq": "practice FAQ question",
+        }
+        return topic_labels.get(knowledge_match.topic, "knowledge question")
+
+    def _aggregate_detected_keywords(self, intents: List[DetectedIntent]) -> List[str]:
+        keywords: List[str] = []
+        for intent in intents:
+            for keyword in intent.matchedKeywords:
+                if keyword not in keywords:
+                    keywords.append(keyword)
+        return keywords

@@ -120,6 +120,14 @@ describe('BusinessesService', () => {
                     intakeNotes: 'Insurance notes',
                     fallbackSummary: 'Insurance fallback',
                 },
+                daytimeHandoffPolicy: {
+                    mode: 'hybrid_transfer',
+                    transferTargetLabel: 'front desk',
+                    transferPhone: '+15551239999',
+                    ringTimeoutSeconds: 20,
+                    collectReasonFirst: true,
+                    fallbackSummary: 'If nobody is available to take the call live, create a same-day callback task for staff.',
+                },
                 knowledgeConfig: {
                     faqSummary: 'Practice summary',
                     commonQuestions: ['Hours'],
@@ -173,6 +181,7 @@ describe('BusinessesService', () => {
         );
         expect(result.voicePolicyV2.servicePolicies.billing.liveEnabled).toBe(false);
         expect(result.voicePolicyV2.knowledgeConfig.servicesSummary).toBe('Services summary');
+        expect(result.voicePolicyV2.daytimeHandoffPolicy.transferPhone).toBe('+15551239999');
         expect(result.voicePolicyV2.knowledgeConfig.customFaqs).toEqual([
             {
                 question: 'Do you take walk-ins?',

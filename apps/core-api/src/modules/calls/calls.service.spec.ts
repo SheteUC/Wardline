@@ -147,6 +147,29 @@ describe('CallsService', () => {
                         },
                     },
                     {
+                        type: 'intent_detected',
+                        actionName: 'intent_detected',
+                        domain: 'billing',
+                        data: {
+                            intentId: 'intent-1',
+                            summary: 'billing request about statement balance',
+                            status: 'queued',
+                            detectedOrder: 1,
+                        },
+                    },
+                    {
+                        type: 'intent_selected',
+                        actionName: 'intent_selected',
+                        domain: 'billing',
+                        data: {
+                            intentId: 'intent-1',
+                            summary: 'billing request about statement balance',
+                            status: 'active',
+                            detectedOrder: 1,
+                            selectedOrder: 1,
+                        },
+                    },
+                    {
                         type: 'runtime_action_outcome',
                         actionName: 'billing-request',
                         domain: 'billing',
@@ -156,7 +179,7 @@ describe('CallsService', () => {
                         followUpTaskId: 'task-1',
                         fallbackReason: 'timeout',
                         operatorSummary: 'Billing request ready',
-                        data: { latencyMs: 1200 },
+                        data: { latencyMs: 1200, intentId: 'intent-1' },
                         createdAt: '2026-03-26T12:00:00.000Z',
                     },
                 ],
@@ -206,6 +229,18 @@ describe('CallsService', () => {
                     deepgramRequestId: 'dg-123',
                 }),
             );
+            expect(result.intentTimeline).toEqual([
+                expect.objectContaining({
+                    intentId: 'intent-1',
+                    domain: 'billing',
+                    summary: 'billing request about statement balance',
+                    status: 'resolved',
+                    detectedOrder: 1,
+                    selectedOrder: 1,
+                    actionName: 'billing-request',
+                    fallbackReason: 'timeout',
+                }),
+            ]);
         });
 
         it('builds an operator fallback summary for abandoned calls with transport events', async () => {
@@ -250,6 +285,107 @@ describe('CallsService', () => {
                     label: 'Caller disconnected before completion',
                 }),
             );
+            expect(result.intentTimeline).toBeUndefined();
+        });
+
+        it('surfaces handoff transfer results in the intent timeline', async () => {
+            mockPrisma.callSession.findUnique.mockResolvedValue({
+                id: 'call-3',
+                businessId: 'business-1',
+                isEmergency: false,
+                tag: 'HUMAN_TRANSFER',
+                status: 'COMPLETED',
+                turnsJson: [
+                    {
+                        type: 'intent_detected',
+                        actionName: 'intent_detected',
+                        domain: 'handoff',
+                        data: {
+                            intentId: 'intent-handoff',
+                            summary: 'Medication question',
+                            status: 'queued',
+                            detectedOrder: 1,
+                        },
+                    },
+                    {
+                        type: 'intent_selected',
+                        actionName: 'intent_selected',
+                        domain: 'handoff',
+                        data: {
+                            intentId: 'intent-handoff',
+                            summary: 'Medication question',
+                            status: 'active',
+                            detectedOrder: 1,
+                            selectedOrder: 1,
+                        },
+                    },
+                    {
+                        type: 'handoff_transfer_requested',
+                        actionName: 'handoff-transfer',
+                        domain: 'handoff',
+                        data: {
+                            intentId: 'intent-handoff',
+                            reasonSummary: 'Medication question',
+                            transferTargetLabel: 'front desk',
+                        },
+                    },
+                    {
+                        type: 'handoff_transfer_failed',
+                        actionName: 'handoff-transfer',
+                        domain: 'handoff',
+                        followUpTaskId: 'task-callback',
+                        fallbackReason: 'no-answer',
+                        data: {
+                            intentId: 'intent-handoff',
+                            reasonSummary: 'Medication question',
+                            transferTargetLabel: 'front desk',
+                            followUpTaskId: 'task-callback',
+                            fallbackReason: 'no-answer',
+                        },
+                    },
+                    {
+                        type: 'handoff_callback_requested',
+                        actionName: 'manual-follow-up',
+                        domain: 'handoff',
+                        followUpTaskId: 'task-callback',
+                        fallbackReason: 'no-answer',
+                        data: {
+                            intentId: 'intent-handoff',
+                            reasonSummary: 'Medication question',
+                            transferTargetLabel: 'front desk',
+                            followUpTaskId: 'task-callback',
+                            fallbackReason: 'no-answer',
+                        },
+                    },
+                ],
+                transcriptSegments: [],
+                handoffs: [],
+                voicemails: [],
+                followUpTasks: [
+                    {
+                        id: 'task-callback',
+                        type: 'MANUAL_REVIEW',
+                        status: 'OPEN',
+                        priority: 'HIGH',
+                    },
+                ],
+            });
+
+            const result = await service.findOne('call-3');
+
+            expect(result.intentTimeline).toEqual([
+                expect.objectContaining({
+                    intentId: 'intent-handoff',
+                    domain: 'handoff',
+                    summary: 'Medication question',
+                    status: 'resolved',
+                    actionName: 'manual-follow-up',
+                    transferStatus: 'callback_requested',
+                    transferTargetLabel: 'front desk',
+                    followUpTaskId: 'task-callback',
+                    fallbackReason: 'no-answer',
+                }),
+            ]);
         });
 
         it('throws when the call is missing', async () => {

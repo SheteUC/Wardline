@@ -20,6 +20,10 @@ describe('RuntimeActionsService', () => {
             },
             insurancePlan: {
                 findFirst: jest.fn(),
+                create: jest.fn(),
+            },
+            insuranceVerification: {
+                create: jest.fn(),
             },
             insuranceInquiry: {
                 create: jest.fn(),
@@ -216,6 +220,7 @@ describe('RuntimeActionsService', () => {
             callerPhone: '+15550000004',
             carrierName: 'Blue Cross',
             planName: 'PPO',
+            inquiryType: 'acceptance',
         });
 
         expect(result.handledLive).toBe(true);
@@ -226,6 +231,120 @@ describe('RuntimeActionsService', () => {
             source: 'local_plan_lookup',
         });
         expect(integrationConnectors.execute).not.toHaveBeenCalled();
+    });
+
+    it('passes eligibility payloads through to connector execution and creates a verification record', async () => {
+        integrationsService.findResolvedIntegration.mockResolvedValue({
+            businessId: 'business-1',
+            category: 'INSURANCE',
+            vendor: 'athenahealth',
+            status: 'CONNECTED',
+            capabilities: {
+                canCheckInsurance: true,
+            },
+            settings: {},
+        });
+        prisma.insurancePlan.findFirst.mockResolvedValue(null);
+        prisma.insurancePlan.create.mockResolvedValue({
+            id: 'plan-1',
+            carrierName: 'Blue Cross',
+            planName: 'PPO',
+        });
+        prisma.caller.upsert.mockResolvedValue({ id: 'caller-1' });
+        prisma.insuranceInquiry.create.mockResolvedValue({ id: 'inq-2' });
+        prisma.insuranceInquiry.update.mockResolvedValue({ id: 'inq-2' });
+        prisma.insuranceVerification.create.mockResolvedValue({ id: 'verification-1' });
+        integrationConnectors.execute.mockResolvedValue({
+            ok: true,
+            handledLive: true,
+            message: 'Coverage is active.',
+            data: {
+                eligibilityStatus: 'ELIGIBLE',
+                memberNumber: 'A12345',
+                groupNumber: 'GRP9',
+                authorizationRequired: false,
+                coverageDetails: { officeVisit: true },
+                copay: 25,
+                deductible: 500,
+                deductibleMet: 150,
+            },
+        });
+
+        const result = await service.checkInsurance('business-1', {
+            callerName: 'Insurance Caller',
+            callerPhone: '+15550000004',
+            carrierName: 'Blue Cross',
+            planName: 'PPO',
+            inquiryType: 'eligibility',
+            memberId: 'A12345',
+            patientDob: '1980-01-05',
+            serviceType: 'Office visit',
+        } as any);
+
+        expect(prisma.insurancePlan.findFirst).not.toHaveBeenCalled();
+        expect(integrationConnectors.execute).toHaveBeenCalledWith(
+            expect.objectContaining({
+                payload: expect.objectContaining({
+                    inquiryId: 'inq-2',
+                    inquiryType: 'eligibility',
+                    memberId: 'A12345',
+                    patientDob: '1980-01-05',
+                    serviceType: 'Office visit',
+                }),
+            }),
+        );
+        expect(prisma.insuranceVerification.create).toHaveBeenCalled();
+        expect(result.data).toMatchObject({
+            inquiryId: 'inq-2',
+            verificationId: 'verification-1',
+            eligibilityStatus: 'ELIGIBLE',
+        });
+    });
+
+    it('stores richer insurance fallback metadata when a live check is unavailable', async () => {
+        integrationsService.findResolvedIntegration.mockResolvedValue({
+            businessId: 'business-1',
+            category: 'INSURANCE',
+            vendor: 'athenahealth',
+            status: 'CONNECTED',
+            capabilities: {
+                canCheckInsurance: true,
+            },
+            settings: {},
+        });
+        prisma.insurancePlan.findFirst.mockResolvedValue(null);
+        prisma.insuranceInquiry.create.mockResolvedValue({ id: 'inq-3' });
+        integrationConnectors.execute.mockResolvedValue({
+            ok: false,
+            handledLive: false,
+            message: 'Connector timed out.',
+            fallbackReason: 'timeout',
+        });
+
+        const result = await service.checkInsurance('business-1', {
+            callerName: 'Insurance Caller',
+            callerPhone: '+15550000004',
+            carrierName: 'Blue Cross',
+            inquiryType: 'eligibility',
+            memberId: 'A12345',
+            patientDob: '1980-01-05',
+            callbackPhone: '+15550000099',
+            serviceType: 'Office visit',
+        } as any);
+
+        expect(result.fallbackCreated).toBe(true);
+        expect(followUpTasksService.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    inquiryId: 'inq-3',
+                    inquiryType: 'eligibility',
+                    memberId: 'A12345',
+                    patientDob: '1980-01-05',
+                    callbackPhone: '+15550000099',
+                    serviceType: 'Office visit',
+                }),
+            }),
+        );
     });
 
     it('requires confirmation before billing requests can run', async () => {

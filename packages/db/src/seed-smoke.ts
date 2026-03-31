@@ -44,8 +44,17 @@ const SMOKE_PRACTICE_SETUP = {
     },
     insurancePolicy: {
         liveEnabled: true,
-        intakeNotes: 'Answer acceptance and basic eligibility questions when the connected payer workflow supports it.',
+        intakeNotes:
+            'Answer acceptance and basic eligibility questions when the connected payer workflow supports it. Member ID and patient date of birth are required for eligibility checks, while benefits, claim status, and prior authorization requests may need staff follow-up.',
         fallbackSummary: 'Create an insurance follow-up if live verification is unavailable.',
+    },
+    daytimeHandoffPolicy: {
+        mode: 'hybrid_transfer' as const,
+        transferTargetLabel: 'front desk',
+        transferPhone: process.env.SMOKE_TRANSFER_PHONE || '',
+        ringTimeoutSeconds: 20,
+        collectReasonFirst: true,
+        fallbackSummary: 'If nobody is available to take the call live, create a same-day callback task for staff.',
     },
     knowledgeConfig: {
         faqSummary:
@@ -276,6 +285,7 @@ async function main() {
             refillPolicy: SMOKE_PRACTICE_SETUP.refillPolicy as any,
             billingPolicy: SMOKE_PRACTICE_SETUP.billingPolicy as any,
             insurancePolicy: SMOKE_PRACTICE_SETUP.insurancePolicy as any,
+            daytimeHandoffPolicy: SMOKE_PRACTICE_SETUP.daytimeHandoffPolicy as any,
             knowledgeConfig: SMOKE_PRACTICE_SETUP.knowledgeConfig as any,
             escalationConfig: SMOKE_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
@@ -291,6 +301,7 @@ async function main() {
             refillPolicy: SMOKE_PRACTICE_SETUP.refillPolicy as any,
             billingPolicy: SMOKE_PRACTICE_SETUP.billingPolicy as any,
             insurancePolicy: SMOKE_PRACTICE_SETUP.insurancePolicy as any,
+            daytimeHandoffPolicy: SMOKE_PRACTICE_SETUP.daytimeHandoffPolicy as any,
             knowledgeConfig: SMOKE_PRACTICE_SETUP.knowledgeConfig as any,
             escalationConfig: SMOKE_PRACTICE_SETUP.escalationConfig as any,
             emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],
@@ -381,6 +392,7 @@ async function main() {
         refillPolicy: SMOKE_PRACTICE_SETUP.refillPolicy,
         billingPolicy: SMOKE_PRACTICE_SETUP.billingPolicy,
         insurancePolicy: SMOKE_PRACTICE_SETUP.insurancePolicy,
+        daytimeHandoffPolicy: SMOKE_PRACTICE_SETUP.daytimeHandoffPolicy,
         knowledgeConfig: SMOKE_PRACTICE_SETUP.knowledgeConfig,
         escalationConfig: SMOKE_PRACTICE_SETUP.escalationConfig,
         emergencyKeywords: ['chest pain', "can't breathe", 'stroke'],

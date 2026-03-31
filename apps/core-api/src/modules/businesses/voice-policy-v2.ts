@@ -29,6 +29,14 @@ export interface VoicePolicyV2 {
         greeting: string;
         sendUrgentToVoicemail: boolean;
     };
+    daytimeHandoffPolicy: {
+        mode: 'hybrid_transfer' | 'callback_only' | 'transfer_first';
+        transferTargetLabel: string;
+        transferPhone: string;
+        ringTimeoutSeconds: number;
+        collectReasonFirst: boolean;
+        fallbackSummary: string;
+    };
     knowledgeConfig: {
         faqSummary: string;
         commonQuestions: string[];
@@ -128,6 +136,7 @@ export function buildVoicePolicyV2(input: {
             'billing-request',
         ],
         afterHoursPolicy: practiceSetup.afterHoursPolicy,
+        daytimeHandoffPolicy: practiceSetup.daytimeHandoffPolicy,
         knowledgeConfig: practiceSetup.knowledgeConfig,
         servicePolicies: {
             scheduling: {
@@ -228,7 +237,16 @@ export function buildVoicePolicyV2(input: {
                 callerIntro: 'I can help with basic insurance questions.',
                 clarificationStyle: 'friendly',
                 slotPrompts: {
+                    inquiryType: 'Are you asking whether the practice accepts the plan, or whether coverage looks active for a patient?',
                     carrierName: 'Which insurance carrier would you like me to check?',
+                    planName: 'Do you know the plan name, like PPO or HMO?',
+                    memberId: 'What is the member ID on the insurance card?',
+                    groupNumber: 'Do you know the group number?',
+                    patientName: "What is the patient's full name?",
+                    patientDob: "What is the patient's date of birth?",
+                    subscriberRelation: 'Is the patient the subscriber, or are they covered through someone else?',
+                    serviceType: 'What type of visit or service is this for?',
+                    callbackPhone: 'What callback number should the staff use if they need to follow up?',
                 },
                 confirmationTemplate: '',
                 successTemplate: 'Okay, I checked that for you.',
@@ -255,6 +273,11 @@ export function buildVoicePolicyV2(input: {
                 clarificationStyle: 'friendly',
                 slotPrompts: {
                     voicemail: 'Please say the message you would like me to pass along.',
+                    reasonSummary: 'What should I tell the staff this is about?',
+                    callbackPhone: 'What callback number should the staff use?',
+                    preferredCallbackWindow: 'Is there a preferred time for the staff to call you back?',
+                    transferConsent:
+                        'I can try to connect you to the practice now. If no one answers, I can create a callback request. Would you like me to try the live transfer?',
                 },
                 confirmationTemplate: '',
                 successTemplate: 'Okay, I passed that request to the staff.',
