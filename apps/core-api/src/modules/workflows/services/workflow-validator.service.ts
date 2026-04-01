@@ -5,41 +5,15 @@ import {
     ValidationError,
     ValidationWarning,
 } from '@wardline/types';
+import { WORKFLOW_CLINICAL_SAFETY_KEYWORDS } from '../../safety/safety-policy';
 
 @Injectable()
 export class WorkflowValidatorService {
     // Logger for validation events
     // private readonly logger = new Logger(WorkflowValidatorService.name);
 
-    // Medical keywords that MUST route to human clinical staff
-    private readonly MEDICAL_KEYWORDS = [
-        // Emergency keywords
-        'chest pain',
-        'heart attack',
-        'stroke',
-        "can't breathe",
-        'difficulty breathing',
-        'unconscious',
-        'seizure',
-        'bleeding',
-        'overdose',
-
-        // Clinical keywords
-        'diagnosis',
-        'test results',
-        'medication side effects',
-        'symptoms',
-        'pain level',
-        'treatment',
-        'prescription',
-        'medical advice',
-
-        // Mental health
-        'suicidal',
-        'want to die',
-        'harm myself',
-        'self-harm',
-    ];
+    // Safety terms that MUST route to human clinical staff.
+    private readonly MEDICAL_KEYWORDS = WORKFLOW_CLINICAL_SAFETY_KEYWORDS;
 
     /**
      * Validate a workflow

@@ -1,3 +1,4 @@
+import { buildRuntimeSafetyPolicy, type RuntimeSafetyPolicy } from '../safety/safety-policy';
 import { normalizePracticeSetup } from './practice-config';
 
 type RuntimeActionName =
@@ -90,6 +91,7 @@ export interface VoicePolicyV2 {
         escalationMessage: string;
         notifyStaffImmediately: boolean;
     };
+    safetyPolicy: RuntimeSafetyPolicy;
     dialoguePolicies: Record<
         SpecialistDomain,
         {
@@ -113,6 +115,12 @@ export function buildVoicePolicyV2(input: {
     integrations?: Array<{ category: string; status: string }> | null;
 }): VoicePolicyV2 {
     const practiceSetup = normalizePracticeSetup(input.settings ?? undefined);
+    const emergencyKeywords = Array.isArray(input.settings?.emergencyKeywords)
+        ? input.settings?.emergencyKeywords.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+    const outOfScopeKeywords = Array.isArray(input.settings?.outOfScopeKeywords)
+        ? input.settings?.outOfScopeKeywords.filter((entry): entry is string => typeof entry === 'string')
+        : [];
     const connectedCategories = (input.integrations ?? [])
         .filter((integration) => integration.status === 'CONNECTED')
         .map((integration) => String(integration.category));
@@ -183,6 +191,10 @@ export function buildVoicePolicyV2(input: {
             },
         },
         escalationConfig: practiceSetup.escalationConfig,
+        safetyPolicy: buildRuntimeSafetyPolicy({
+            emergencyKeywords,
+            outOfScopeKeywords,
+        }),
         dialoguePolicies: {
             safety: {
                 callerIntro: 'I can help make sure urgent medical concerns get to the right place quickly.',
@@ -285,12 +297,8 @@ export function buildVoicePolicyV2(input: {
                 closeTemplate: 'Thanks for calling the practice. Take care.',
             },
         },
-        emergencyKeywords: Array.isArray(input.settings?.emergencyKeywords)
-            ? input.settings?.emergencyKeywords.filter((entry): entry is string => typeof entry === 'string')
-            : [],
-        outOfScopeKeywords: Array.isArray(input.settings?.outOfScopeKeywords)
-            ? input.settings?.outOfScopeKeywords.filter((entry): entry is string => typeof entry === 'string')
-            : [],
+        emergencyKeywords,
+        outOfScopeKeywords,
         fallbackRuntimeAction: 'manual-follow-up',
         operatorSummaryEnabled: true,
     };

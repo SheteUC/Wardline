@@ -16,6 +16,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     declare readonly workflowVersion: PrismaClientInstance['workflowVersion'];
     declare readonly agent: PrismaClientInstance['agent'];
     declare readonly callSession: PrismaClientInstance['callSession'];
+    declare readonly callEvent: PrismaClientInstance['callEvent'];
+    declare readonly callSessionProjection: PrismaClientInstance['callSessionProjection'];
     declare readonly transcriptSegment: PrismaClientInstance['transcriptSegment'];
     declare readonly voicemailRecord: PrismaClientInstance['voicemailRecord'];
     declare readonly followUpTask: PrismaClientInstance['followUpTask'];

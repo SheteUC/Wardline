@@ -78,6 +78,16 @@ export type Appointment = Prisma.AppointmentModel
  */
 export type CallSession = Prisma.CallSessionModel
 /**
+ * Model CallEvent
+ * 
+ */
+export type CallEvent = Prisma.CallEventModel
+/**
+ * Model CallSessionProjection
+ * 
+ */
+export type CallSessionProjection = Prisma.CallSessionProjectionModel
+/**
  * Model TranscriptSegment
  * 
  */

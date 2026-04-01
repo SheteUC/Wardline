@@ -165,6 +165,113 @@ export class SaveTranscriptDto {
     segments: TranscriptSegmentDto[];
 }
 
+export class BootstrapVoiceSessionDto {
+    @ApiProperty({ enum: CallDirection, description: 'Call direction' })
+    @IsEnum(CallDirection)
+    direction: CallDirection;
+
+    @ApiProperty({ description: 'Caller phone number' })
+    @IsString()
+    fromNumber: string;
+
+    @ApiProperty({ description: 'Called phone number (Twilio number)' })
+    @IsString()
+    toNumber: string;
+
+    @ApiProperty({ description: 'Twilio Call SID' })
+    @IsString()
+    twilioCallSid: string;
+
+    @ApiPropertyOptional({ description: 'Twilio phone number SID' })
+    @IsOptional()
+    @IsString()
+    twilioPhoneNumberSid?: string;
+}
+
+export class CallIngestEventDto {
+    @ApiProperty({ description: 'Monotonic per-call event sequence' })
+    @IsNumber()
+    sequence: number;
+
+    @ApiProperty({ description: 'Event type' })
+    @IsString()
+    type: string;
+
+    @ApiPropertyOptional({ description: 'Domain associated with the event' })
+    @IsOptional()
+    @IsString()
+    domain?: string;
+
+    @ApiPropertyOptional({ description: 'Action name associated with the event' })
+    @IsOptional()
+    @IsString()
+    actionName?: string;
+
+    @ApiPropertyOptional({ description: 'Event creation timestamp' })
+    @IsOptional()
+    @IsDateString()
+    createdAt?: string;
+}
+
+export class CallStatePatchDto {
+    @ApiPropertyOptional({ enum: CallStatus, description: 'Call status' })
+    @IsOptional()
+    @IsEnum(CallStatus)
+    status?: CallStatus;
+
+    @ApiPropertyOptional({ enum: CallTag, description: 'Call tag' })
+    @IsOptional()
+    @IsEnum(CallTag)
+    tag?: CallTag;
+
+    @ApiPropertyOptional({ description: 'Number of turns completed' })
+    @IsOptional()
+    @IsNumber()
+    turnCount?: number;
+
+    @ApiPropertyOptional({ description: 'Whether emergency language has been detected' })
+    @IsOptional()
+    @IsBoolean()
+    isEmergency?: boolean;
+
+    @ApiPropertyOptional({ description: 'End timestamp' })
+    @IsOptional()
+    @IsDateString()
+    endedAt?: string;
+
+    @ApiPropertyOptional({ description: 'Caller ID' })
+    @IsOptional()
+    @IsString()
+    callerId?: string;
+}
+
+export class CallIngestDto {
+    @ApiPropertyOptional({ description: 'Runtime session id' })
+    @IsOptional()
+    @IsString()
+    sessionId?: string;
+
+    @ApiPropertyOptional({ type: [CallIngestEventDto], description: 'Append-only call events' })
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CallIngestEventDto)
+    events?: CallIngestEventDto[];
+
+    @ApiPropertyOptional({ type: [TranscriptSegmentDto], description: 'Transcript segment batch' })
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => TranscriptSegmentDto)
+    transcriptSegments?: TranscriptSegmentDto[];
+
+    @ApiPropertyOptional({ type: CallStatePatchDto, description: 'Small call state patch' })
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => CallStatePatchDto)
+    statePatch?: CallStatePatchDto;
+}
+
 // DTO for creating a handoff
 export class CreateHandoffDto {
     @ApiProperty({ description: 'Call ID' })

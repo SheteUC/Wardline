@@ -396,6 +396,8 @@ export const ModelName = {
   SchedulingIntegration: 'SchedulingIntegration',
   Appointment: 'Appointment',
   CallSession: 'CallSession',
+  CallEvent: 'CallEvent',
+  CallSessionProjection: 'CallSessionProjection',
   TranscriptSegment: 'TranscriptSegment',
   Handoff: 'Handoff',
   VoicemailRecord: 'VoicemailRecord',
@@ -423,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "business" | "businessSettings" | "businessIntegration" | "user" | "businessUser" | "phoneNumber" | "workflow" | "workflowVersion" | "caller" | "schedulingIntegration" | "appointment" | "callSession" | "transcriptSegment" | "handoff" | "voicemailRecord" | "followUpTask" | "auditLog" | "stripeSubscription" | "usageRecord" | "agent" | "prescriptionRefill" | "insurancePlan" | "insuranceInquiry" | "insuranceVerification"
+    modelProps: "business" | "businessSettings" | "businessIntegration" | "user" | "businessUser" | "phoneNumber" | "workflow" | "workflowVersion" | "caller" | "schedulingIntegration" | "appointment" | "callSession" | "callEvent" | "callSessionProjection" | "transcriptSegment" | "handoff" | "voicemailRecord" | "followUpTask" | "auditLog" | "stripeSubscription" | "usageRecord" | "agent" | "prescriptionRefill" | "insurancePlan" | "insuranceInquiry" | "insuranceVerification"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1312,6 +1314,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CallSessionCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CallSessionCountAggregateOutputType> | number
+        }
+      }
+    }
+    CallEvent: {
+      payload: Prisma.$CallEventPayload<ExtArgs>
+      fields: Prisma.CallEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CallEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CallEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>
+        }
+        findFirst: {
+          args: Prisma.CallEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CallEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>
+        }
+        findMany: {
+          args: Prisma.CallEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>[]
+        }
+        create: {
+          args: Prisma.CallEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>
+        }
+        createMany: {
+          args: Prisma.CallEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CallEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>[]
+        }
+        delete: {
+          args: Prisma.CallEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>
+        }
+        update: {
+          args: Prisma.CallEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.CallEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CallEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CallEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.CallEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallEventPayload>
+        }
+        aggregate: {
+          args: Prisma.CallEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCallEvent>
+        }
+        groupBy: {
+          args: Prisma.CallEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CallEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CallEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CallEventCountAggregateOutputType> | number
+        }
+      }
+    }
+    CallSessionProjection: {
+      payload: Prisma.$CallSessionProjectionPayload<ExtArgs>
+      fields: Prisma.CallSessionProjectionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CallSessionProjectionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CallSessionProjectionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>
+        }
+        findFirst: {
+          args: Prisma.CallSessionProjectionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CallSessionProjectionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>
+        }
+        findMany: {
+          args: Prisma.CallSessionProjectionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>[]
+        }
+        create: {
+          args: Prisma.CallSessionProjectionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>
+        }
+        createMany: {
+          args: Prisma.CallSessionProjectionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CallSessionProjectionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>[]
+        }
+        delete: {
+          args: Prisma.CallSessionProjectionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>
+        }
+        update: {
+          args: Prisma.CallSessionProjectionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>
+        }
+        deleteMany: {
+          args: Prisma.CallSessionProjectionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CallSessionProjectionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CallSessionProjectionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>[]
+        }
+        upsert: {
+          args: Prisma.CallSessionProjectionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CallSessionProjectionPayload>
+        }
+        aggregate: {
+          args: Prisma.CallSessionProjectionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCallSessionProjection>
+        }
+        groupBy: {
+          args: Prisma.CallSessionProjectionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CallSessionProjectionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CallSessionProjectionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CallSessionProjectionCountAggregateOutputType> | number
         }
       }
     }
@@ -2441,6 +2591,40 @@ export const CallSessionScalarFieldEnum = {
 export type CallSessionScalarFieldEnum = (typeof CallSessionScalarFieldEnum)[keyof typeof CallSessionScalarFieldEnum]
 
 
+export const CallEventScalarFieldEnum = {
+  id: 'id',
+  callId: 'callId',
+  sequence: 'sequence',
+  type: 'type',
+  domain: 'domain',
+  actionName: 'actionName',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type CallEventScalarFieldEnum = (typeof CallEventScalarFieldEnum)[keyof typeof CallEventScalarFieldEnum]
+
+
+export const CallSessionProjectionScalarFieldEnum = {
+  callId: 'callId',
+  lastSequenceApplied: 'lastSequenceApplied',
+  latestDomain: 'latestDomain',
+  resolution: 'resolution',
+  resolutionLabel: 'resolutionLabel',
+  operatorNextStep: 'operatorNextStep',
+  latestRuntimeAction: 'latestRuntimeAction',
+  handledLive: 'handledLive',
+  fallbackReason: 'fallbackReason',
+  transportSummaryJson: 'transportSummaryJson',
+  intentTimelineJson: 'intentTimelineJson',
+  operatorSummaryJson: 'operatorSummaryJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CallSessionProjectionScalarFieldEnum = (typeof CallSessionProjectionScalarFieldEnum)[keyof typeof CallSessionProjectionScalarFieldEnum]
+
+
 export const TranscriptSegmentScalarFieldEnum = {
   id: 'id',
   callId: 'callId',
@@ -3176,6 +3360,8 @@ export type GlobalOmitConfig = {
   schedulingIntegration?: Prisma.SchedulingIntegrationOmit
   appointment?: Prisma.AppointmentOmit
   callSession?: Prisma.CallSessionOmit
+  callEvent?: Prisma.CallEventOmit
+  callSessionProjection?: Prisma.CallSessionProjectionOmit
   transcriptSegment?: Prisma.TranscriptSegmentOmit
   handoff?: Prisma.HandoffOmit
   voicemailRecord?: Prisma.VoicemailRecordOmit

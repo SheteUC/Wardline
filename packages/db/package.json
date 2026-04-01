@@ -6,6 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "test": "node --import tsx --test src/call-projection-migration.test.ts",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
@@ -14,6 +15,8 @@
     "seed:smoke": "tsx src/seed-smoke.ts",
     "seed:staging": "tsx src/seed-staging.ts",
     "seed:test": "tsx src/seed-test-data.ts",
+    "backfill:call-events": "tsx src/backfill-call-events.ts",
+    "verify:call-projections": "tsx src/verify-call-projections.ts",
     "check:audit-log-immutability": "tsx src/check-audit-log-immutability.ts",
     "add-user": "tsx src/add-user.ts",
     "clean": "rm -rf dist"

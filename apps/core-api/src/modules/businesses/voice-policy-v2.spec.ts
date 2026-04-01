@@ -30,6 +30,13 @@ describe('buildVoicePolicyV2', () => {
         expect(result.dialoguePolicies.billing.slotPrompts.accountReference).toContain("account or statement reference");
         expect(result.dialoguePolicies.scheduling.confirmationTemplate).toContain('Should I send that to the practice');
         expect(result.daytimeHandoffPolicy.mode).toBe('hybrid_transfer');
+        expect(result.safetyPolicy.emergencyGroups).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ category: 'medical_emergency' }),
+                expect.objectContaining({ category: 'mental_health_emergency' }),
+                expect.objectContaining({ category: 'violence_abuse_emergency' }),
+            ]),
+        );
     });
 
     it('uses strict refill and billing defaults when practice settings do not override them', () => {
@@ -97,5 +104,8 @@ describe('buildVoicePolicyV2', () => {
                 routeTo: 'scheduling',
             },
         ]);
+        expect(result.safetyPolicy.nonClinicalOutOfScopePatterns).toEqual(
+            expect.arrayContaining([expect.stringContaining('legal')]),
+        );
     });
 });

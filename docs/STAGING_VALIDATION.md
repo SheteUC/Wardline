@@ -24,6 +24,9 @@ Current defaults:
    - `pnpm test:staging:env`
 4. The staging validation tenant exists:
    - `pnpm db:seed:staging`
+5. Runtime hot-path cutover parity commands are available:
+   - `pnpm db:backfill:call-events`
+   - `pnpm db:verify:call-projections`
 
 ## Canonical Staging Tenant
 
@@ -151,6 +154,43 @@ Before the full staging gate, verify one provider-backed V2 call:
 5. one inbound scheduling call reaches the V2 media websocket
 6. the caller hears the greeting, confirms an appointment request, and the mock action completes live
 7. the resulting call detail page shows operator summary plus transport metadata
+
+### Runtime hot-path cutover validation
+
+Before disabling any legacy compatibility path in staging:
+
+1. keep these flags enabled:
+   - `CALLS_ENABLE_PROJECTION_FALLBACK=true`
+   - `VOICE_RUNTIME_LEGACY_CALL_SYNC=true`
+   - `RUNTIME_ACTIONS_DUAL_WRITE_LEGACY_TURNS=true`
+2. run:
+   - `pnpm --filter @wardline/db migrate:deploy`
+   - `pnpm db:backfill:call-events`
+   - `pnpm db:verify:call-projections`
+3. confirm the verifier reports:
+   - `Missing projection rows: 0`
+   - `Mismatched projection rows: 0`
+4. check `GET /api/internal/calls/cutover-health`
+5. confirm the health response exposes:
+   - projection row count
+   - fallback-read count
+   - ingest failure count
+   - projection rebuild failure count
+   - current rollout flag values
+
+Then validate the staged flag cutover:
+
+1. disable:
+   - `VOICE_RUNTIME_LEGACY_CALL_SYNC`
+   - `RUNTIME_ACTIONS_DUAL_WRITE_LEGACY_TURNS`
+2. keep `CALLS_ENABLE_PROJECTION_FALLBACK=true`
+3. soak for 24 hours with:
+   - `ingestFailureCount = 0`
+   - `projectionRebuildFailureCount = 0`
+4. disable `CALLS_ENABLE_PROJECTION_FALLBACK`
+5. soak for another 24 hours with:
+   - `fallbackReadCount = 0`
+   - no projection-missing logs
 
 ### Operator review
 

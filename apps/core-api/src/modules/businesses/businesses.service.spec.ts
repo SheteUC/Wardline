@@ -182,6 +182,12 @@ describe('BusinessesService', () => {
         expect(result.voicePolicyV2.servicePolicies.billing.liveEnabled).toBe(false);
         expect(result.voicePolicyV2.knowledgeConfig.servicesSummary).toBe('Services summary');
         expect(result.voicePolicyV2.daytimeHandoffPolicy.transferPhone).toBe('+15551239999');
+        expect(result.voicePolicyV2.safetyPolicy.emergencyGroups).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ category: 'medical_emergency' }),
+                expect.objectContaining({ category: 'mental_health_emergency' }),
+            ]),
+        );
         expect(result.voicePolicyV2.knowledgeConfig.customFaqs).toEqual([
             {
                 question: 'Do you take walk-ins?',

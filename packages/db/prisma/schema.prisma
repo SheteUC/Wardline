@@ -362,6 +362,8 @@ model CallSession {
   phoneNumber        PhoneNumber          @relation(fields: [phoneNumberId], references: [id])
   caller             Caller?              @relation(fields: [callerId], references: [id], onDelete: SetNull)
   transcriptSegments TranscriptSegment[]
+  callEvents         CallEvent[]
+  projection         CallSessionProjection?
   handoffs           Handoff[]
   appointments       Appointment[]
   prescriptionRefills PrescriptionRefill[]
@@ -374,6 +376,45 @@ model CallSession {
   @@index([callerId])
   @@index([twilioCallSid])
   @@map("call_sessions")
+}
+
+model CallEvent {
+  id         String   @id @default(uuid())
+  callId      String   @map("call_id")
+  sequence    Int
+  type        String
+  domain      String?
+  actionName  String?  @map("action_name")
+  payload     Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  call CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@unique([callId, sequence])
+  @@index([callId, createdAt])
+  @@index([callId, sequence])
+  @@map("call_events")
+}
+
+model CallSessionProjection {
+  callId               String   @id @map("call_id")
+  lastSequenceApplied  Int      @default(0) @map("last_sequence_applied")
+  latestDomain         String?  @map("latest_domain")
+  resolution           String?
+  resolutionLabel      String?  @map("resolution_label")
+  operatorNextStep     String?  @map("operator_next_step")
+  latestRuntimeAction  String?  @map("latest_runtime_action")
+  handledLive          Boolean? @map("handled_live")
+  fallbackReason       String?  @map("fallback_reason")
+  transportSummaryJson Json?    @map("transport_summary_json")
+  intentTimelineJson   Json?    @map("intent_timeline_json")
+  operatorSummaryJson  Json?    @map("operator_summary_json")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  call CallSession @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@map("call_session_projections")
 }
 
 enum CallDirection {

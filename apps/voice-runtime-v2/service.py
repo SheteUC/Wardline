@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import re
 import uuid
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import ValidationError
+from config import settings
 
 from agents import (
     BillingAgent,
@@ -24,6 +26,7 @@ from agents import (
 )
 from core_api_client import CoreApiClient
 from models import (
+    CallBootstrapResponse,
     CallLifecycleStatus,
     DetectedIntent,
     DomainName,
@@ -49,6 +52,8 @@ from providers import (
     TwilioTelephonyAdapter,
     build_public_callback_url,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize(text: str) -> str:
@@ -112,22 +117,7 @@ class VoiceRuntimeV2:
         )
 
     async def start_session(self, call_sid: str, caller_phone: str, called_phone: str) -> SessionState:
-        business = await self.api_client.get_business_by_phone(called_phone)
-        if not business:
-            raise ValueError(f"No business found for phone {called_phone}")
-
-        runtime_config_payload = await self.api_client.get_runtime_config(str(business["id"]))
-        if not runtime_config_payload:
-            raise ValueError(f"Unable to load runtime-config for business {business['id']}")
-        if "voicePolicyV2" not in runtime_config_payload:
-            raise ValueError(f"Runtime-config for business {business['id']} is missing required voicePolicyV2")
-
-        try:
-            runtime_config = RuntimeConfigBootstrap.model_validate(runtime_config_payload)
-        except ValidationError as error:
-            raise ValueError(f"Runtime-config for business {business['id']} is invalid for Voice Runtime V2") from error
-
-        call_data = await self.api_client.create_call_session(
+        bootstrap_payload = await self.api_client.bootstrap_voice_session(
             {
                 "direction": "INBOUND",
                 "fromNumber": caller_phone,
@@ -135,13 +125,22 @@ class VoiceRuntimeV2:
                 "twilioCallSid": call_sid,
             }
         )
-        if not call_data or not call_data.get("id"):
-            raise ValueError(f"Unable to create a call session for phone {called_phone}")
+        if not bootstrap_payload:
+            raise ValueError(f"Unable to bootstrap a call session for phone {called_phone}")
+
+        try:
+            bootstrap = CallBootstrapResponse.model_validate(bootstrap_payload)
+        except ValidationError as error:
+            raise ValueError(
+                f"Runtime bootstrap for phone {called_phone} is invalid for Voice Runtime V2: {error}"
+            ) from error
+
+        runtime_config = RuntimeConfigBootstrap.model_validate(bootstrap.model_dump())
         session_id = str(uuid.uuid4())
         transport = SessionTransportMetadata.model_validate(
             self.livekit.build_dispatch_metadata(
                 session_id=session_id,
-                business_id=runtime_config.business.id,
+                business_id=bootstrap.business.id,
                 call_sid=call_sid,
             ),
         )
@@ -149,11 +148,11 @@ class VoiceRuntimeV2:
         session = SessionState(
             sessionId=session_id,
             callSid=call_sid,
-            callId=call_data.get("id") if call_data else None,
-            businessId=runtime_config.business.id,
+            callId=bootstrap.callId,
+            businessId=bootstrap.business.id,
             callerPhone=caller_phone,
             calledPhone=called_phone,
-            businessName=runtime_config.business.name,
+            businessName=bootstrap.business.name,
             runtimeConfig=runtime_config,
             transport=transport,
             isAfterHours=not self._is_business_open(runtime_config),
@@ -281,14 +280,7 @@ class VoiceRuntimeV2:
 
         safety_result = self.safety.evaluate(session, cleaned_text)
         if safety_result:
-            self._clear_priority_prompt(session)
-            if safety_result.requestHumanFollowUp:
-                await self._create_manual_follow_up_event(
-                    session,
-                    safety_result.operatorSummary.headline if safety_result.operatorSummary else cleaned_text,
-                )
-                session.lastOperatorSummary = safety_result.operatorSummary
-            return await self._finalize_specialist_result(session, safety_result)
+            return await self._handle_safety_result(session, cleaned_text, safety_result)
 
         if session.awaitingIntentPriority:
             return await self._handle_intent_priority(session, cleaned_text)
@@ -1096,6 +1088,61 @@ class VoiceRuntimeV2:
 
         return await self._finalize_specialist_result(session, result, reply_prefix=reply_prefix)
 
+    async def _handle_safety_result(
+        self,
+        session: SessionState,
+        caller_text: str,
+        result: SpecialistResult,
+    ) -> Dict[str, Any]:
+        preempted_domain = session.activeDomain
+        had_pending_confirmation = session.pendingConfirmation is not None
+
+        if session.activeDomain and session.activeDomain not in {"knowledge", "safety"} and (
+            session.pendingConfirmation
+            or session.missingSlots
+            or session.activeDomain in session.slotState
+        ):
+            self._pause_current_intent(session)
+
+        self._clear_priority_prompt(session)
+        if result.safetyAssessment:
+            self._record_safety_trigger(
+                session,
+                caller_text=caller_text,
+                preempted_domain=preempted_domain,
+                had_pending_confirmation=had_pending_confirmation,
+                assessment=result.safetyAssessment,
+            )
+
+        if result.safetyAssessment and result.safetyAssessment.severity == "emergency":
+            session.isEmergency = True
+            session.lastSpecialistResult = result
+            session.intent = "safety"
+            session.activeDomain = "safety"
+            session.missingSlots = []
+            if result.requestHumanFollowUp:
+                await self._create_manual_follow_up_event(
+                    session,
+                    result.operatorSummary.headline if result.operatorSummary else caller_text,
+                )
+            session.lastOperatorSummary = result.operatorSummary
+            return await self._finalize_specialist_result(session, result)
+
+        if result.safetyAssessment and result.safetyAssessment.severity == "urgent_handoff":
+            if session.isAfterHours:
+                handoff_result = self.handoff.build_after_hours_urgent_reply(session, caller_text)
+            else:
+                handoff_result = self.handoff.handle(session, caller_text)
+            return await self._handle_specialist_result(session, handoff_result, reply_prefix=result.nextPrompt)
+
+        if result.requestHumanFollowUp:
+            await self._create_manual_follow_up_event(
+                session,
+                result.operatorSummary.headline if result.operatorSummary else caller_text,
+            )
+            session.lastOperatorSummary = result.operatorSummary
+        return await self._finalize_specialist_result(session, result)
+
     async def _finalize_specialist_result(
         self,
         session: SessionState,
@@ -1118,7 +1165,10 @@ class VoiceRuntimeV2:
             session.awaitingAnythingElse = False
 
         await self._append_and_persist_assistant_message(session, reply)
-        await self._sync_call_state(session, tag=self._domain_to_tag(result.domain))
+        await self._sync_call_state(
+            session,
+            tag=self._domain_to_tag(result.domain) or ("EMERGENCY" if session.isEmergency else None),
+        )
         return self._build_turn_response(
             session,
             reply,
@@ -1877,21 +1927,59 @@ class VoiceRuntimeV2:
             return
 
         resolved_status = self._resolve_lifecycle_status(session, status)
-        payload: Dict[str, Any] = {
+        state_patch: Dict[str, Any] = {
             "status": resolved_status,
             "isEmergency": session.isEmergency,
             "turnCount": session.turns,
-            "turnsJson": [event.model_dump() for event in session.events],
         }
         if tag is not None:
-            payload["tag"] = tag
+            state_patch["tag"] = tag
         if resolved_status in {"COMPLETED", "ABANDONED", "FAILED"}:
-            payload["endedAt"] = datetime.now(timezone.utc).isoformat()
+            state_patch["endedAt"] = datetime.now(timezone.utc).isoformat()
 
-        await self.api_client.update_call_session(
+        pending_events: list[Dict[str, Any]] = []
+        for event in session.events[session.persistedEventCount:]:
+            if event.sequence is None:
+                event.sequence = session.nextEventSequence
+                session.nextEventSequence += 1
+            pending_events.append(event.model_dump())
+
+        transcript_segments = list(session.pendingTranscriptSegments)
+
+        ingest_result = await self.api_client.ingest_call(
             session.callId,
-            payload,
+            {
+                "sessionId": session.sessionId,
+                "events": pending_events,
+                "transcriptSegments": transcript_segments,
+                "statePatch": state_patch,
+            },
         )
+        if ingest_result is not None:
+            session.persistedEventCount = len(session.events)
+            session.pendingTranscriptSegments.clear()
+
+        if settings.voice_runtime_legacy_call_sync:
+            logger.info(
+                "Legacy call sync still active",
+                extra={
+                    "callId": session.callId,
+                    "sessionId": session.sessionId,
+                    "pendingEventCount": len(pending_events),
+                    "transcriptSegmentCount": len(transcript_segments),
+                },
+            )
+            await self._legacy_sync_call_state(session, state_patch)
+
+    async def _legacy_sync_call_state(self, session: SessionState, state_patch: Dict[str, Any]):
+        if not session.callId:
+            return
+
+        legacy_payload: Dict[str, Any] = {
+            **state_patch,
+            "turnsJson": [event.model_dump() for event in session.events],
+        }
+        await self.api_client.update_call_session(session.callId, legacy_payload)
 
     def _build_turn_response(
         self,
@@ -1996,6 +2084,40 @@ class VoiceRuntimeV2:
             )
         )
 
+    def _record_safety_trigger(
+        self,
+        session: SessionState,
+        *,
+        caller_text: str,
+        preempted_domain: Optional[DomainName],
+        had_pending_confirmation: bool,
+        assessment: Any,
+    ):
+        session.events.append(
+            SessionEvent(
+                type="safety_triggered",
+                actionName="safety",
+                domain="safety",
+                operatorSummary=assessment.headline,
+                requiresFollowUp=True,
+                data={
+                    "category": assessment.category,
+                    "severity": assessment.severity,
+                    "matchedPatterns": assessment.matchedPatterns,
+                    "preemptedDomain": preempted_domain,
+                    "hadPendingConfirmation": had_pending_confirmation,
+                    "queuedIntentCount": len(
+                        [
+                            intent
+                            for intent in session.intentQueue.intents
+                            if intent.status not in {"resolved", "cancelled", "dropped"}
+                        ]
+                    ),
+                    "callerText": caller_text,
+                },
+            )
+        )
+
     def _record_specialist_result(self, session: SessionState, result: SpecialistResult):
         session.events.append(
             SessionEvent(
@@ -2011,6 +2133,7 @@ class VoiceRuntimeV2:
                     "extractedFields": result.extractedFields,
                     "callerRequestSummary": result.callerRequestSummary,
                     "fallbackRecommendation": result.fallbackRecommendation,
+                    "safetyAssessment": result.safetyAssessment.model_dump() if result.safetyAssessment else None,
                 },
             )
         )
@@ -2186,23 +2309,16 @@ class VoiceRuntimeV2:
         end_ms = start_ms + duration_ms
         session.transcriptCursorMs = end_ms
 
-        try:
-            await self.api_client.save_transcript(
-                session.callId,
-                [
-                    {
-                        "speaker": speaker,
-                        "text": clean_text,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "startTimeMs": start_ms,
-                        "endTimeMs": end_ms,
-                        "confidence": confidence,
-                    }
-                ],
-            )
-        except Exception:
-            # Transcript persistence should not break the live call loop.
-            return
+        session.pendingTranscriptSegments.append(
+            {
+                "speaker": speaker,
+                "text": clean_text,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "startTimeMs": start_ms,
+                "endTimeMs": end_ms,
+                "confidence": confidence,
+            }
+        )
 
     def _transport_event_snapshot(self, transport: SessionTransportMetadata) -> Dict[str, Any]:
         snapshot = transport.model_dump()

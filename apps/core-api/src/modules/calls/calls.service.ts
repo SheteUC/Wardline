@@ -3,6 +3,13 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../../cache/cache.service';
 import { Logger } from '@wardline/utils';
 import { FollowUpTasksService } from '../follow-up-tasks/follow-up-tasks.service';
+import { DEFAULT_OPERATING_HOURS, normalizeOperatingHours } from '../businesses/business-hours';
+import { buildVoicePolicyV2 } from '../businesses/voice-policy-v2';
+import { normalizePracticeSetup } from '../businesses/practice-config';
+import { CallProjectionService } from './call-projection.service';
+import { CallIngestService } from './call-ingest.service';
+import { callsEnableProjectionFallback, getCallCutoverFlagSnapshot } from './call-cutover-flags';
+import { CallCutoverMetricsService } from './call-cutover-metrics.service';
 
 @Injectable()
 export class CallsService {
@@ -12,6 +19,9 @@ export class CallsService {
         private prisma: PrismaService,
         private cache: CacheService,
         private followUpTasksService: FollowUpTasksService,
+        private callProjectionService: CallProjectionService,
+        private callIngestService: CallIngestService,
+        private callCutoverMetrics: CallCutoverMetricsService,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -41,13 +51,35 @@ export class CallsService {
         const [calls, total] = await Promise.all([
             this.prisma.callSession.findMany({
                 where,
-                include: {
+                select: {
+                    id: true,
+                    businessId: true,
+                    twilioCallSid: true,
+                    direction: true,
+                    status: true,
+                    tag: true,
+                    isEmergency: true,
+                    turnCount: true,
+                    startedAt: true,
+                    endedAt: true,
+                    sentimentScore: true,
                     phoneNumber: { select: { twilioPhoneNumber: true, label: true } },
                     caller: { select: { id: true, name: true, phone: true } },
                     voicemails: { select: { id: true, isListened: true } },
                     followUpTasks: {
                         where: { status: { in: ['OPEN', 'IN_PROGRESS'] as any } },
                         select: { id: true, priority: true, status: true, type: true },
+                    },
+                    projection: {
+                        select: {
+                            latestDomain: true,
+                            resolution: true,
+                            resolutionLabel: true,
+                            operatorNextStep: true,
+                            latestRuntimeAction: true,
+                            handledLive: true,
+                            fallbackReason: true,
+                        },
                     },
                 },
                 orderBy: { startedAt: 'desc' },
@@ -57,10 +89,56 @@ export class CallsService {
             this.prisma.callSession.count({ where }),
         ]);
 
+        const projectionFallbackEnabled = callsEnableProjectionFallback();
+        const missingProjectionIds = projectionFallbackEnabled
+            ? calls.filter((call) => !call.projection).map((call) => call.id)
+            : [];
+        const legacyTurnsMap = missingProjectionIds.length
+            ? new Map(
+                  (
+                      await this.prisma.callSession.findMany({
+                          where: { id: { in: missingProjectionIds } },
+                          select: { id: true, turnsJson: true },
+                      })
+                  ).map((call) => [call.id, call.turnsJson]),
+              )
+            : new Map<string, unknown>();
+
+        if (missingProjectionIds.length > 0) {
+            this.callCutoverMetrics.recordFallbackRead();
+            this.logger.warn('Projection fallback used for dashboard call rows', {
+                route: 'dashboard_call_rows',
+                businessId,
+                count: missingProjectionIds.length,
+                projectionFallbackEnabled,
+            });
+        } else if (!projectionFallbackEnabled && calls.some((call) => !call.projection)) {
+            this.logger.error('Projection row missing while fallback is disabled for dashboard call rows', {
+                route: 'dashboard_call_rows',
+                businessId,
+                count: calls.filter((call) => !call.projection).length,
+                projectionFallbackEnabled,
+            });
+        }
+
         const data = calls.map((call) => {
-            const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
-            const operatorSummary = this.buildOperatorSummary(call, runtimeActionEvents, call.turnsJson);
-            const latestRuntimeAction = runtimeActionEvents[0];
+            const fallbackSnapshot = !call.projection
+                ? this.callProjectionService.buildProjection(call, legacyTurnsMap.get(call.id) ?? [])
+                : undefined;
+            const latestRuntimeAction = call.projection?.latestRuntimeAction
+                ? {
+                      actionName: call.projection.latestRuntimeAction,
+                      handledLive: call.projection.handledLive ?? undefined,
+                      fallbackReason: call.projection.fallbackReason ?? undefined,
+                  }
+                : fallbackSnapshot?.latestRuntimeAction;
+            const operatorSummary = call.projection
+                ? {
+                      resolution: call.projection.resolution ?? 'CALL_IN_PROGRESS',
+                      label: call.projection.resolutionLabel ?? 'Call in progress',
+                      nextStep: call.projection.operatorNextStep ?? 'Review live transport events while the call is still active.',
+                  }
+                : fallbackSnapshot?.operatorSummary;
 
             return {
                 id: call.id,
@@ -69,7 +147,7 @@ export class CallsService {
                 direction: call.direction,
                 status: call.status,
                 tag: call.tag,
-                latestDomain: this.extractLatestDomain(call.turnsJson, call.tag),
+                latestDomain: call.projection?.latestDomain ?? fallbackSnapshot?.latestDomain,
                 callerPhone: this.canonicalizePhone(call.caller?.phone) ?? call.phoneNumber.twilioPhoneNumber,
                 callerName: call.caller?.name,
                 lineLabel: call.phoneNumber.label,
@@ -79,9 +157,9 @@ export class CallsService {
                 voicemailListened: call.voicemails.every(v => v.isListened),
                 followUpTaskCount: call.followUpTasks.length,
                 hasFollowUp: call.followUpTasks.length > 0,
-                resolution: operatorSummary.resolution,
-                resolutionLabel: operatorSummary.label,
-                operatorNextStep: operatorSummary.nextStep,
+                resolution: operatorSummary?.resolution,
+                resolutionLabel: operatorSummary?.label,
+                operatorNextStep: operatorSummary?.nextStep,
                 latestRuntimeAction: latestRuntimeAction?.actionName,
                 handledLive: latestRuntimeAction?.handledLive,
                 fallbackReason: latestRuntimeAction?.fallbackReason,
@@ -113,7 +191,22 @@ export class CallsService {
         // Call detail includes transcript text and caller fields, so it bypasses Redis.
         const call = await this.prisma.callSession.findUnique({
             where: { id },
-            include: {
+            select: {
+                id: true,
+                businessId: true,
+                twilioCallSid: true,
+                direction: true,
+                status: true,
+                tag: true,
+                callerId: true,
+                isEmergency: true,
+                turnCount: true,
+                startedAt: true,
+                endedAt: true,
+                sentimentScore: true,
+                recordingUrl: true,
+                createdAt: true,
+                updatedAt: true,
                 phoneNumber: true,
                 caller: true,
                 transcriptSegments: { orderBy: { startTimeMs: 'asc' } },
@@ -123,18 +216,69 @@ export class CallsService {
                 prescriptionRefills: { select: { id: true, medicationName: true, status: true } },
                 insuranceInquiries: { select: { id: true, inquiryType: true, resolved: true } },
                 followUpTasks: { orderBy: { createdAt: 'desc' } },
+                projection: {
+                    select: {
+                        latestDomain: true,
+                        resolution: true,
+                        resolutionLabel: true,
+                        operatorNextStep: true,
+                        latestRuntimeAction: true,
+                        handledLive: true,
+                        fallbackReason: true,
+                        transportSummaryJson: true,
+                        intentTimelineJson: true,
+                        operatorSummaryJson: true,
+                    },
+                },
+                callEvents: {
+                    where: { type: 'runtime_action_outcome' },
+                    orderBy: { sequence: 'desc' },
+                    select: { payload: true },
+                },
             },
         });
         if (!call) throw new NotFoundException(`Call not found: ${id}`);
-        const runtimeActionEvents = this.extractRuntimeActionEvents(call.turnsJson);
-        const transportSummary = this.extractTransportSummary(call.turnsJson);
-        const intentTimeline = this.extractIntentTimeline(call.turnsJson);
+        const projectionFallbackEnabled = callsEnableProjectionFallback();
+        const fallbackTurns = !call.projection && projectionFallbackEnabled
+            ? (
+                  await this.prisma.callSession.findUnique({
+                      where: { id },
+                      select: { turnsJson: true },
+                  })
+              )?.turnsJson
+            : undefined;
+        if (!call.projection && projectionFallbackEnabled) {
+            this.callCutoverMetrics.recordFallbackRead();
+            this.logger.warn('Projection fallback used for call detail', {
+                route: 'call_detail',
+                callId: id,
+                businessId: call.businessId,
+                projectionFallbackEnabled,
+            });
+        } else if (!call.projection) {
+            this.logger.error('Projection row missing while fallback is disabled for call detail', {
+                route: 'call_detail',
+                callId: id,
+                businessId: call.businessId,
+                projectionFallbackEnabled,
+            });
+        }
+
+        const runtimeActionEvents = call.callEvents.length > 0
+            ? this.callProjectionService.extractRuntimeActionEvents(call.callEvents.map((event) => event.payload))
+            : this.callProjectionService.extractRuntimeActionEvents(fallbackTurns);
+        const fallbackSnapshot = !call.projection
+            ? this.callProjectionService.buildProjection(call, fallbackTurns ?? [])
+            : undefined;
+        const transportSummary = call.projection?.transportSummaryJson ?? fallbackSnapshot?.transportSummary;
+        const intentTimeline = call.projection?.intentTimelineJson ?? fallbackSnapshot?.intentTimeline;
+        const operatorSummary = call.projection?.operatorSummaryJson ?? fallbackSnapshot?.operatorSummary;
         const response = {
             ...call,
             transportSummary,
             runtimeActionEvents,
             intentTimeline,
-            operatorSummary: this.buildOperatorSummary(call, runtimeActionEvents, call.turnsJson),
+            operatorSummary,
         };
 
         this.logger.info('Call detail query completed', {
@@ -144,514 +288,6 @@ export class CallsService {
         });
 
         return response;
-    }
-
-    private extractRuntimeActionEvents(turnsJson: unknown) {
-        if (!Array.isArray(turnsJson)) {
-            return [];
-        }
-
-        return turnsJson
-            .filter((entry): entry is Record<string, any> =>
-                Boolean(entry) &&
-                typeof entry === 'object' &&
-                entry.type === 'runtime_action_outcome' &&
-                typeof entry.actionName === 'string',
-            )
-            .map((entry) => ({
-                type: 'runtime_action_outcome',
-                actionName: entry.actionName,
-                integrationCategory: entry.integrationCategory,
-                integrationVendor: entry.integrationVendor,
-                domain: typeof entry.domain === 'string' ? entry.domain : undefined,
-                handledLive: Boolean(entry.handledLive),
-                followUpTaskId:
-                    typeof entry.followUpTaskId === 'string' ? entry.followUpTaskId : undefined,
-                fallbackReason:
-                    typeof entry.fallbackReason === 'string' ? entry.fallbackReason : undefined,
-                operatorSummary:
-                    typeof entry.operatorSummary === 'string' ? entry.operatorSummary : undefined,
-                callerName: typeof entry.callerName === 'string' ? entry.callerName : undefined,
-                callerPhone: typeof entry.callerPhone === 'string' ? entry.callerPhone : undefined,
-                data:
-                    entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)
-                        ? entry.data
-                        : {},
-                latencyMs:
-                    entry.data &&
-                    typeof entry.data === 'object' &&
-                    !Array.isArray(entry.data) &&
-                    typeof entry.data.latencyMs === 'number'
-                        ? entry.data.latencyMs
-                        : undefined,
-                createdAt:
-                    typeof entry.createdAt === 'string'
-                        ? entry.createdAt
-                        : new Date().toISOString(),
-            }))
-            .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-    }
-
-    private extractTransportSummary(turnsJson: unknown) {
-        if (!Array.isArray(turnsJson)) {
-            return undefined;
-        }
-
-        const bootstrapEvent = turnsJson.find(
-            (entry): entry is Record<string, any> =>
-                Boolean(entry) &&
-                typeof entry === 'object' &&
-                entry.type === 'session_bootstrap' &&
-                entry.data &&
-                typeof entry.data === 'object' &&
-                entry.data.transport &&
-                typeof entry.data.transport === 'object',
-        );
-
-        if (!bootstrapEvent) {
-            return undefined;
-        }
-
-        const transport = bootstrapEvent.data.transport as Record<string, unknown>;
-        const transportEvents = turnsJson.filter(
-            (entry): entry is Record<string, any> =>
-                Boolean(entry) &&
-                typeof entry === 'object' &&
-                entry.type === 'transport_event',
-        );
-        const latestProviderEvent = [...transportEvents]
-            .reverse()
-            .find(
-                (entry) =>
-                    typeof entry.data?.providerSessionId === 'string' ||
-                    typeof entry.data?.deepgramRequestId === 'string' ||
-                    typeof entry.data?.twilioStreamSid === 'string',
-            );
-        const transcriptEventCount = turnsJson.filter(
-            (entry): entry is Record<string, any> =>
-                Boolean(entry) &&
-                typeof entry === 'object' &&
-                (entry.type === 'transcript_partial' ||
-                    (entry.type === 'transport_event' && entry.actionName === 'deepgram_transcript')),
-        ).length;
-
-        return {
-            runtime: typeof transport.runtime === 'string' ? transport.runtime : 'voice-runtime-v2',
-            transport: typeof transport.transport === 'string' ? transport.transport : 'livekit',
-            twilioCallSid: typeof transport.twilioCallSid === 'string' ? transport.twilioCallSid : undefined,
-            roomName: typeof transport.roomName === 'string' ? transport.roomName : undefined,
-            participantIdentity:
-                typeof transport.participantIdentity === 'string' ? transport.participantIdentity : undefined,
-            livekitUrl: typeof transport.livekitUrl === 'string' ? transport.livekitUrl : undefined,
-            twilioMediaStreamUrl:
-                typeof transport.twilioMediaStreamUrl === 'string' ? transport.twilioMediaStreamUrl : undefined,
-            twilioStreamSid:
-                typeof latestProviderEvent?.data?.twilioStreamSid === 'string'
-                    ? latestProviderEvent.data.twilioStreamSid
-                    : typeof transport.twilioStreamSid === 'string'
-                      ? transport.twilioStreamSid
-                      : undefined,
-            providerSessionId:
-                typeof latestProviderEvent?.data?.providerSessionId === 'string'
-                    ? latestProviderEvent.data.providerSessionId
-                    : typeof latestProviderEvent?.data?.deepgramRequestId === 'string'
-                      ? latestProviderEvent.data.deepgramRequestId
-                      : typeof transport.providerSessionId === 'string'
-                        ? transport.providerSessionId
-                        : undefined,
-            deepgramRequestId:
-                typeof latestProviderEvent?.data?.deepgramRequestId === 'string'
-                    ? latestProviderEvent.data.deepgramRequestId
-                    : typeof transport.deepgramRequestId === 'string'
-                      ? transport.deepgramRequestId
-                      : undefined,
-            transcriptEventCount,
-        };
-    }
-
-    private extractIntentTimeline(turnsJson: unknown) {
-        if (!Array.isArray(turnsJson)) {
-            return undefined;
-        }
-
-        type IntentTimelineEntry = {
-            intentId: string;
-            domain?: string;
-            summary: string;
-            status: string;
-            detectedOrder?: number;
-            selectedOrder?: number;
-            actionName?: string;
-            handledLive?: boolean;
-            followUpTaskId?: string;
-            fallbackReason?: string;
-            transferStatus?: string;
-            transferTargetLabel?: string;
-            createdAt?: string;
-        };
-
-        const timeline = new Map<string, IntentTimelineEntry>();
-
-        const intentStatusByEvent: Record<string, string> = {
-            intent_detected: 'detected',
-            intent_selected: 'active',
-            intent_resumed: 'active',
-            intent_paused: 'paused',
-            intent_resolved: 'resolved',
-            intent_cancelled: 'cancelled',
-            intent_dropped: 'dropped',
-        };
-
-        for (const entry of turnsJson) {
-            if (!entry || typeof entry !== 'object') {
-                continue;
-            }
-
-            if (typeof entry.type === 'string' && entry.type.startsWith('intent_')) {
-                const data =
-                    entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)
-                        ? entry.data
-                        : {};
-                const intentId = typeof data.intentId === 'string' ? data.intentId : undefined;
-                if (!intentId) {
-                    continue;
-                }
-
-                const existing: IntentTimelineEntry = timeline.get(intentId) ?? {
-                    intentId,
-                    domain: typeof entry.domain === 'string' ? entry.domain : undefined,
-                    summary:
-                        typeof data.summary === 'string'
-                            ? data.summary
-                            : typeof entry.operatorSummary === 'string'
-                              ? entry.operatorSummary
-                              : 'Call issue',
-                    status: typeof data.status === 'string' ? data.status : 'detected',
-                    createdAt: typeof entry.createdAt === 'string' ? entry.createdAt : undefined,
-                };
-
-                existing.domain =
-                    typeof entry.domain === 'string'
-                        ? entry.domain
-                        : typeof existing.domain === 'string'
-                          ? existing.domain
-                          : undefined;
-                existing.summary =
-                    typeof data.summary === 'string' && data.summary.length > 0
-                        ? data.summary
-                        : existing.summary;
-                existing.status = intentStatusByEvent[entry.type] ?? existing.status;
-                existing.detectedOrder =
-                    typeof data.detectedOrder === 'number' ? data.detectedOrder : existing.detectedOrder;
-                existing.selectedOrder =
-                    typeof data.selectedOrder === 'number' ? data.selectedOrder : existing.selectedOrder;
-                existing.followUpTaskId =
-                    typeof data.followUpTaskId === 'string' ? data.followUpTaskId : existing.followUpTaskId;
-                existing.fallbackReason =
-                    typeof data.fallbackReason === 'string' ? data.fallbackReason : existing.fallbackReason;
-                existing.actionName =
-                    typeof data.actionName === 'string' ? data.actionName : existing.actionName;
-                timeline.set(intentId, existing);
-                continue;
-            }
-
-            if (entry.type !== 'runtime_action_outcome') {
-                if (
-                    entry.type !== 'handoff_transfer_requested' &&
-                    entry.type !== 'handoff_transfer_connected' &&
-                    entry.type !== 'handoff_transfer_failed' &&
-                    entry.type !== 'handoff_callback_requested'
-                ) {
-                    continue;
-                }
-
-                const data =
-                    entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data) ? entry.data : {};
-                const intentId = typeof data.intentId === 'string' ? data.intentId : undefined;
-                if (!intentId) {
-                    continue;
-                }
-
-                const existing: IntentTimelineEntry = timeline.get(intentId) ?? {
-                    intentId,
-                    domain: typeof entry.domain === 'string' ? entry.domain : undefined,
-                    summary:
-                        typeof data.reasonSummary === 'string'
-                            ? data.reasonSummary
-                            : typeof data.summary === 'string'
-                              ? data.summary
-                              : typeof entry.operatorSummary === 'string'
-                                ? entry.operatorSummary
-                                : 'Call issue',
-                    status: 'active',
-                    createdAt: typeof entry.createdAt === 'string' ? entry.createdAt : undefined,
-                };
-
-                existing.domain =
-                    typeof entry.domain === 'string'
-                        ? entry.domain
-                        : typeof existing.domain === 'string'
-                          ? existing.domain
-                          : undefined;
-                existing.summary =
-                    typeof data.reasonSummary === 'string' && data.reasonSummary.length > 0
-                        ? data.reasonSummary
-                        : typeof existing.summary === 'string'
-                          ? existing.summary
-                          : 'Call issue';
-                existing.actionName =
-                    entry.type === 'handoff_callback_requested'
-                        ? 'manual-follow-up'
-                        : typeof entry.actionName === 'string'
-                          ? entry.actionName
-                          : existing.actionName;
-                existing.transferStatus =
-                    entry.type === 'handoff_transfer_requested'
-                        ? 'requested'
-                        : entry.type === 'handoff_transfer_connected'
-                          ? 'connected'
-                          : entry.type === 'handoff_transfer_failed'
-                            ? 'failed'
-                            : 'callback_requested';
-                existing.transferTargetLabel =
-                    typeof data.transferTargetLabel === 'string'
-                        ? data.transferTargetLabel
-                        : existing.transferTargetLabel;
-                existing.handledLive =
-                    entry.type === 'handoff_transfer_connected'
-                        ? true
-                        : entry.type === 'handoff_transfer_failed'
-                          ? false
-                          : existing.handledLive;
-                existing.followUpTaskId =
-                    typeof entry.followUpTaskId === 'string'
-                        ? entry.followUpTaskId
-                        : typeof data.followUpTaskId === 'string'
-                          ? data.followUpTaskId
-                          : existing.followUpTaskId;
-                existing.fallbackReason =
-                    typeof entry.fallbackReason === 'string'
-                        ? entry.fallbackReason
-                        : typeof data.fallbackReason === 'string'
-                          ? data.fallbackReason
-                          : existing.fallbackReason;
-                existing.status =
-                    entry.type === 'handoff_transfer_connected' || entry.type === 'handoff_callback_requested'
-                        ? 'resolved'
-                        : existing.status;
-                timeline.set(intentId, existing);
-                continue;
-            }
-
-            const data =
-                entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data) ? entry.data : {};
-            const intentId = typeof data.intentId === 'string' ? data.intentId : undefined;
-            if (!intentId) {
-                continue;
-            }
-
-            const existing = timeline.get(intentId);
-            if (!existing) {
-                continue;
-            }
-
-            existing.actionName = typeof entry.actionName === 'string' ? entry.actionName : existing.actionName;
-            existing.handledLive = Boolean(entry.handledLive);
-            existing.followUpTaskId =
-                typeof entry.followUpTaskId === 'string' ? entry.followUpTaskId : existing.followUpTaskId;
-            existing.fallbackReason =
-                typeof entry.fallbackReason === 'string' ? entry.fallbackReason : existing.fallbackReason;
-            if (existing.status !== 'cancelled' && existing.status !== 'dropped') {
-                existing.status = 'resolved';
-            }
-            timeline.set(intentId, existing);
-        }
-
-        if (timeline.size === 0) {
-            return undefined;
-        }
-
-        return Array.from(timeline.values()).sort((left, right) => {
-            const leftDetected = left.detectedOrder ?? Number.MAX_SAFE_INTEGER;
-            const rightDetected = right.detectedOrder ?? Number.MAX_SAFE_INTEGER;
-            if (leftDetected !== rightDetected) {
-                return leftDetected - rightDetected;
-            }
-            const leftSelected = left.selectedOrder ?? Number.MAX_SAFE_INTEGER;
-            const rightSelected = right.selectedOrder ?? Number.MAX_SAFE_INTEGER;
-            return leftSelected - rightSelected;
-        });
-    }
-
-    private extractLatestDomain(turnsJson: unknown, tag?: string | null) {
-        if (tag) {
-            return tag.toLowerCase();
-        }
-
-        if (!Array.isArray(turnsJson)) {
-            return undefined;
-        }
-
-        const latestDomainEvent = [...turnsJson].reverse().find(
-            (entry): entry is Record<string, any> =>
-                Boolean(entry) &&
-                typeof entry === 'object' &&
-                typeof entry.domain === 'string',
-        );
-
-        return typeof latestDomainEvent?.domain === 'string' ? latestDomainEvent.domain : undefined;
-    }
-
-    private hasTransportEvent(turnsJson: unknown, ...eventNames: string[]) {
-        if (!Array.isArray(turnsJson)) {
-            return false;
-        }
-
-        return turnsJson.some(
-            (entry): entry is Record<string, any> =>
-                Boolean(entry) &&
-                typeof entry === 'object' &&
-                entry.type === 'transport_event' &&
-                (eventNames.length === 0 || eventNames.includes(entry.actionName)),
-        );
-    }
-
-    private buildOperatorSummary(
-        call: {
-            isEmergency?: boolean;
-            tag?: string | null;
-            status?: string | null;
-            voicemails?: Array<unknown>;
-            followUpTasks?: Array<{
-                id: string;
-                status: string;
-                priority: string;
-                type: string;
-            }>;
-        },
-        runtimeActionEvents: Array<{
-            actionName: string;
-            domain?: string;
-            handledLive: boolean;
-            followUpTaskId?: string;
-            fallbackReason?: string;
-            operatorSummary?: string;
-        }>,
-        turnsJson?: unknown,
-    ) {
-        const openFollowUpTask = (call.followUpTasks ?? []).find(
-            (task) => task.status === 'OPEN' || task.status === 'IN_PROGRESS',
-        );
-        const latestRuntimeAction = runtimeActionEvents[0];
-
-        if (call.isEmergency || call.tag === 'EMERGENCY') {
-            return {
-                resolution: 'EMERGENCY_ESCALATION',
-                label: 'Emergency escalation',
-                nextStep: openFollowUpTask
-                    ? 'Review the urgent task and contact the caller immediately if staff intervention is still needed.'
-                    : 'Confirm the caller received emergency guidance and staff awareness where appropriate.',
-            };
-        }
-
-        if (latestRuntimeAction) {
-            if (latestRuntimeAction.handledLive) {
-                return {
-                    resolution: 'LIVE_RESOLVED',
-                    label: latestRuntimeAction.operatorSummary || 'Handled live',
-                    nextStep: openFollowUpTask
-                        ? 'A follow-up task is still open. Review it and close it if the live action fully resolved the call.'
-                        : 'No staff follow-up is currently required unless the caller contacts the practice again.',
-                    actionName: latestRuntimeAction.actionName,
-                    handledLive: true,
-                };
-            }
-
-            return {
-                resolution: 'FOLLOW_UP_REQUIRED',
-                label: latestRuntimeAction.operatorSummary || 'Staff follow-up required',
-                nextStep: openFollowUpTask
-                    ? `Open the ${this.humanizeTaskType(openFollowUpTask.type)} task and complete the requested staff follow-up.`
-                    : 'Review the call and create or complete the appropriate staff follow-up.',
-                actionName: latestRuntimeAction.actionName,
-                handledLive: false,
-                followUpTaskId: latestRuntimeAction.followUpTaskId,
-                fallbackReason: latestRuntimeAction.fallbackReason,
-            };
-        }
-
-        if ((call.voicemails ?? []).length > 0 || call.tag === 'VOICEMAIL') {
-            return {
-                resolution: 'VOICEMAIL_CAPTURED',
-                label: 'Voicemail captured',
-                nextStep: openFollowUpTask
-                    ? 'Review the voicemail and the linked follow-up task.'
-                    : 'Review the voicemail recording and transcript for next steps.',
-            };
-        }
-
-        if (call.tag === 'HUMAN_TRANSFER') {
-            return {
-                resolution: 'HUMAN_ESCALATION',
-                label: 'Escalated to staff',
-                nextStep: openFollowUpTask
-                    ? 'Review the linked follow-up task for the escalation outcome.'
-                    : 'Review the call context to confirm the caller reached the right staff workflow.',
-            };
-        }
-
-        if (call.status === 'ABANDONED') {
-            return {
-                resolution: 'CALL_ABANDONED',
-                label: 'Caller disconnected before completion',
-                nextStep: openFollowUpTask
-                    ? 'Review the open follow-up task and confirm whether staff outreach is still needed.'
-                    : 'No completed request was captured before the caller disconnected.',
-            };
-        }
-
-        if (call.status === 'FAILED') {
-            return {
-                resolution: 'CALL_FAILED',
-                label: 'Call failed before voice session initialized',
-                nextStep: openFollowUpTask
-                    ? 'Review the open follow-up task and the provider logs before retrying.'
-                    : 'Review the bootstrap or provider logs before attempting another live call.',
-            };
-        }
-
-        const connectedToTransport = this.hasTransportEvent(
-            turnsJson,
-            'twilio_stream_connected',
-            'twilio_stream_started',
-            'deepgram_connected',
-        );
-
-        return {
-            resolution:
-                call.status === 'COMPLETED'
-                    ? 'CALL_COMPLETED_NO_ACTION'
-                    : call.status === 'INITIATED'
-                      ? 'CALL_INITIATED'
-                      : 'CALL_IN_PROGRESS',
-            label:
-                call.status === 'COMPLETED'
-                    ? connectedToTransport
-                        ? 'Call connected, no request completed'
-                        : 'Call completed without action'
-                    : call.status === 'INITIATED'
-                      ? 'Voice session starting'
-                      : 'Call in progress',
-            nextStep: openFollowUpTask
-                ? 'A follow-up task is open for this call.'
-                : call.status === 'COMPLETED'
-                  ? 'Review the transport events and transcript if the caller needs additional follow-up.'
-                  : 'Review live transport events while the call is still active.',
-        };
-    }
-
-    private humanizeTaskType(type: string) {
-        return type.toLowerCase().replaceAll('_', ' ');
     }
 
     private buildPhoneCandidates(phoneNumber?: string) {
@@ -857,6 +493,7 @@ export class CallsService {
             });
         }
 
+        await this.callIngestService.rebuildProjection(data.callId);
         await this.invalidateOperationalCaches(data.businessId, data.callId);
         this.logger.info('Voicemail recorded', { callId: data.callId, businessId: data.businessId });
         return voicemail;
@@ -875,19 +512,7 @@ export class CallsService {
             return existing;
         }
 
-        const candidates = this.buildPhoneCandidates(dto.toNumber);
-
-        const phoneNumber = await this.prisma.phoneNumber.findFirst({
-            where: {
-                OR: [
-                    ...(dto.twilioPhoneNumberSid ? [{ twilioSid: dto.twilioPhoneNumberSid }] : []),
-                    ...candidates.flatMap((candidate) => [
-                        { twilioPhoneNumber: candidate },
-                        { twilioPhoneNumber: { endsWith: candidate } },
-                    ]),
-                ],
-            },
-        });
+        const phoneNumber = await this.findPhoneNumberByInboundNumber(dto.toNumber, dto.twilioPhoneNumberSid);
 
         if (!phoneNumber) {
             throw new Error(`Phone number not found: ${dto.toNumber || dto.twilioPhoneNumberSid}`);
@@ -902,11 +527,12 @@ export class CallsService {
                     phoneNumberId: phoneNumber.id,
                     callerId: caller?.id,
                     twilioCallSid: dto.twilioCallSid,
-                    direction: dto.direction || 'INBOUND',
+                    direction: (dto.direction || 'INBOUND') as any,
                     status: 'INITIATED',
                     turnCount: 0,
                 },
             });
+            await this.callIngestService.rebuildProjection(created.id);
             await this.invalidateOperationalCaches(created.businessId, created.id);
             return created;
         } catch (error: unknown) {
@@ -924,6 +550,130 @@ export class CallsService {
         }
     }
 
+    async bootstrapVoiceSession(dto: {
+        direction: string;
+        fromNumber: string;
+        toNumber: string;
+        twilioCallSid: string;
+        twilioPhoneNumberSid?: string;
+    }) {
+        const existing = dto.twilioCallSid
+            ? await this.prisma.callSession.findUnique({
+                  where: { twilioCallSid: dto.twilioCallSid },
+                  select: { id: true, businessId: true },
+              })
+            : null;
+
+        const phoneNumber = await this.findPhoneNumberByInboundNumber(dto.toNumber, dto.twilioPhoneNumberSid, {
+            includeBusinessContext: true,
+        });
+        if (!phoneNumber) {
+            throw new Error(`Phone number not found: ${dto.toNumber || dto.twilioPhoneNumberSid}`);
+        }
+
+        const caller = await this.upsertCaller(phoneNumber.businessId, dto.fromNumber);
+        const call =
+            existing ??
+            (await this.prisma.callSession.create({
+                data: {
+                    businessId: phoneNumber.businessId,
+                    phoneNumberId: phoneNumber.id,
+                    callerId: caller?.id,
+                    twilioCallSid: dto.twilioCallSid,
+                    direction: (dto.direction || 'INBOUND') as any,
+                    status: 'INITIATED',
+                    turnCount: 0,
+                },
+                select: { id: true, businessId: true },
+            }).catch(async (error: unknown) => {
+                const prismaError = error as Error & { code?: string };
+                if (prismaError.code === 'P2002' && dto.twilioCallSid) {
+                    const duplicate = await this.prisma.callSession.findUnique({
+                        where: { twilioCallSid: dto.twilioCallSid },
+                        select: { id: true, businessId: true },
+                    });
+                    if (duplicate) {
+                        return duplicate;
+                    }
+                }
+                throw error;
+            }));
+
+        const normalizedSettings = phoneNumber.business.settings
+            ? this.normalizeBusinessSettingsRecord(phoneNumber.business.settings)
+            : this.getDefaultBusinessSettings();
+        const integrations = phoneNumber.business.integrations.map((integration) => ({
+            id: integration.id,
+            category: integration.category,
+            vendor: integration.vendor,
+            status: integration.status,
+            capabilities: integration.capabilities,
+            lastHealthCheckAt: integration.lastHealthCheckAt,
+        }));
+        const settingsUpdatedAt = phoneNumber.business.settings?.updatedAt
+            ? phoneNumber.business.settings.updatedAt.toISOString()
+            : 'no-settings';
+
+        await this.callIngestService.rebuildProjection(call.id);
+        await this.invalidateOperationalCaches(call.businessId, call.id);
+
+        return {
+            callId: call.id,
+            runtimeConfigVersion: `${phoneNumber.business.updatedAt.toISOString()}:${settingsUpdatedAt}`,
+            business: {
+                id: phoneNumber.business.id,
+                name: phoneNumber.business.name,
+                slug: phoneNumber.business.slug,
+                timeZone: phoneNumber.business.timeZone,
+                status: phoneNumber.business.status,
+            },
+            settings: normalizedSettings,
+            phoneNumbers: phoneNumber.business.phoneNumbers.map((entry) => ({
+                id: entry.id,
+                label: entry.label,
+                twilioPhoneNumber: entry.twilioPhoneNumber,
+            })),
+            integrations,
+            connectedIntegrationCategories: integrations
+                .filter((integration) => integration.status === 'CONNECTED')
+                .map((integration) => integration.category),
+            voicePolicyV2: buildVoicePolicyV2({
+                settings: normalizedSettings,
+                integrations,
+            }),
+        };
+    }
+
+    async ingestCall(
+        callId: string,
+        input: {
+            sessionId?: string;
+            events?: Array<Record<string, unknown>>;
+            transcriptSegments?: Array<Record<string, unknown>>;
+            statePatch?: Record<string, unknown>;
+        },
+    ) {
+        return this.callIngestService.ingestDelta(
+            callId,
+            {
+                sessionId: input.sessionId,
+                events: (input.events ?? []) as any,
+                transcriptSegments: (input.transcriptSegments ?? []) as any,
+                statePatch: (input.statePatch ?? {}) as any,
+            },
+            {
+                dualWriteLegacyTurns: false,
+            },
+        );
+    }
+
+    async getCutoverHealthSummary() {
+        return {
+            ...(await this.callIngestService.getCutoverHealthSummary()),
+            ...getCallCutoverFlagSnapshot(),
+        };
+    }
+
     async update(id: string, dto: any): Promise<any> {
         const data: any = {};
         if (dto.status !== undefined) data.status = dto.status;
@@ -937,6 +687,14 @@ export class CallsService {
         if (dto.callerId !== undefined) data.callerId = dto.callerId;
         await this.cache.delete(`calls:detail:${id}`);
         const updated = await this.prisma.callSession.update({ where: { id }, data });
+        if (
+            dto.turnsJson !== undefined ||
+            dto.status !== undefined ||
+            dto.tag !== undefined ||
+            dto.isEmergency !== undefined
+        ) {
+            await this.callIngestService.rebuildProjection(id);
+        }
         await this.invalidateOperationalCaches(updated.businessId, id);
         return updated;
     }
@@ -957,7 +715,95 @@ export class CallsService {
         });
 
         await this.cache.delete(`calls:detail:${id}`);
+        await this.callIngestService.rebuildProjection(id);
         return { success: true, segmentsAdded: segments.length };
+    }
+
+    private async findPhoneNumberByInboundNumber(
+        toNumber: string,
+        twilioPhoneNumberSid?: string,
+        options?: { includeBusinessContext?: boolean },
+    ): Promise<any> {
+        const candidates = this.buildPhoneCandidates(toNumber);
+
+        return this.prisma.phoneNumber.findFirst({
+            where: {
+                OR: [
+                    ...(twilioPhoneNumberSid ? [{ twilioSid: twilioPhoneNumberSid }] : []),
+                    ...candidates.flatMap((candidate) => [
+                        { twilioPhoneNumber: candidate },
+                        { twilioPhoneNumber: { endsWith: candidate } },
+                    ]),
+                ],
+            },
+            ...(options?.includeBusinessContext
+                ? {
+                      include: {
+                          business: {
+                              include: {
+                                  settings: true,
+                                  integrations: {
+                                      select: {
+                                          id: true,
+                                          category: true,
+                                          vendor: true,
+                                          status: true,
+                                          capabilities: true,
+                                          lastHealthCheckAt: true,
+                                      },
+                                      orderBy: { category: 'asc' },
+                                  },
+                                  phoneNumbers: {
+                                      select: {
+                                          id: true,
+                                          label: true,
+                                          twilioPhoneNumber: true,
+                                      },
+                                      orderBy: { label: 'asc' },
+                                  },
+                              },
+                          },
+                      },
+                  }
+                : {}),
+        });
+    }
+
+    private getDefaultBusinessSettings() {
+        const practiceSetup = normalizePracticeSetup();
+
+        return {
+            recordingDefault: 'ON',
+            transcriptRetentionDays: 30,
+            operatingHours: DEFAULT_OPERATING_HOURS,
+            enabledActions: practiceSetup.enabledActions,
+            afterHoursPolicy: practiceSetup.afterHoursPolicy,
+            refillPolicy: practiceSetup.refillPolicy,
+            billingPolicy: practiceSetup.billingPolicy,
+            insurancePolicy: practiceSetup.insurancePolicy,
+            knowledgeConfig: practiceSetup.knowledgeConfig,
+            escalationConfig: practiceSetup.escalationConfig,
+            outOfScopeKeywords: [] as string[],
+            emergencyKeywords: [] as string[],
+            daytimeHandoffPolicy: practiceSetup.daytimeHandoffPolicy,
+        };
+    }
+
+    private normalizeBusinessSettingsRecord(settings: any) {
+        const practiceSetup = normalizePracticeSetup(settings);
+
+        return {
+            ...settings,
+            operatingHours: normalizeOperatingHours(settings.operatingHours) as any,
+            enabledActions: practiceSetup.enabledActions,
+            afterHoursPolicy: practiceSetup.afterHoursPolicy,
+            refillPolicy: practiceSetup.refillPolicy,
+            billingPolicy: practiceSetup.billingPolicy,
+            insurancePolicy: practiceSetup.insurancePolicy,
+            knowledgeConfig: practiceSetup.knowledgeConfig,
+            escalationConfig: practiceSetup.escalationConfig,
+            daytimeHandoffPolicy: practiceSetup.daytimeHandoffPolicy,
+        };
     }
 
     private async invalidateOperationalCaches(_businessId: string, callId?: string) {

@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Logger } from '@wardline/utils';
+import {
+    buildRuntimeSafetyPolicy,
+    getDefaultOutOfScopeKeywords,
+    getSystemEmergencyKeywords,
+    type RuntimeSafetyPolicy,
+    type SafetyCategory,
+    type SafetySeverity,
+} from './safety-policy';
 
 export interface SafetyCheckResult {
     isEmergency: boolean;
@@ -11,46 +19,21 @@ export interface SafetyCheckResult {
     deflectionMessage?: string;
 }
 
-/**
- * Always-on emergency keywords — cannot be disabled by any business owner.
- * These trigger immediate 911 advisory and call emergency escalation.
- */
-const SYSTEM_EMERGENCY_KEYWORDS = [
-    // Life-threatening emergencies
-    'chest pain', 'heart attack', 'cardiac arrest', 'stroke',
-    "can't breathe", 'difficulty breathing', 'shortness of breath', 'not breathing',
-    'unconscious', 'unresponsive', 'passed out',
-    'seizure', 'convulsion',
-    'severe bleeding', 'hemorrhage', 'blood everywhere',
-    'overdose', 'poisoning', 'swallowed', 'ingested',
-    'broken bone', 'fracture', 'bone sticking out',
-    'head injury', 'head trauma', 'concussion', 'hit my head',
-    'allergic reaction', 'anaphylaxis', 'throat closing',
-    // Mental health emergencies
-    'suicidal', 'want to die', 'kill myself', 'harm myself', 'self-harm',
-    'suicide', 'mental health crisis',
-    // Generic emergency signals
-    'call 911', 'send an ambulance', 'emergency',
-];
+interface SafetyMatch {
+    category: SafetyCategory;
+    severity: SafetySeverity;
+    matchedPatterns: string[];
+}
 
-/**
- * Out-of-scope keywords for a clinical/dental clinic context.
- * Triggers deflection ("I can't help with that") + optional human transfer.
- * Business owners can extend this list via BusinessSettings.outOfScopeKeywords.
- */
-const DEFAULT_OUT_OF_SCOPE_KEYWORDS = [
-    // Clinical advice (outside receptionist scope)
-    'diagnosis', 'diagnose', 'what do i have',
-    'test results', 'lab results', 'blood test results',
-    'medication side effects', 'drug interaction', 'adverse reaction',
-    'is this normal', 'should i be worried',
-    'medical advice', 'doctor advice', 'medical consultation',
-    'clinical assessment', 'treatment plan',
-    'dosage', 'how much should i take',
-    'is it safe to take',
-    // Legal / beyond scope
-    'malpractice', 'sue', 'lawsuit',
-];
+function matchPatterns(text: string, patterns: string[]): string[] {
+    return patterns.filter((pattern) => {
+        try {
+            return new RegExp(pattern, 'i').test(text);
+        } catch {
+            return false;
+        }
+    });
+}
 
 @Injectable()
 export class SafetyGuardService {
@@ -58,98 +41,123 @@ export class SafetyGuardService {
 
     constructor(private readonly prisma: PrismaService) {}
 
-    /**
-     * Check a transcript excerpt or utterance against safety rules.
-     * Always runs — cannot be bypassed by workflow configuration.
-     */
     async checkSafety(
         text: string,
         businessId: string,
     ): Promise<SafetyCheckResult> {
         const normalized = text.toLowerCase();
-        const triggeredKeywords: string[] = [];
+        const [customOutOfScope, customEmergency] = await this.getBusinessKeywords(businessId);
+        const policy = buildRuntimeSafetyPolicy({
+            emergencyKeywords: customEmergency,
+            outOfScopeKeywords: customOutOfScope,
+        });
+        const match = this.assessSafety(normalized, policy);
 
-        // 1. Check emergency keywords first (highest priority)
-        for (const kw of SYSTEM_EMERGENCY_KEYWORDS) {
-            if (normalized.includes(kw)) {
-                triggeredKeywords.push(kw);
-            }
+        if (!match) {
+            return {
+                isEmergency: false,
+                isOutOfScope: false,
+                confidence: 1.0,
+                triggeredKeywords: [],
+                recommendedAction: 'continue',
+            };
         }
 
-        if (triggeredKeywords.length > 0) {
-            this.logger.warn('Emergency keywords detected', { businessId, keywords: triggeredKeywords });
+        if (match.severity === 'emergency') {
+            this.logger.warn('Emergency safety language detected', {
+                businessId,
+                category: match.category,
+                matchedPatterns: match.matchedPatterns,
+            });
             return {
                 isEmergency: true,
                 isOutOfScope: false,
                 confidence: 0.95,
-                triggeredKeywords,
+                triggeredKeywords: match.matchedPatterns,
                 recommendedAction: 'emergency_escalate',
             };
         }
 
-        // 2. Load business-specific keyword overrides
-        const [customOutOfScope, customEmergency] = await this.getBusinessKeywords(businessId);
-
-        // 3. Check custom emergency keywords (business-defined additions)
-        for (const kw of customEmergency) {
-            if (normalized.includes(kw.toLowerCase())) {
-                triggeredKeywords.push(kw);
-            }
-        }
-
-        if (triggeredKeywords.length > 0) {
-            return {
-                isEmergency: true,
-                isOutOfScope: false,
-                confidence: 0.9,
-                triggeredKeywords,
-                recommendedAction: 'emergency_escalate',
-            };
-        }
-
-        // 4. Check out-of-scope keywords
-        const allOutOfScope = [...DEFAULT_OUT_OF_SCOPE_KEYWORDS, ...customOutOfScope];
-        for (const kw of allOutOfScope) {
-            if (normalized.includes(kw.toLowerCase())) {
-                triggeredKeywords.push(kw);
-            }
-        }
-
-        if (triggeredKeywords.length > 0) {
+        if (match.severity === 'urgent_handoff') {
             return {
                 isEmergency: false,
-                isOutOfScope: true,
-                confidence: 0.8,
-                triggeredKeywords,
+                isOutOfScope: false,
+                confidence: 0.88,
+                triggeredKeywords: match.matchedPatterns,
                 recommendedAction: 'human_transfer',
                 deflectionMessage:
-                    "I'm not able to help with that, but I can connect you with a staff member who can. " +
-                    'Would you like me to transfer you?',
+                    "I can't interpret symptoms, test results, or medication safety questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
             };
         }
 
         return {
             isEmergency: false,
-            isOutOfScope: false,
-            confidence: 1.0,
-            triggeredKeywords: [],
-            recommendedAction: 'continue',
+            isOutOfScope: true,
+            confidence: 0.8,
+            triggeredKeywords: match.matchedPatterns,
+            recommendedAction: 'human_transfer',
+            deflectionMessage:
+                "I'm not able to help with that, but I can connect you with a staff member who can. Would you like me to transfer you?",
         };
     }
 
-    /**
-     * Quick synchronous emergency check — for the voice orchestrator hot path.
-     * Does NOT hit the database. Only checks system-level emergency keywords.
-     */
     quickEmergencyCheck(text: string): { isEmergency: boolean; triggeredKeywords: string[] } {
         const normalized = text.toLowerCase();
-        const triggered = SYSTEM_EMERGENCY_KEYWORDS.filter(kw => normalized.includes(kw));
+        const triggered = buildRuntimeSafetyPolicy()
+            .emergencyGroups.flatMap((group) => group.patterns)
+            .filter((pattern) => {
+                try {
+                    return new RegExp(pattern, 'i').test(normalized);
+                } catch {
+                    return false;
+                }
+            });
         return { isEmergency: triggered.length > 0, triggeredKeywords: triggered };
     }
 
-    /**
-     * Returns [outOfScopeKeywords, emergencyKeywords] for a business.
-     */
+    private assessSafety(text: string, policy: RuntimeSafetyPolicy): SafetyMatch | null {
+        for (const group of policy.emergencyGroups) {
+            const matchedPatterns = matchPatterns(text, group.patterns);
+            if (!matchedPatterns.length) {
+                continue;
+            }
+            if (
+                group.category === 'medical_emergency'
+                && matchPatterns(text, policy.historicalGuardPatterns).length > 0
+                && matchPatterns(text, policy.acuteAmplifierPatterns).length === 0
+            ) {
+                continue;
+            }
+            return {
+                category: group.category,
+                severity: 'emergency',
+                matchedPatterns,
+            };
+        }
+
+        for (const group of policy.urgentClinicalGroups) {
+            const matchedPatterns = matchPatterns(text, group.patterns);
+            if (matchedPatterns.length) {
+                return {
+                    category: group.category,
+                    severity: 'urgent_handoff',
+                    matchedPatterns,
+                };
+            }
+        }
+
+        const outOfScopePatterns = matchPatterns(text, policy.nonClinicalOutOfScopePatterns);
+        if (outOfScopePatterns.length) {
+            return {
+                category: 'nonclinical_out_of_scope',
+                severity: 'deflect',
+                matchedPatterns: outOfScopePatterns,
+            };
+        }
+
+        return null;
+    }
+
     private async getBusinessKeywords(businessId: string): Promise<[string[], string[]]> {
         try {
             const settings = await this.prisma.businessSettings.findUnique({
@@ -162,17 +170,11 @@ export class SafetyGuardService {
         }
     }
 
-    /**
-     * Get the system-level emergency keyword list (read-only, for display in UI).
-     */
     getSystemEmergencyKeywords(): string[] {
-        return SYSTEM_EMERGENCY_KEYWORDS;
+        return getSystemEmergencyKeywords();
     }
 
-    /**
-     * Get default out-of-scope keywords (can be extended per business).
-     */
     getDefaultOutOfScopeKeywords(): string[] {
-        return DEFAULT_OUT_OF_SCOPE_KEYWORDS;
+        return getDefaultOutOfScopeKeywords();
     }
 }

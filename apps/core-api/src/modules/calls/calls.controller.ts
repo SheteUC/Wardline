@@ -4,7 +4,14 @@ import {
 } from '@nestjs/common';
 import { Public } from '../../auth/public.decorator';
 import { CallsService } from './calls.service';
-import { CreateCallDto, UpdateCallDto, SaveTranscriptDto, CreateHandoffDto } from './dto/calls.dto';
+import {
+    BootstrapVoiceSessionDto,
+    CallIngestDto,
+    CreateCallDto,
+    UpdateCallDto,
+    SaveTranscriptDto,
+    CreateHandoffDto,
+} from './dto/calls.dto';
 
 @Controller('api')
 export class CallsController {
@@ -63,6 +70,46 @@ export class CallsController {
     async getCalls(@Query('twilioCallSid') twilioCallSid?: string) {
         if (twilioCallSid) return this.callsService.findByTwilioSid(twilioCallSid);
         return { data: [], message: 'Provide twilioCallSid query parameter' };
+    }
+
+    @Post('internal/voice/bootstrap')
+    @Public()
+    @HttpCode(HttpStatus.CREATED)
+    async bootstrapVoice(@Body() dto: BootstrapVoiceSessionDto) {
+        try {
+            return await this.callsService.bootstrapVoiceSession(dto);
+        } catch (err: unknown) {
+            const error = err as Error;
+            if (error.message?.includes('Phone number not found')) {
+                throw new BadRequestException(error.message);
+            }
+            throw err;
+        }
+    }
+
+    @Post('internal/calls/:id/ingest')
+    @Public()
+    @HttpCode(HttpStatus.CREATED)
+    async ingestCall(@Param('id') id: string, @Body() dto: CallIngestDto) {
+        try {
+            return await this.callsService.ingestCall(id, {
+                sessionId: dto.sessionId,
+                events: dto.events?.map((event) => ({ ...event })),
+                transcriptSegments: dto.transcriptSegments?.map((segment) => ({ ...segment })),
+                statePatch: dto.statePatch ? { ...dto.statePatch } : undefined,
+            });
+        } catch (err: unknown) {
+            const error = err as Error;
+            if (error.message?.includes('Call not found')) {
+                throw new NotFoundException(error.message);
+            }
+            throw err;
+        }
+    }
+
+    @Get('internal/calls/cutover-health')
+    async getCutoverHealthSummary() {
+        return this.callsService.getCutoverHealthSummary();
     }
 
     @Post('calls')

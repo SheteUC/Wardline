@@ -63,6 +63,8 @@ export const ModelName = {
   SchedulingIntegration: 'SchedulingIntegration',
   Appointment: 'Appointment',
   CallSession: 'CallSession',
+  CallEvent: 'CallEvent',
+  CallSessionProjection: 'CallSessionProjection',
   TranscriptSegment: 'TranscriptSegment',
   Handoff: 'Handoff',
   VoicemailRecord: 'VoicemailRecord',
@@ -290,6 +292,40 @@ export const CallSessionScalarFieldEnum = {
 } as const
 
 export type CallSessionScalarFieldEnum = (typeof CallSessionScalarFieldEnum)[keyof typeof CallSessionScalarFieldEnum]
+
+
+export const CallEventScalarFieldEnum = {
+  id: 'id',
+  callId: 'callId',
+  sequence: 'sequence',
+  type: 'type',
+  domain: 'domain',
+  actionName: 'actionName',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type CallEventScalarFieldEnum = (typeof CallEventScalarFieldEnum)[keyof typeof CallEventScalarFieldEnum]
+
+
+export const CallSessionProjectionScalarFieldEnum = {
+  callId: 'callId',
+  lastSequenceApplied: 'lastSequenceApplied',
+  latestDomain: 'latestDomain',
+  resolution: 'resolution',
+  resolutionLabel: 'resolutionLabel',
+  operatorNextStep: 'operatorNextStep',
+  latestRuntimeAction: 'latestRuntimeAction',
+  handledLive: 'handledLive',
+  fallbackReason: 'fallbackReason',
+  transportSummaryJson: 'transportSummaryJson',
+  intentTimelineJson: 'intentTimelineJson',
+  operatorSummaryJson: 'operatorSummaryJson',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CallSessionProjectionScalarFieldEnum = (typeof CallSessionProjectionScalarFieldEnum)[keyof typeof CallSessionProjectionScalarFieldEnum]
 
 
 export const TranscriptSegmentScalarFieldEnum = {

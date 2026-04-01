@@ -413,6 +413,19 @@ export interface BusinessRuntimeConfig {
             };
         };
         escalationConfig: EscalationConfig;
+        safetyPolicy: {
+            emergencyGroups: Array<{
+                category: 'medical_emergency' | 'mental_health_emergency' | 'violence_abuse_emergency';
+                patterns: string[];
+            }>;
+            urgentClinicalGroups: Array<{
+                category: 'clinical_results_or_diagnosis' | 'medication_safety' | 'symptom_interpretation';
+                patterns: string[];
+            }>;
+            nonClinicalOutOfScopePatterns: string[];
+            historicalGuardPatterns: string[];
+            acuteAmplifierPatterns: string[];
+        };
         emergencyKeywords: string[];
         outOfScopeKeywords: string[];
         fallbackRuntimeAction: 'manual-follow-up';

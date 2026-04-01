@@ -18,6 +18,16 @@ DomainName = Literal[
     "billing",
     "handoff",
 ]
+SafetyCategory = Literal[
+    "medical_emergency",
+    "mental_health_emergency",
+    "violence_abuse_emergency",
+    "clinical_results_or_diagnosis",
+    "medication_safety",
+    "symptom_interpretation",
+    "nonclinical_out_of_scope",
+]
+SafetySeverity = Literal["emergency", "urgent_handoff", "deflect"]
 KnowledgeTopic = Literal[
     "office_hours",
     "services",
@@ -116,6 +126,24 @@ class DialoguePolicy(BaseModel):
     closeTemplate: str = ""
 
 
+class SafetyEmergencyGroup(BaseModel):
+    category: Literal["medical_emergency", "mental_health_emergency", "violence_abuse_emergency"]
+    patterns: List[str] = Field(default_factory=list)
+
+
+class SafetyUrgentClinicalGroup(BaseModel):
+    category: Literal["clinical_results_or_diagnosis", "medication_safety", "symptom_interpretation"]
+    patterns: List[str] = Field(default_factory=list)
+
+
+class SafetyPolicy(BaseModel):
+    emergencyGroups: List[SafetyEmergencyGroup] = Field(default_factory=list)
+    urgentClinicalGroups: List[SafetyUrgentClinicalGroup] = Field(default_factory=list)
+    nonClinicalOutOfScopePatterns: List[str] = Field(default_factory=list)
+    historicalGuardPatterns: List[str] = Field(default_factory=list)
+    acuteAmplifierPatterns: List[str] = Field(default_factory=list)
+
+
 class VoicePolicyV2(BaseModel):
     version: Literal["v2"] = "v2"
     runtime: Literal["internal-multi-agent"] = "internal-multi-agent"
@@ -128,6 +156,7 @@ class VoicePolicyV2(BaseModel):
     knowledgeConfig: KnowledgeConfig
     servicePolicies: Dict[str, ServicePolicy]
     escalationConfig: EscalationConfig
+    safetyPolicy: SafetyPolicy = Field(default_factory=SafetyPolicy)
     dialoguePolicies: Dict[str, DialoguePolicy] = Field(default_factory=dict)
     emergencyKeywords: List[str] = Field(default_factory=list)
     outOfScopeKeywords: List[str] = Field(default_factory=list)
@@ -151,7 +180,14 @@ class RuntimeConfigBootstrap(BaseModel):
     business: BusinessProfile
     settings: Dict[str, Any]
     voicePolicyV2: VoicePolicyV2
+    phoneNumbers: List[Dict[str, Any]] = Field(default_factory=list)
+    integrations: List[Dict[str, Any]] = Field(default_factory=list)
     connectedIntegrationCategories: List[str] = Field(default_factory=list)
+
+
+class CallBootstrapResponse(RuntimeConfigBootstrap):
+    callId: str
+    runtimeConfigVersion: str = ""
 
 
 class KnowledgeMatch(BaseModel):
@@ -208,6 +244,15 @@ class RuntimeActionOutcome(BaseModel):
     latencyMs: Optional[float] = None
 
 
+class SafetyAssessment(BaseModel):
+    category: SafetyCategory
+    severity: SafetySeverity
+    matchedPatterns: List[str] = Field(default_factory=list)
+    headline: str
+    callerReply: str
+    operatorNextStep: str
+
+
 class SpecialistResult(BaseModel):
     domain: DomainName
     status: SpecialistStatus
@@ -223,9 +268,11 @@ class SpecialistResult(BaseModel):
     callerRequestSummary: Optional[str] = None
     requestHumanFollowUp: bool = False
     resolved: bool = False
+    safetyAssessment: Optional[SafetyAssessment] = None
 
 
 class SessionEvent(BaseModel):
+    sequence: Optional[int] = None
     type: str
     actionName: str
     domain: Optional[DomainName] = None
@@ -426,6 +473,9 @@ class SessionState(BaseModel):
     lastOperatorSummary: Optional[OperatorSummary] = None
     turns: int = 0
     transcriptCursorMs: int = 0
+    nextEventSequence: int = 1
+    persistedEventCount: int = 0
+    pendingTranscriptSegments: List[Dict[str, Any]] = Field(default_factory=list)
     runtimeFailureReason: Optional[str] = None
 
 

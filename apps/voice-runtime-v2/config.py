@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     twilio_auth_token: str = Field(default="", alias="TWILIO_AUTH_TOKEN")
     twilio_phone_number: str = Field(default="", alias="TWILIO_PHONE_NUMBER")
     twilio_media_stream_path: str = Field(default="/telephony/twilio/media", alias="TWILIO_MEDIA_STREAM_PATH")
+    voice_runtime_legacy_call_sync: bool = Field(default=True, alias="VOICE_RUNTIME_LEGACY_CALL_SYNC")
 
     managed_tts_provider: str = Field(default="deepgram", alias="MANAGED_TTS_PROVIDER")
 

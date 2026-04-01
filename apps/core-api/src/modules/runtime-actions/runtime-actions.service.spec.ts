@@ -8,6 +8,7 @@ describe('RuntimeActionsService', () => {
     let followUpTasksService: any;
     let integrationsService: any;
     let integrationConnectors: any;
+    let callIngestService: any;
 
     beforeEach(() => {
         prisma = {
@@ -59,13 +60,22 @@ describe('RuntimeActionsService', () => {
             }),
         };
 
+        callIngestService = {
+            appendInternalEvent: jest.fn().mockResolvedValue(undefined),
+        };
+
         service = new RuntimeActionsService(
             prisma,
             auditService,
             followUpTasksService,
             integrationsService,
             integrationConnectors,
+            callIngestService,
         );
+    });
+
+    afterEach(() => {
+        delete process.env.RUNTIME_ACTIONS_DUAL_WRITE_LEGACY_TURNS;
     });
 
     const connectedSchedulingIntegration = {
@@ -404,8 +414,6 @@ describe('RuntimeActionsService', () => {
     });
 
     it('persists manual follow-up metadata and records it in the action outcome', async () => {
-        prisma.callSession.findUnique.mockResolvedValue({ turnsJson: [] });
-
         const result = await service.captureManualFollowUp('business-1', {
             callId: 'call-1',
             callerName: 'Refill Caller',
@@ -435,21 +443,37 @@ describe('RuntimeActionsService', () => {
                 }),
             }),
         );
-        expect(prisma.callSession.update).toHaveBeenCalledWith(
+        expect(callIngestService.appendInternalEvent).toHaveBeenCalledWith(
+            'call-1',
             expect.objectContaining({
+                actionName: 'manual-follow-up',
                 data: expect.objectContaining({
-                    turnsJson: expect.arrayContaining([
-                        expect.objectContaining({
-                            actionName: 'manual-follow-up',
-                            data: expect.objectContaining({
-                                metadata: expect.objectContaining({
-                                    originatingDomain: 'refill',
-                                    missingRequiredFields: ['pharmacyPhone'],
-                                }),
-                            }),
-                        }),
-                    ]),
+                    metadata: expect.objectContaining({
+                        originatingDomain: 'refill',
+                        missingRequiredFields: ['pharmacyPhone'],
+                    }),
                 }),
+            }),
+            expect.any(Object),
+        );
+    });
+
+    it('disables legacy turns dual-write when the cutover flag is off', async () => {
+        process.env.RUNTIME_ACTIONS_DUAL_WRITE_LEGACY_TURNS = 'false';
+
+        await service.captureManualFollowUp('business-1', {
+            callId: 'call-1',
+            callerName: 'Billing Caller',
+            callerPhone: '+15550000005',
+            title: 'Billing follow-up',
+            summary: 'Need staff review.',
+        });
+
+        expect(callIngestService.appendInternalEvent).toHaveBeenCalledWith(
+            'call-1',
+            expect.any(Object),
+            expect.objectContaining({
+                dualWriteLegacyTurns: false,
             }),
         );
     });

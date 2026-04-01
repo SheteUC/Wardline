@@ -1,5 +1,6 @@
 import asyncio
 import pathlib
+import re
 import sys
 import unittest
 from unittest.mock import AsyncMock, patch
@@ -101,6 +102,86 @@ def build_voice_policy(overrides=None):
             "escalationMessage": "Escalate urgent requests.",
             "notifyStaffImmediately": True,
         },
+        "safetyPolicy": {
+            "emergencyGroups": [
+                {
+                    "category": "medical_emergency",
+                    "patterns": [
+                        r"\b(?:chest\s+pain|heart\s+attack|cardiac\s+arrest|stroke)\b",
+                        r"\b(?:can(?:not|'?t)\s+breathe|trouble\s+breathing|difficulty\s+breathing|shortness\s+of\s+breath|not\s+breathing)\b",
+                        r"\b(?:unconscious|unresponsive|passed\s+out|fainted)\b",
+                        r"\b(?:seizure|convulsion)\b",
+                        r"\b(?:severe\s+bleeding|hemorrhage|blood\s+everywhere)\b",
+                        r"\b(?:overdose|overdosed|poisoning|swallowed\s+pills|ingested\s+something)\b",
+                        r"\b(?:allergic\s+reaction|anaphylaxis|throat\s+closing)\b",
+                        r"\b(?:broken\s+bone|bone\s+sticking\s+out)\b",
+                        r"\b(?:head\s+injury|head\s+trauma|hit\s+my\s+head\s+badly)\b",
+                        r"\bstroke\b",
+                    ],
+                },
+                {
+                    "category": "mental_health_emergency",
+                    "patterns": [
+                        r"\b(?:suicidal|suicide|want\s+to\s+die|kill\s+myself|hurt\s+myself|harm\s+myself|self[\s-]?harm|mental\s+health\s+crisis)\b",
+                    ],
+                },
+                {
+                    "category": "violence_abuse_emergency",
+                    "patterns": [
+                        r"\b(?:domestic\s+violence|being\s+abused|abuse|unsafe\s+at\s+home|not\s+safe\s+at\s+home|someone\s+is\s+hurting\s+me|assaulted|attacked|sexual\s+assault|raped|child\s+abuse)\b",
+                    ],
+                },
+            ],
+            "urgentClinicalGroups": [
+                {
+                    "category": "clinical_results_or_diagnosis",
+                    "patterns": [
+                        r"\b(?:diagnosis|diagnose|what\s+do\s+i\s+have|what\s+do\s+these\s+results\s+mean|test\s+results|lab\s+results|blood\s+work\s+results|blood\s+test\s+results|is\s+this\s+normal|should\s+i\s+be\s+worried|treatment\s+plan)\b",
+                    ],
+                },
+                {
+                    "category": "medication_safety",
+                    "patterns": [
+                        r"\b(?:side\s+effects|adverse\s+reaction|drug\s+interaction|is\s+it\s+safe\s+to\s+take|dosage|dose|how\s+much\s+should\s+i\s+take)\b",
+                        r"\bcan\s+i\s+take\b.+\bwith\b.+",
+                    ],
+                },
+                {
+                    "category": "symptom_interpretation",
+                    "patterns": [
+                        r"\b(?:what\s+should\s+i\s+do\s+about\s+these\s+symptoms|symptom\s+question|pain\s+level|is\s+this\s+symptom\s+serious|what\s+should\s+i\s+take\s+for\s+this)\b",
+                    ],
+                },
+            ],
+            "nonClinicalOutOfScopePatterns": [
+                r"\blegal\s+advice\b",
+                r"\bmalpractice\b",
+                r"\bsue\b",
+                r"\blawsuit\b",
+            ],
+            "historicalGuardPatterns": [
+                r"\bhistory\s+of\b",
+                r"\blast\s+year\b",
+                r"\byears\s+ago\b",
+                r"\bmonths\s+ago\b",
+                r"\bfollow-up\s+after\b",
+                r"\brecovering\s+from\b",
+                r"\bfamily\s+history\s+of\b",
+                r"\brecords\s+for\b",
+                r"\bpaperwork\s+for\b",
+            ],
+            "acuteAmplifierPatterns": [
+                r"\bright\s+now\b",
+                r"\bcurrently\b",
+                r"\bsudden\b",
+                r"\bsevere\b",
+                r"\bhelp\b",
+                r"\bright\s+away\b",
+                r"\bimmediately\b",
+                r"\bambulance\b",
+                r"\bcall\s+911\b",
+            ],
+        },
         "dialoguePolicies": {
             "safety": {
                 "callerIntro": "",
@@ -200,7 +281,25 @@ def build_voice_policy(overrides=None):
         "fallbackRuntimeAction": "manual-follow-up",
         "operatorSummaryEnabled": True,
     }
-    return _deep_merge(policy, overrides)
+    merged = _deep_merge(policy, overrides)
+    custom_emergency = [entry for entry in merged.get("emergencyKeywords", []) if isinstance(entry, str) and entry.strip()]
+    custom_out_of_scope = [entry for entry in merged.get("outOfScopeKeywords", []) if isinstance(entry, str) and entry.strip()]
+    if custom_emergency:
+        medical_group = next(
+            (group for group in merged["safetyPolicy"]["emergencyGroups"] if group.get("category") == "medical_emergency"),
+            None,
+        )
+        if medical_group is not None:
+            medical_group["patterns"] = list(medical_group.get("patterns", [])) + [
+                rf"\b{re.escape(entry).replace(r'\\ ', r'\\s+')}\b" for entry in custom_emergency
+            ]
+    if custom_out_of_scope:
+        merged["safetyPolicy"]["nonClinicalOutOfScopePatterns"] = list(
+            merged["safetyPolicy"].get("nonClinicalOutOfScopePatterns", [])
+        ) + [
+            rf"\b{re.escape(entry).replace(r'\\ ', r'\\s+')}\b" for entry in custom_out_of_scope
+        ]
+    return merged
 
 
 class FakeCoreApiClient:
@@ -222,16 +321,17 @@ class FakeCoreApiClient:
         self.updated_calls = []
         self.created_voicemails = []
         self.saved_transcripts = []
+        self.ingested_calls = []
+        self.bootstrapped_calls = []
         self.escalation_calls = []
 
     async def close(self):
         return None
 
-    async def get_business_by_phone(self, _phone_number: str):
-        return {"id": "business-1"}
-
-    async def get_runtime_config(self, _business_id: str):
+    async def bootstrap_voice_session(self, payload):
         payload = {
+            "callId": "call-1",
+            "runtimeConfigVersion": "test-version",
             "business": {
                 "id": "business-1",
                 "name": "Wardline Family Medicine",
@@ -248,12 +348,21 @@ class FakeCoreApiClient:
                     else [{"dayOfWeek": day, "isClosed": False, "startTime": "00:00", "endTime": "23:59"} for day in range(7)]
                 ),
             },
+            "phoneNumbers": [{"id": "phone-1", "label": "Main", "twilioPhoneNumber": "+15551230001"}],
+            "integrations": [],
             "connectedIntegrationCategories": ["SCHEDULING", "EHR_REFILL", "INSURANCE", "BILLING"],
         }
         payload["settings"].update(self.settings_overrides)
         if not self.omit_voice_policy:
             payload["voicePolicyV2"] = self.voice_policy or build_voice_policy()
+        self.bootstrapped_calls.append(payload)
         return payload
+
+    async def get_business_by_phone(self, _phone_number: str):
+        return {"id": "business-1"}
+
+    async def get_runtime_config(self, _business_id: str):
+        return await self.bootstrap_voice_session({})
 
     async def create_call_session(self, _payload):
         return {"id": "call-1"}
@@ -269,6 +378,17 @@ class FakeCoreApiClient:
     async def save_transcript(self, call_id, payload):
         self.saved_transcripts.append((call_id, payload))
         return {"success": True}
+
+    async def ingest_call(self, call_id, payload):
+        self.ingested_calls.append((call_id, payload))
+        for segment in payload.get("transcriptSegments", []):
+            self.saved_transcripts.append((call_id, {"segments": [segment]}))
+        return {
+            "accepted": True,
+            "callId": call_id,
+            "ingestedEventCount": len(payload.get("events", [])),
+            "transcriptSegmentCount": len(payload.get("transcriptSegments", [])),
+        }
 
     async def escalate_to_human(self, payload):
         self.escalation_calls.append(payload)
@@ -341,6 +461,13 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         _runtime, api_client, _session = await self.create_runtime()
 
         self.assertEqual(api_client.updated_calls[0]["status"], "INITIATED")
+
+    async def test_session_bootstrap_skips_legacy_call_sync_when_flag_is_disabled(self):
+        with patch("service.settings.voice_runtime_legacy_call_sync", False):
+            _runtime, api_client, _session = await self.create_runtime()
+
+        self.assertEqual(len(api_client.updated_calls), 0)
+        self.assertEqual(api_client.ingested_calls[0][1]["statePatch"]["status"], "INITIATED")
 
     async def test_transport_start_persists_ongoing_status(self):
         runtime, api_client, session = await self.create_runtime()
@@ -480,7 +607,110 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("Please call 911", response["reply"])
         self.assertEqual(api_client.runtime_action_calls[0][1], "manual-follow-up")
-        self.assertEqual(response["operatorSummary"]["headline"], "Emergency language detected")
+        self.assertEqual(response["operatorSummary"]["headline"], "Medical emergency language detected")
+
+    async def test_mental_health_crisis_triggers_emergency_guidance(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(session.sessionId, "I want to kill myself")
+
+        self.assertEqual(response["domain"], "safety")
+        self.assertIn("call or text 988", response["reply"])
+        self.assertEqual(api_client.runtime_action_calls[0][1], "manual-follow-up")
+        self.assertEqual(response["operatorSummary"]["headline"], "Mental health crisis language detected")
+
+    async def test_violence_abuse_language_triggers_emergency_guidance(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(session.sessionId, "I'm not safe at home and someone is hurting me")
+
+        self.assertEqual(response["domain"], "safety")
+        self.assertIn("may be in danger", response["reply"].lower())
+        self.assertEqual(response["operatorSummary"]["headline"], "Violence or abuse emergency language detected")
+
+    async def test_results_question_routes_to_daytime_handoff_flow(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(session.sessionId, "Can you tell me what these lab results mean?")
+
+        self.assertEqual(response["domain"], "handoff")
+        self.assertTrue(response["requiresConfirmation"])
+        self.assertIn("i can't interpret symptoms, test results, or medication safety questions", response["reply"].lower())
+        self.assertIn("try to connect you to the front desk", response["reply"].lower())
+        self.assertEqual(len(api_client.runtime_action_calls), 0)
+        safety_event = [event for event in session.events if event.type == "safety_triggered"][-1]
+        self.assertEqual(safety_event.data["category"], "clinical_results_or_diagnosis")
+        self.assertEqual(safety_event.data["severity"], "urgent_handoff")
+
+    async def test_medication_safety_question_routes_to_after_hours_urgent_voicemail(self):
+        runtime, _api_client, session = await self.create_runtime(after_hours=True)
+
+        response = await runtime.process_text_turn(session.sessionId, "Can I take ibuprofen with this antibiotic?")
+
+        self.assertEqual(response["domain"], "handoff")
+        self.assertTrue(response["awaitingVoicemail"])
+        self.assertIn("urgent callbacks within about 30 minutes", response["reply"].lower())
+        self.assertIn("i can't interpret symptoms, test results, or medication safety questions", response["reply"].lower())
+
+    async def test_historical_stroke_reference_does_not_trigger_emergency(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(session.sessionId, "I need a follow-up after my stroke last year")
+
+        self.assertNotEqual(response["domain"], "safety")
+        self.assertNotIn("call 911", response["reply"].lower())
+
+    async def test_prescription_refill_request_does_not_trigger_medication_safety(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        response = await runtime.process_text_turn(session.sessionId, "I need a prescription refill")
+
+        self.assertEqual(response["domain"], "refill")
+        self.assertEqual(response["reply"], "Which medication would you like refilled?")
+
+    async def test_safety_preempts_active_intake_and_pauses_current_issue(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need to schedule an appointment")
+        response = await runtime.process_text_turn(session.sessionId, "Can you tell me what these lab results mean?")
+
+        self.assertEqual(response["domain"], "handoff")
+        scheduling_intent = next(intent for intent in response["intentQueue"] if intent["domain"] == "scheduling")
+        self.assertEqual(scheduling_intent["status"], "paused")
+        safety_event = [event for event in session.events if event.type == "safety_triggered"][-1]
+        self.assertEqual(safety_event.data["preemptedDomain"], "scheduling")
+        self.assertFalse(safety_event.data["hadPendingConfirmation"])
+
+    async def test_safety_preempts_pending_confirmation(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
+        response = await runtime.process_text_turn(session.sessionId, "What dosage should I take?")
+
+        self.assertEqual(response["domain"], "handoff")
+        self.assertTrue(response["requiresConfirmation"])
+        safety_event = [event for event in session.events if event.type == "safety_triggered"][-1]
+        self.assertTrue(safety_event.data["hadPendingConfirmation"])
+
+    async def test_emergency_clears_priority_prompt(self):
+        runtime, _api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need billing help and a refill for lisinopril")
+        response = await runtime.process_text_turn(session.sessionId, "I think I'm having a heart attack right now")
+
+        self.assertEqual(response["domain"], "safety")
+        self.assertFalse(response["awaitingIntentPriority"])
+        self.assertFalse(response["priorityPromptState"]["active"])
+
+    async def test_custom_emergency_keyword_still_triggers_emergency(self):
+        runtime, _api_client, session = await self.create_runtime(
+            voice_policy=build_voice_policy({"emergencyKeywords": ["code red"]}),
+        )
+
+        response = await runtime.process_text_turn(session.sessionId, "This is a code red situation")
+
+        self.assertEqual(response["domain"], "safety")
+        self.assertIn("call 911", response["reply"].lower())
 
     async def test_after_hours_urgent_voicemail_sets_awaiting_voicemail(self):
         runtime, _api_client, session = await self.create_runtime(after_hours=True)

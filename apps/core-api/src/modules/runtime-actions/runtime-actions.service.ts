@@ -4,6 +4,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import { FollowUpTasksService } from '../follow-up-tasks/follow-up-tasks.service';
 import { IntegrationsService } from '../integrations/integrations.service';
+import { CallIngestService } from '../calls/call-ingest.service';
+import { runtimeActionsDualWriteLegacyTurns } from '../calls/call-cutover-flags';
 import {
     IntegrationConnectorsService,
     ResolvedBusinessIntegration,
@@ -48,6 +50,7 @@ export class RuntimeActionsService {
         private readonly followUpTasksService: FollowUpTasksService,
         private readonly integrationsService: IntegrationsService,
         private readonly integrationConnectors: IntegrationConnectorsService,
+        private readonly callIngestService: CallIngestService,
     ) {}
 
     async requestAppointment(
@@ -663,34 +666,25 @@ export class RuntimeActionsService {
         });
 
         if (!input.callId) return;
-
-        const call = await this.prisma.callSession.findUnique({
-            where: { id: input.callId },
-            select: { turnsJson: true },
-        });
-        if (!call) return;
-
-        const existingTurns = Array.isArray(call.turnsJson) ? ([...call.turnsJson] as any[]) : [];
-        existingTurns.push({
-            type: 'runtime_action_outcome',
-            actionName: input.actionName,
-            integrationCategory: input.integration.category,
-            integrationVendor: input.integration.vendor,
-            handledLive: input.handledLive,
-            followUpTaskId: input.followUpTaskId,
-            fallbackReason: input.fallbackReason,
-            callerName: input.callerName,
-            callerPhone: input.callerPhone,
-            data: (input.data ?? {}) as any,
-            createdAt: new Date().toISOString(),
-        } as any);
-
-        await this.prisma.callSession.update({
-            where: { id: input.callId },
-            data: {
-                turnsJson: existingTurns as any,
+        await this.callIngestService.appendInternalEvent(
+            input.callId,
+            {
+                type: 'runtime_action_outcome',
+                actionName: input.actionName,
+                integrationCategory: input.integration.category,
+                integrationVendor: input.integration.vendor,
+                handledLive: input.handledLive,
+                followUpTaskId: input.followUpTaskId,
+                fallbackReason: input.fallbackReason,
+                callerName: input.callerName,
+                callerPhone: input.callerPhone,
+                data: (input.data ?? {}) as any,
+                createdAt: new Date().toISOString(),
             },
-        });
+            {
+                dualWriteLegacyTurns: runtimeActionsDualWriteLegacyTurns(),
+            },
+        );
     }
 
     private toPublicIntegration(integration: ResolvedBusinessIntegration) {

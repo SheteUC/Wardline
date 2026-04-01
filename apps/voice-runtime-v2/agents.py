@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from models import (
@@ -20,31 +20,14 @@ from models import (
     KnowledgeTopic,
     OperatorSummary,
     RefillSlotState,
+    SafetyAssessment,
+    SafetyCategory,
+    SafetyPolicy,
     SchedulingSlotState,
     SessionState,
     SpecialistResult,
     SupervisorDecision,
 )
-
-EMERGENCY_KEYWORDS = [
-    "chest pain",
-    "can't breathe",
-    "difficulty breathing",
-    "stroke",
-    "heart attack",
-    "severe bleeding",
-    "unconscious",
-    "suicidal",
-    "kill myself",
-]
-
-CLINICAL_ADVICE_PHRASES = [
-    "what do i have",
-    "should i be worried",
-    "diagnosis",
-    "medical advice",
-    "what should i take",
-]
 
 URGENT_AFTER_HOURS_KEYWORDS = [
     "urgent",
@@ -185,6 +168,22 @@ def _phrase_in_text(lowered: str, phrase: str) -> bool:
         return False
     pattern = r"\b" + re.escape(normalized_phrase).replace(r"\ ", r"\s+") + r"\b"
     return re.search(pattern, lowered) is not None
+
+
+def _compile_patterns(patterns: List[str]) -> List[Tuple[str, re.Pattern[str]]]:
+    compiled: List[Tuple[str, re.Pattern[str]]] = []
+    for pattern in patterns:
+        if not pattern:
+            continue
+        try:
+            compiled.append((pattern, re.compile(pattern, re.IGNORECASE)))
+        except re.error:
+            continue
+    return compiled
+
+
+def _matches_compiled_patterns(text: str, patterns: List[Tuple[str, re.Pattern[str]]]) -> List[str]:
+    return [raw_pattern for raw_pattern, compiled_pattern in patterns if compiled_pattern.search(text)]
 
 
 def _dialogue_policy(session: SessionState, domain: str) -> DialoguePolicy:
@@ -777,7 +776,25 @@ def _extract_reason_summary(text: str) -> str:
 
 def _extract_reason_category(text: str, active_domain: Optional[str] = None) -> str:
     lowered = _normalize(text)
-    if any(token in lowered for token in ["clinical", "nurse", "symptom", "medication issue"]):
+    if any(
+        token in lowered
+        for token in [
+            "clinical",
+            "nurse",
+            "symptom",
+            "symptoms",
+            "medication issue",
+            "test results",
+            "lab results",
+            "diagnosis",
+            "diagnose",
+            "side effect",
+            "drug interaction",
+            "dosage",
+            "dose",
+            "should i be worried",
+        ]
+    ):
         return "clinical"
     if any(token in lowered for token in ["appointment", "schedule", "physical", "follow-up"]):
         return "appointments"
@@ -941,23 +958,148 @@ def _enabled_service_labels(session: SessionState) -> str:
 
 
 class SafetyAgent:
+    def __init__(self):
+        self._compiled_policy_cache: Dict[str, Dict[str, Any]] = {}
+
+    def _compile_safety_policy(self, policy: SafetyPolicy) -> Dict[str, Any]:
+        cache_key = repr(policy.model_dump())
+        cached = self._compiled_policy_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        compiled = {
+            "emergencyGroups": [
+                {
+                    "category": group.category,
+                    "patterns": _compile_patterns(list(group.patterns)),
+                }
+                for group in policy.emergencyGroups
+            ],
+            "urgentClinicalGroups": [
+                {
+                    "category": group.category,
+                    "patterns": _compile_patterns(list(group.patterns)),
+                }
+                for group in policy.urgentClinicalGroups
+            ],
+            "nonClinicalOutOfScopePatterns": _compile_patterns(list(policy.nonClinicalOutOfScopePatterns)),
+            "historicalGuardPatterns": _compile_patterns(list(policy.historicalGuardPatterns)),
+            "acuteAmplifierPatterns": _compile_patterns(list(policy.acuteAmplifierPatterns)),
+        }
+        self._compiled_policy_cache = {cache_key: compiled}
+        return compiled
+
+    def _matches_group(self, text: str, patterns: List[Tuple[str, re.Pattern[str]]]) -> List[str]:
+        return _matches_compiled_patterns(text, patterns)
+
+    def _has_historical_guard(self, text: str, patterns: List[Tuple[str, re.Pattern[str]]]) -> bool:
+        return bool(self._matches_group(text, patterns))
+
+    def _has_acute_amplifier(self, text: str, patterns: List[Tuple[str, re.Pattern[str]]]) -> bool:
+        return bool(self._matches_group(text, patterns))
+
+    def _assessment_metadata(self, category: SafetyCategory) -> Tuple[str, str, str]:
+        if category == "medical_emergency":
+            return (
+                "Medical emergency language detected",
+                "I'm hearing something that may be a medical emergency. Please call 911 right now or go to the nearest emergency room.",
+                "Escalate immediately and confirm the caller received 911 guidance.",
+            )
+        if category == "mental_health_emergency":
+            return (
+                "Mental health crisis language detected",
+                "I'm concerned this may be an emergency. Please call 911 right now. If this is a suicide or mental health crisis in the United States, you can also call or text 988.",
+                "Escalate immediately and confirm the caller received 911 and 988 crisis guidance.",
+            )
+        if category == "violence_abuse_emergency":
+            return (
+                "Violence or abuse emergency language detected",
+                "I'm concerned you may be in danger. If you can do so safely, call 911 right now or get to a safe place immediately.",
+                "Escalate immediately and confirm the caller received emergency safety guidance.",
+            )
+        if category == "medication_safety":
+            return (
+                "Medication safety question redirected",
+                "I can't interpret symptoms, test results, or medication safety questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+                "Route this caller to urgent clinical staff follow-up for medication safety guidance.",
+            )
+        if category == "clinical_results_or_diagnosis":
+            return (
+                "Results or diagnosis question redirected",
+                "I can't interpret symptoms, test results, or medication safety questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+                "Route this caller to urgent clinical staff follow-up for results or diagnosis questions.",
+            )
+        return (
+            "Clinical advice request redirected",
+            "I can't interpret symptoms, test results, or medication safety questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+            "Route this caller to urgent clinical staff follow-up for symptom questions.",
+        )
+
+    def _assess_safety(self, session: SessionState, text: str) -> Optional[SafetyAssessment]:
+        compiled_policy = self._compile_safety_policy(session.runtimeConfig.voicePolicyV2.safetyPolicy)
+
+        for group in compiled_policy["emergencyGroups"]:
+            matched_patterns = self._matches_group(text, group["patterns"])
+            if not matched_patterns:
+                continue
+            if (
+                group["category"] == "medical_emergency"
+                and self._has_historical_guard(text, compiled_policy["historicalGuardPatterns"])
+                and not self._has_acute_amplifier(text, compiled_policy["acuteAmplifierPatterns"])
+            ):
+                continue
+            headline, caller_reply, operator_next_step = self._assessment_metadata(group["category"])
+            return SafetyAssessment(
+                category=group["category"],
+                severity="emergency",
+                matchedPatterns=matched_patterns,
+                headline=headline,
+                callerReply=caller_reply,
+                operatorNextStep=operator_next_step,
+            )
+
+        for group in compiled_policy["urgentClinicalGroups"]:
+            matched_patterns = self._matches_group(text, group["patterns"])
+            if not matched_patterns:
+                continue
+            headline, caller_reply, operator_next_step = self._assessment_metadata(group["category"])
+            return SafetyAssessment(
+                category=group["category"],
+                severity="urgent_handoff",
+                matchedPatterns=matched_patterns,
+                headline=headline,
+                callerReply=caller_reply,
+                operatorNextStep=operator_next_step,
+            )
+
+        matched_nonclinical = self._matches_group(text, compiled_policy["nonClinicalOutOfScopePatterns"])
+        if matched_nonclinical:
+            headline, caller_reply, operator_next_step = self._assessment_metadata("symptom_interpretation")
+            return SafetyAssessment(
+                category="nonclinical_out_of_scope",
+                severity="deflect",
+                matchedPatterns=matched_nonclinical,
+                headline=headline,
+                callerReply=caller_reply,
+                operatorNextStep=operator_next_step,
+            )
+
+        return None
+
     def evaluate(self, session: SessionState, text: str) -> Optional[SpecialistResult]:
-        lowered = _normalize(text)
-        emergency_keywords = EMERGENCY_KEYWORDS + session.runtimeConfig.voicePolicyV2.emergencyKeywords
-        matched = [keyword for keyword in emergency_keywords if keyword and keyword in lowered]
-        if matched:
-            session.isEmergency = True
+        assessment = self._assess_safety(session, text)
+        if not assessment or assessment.severity == "deflect":
+            return None
+
+        if assessment.severity == "emergency":
             return SpecialistResult(
                 domain="safety",
                 status="handoff",
                 confidence=1.0,
-                nextPrompt=(
-                    "I'm hearing something that may be a medical emergency. "
-                    "Please call 911 right away or go to the nearest emergency room."
-                ),
+                nextPrompt=assessment.callerReply,
                 operatorSummary=OperatorSummary(
-                    headline="Emergency language detected",
-                    nextStep="Escalate immediately and confirm emergency guidance was given.",
+                    headline=assessment.headline,
+                    nextStep=assessment.operatorNextStep,
                     specialist="safety",
                     callerRequest=text.strip() or "Emergency concern",
                     followUpRequired=True,
@@ -965,30 +1107,27 @@ class SafetyAgent:
                 callerRequestSummary="Emergency concern reported by caller.",
                 requestHumanFollowUp=True,
                 resolved=True,
+                safetyAssessment=assessment,
             )
 
-        if any(phrase in lowered for phrase in CLINICAL_ADVICE_PHRASES):
-            return SpecialistResult(
-                domain="safety",
-                status="handoff",
-                confidence=0.92,
-                nextPrompt=(
-                    "I'm not able to provide medical advice, but I can connect you with a staff member or capture a message for clinical follow-up."
-                ),
-                fallbackRecommendation="manual-follow-up",
-                operatorSummary=OperatorSummary(
-                    headline="Clinical advice request redirected",
-                    nextStep="Route to staff follow-up for clinical guidance.",
-                    specialist="safety",
-                    callerRequest=text.strip() or "Clinical advice request",
-                    followUpRequired=True,
-                ),
-                callerRequestSummary="Caller requested medical advice and was redirected to staff.",
-                requestHumanFollowUp=True,
-                resolved=True,
-            )
-
-        return None
+        return SpecialistResult(
+            domain="safety",
+            status="handoff",
+            confidence=0.93,
+            nextPrompt=assessment.callerReply,
+            fallbackRecommendation="manual-follow-up",
+            operatorSummary=OperatorSummary(
+                headline=assessment.headline,
+                nextStep=assessment.operatorNextStep,
+                specialist="safety",
+                callerRequest=text.strip() or "Clinical safety request",
+                followUpRequired=True,
+            ),
+            callerRequestSummary="Caller requested clinically sensitive guidance and was redirected to staff.",
+            requestHumanFollowUp=True,
+            resolved=True,
+            safetyAssessment=assessment,
+        )
 
 
 class KnowledgeAgent:
@@ -1338,11 +1477,16 @@ class KnowledgeAgent:
 
     def _contains_out_of_scope_keyword(self, session: SessionState, text: str) -> List[str]:
         lowered = _normalize(text)
-        return [
-            keyword
-            for keyword in session.runtimeConfig.voicePolicyV2.outOfScopeKeywords
-            if keyword and _phrase_in_text(lowered, keyword)
-        ]
+        matched: List[str] = []
+        for pattern in session.runtimeConfig.voicePolicyV2.safetyPolicy.nonClinicalOutOfScopePatterns:
+            if not pattern:
+                continue
+            try:
+                if re.search(pattern, lowered, re.IGNORECASE):
+                    matched.append(pattern)
+            except re.error:
+                continue
+        return matched
 
     def _knowledge_headline(self, topic: KnowledgeTopic) -> str:
         return {

@@ -44,6 +44,16 @@ class CoreApiClient:
     async def get_runtime_config(self, business_id: str) -> Optional[Dict[str, Any]]:
         return await self._get_json(f"/businesses/{business_id}/runtime-config")
 
+    async def bootstrap_voice_session(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        return await self._post_json("/api/internal/voice/bootstrap", payload)
+
+    async def ingest_call(
+        self,
+        call_id: str,
+        payload: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        return await self._post_json(f"/api/internal/calls/{call_id}/ingest", payload)
+
     async def create_call_session(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return await self._post_json("/api/calls", payload)
 

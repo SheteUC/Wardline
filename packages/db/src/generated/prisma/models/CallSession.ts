@@ -324,6 +324,8 @@ export type CallSessionWhereInput = {
   phoneNumber?: Prisma.XOR<Prisma.PhoneNumberScalarRelationFilter, Prisma.PhoneNumberWhereInput>
   caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
   transcriptSegments?: Prisma.TranscriptSegmentListRelationFilter
+  callEvents?: Prisma.CallEventListRelationFilter
+  projection?: Prisma.XOR<Prisma.CallSessionProjectionNullableScalarRelationFilter, Prisma.CallSessionProjectionWhereInput> | null
   handoffs?: Prisma.HandoffListRelationFilter
   appointments?: Prisma.AppointmentListRelationFilter
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
@@ -355,6 +357,8 @@ export type CallSessionOrderByWithRelationInput = {
   phoneNumber?: Prisma.PhoneNumberOrderByWithRelationInput
   caller?: Prisma.CallerOrderByWithRelationInput
   transcriptSegments?: Prisma.TranscriptSegmentOrderByRelationAggregateInput
+  callEvents?: Prisma.CallEventOrderByRelationAggregateInput
+  projection?: Prisma.CallSessionProjectionOrderByWithRelationInput
   handoffs?: Prisma.HandoffOrderByRelationAggregateInput
   appointments?: Prisma.AppointmentOrderByRelationAggregateInput
   prescriptionRefills?: Prisma.PrescriptionRefillOrderByRelationAggregateInput
@@ -389,6 +393,8 @@ export type CallSessionWhereUniqueInput = Prisma.AtLeast<{
   phoneNumber?: Prisma.XOR<Prisma.PhoneNumberScalarRelationFilter, Prisma.PhoneNumberWhereInput>
   caller?: Prisma.XOR<Prisma.CallerNullableScalarRelationFilter, Prisma.CallerWhereInput> | null
   transcriptSegments?: Prisma.TranscriptSegmentListRelationFilter
+  callEvents?: Prisma.CallEventListRelationFilter
+  projection?: Prisma.XOR<Prisma.CallSessionProjectionNullableScalarRelationFilter, Prisma.CallSessionProjectionWhereInput> | null
   handoffs?: Prisma.HandoffListRelationFilter
   appointments?: Prisma.AppointmentListRelationFilter
   prescriptionRefills?: Prisma.PrescriptionRefillListRelationFilter
@@ -467,6 +473,8 @@ export type CallSessionCreateInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -495,6 +503,8 @@ export type CallSessionUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -523,6 +533,8 @@ export type CallSessionUpdateInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -551,6 +563,8 @@ export type CallSessionUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -876,6 +890,34 @@ export type NullableDecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
+export type CallSessionCreateNestedOneWithoutCallEventsInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutCallEventsInput, Prisma.CallSessionUncheckedCreateWithoutCallEventsInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutCallEventsInput
+  connect?: Prisma.CallSessionWhereUniqueInput
+}
+
+export type CallSessionUpdateOneRequiredWithoutCallEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutCallEventsInput, Prisma.CallSessionUncheckedCreateWithoutCallEventsInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutCallEventsInput
+  upsert?: Prisma.CallSessionUpsertWithoutCallEventsInput
+  connect?: Prisma.CallSessionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutCallEventsInput, Prisma.CallSessionUpdateWithoutCallEventsInput>, Prisma.CallSessionUncheckedUpdateWithoutCallEventsInput>
+}
+
+export type CallSessionCreateNestedOneWithoutProjectionInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutProjectionInput, Prisma.CallSessionUncheckedCreateWithoutProjectionInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutProjectionInput
+  connect?: Prisma.CallSessionWhereUniqueInput
+}
+
+export type CallSessionUpdateOneRequiredWithoutProjectionNestedInput = {
+  create?: Prisma.XOR<Prisma.CallSessionCreateWithoutProjectionInput, Prisma.CallSessionUncheckedCreateWithoutProjectionInput>
+  connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutProjectionInput
+  upsert?: Prisma.CallSessionUpsertWithoutProjectionInput
+  connect?: Prisma.CallSessionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CallSessionUpdateToOneWithWhereWithoutProjectionInput, Prisma.CallSessionUpdateWithoutProjectionInput>, Prisma.CallSessionUncheckedUpdateWithoutProjectionInput>
+}
+
 export type CallSessionCreateNestedOneWithoutTranscriptSegmentsInput = {
   create?: Prisma.XOR<Prisma.CallSessionCreateWithoutTranscriptSegmentsInput, Prisma.CallSessionUncheckedCreateWithoutTranscriptSegmentsInput>
   connectOrCreate?: Prisma.CallSessionCreateOrConnectWithoutTranscriptSegmentsInput
@@ -985,6 +1027,8 @@ export type CallSessionCreateWithoutBusinessInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -1012,6 +1056,8 @@ export type CallSessionUncheckedCreateWithoutBusinessInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -1089,6 +1135,8 @@ export type CallSessionCreateWithoutPhoneNumberInput = {
   business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -1116,6 +1164,8 @@ export type CallSessionUncheckedCreateWithoutPhoneNumberInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -1169,6 +1219,8 @@ export type CallSessionCreateWithoutCallerInput = {
   business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -1196,6 +1248,8 @@ export type CallSessionUncheckedCreateWithoutCallerInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -1250,6 +1304,8 @@ export type CallSessionCreateWithoutAppointmentsInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
@@ -1277,6 +1333,8 @@ export type CallSessionUncheckedCreateWithoutAppointmentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
@@ -1320,6 +1378,8 @@ export type CallSessionUpdateWithoutAppointmentsInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
@@ -1347,7 +1407,273 @@ export type CallSessionUncheckedUpdateWithoutAppointmentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
+}
+
+export type CallSessionCreateWithoutCallEventsInput = {
+  id?: string
+  twilioCallSid: string
+  direction: $Enums.CallDirection
+  status?: $Enums.CallStatus
+  recordingConsent?: $Enums.RecordingConsent | null
+  tag?: $Enums.CallTag | null
+  isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
+  phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
+  transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
+  handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
+  appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
+  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
+  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
+}
+
+export type CallSessionUncheckedCreateWithoutCallEventsInput = {
+  id?: string
+  businessId: string
+  phoneNumberId: string
+  twilioCallSid: string
+  direction: $Enums.CallDirection
+  status?: $Enums.CallStatus
+  recordingConsent?: $Enums.RecordingConsent | null
+  tag?: $Enums.CallTag | null
+  callerId?: string | null
+  isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
+  handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
+  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
+}
+
+export type CallSessionCreateOrConnectWithoutCallEventsInput = {
+  where: Prisma.CallSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutCallEventsInput, Prisma.CallSessionUncheckedCreateWithoutCallEventsInput>
+}
+
+export type CallSessionUpsertWithoutCallEventsInput = {
+  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutCallEventsInput, Prisma.CallSessionUncheckedUpdateWithoutCallEventsInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutCallEventsInput, Prisma.CallSessionUncheckedCreateWithoutCallEventsInput>
+  where?: Prisma.CallSessionWhereInput
+}
+
+export type CallSessionUpdateToOneWithWhereWithoutCallEventsInput = {
+  where?: Prisma.CallSessionWhereInput
+  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutCallEventsInput, Prisma.CallSessionUncheckedUpdateWithoutCallEventsInput>
+}
+
+export type CallSessionUpdateWithoutCallEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
+  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
+  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
+  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
+  phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
+  transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
+  handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
+  appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
+}
+
+export type CallSessionUncheckedUpdateWithoutCallEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
+  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
+  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
+  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
+  handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
+  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedUpdateManyWithoutCallNestedInput
+}
+
+export type CallSessionCreateWithoutProjectionInput = {
+  id?: string
+  twilioCallSid: string
+  direction: $Enums.CallDirection
+  status?: $Enums.CallStatus
+  recordingConsent?: $Enums.RecordingConsent | null
+  tag?: $Enums.CallTag | null
+  isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
+  phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
+  caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
+  transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
+  appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
+  prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
+  insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskCreateNestedManyWithoutCallInput
+}
+
+export type CallSessionUncheckedCreateWithoutProjectionInput = {
+  id?: string
+  businessId: string
+  phoneNumberId: string
+  twilioCallSid: string
+  direction: $Enums.CallDirection
+  status?: $Enums.CallStatus
+  recordingConsent?: $Enums.RecordingConsent | null
+  tag?: $Enums.CallTag | null
+  callerId?: string | null
+  isEmergency?: boolean
+  turnCount?: number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+  sentimentScore?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
+  appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
+  voicemails?: Prisma.VoicemailRecordUncheckedCreateNestedManyWithoutCallInput
+  followUpTasks?: Prisma.FollowUpTaskUncheckedCreateNestedManyWithoutCallInput
+}
+
+export type CallSessionCreateOrConnectWithoutProjectionInput = {
+  where: Prisma.CallSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutProjectionInput, Prisma.CallSessionUncheckedCreateWithoutProjectionInput>
+}
+
+export type CallSessionUpsertWithoutProjectionInput = {
+  update: Prisma.XOR<Prisma.CallSessionUpdateWithoutProjectionInput, Prisma.CallSessionUncheckedUpdateWithoutProjectionInput>
+  create: Prisma.XOR<Prisma.CallSessionCreateWithoutProjectionInput, Prisma.CallSessionUncheckedCreateWithoutProjectionInput>
+  where?: Prisma.CallSessionWhereInput
+}
+
+export type CallSessionUpdateToOneWithWhereWithoutProjectionInput = {
+  where?: Prisma.CallSessionWhereInput
+  data: Prisma.XOR<Prisma.CallSessionUpdateWithoutProjectionInput, Prisma.CallSessionUncheckedUpdateWithoutProjectionInput>
+}
+
+export type CallSessionUpdateWithoutProjectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
+  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
+  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
+  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
+  phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
+  caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
+  transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
+  appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
+  prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
+  insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
+  voicemails?: Prisma.VoicemailRecordUpdateManyWithoutCallNestedInput
+  followUpTasks?: Prisma.FollowUpTaskUpdateManyWithoutCallNestedInput
+}
+
+export type CallSessionUncheckedUpdateWithoutProjectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  businessId?: Prisma.StringFieldUpdateOperationsInput | string
+  phoneNumberId?: Prisma.StringFieldUpdateOperationsInput | string
+  twilioCallSid?: Prisma.StringFieldUpdateOperationsInput | string
+  direction?: Prisma.EnumCallDirectionFieldUpdateOperationsInput | $Enums.CallDirection
+  status?: Prisma.EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+  recordingConsent?: Prisma.NullableEnumRecordingConsentFieldUpdateOperationsInput | $Enums.RecordingConsent | null
+  tag?: Prisma.NullableEnumCallTagFieldUpdateOperationsInput | $Enums.CallTag | null
+  callerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isEmergency?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  turnCount?: Prisma.IntFieldUpdateOperationsInput | number
+  turnsJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sentimentScore?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
+  appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
   voicemails?: Prisma.VoicemailRecordUncheckedUpdateManyWithoutCallNestedInput
@@ -1373,6 +1699,8 @@ export type CallSessionCreateWithoutTranscriptSegmentsInput = {
   business: Prisma.BusinessCreateNestedOneWithoutCallSessionsInput
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -1400,6 +1728,8 @@ export type CallSessionUncheckedCreateWithoutTranscriptSegmentsInput = {
   recordingUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -1443,6 +1773,8 @@ export type CallSessionUpdateWithoutTranscriptSegmentsInput = {
   business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -1470,6 +1802,8 @@ export type CallSessionUncheckedUpdateWithoutTranscriptSegmentsInput = {
   recordingUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -1498,6 +1832,8 @@ export type CallSessionCreateWithoutHandoffsInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
@@ -1525,6 +1861,8 @@ export type CallSessionUncheckedCreateWithoutHandoffsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
@@ -1568,6 +1906,8 @@ export type CallSessionUpdateWithoutHandoffsInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
@@ -1595,6 +1935,8 @@ export type CallSessionUncheckedUpdateWithoutHandoffsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
@@ -1622,6 +1964,8 @@ export type CallSessionCreateWithoutVoicemailsInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -1649,6 +1993,8 @@ export type CallSessionUncheckedCreateWithoutVoicemailsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -1692,6 +2038,8 @@ export type CallSessionUpdateWithoutVoicemailsInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -1719,6 +2067,8 @@ export type CallSessionUncheckedUpdateWithoutVoicemailsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -1746,6 +2096,8 @@ export type CallSessionCreateWithoutFollowUpTasksInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -1773,6 +2125,8 @@ export type CallSessionUncheckedCreateWithoutFollowUpTasksInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -1816,6 +2170,8 @@ export type CallSessionUpdateWithoutFollowUpTasksInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -1843,6 +2199,8 @@ export type CallSessionUncheckedUpdateWithoutFollowUpTasksInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -1870,6 +2228,8 @@ export type CallSessionCreateWithoutPrescriptionRefillsInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryCreateNestedManyWithoutCallInput
@@ -1897,6 +2257,8 @@ export type CallSessionUncheckedCreateWithoutPrescriptionRefillsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedCreateNestedManyWithoutCallInput
@@ -1940,6 +2302,8 @@ export type CallSessionUpdateWithoutPrescriptionRefillsInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUpdateManyWithoutCallNestedInput
@@ -1967,6 +2331,8 @@ export type CallSessionUncheckedUpdateWithoutPrescriptionRefillsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   insuranceInquiries?: Prisma.InsuranceInquiryUncheckedUpdateManyWithoutCallNestedInput
@@ -1994,6 +2360,8 @@ export type CallSessionCreateWithoutInsuranceInquiriesInput = {
   phoneNumber: Prisma.PhoneNumberCreateNestedOneWithoutCallSessionsInput
   caller?: Prisma.CallerCreateNestedOneWithoutCallSessionsInput
   transcriptSegments?: Prisma.TranscriptSegmentCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillCreateNestedManyWithoutCallInput
@@ -2021,6 +2389,8 @@ export type CallSessionUncheckedCreateWithoutInsuranceInquiriesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutCallInput
+  callEvents?: Prisma.CallEventUncheckedCreateNestedManyWithoutCallInput
+  projection?: Prisma.CallSessionProjectionUncheckedCreateNestedOneWithoutCallInput
   handoffs?: Prisma.HandoffUncheckedCreateNestedManyWithoutCallInput
   appointments?: Prisma.AppointmentUncheckedCreateNestedManyWithoutCallInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedCreateNestedManyWithoutCallInput
@@ -2064,6 +2434,8 @@ export type CallSessionUpdateWithoutInsuranceInquiriesInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -2091,6 +2463,8 @@ export type CallSessionUncheckedUpdateWithoutInsuranceInquiriesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -2137,6 +2511,8 @@ export type CallSessionUpdateWithoutBusinessInput = {
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -2164,6 +2540,8 @@ export type CallSessionUncheckedUpdateWithoutBusinessInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -2231,6 +2609,8 @@ export type CallSessionUpdateWithoutPhoneNumberInput = {
   business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   caller?: Prisma.CallerUpdateOneWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -2258,6 +2638,8 @@ export type CallSessionUncheckedUpdateWithoutPhoneNumberInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -2325,6 +2707,8 @@ export type CallSessionUpdateWithoutCallerInput = {
   business?: Prisma.BusinessUpdateOneRequiredWithoutCallSessionsNestedInput
   phoneNumber?: Prisma.PhoneNumberUpdateOneRequiredWithoutCallSessionsNestedInput
   transcriptSegments?: Prisma.TranscriptSegmentUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUpdateManyWithoutCallNestedInput
@@ -2352,6 +2736,8 @@ export type CallSessionUncheckedUpdateWithoutCallerInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcriptSegments?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutCallNestedInput
+  callEvents?: Prisma.CallEventUncheckedUpdateManyWithoutCallNestedInput
+  projection?: Prisma.CallSessionProjectionUncheckedUpdateOneWithoutCallNestedInput
   handoffs?: Prisma.HandoffUncheckedUpdateManyWithoutCallNestedInput
   appointments?: Prisma.AppointmentUncheckedUpdateManyWithoutCallNestedInput
   prescriptionRefills?: Prisma.PrescriptionRefillUncheckedUpdateManyWithoutCallNestedInput
@@ -2387,6 +2773,7 @@ export type CallSessionUncheckedUpdateManyWithoutCallerInput = {
 
 export type CallSessionCountOutputType = {
   transcriptSegments: number
+  callEvents: number
   handoffs: number
   appointments: number
   prescriptionRefills: number
@@ -2397,6 +2784,7 @@ export type CallSessionCountOutputType = {
 
 export type CallSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transcriptSegments?: boolean | CallSessionCountOutputTypeCountTranscriptSegmentsArgs
+  callEvents?: boolean | CallSessionCountOutputTypeCountCallEventsArgs
   handoffs?: boolean | CallSessionCountOutputTypeCountHandoffsArgs
   appointments?: boolean | CallSessionCountOutputTypeCountAppointmentsArgs
   prescriptionRefills?: boolean | CallSessionCountOutputTypeCountPrescriptionRefillsArgs
@@ -2420,6 +2808,13 @@ export type CallSessionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.
  */
 export type CallSessionCountOutputTypeCountTranscriptSegmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.TranscriptSegmentWhereInput
+}
+
+/**
+ * CallSessionCountOutputType without action
+ */
+export type CallSessionCountOutputTypeCountCallEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CallEventWhereInput
 }
 
 /**
@@ -2488,6 +2883,8 @@ export type CallSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
   caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
   transcriptSegments?: boolean | Prisma.CallSession$transcriptSegmentsArgs<ExtArgs>
+  callEvents?: boolean | Prisma.CallSession$callEventsArgs<ExtArgs>
+  projection?: boolean | Prisma.CallSession$projectionArgs<ExtArgs>
   handoffs?: boolean | Prisma.CallSession$handoffsArgs<ExtArgs>
   appointments?: boolean | Prisma.CallSession$appointmentsArgs<ExtArgs>
   prescriptionRefills?: boolean | Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>
@@ -2572,6 +2969,8 @@ export type CallSessionInclude<ExtArgs extends runtime.Types.Extensions.Internal
   phoneNumber?: boolean | Prisma.PhoneNumberDefaultArgs<ExtArgs>
   caller?: boolean | Prisma.CallSession$callerArgs<ExtArgs>
   transcriptSegments?: boolean | Prisma.CallSession$transcriptSegmentsArgs<ExtArgs>
+  callEvents?: boolean | Prisma.CallSession$callEventsArgs<ExtArgs>
+  projection?: boolean | Prisma.CallSession$projectionArgs<ExtArgs>
   handoffs?: boolean | Prisma.CallSession$handoffsArgs<ExtArgs>
   appointments?: boolean | Prisma.CallSession$appointmentsArgs<ExtArgs>
   prescriptionRefills?: boolean | Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>
@@ -2598,6 +2997,8 @@ export type $CallSessionPayload<ExtArgs extends runtime.Types.Extensions.Interna
     phoneNumber: Prisma.$PhoneNumberPayload<ExtArgs>
     caller: Prisma.$CallerPayload<ExtArgs> | null
     transcriptSegments: Prisma.$TranscriptSegmentPayload<ExtArgs>[]
+    callEvents: Prisma.$CallEventPayload<ExtArgs>[]
+    projection: Prisma.$CallSessionProjectionPayload<ExtArgs> | null
     handoffs: Prisma.$HandoffPayload<ExtArgs>[]
     appointments: Prisma.$AppointmentPayload<ExtArgs>[]
     prescriptionRefills: Prisma.$PrescriptionRefillPayload<ExtArgs>[]
@@ -3028,6 +3429,8 @@ export interface Prisma__CallSessionClient<T, Null = never, ExtArgs extends runt
   phoneNumber<T extends Prisma.PhoneNumberDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PhoneNumberDefaultArgs<ExtArgs>>): Prisma.Prisma__PhoneNumberClient<runtime.Types.Result.GetResult<Prisma.$PhoneNumberPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   caller<T extends Prisma.CallSession$callerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$callerArgs<ExtArgs>>): Prisma.Prisma__CallerClient<runtime.Types.Result.GetResult<Prisma.$CallerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   transcriptSegments<T extends Prisma.CallSession$transcriptSegmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$transcriptSegmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TranscriptSegmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  callEvents<T extends Prisma.CallSession$callEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$callEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CallEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  projection<T extends Prisma.CallSession$projectionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$projectionArgs<ExtArgs>>): Prisma.Prisma__CallSessionProjectionClient<runtime.Types.Result.GetResult<Prisma.$CallSessionProjectionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   handoffs<T extends Prisma.CallSession$handoffsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$handoffsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$HandoffPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   appointments<T extends Prisma.CallSession$appointmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$appointmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AppointmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   prescriptionRefills<T extends Prisma.CallSession$prescriptionRefillsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CallSession$prescriptionRefillsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PrescriptionRefillPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3517,6 +3920,49 @@ export type CallSession$transcriptSegmentsArgs<ExtArgs extends runtime.Types.Ext
   take?: number
   skip?: number
   distinct?: Prisma.TranscriptSegmentScalarFieldEnum | Prisma.TranscriptSegmentScalarFieldEnum[]
+}
+
+/**
+ * CallSession.callEvents
+ */
+export type CallSession$callEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CallEvent
+   */
+  select?: Prisma.CallEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CallEvent
+   */
+  omit?: Prisma.CallEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CallEventInclude<ExtArgs> | null
+  where?: Prisma.CallEventWhereInput
+  orderBy?: Prisma.CallEventOrderByWithRelationInput | Prisma.CallEventOrderByWithRelationInput[]
+  cursor?: Prisma.CallEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CallEventScalarFieldEnum | Prisma.CallEventScalarFieldEnum[]
+}
+
+/**
+ * CallSession.projection
+ */
+export type CallSession$projectionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CallSessionProjection
+   */
+  select?: Prisma.CallSessionProjectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CallSessionProjection
+   */
+  omit?: Prisma.CallSessionProjectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CallSessionProjectionInclude<ExtArgs> | null
+  where?: Prisma.CallSessionProjectionWhereInput
 }
 
 /**
