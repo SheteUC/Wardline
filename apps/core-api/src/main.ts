@@ -1,3 +1,4 @@
+import './tracing';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -5,6 +6,7 @@ import compression from 'compression';
 import { AppModule } from './app.module';
 import { Logger } from '@wardline/utils';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import { requestContextExpressMiddleware } from './observability/request-context.express.middleware';
 
 const logger = new Logger('Bootstrap');
 
@@ -12,6 +14,8 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         logger: ['error', 'warn', 'log'],
     });
+
+    app.use(requestContextExpressMiddleware);
 
     app.use(
         compression({

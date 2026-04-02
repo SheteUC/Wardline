@@ -25,6 +25,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { FollowUpTasksModule } from './modules/follow-up-tasks/follow-up-tasks.module';
 import { RuntimeActionsModule } from './modules/runtime-actions/runtime-actions.module';
 import { HealthController } from './health.controller';
+import { ObservabilityModule } from './observability/observability.module';
 
 const rootEnvFilePaths = [
     resolve(__dirname, '../../../.env.local'),
@@ -56,6 +57,7 @@ if (shouldWarnOnDeprecatedEnvFiles && deprecatedCoreApiEnvPaths.length > 0) {
 @Module({
     controllers: [HealthController],
     imports: [
+        ObservabilityModule,
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: rootEnvFilePaths,

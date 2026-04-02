@@ -35,6 +35,7 @@ from llm_safety import assess_safety_llm
 from llm_slots import extract_slots_llm, merge_slots_conservative
 from llm_supervisor import route_turn_llm
 from core_api_client import CoreApiClient
+from observability.metrics import turn_processing_seconds
 from models import (
     CallBootstrapResponse,
     CallLifecycleStatus,
@@ -390,8 +391,12 @@ class VoiceRuntimeV2:
         self._local_session_locks.pop(session_id, None)
 
     async def process_text_turn(self, session_id: str, text: str) -> Dict[str, Any]:
-        async with self._exclusive_session(session_id) as session:
-            return await self._process_text_turn_for_session(session, text)
+        started = time.perf_counter()
+        try:
+            async with self._exclusive_session(session_id) as session:
+                return await self._process_text_turn_for_session(session, text)
+        finally:
+            turn_processing_seconds.observe(time.perf_counter() - started)
 
     async def _process_text_turn_for_session(self, session: SessionState, text: str) -> Dict[str, Any]:
         cleaned_text = text.strip()

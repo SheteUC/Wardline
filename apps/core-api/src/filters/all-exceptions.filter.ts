@@ -6,6 +6,7 @@ import {
     HttpStatus,
     Logger,
 } from '@nestjs/common';
+import { getRequestContext } from '@wardline/utils';
 import { Request, Response } from 'express';
 
 @Catch()
@@ -23,6 +24,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 : HttpStatus.INTERNAL_SERVER_ERROR;
 
         const isProd = (process.env.NODE_ENV ?? 'development') === 'production';
+        const reqCtx = getRequestContext();
 
         if (exception instanceof HttpException) {
             const res = exception.getResponse();
@@ -35,6 +37,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 statusCode: status,
                 path: request.url,
                 timestamp: new Date().toISOString(),
+                ...(reqCtx
+                    ? {
+                          requestId: reqCtx.requestId,
+                          correlationId: reqCtx.correlationId,
+                          traceId: reqCtx.traceId,
+                      }
+                    : {}),
             });
             return;
         }
@@ -47,6 +56,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
             message: 'Internal server error',
             path: request.url,
             timestamp: new Date().toISOString(),
+            ...(reqCtx
+                ? {
+                      requestId: reqCtx.requestId,
+                      correlationId: reqCtx.correlationId,
+                      traceId: reqCtx.traceId,
+                  }
+                : {}),
             ...(isProd
                 ? {}
                 : {

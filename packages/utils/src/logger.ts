@@ -1,4 +1,5 @@
 import pino from 'pino';
+import { getRequestContext } from './request-context';
 
 /**
  * PHI-sensitive field patterns for redaction
@@ -76,12 +77,26 @@ export function redactPHIFromObject(obj: any): any {
  */
 export function createLogger(name: string, options: pino.LoggerOptions = {}) {
     const isDevelopment = process.env.NODE_ENV === 'development';
+    const logFormat = (process.env.WARDLINE_LOG_FORMAT || '').toLowerCase();
+    const usePretty =
+        logFormat === 'pretty' || (logFormat !== 'json' && !process.env.CI && isDevelopment);
 
     return pino({
         name,
         level: process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info'),
         ...options,
-        transport: isDevelopment
+        mixin() {
+            const ctx = getRequestContext();
+            if (!ctx) {
+                return {};
+            }
+            return {
+                requestId: ctx.requestId,
+                correlationId: ctx.correlationId,
+                traceId: ctx.traceId,
+            };
+        },
+        transport: usePretty
             ? {
                 target: 'pino-pretty',
                 options: {

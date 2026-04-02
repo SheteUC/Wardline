@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 import httpx
 
 from config import settings
+from observability.context import outbound_headers
 
 
 def _retryable_status(status_code: int) -> bool:
@@ -30,9 +31,10 @@ class CoreApiClient:
 
     def _internal_headers(self) -> Dict[str, str]:
         secret = settings.wardline_internal_api_secret.strip()
-        if not secret:
-            return {}
-        return {"X-Wardline-Internal-Secret": secret}
+        base: Dict[str, str] = {**outbound_headers()}
+        if secret:
+            base["X-Wardline-Internal-Secret"] = secret
+        return base
 
     async def close(self):
         await self.client.aclose()

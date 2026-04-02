@@ -7,22 +7,26 @@ provide the real provider-backed cutover path for V2.
 """
 from __future__ import annotations
 
-import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 from twilio.request_validator import RequestValidator
 
 from config import settings
+from observability.logging_setup import configure_logging, get_logger
+from observability.middleware import ObservabilityMiddleware
 from preflight import default_bootstrap_error_message
 from service import VoiceRuntimeV2
 from telephony import TwilioMediaSession
 
+configure_logging()
+
 runtime = VoiceRuntimeV2()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _rethrow_session_errors(error: BaseException) -> None:
@@ -102,6 +106,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.add_middleware(ObservabilityMiddleware)
 
 
 @app.get("/health")
@@ -316,6 +322,16 @@ async def capture_voicemail(session_id: str, request: VoicemailRequest):
         raise HTTPException(status_code=404, detail=str(error)) from error
     except (KeyError, RuntimeError) as error:
         _rethrow_session_errors(error)
+
+
+@app.get("/metrics")
+async def prometheus_metrics() -> Response:
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+from observability.otel import instrument_app
+
+instrument_app(app)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any, Dict, Optional
 
 from openai import AsyncAzureOpenAI, AsyncOpenAI
@@ -84,9 +85,13 @@ async def chat_json_completion(
             raise ValueError("empty LLM content")
         return json.loads(raw)
 
+    started = time.perf_counter()
     try:
-        return await retry_async(_once, attempts=3, operation="llm_chat_json")
+        result = await retry_async(_once, attempts=3, operation="llm_chat_json")
+        llm_chat_json_seconds.observe(time.perf_counter() - started)
+        return result
     except Exception as exc:
+        llm_chat_json_seconds.observe(time.perf_counter() - started)
         logger.warning("LLM chat_json_completion failed: %s", exc)
         return None
 
