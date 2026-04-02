@@ -32,6 +32,12 @@ if (shouldWarnOnDeprecatedEnvFiles && existingDeprecatedWebEnvPaths.length > 0) 
 
 const isProd = process.env.NODE_ENV === "production";
 
+const nextPublicVoiceRuntimeBase =
+  process.env.NEXT_PUBLIC_VOICE_RUNTIME_URL ??
+  process.env.NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL ??
+  process.env.NEXT_PUBLIC_VOICE_API_URL ??
+  "http://localhost:3003";
+
 const cspDirectives = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -69,10 +75,9 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_CORE_API_URL ??
       process.env.NEXT_PUBLIC_API_BASE_URL ??
       "http://localhost:3001",
-    NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL:
-      process.env.NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL ??
-      process.env.NEXT_PUBLIC_VOICE_API_URL ??
-      "http://localhost:3003",
+    NEXT_PUBLIC_VOICE_RUNTIME_URL: nextPublicVoiceRuntimeBase,
+    // Legacy alias: same resolved base URL as NEXT_PUBLIC_VOICE_RUNTIME_URL
+    NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL: nextPublicVoiceRuntimeBase,
   },
   images: {
     remotePatterns: [

@@ -34,7 +34,7 @@ jobs:
       WEB_BASE_URL: http://localhost:3000
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
       NEXT_PUBLIC_CORE_API_URL: http://localhost:3001
-      NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL: http://localhost:3003
+      NEXT_PUBLIC_VOICE_RUNTIME_URL: http://localhost:3003
       NEXT_PUBLIC_WEB_BASE_URL: http://localhost:3000
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
       CLERK_SECRET_KEY: sk_test_ci_placeholder
@@ -47,8 +47,6 @@ jobs:
       AZURE_OPENAI_KEY: azure_ci_placeholder
       AZURE_OPENAI_ENDPOINT: https://example.openai.azure.com/
       AZURE_OPENAI_DEPLOYMENT: gpt-4o-mini
-      AZURE_SPEECH_KEY: speech_ci_placeholder
-      AZURE_SPEECH_REGION: eastus2
       TWILIO_ACCOUNT_SID: AC_ci_placeholder
       TWILIO_AUTH_TOKEN: twilio_ci_placeholder
       TWILIO_PHONE_NUMBER: "+15555550123"

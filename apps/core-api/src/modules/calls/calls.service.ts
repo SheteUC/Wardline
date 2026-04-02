@@ -568,7 +568,7 @@ export class CallsService {
     }
 
     // -------------------------------------------------------------------------
-    // Voice orchestrator endpoints
+    // Voice runtime endpoints
     // -------------------------------------------------------------------------
 
     async create(dto: any): Promise<any> {

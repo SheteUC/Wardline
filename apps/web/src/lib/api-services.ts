@@ -8,11 +8,9 @@ import type {
     CallListItem,
     FollowUpTask,
     PaginatedResponse,
-    SystemHealth,
     TeamMember,
     VoicemailRecord,
 } from './api-types';
-import { CORE_API_ORIGIN } from './core-api-url';
 
 interface ApiClientMethods {
     get: <T>(endpoint: string) => Promise<T>;
@@ -149,21 +147,6 @@ export const createBusinessService = (client: ApiClientMethods) => ({
 
     async getRuntimeConfig(businessId: string): Promise<BusinessRuntimeConfig> {
         return client.get<BusinessRuntimeConfig>(`/businesses/${businessId}/runtime-config`);
-    },
-});
-
-export const createSystemService = () => ({
-    async getHealth(): Promise<SystemHealth> {
-        const response = await fetch(`${CORE_API_ORIGIN}/health`);
-        if (!response.ok) throw new Error('Health check failed');
-        return response.json();
-    },
-
-    async getVoiceOrchestratorHealth(): Promise<unknown> {
-        const url = process.env.NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL || 'http://localhost:3003';
-        const response = await fetch(`${url}/health`);
-        if (!response.ok) throw new Error('Voice orchestrator health check failed');
-        return response.json();
     },
 });
 

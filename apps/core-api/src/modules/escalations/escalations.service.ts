@@ -33,7 +33,7 @@ export class EscalationsService {
 
     /**
      * Attempt human transfer. If no answer, fall back to voicemail.
-     * Returns the outcome so the voice orchestrator can take action.
+     * Returns the outcome so the voice runtime can take action.
      */
     async escalateToHuman(context: EscalationContext): Promise<{
         outcome: EscalationOutcome;

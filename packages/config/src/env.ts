@@ -38,28 +38,8 @@ export const coreApiEnvSchema = commonEnvSchema.extend({
     AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
 });
 
-/**
- * Voice orchestrator environment schema
- */
-export const voiceOrchestratorEnvSchema = commonEnvSchema.extend({
-    PORT: z.string().default('3002'),
-    TWILIO_ACCOUNT_SID: z.string().min(1),
-    TWILIO_AUTH_TOKEN: z.string().min(1),
-    TWILIO_PHONE_NUMBER: z.string().min(1),
-    AZURE_SPEECH_KEY: z.string().min(1),
-    AZURE_SPEECH_REGION: z.string().min(1),
-    OPENAI_API_KEY: z.string().optional(),
-    OPENAI_MODEL: z.string().optional(),
-    LLM_PROVIDER: z.enum(['auto', 'openai', 'azure']).optional(),
-    AZURE_OPENAI_KEY: z.string().optional(),
-    AZURE_OPENAI_ENDPOINT: z.string().url().optional(),
-    AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
-    API_BASE_URL: z.string().url(),
-});
-
 export type WebEnv = z.infer<typeof webEnvSchema>;
 export type CoreApiEnv = z.infer<typeof coreApiEnvSchema>;
-export type VoiceOrchestratorEnv = z.infer<typeof voiceOrchestratorEnvSchema>;
 
 /**
  * Validates and returns environment variables

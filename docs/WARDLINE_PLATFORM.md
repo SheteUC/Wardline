@@ -136,7 +136,7 @@ Partial transcripts still call `process_transcript_turn` with `final=False` (no 
 **Vercel (web)**
 
 - Root directory: `apps/web`.
-- Set `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CORE_API_URL`, `NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL`, `NEXT_PUBLIC_WEB_BASE_URL`, Clerk keys.
+- Set `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CORE_API_URL`, `NEXT_PUBLIC_VOICE_RUNTIME_URL` (legacy: `NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL`), `NEXT_PUBLIC_WEB_BASE_URL`, Clerk keys.
 
 **After Vercel exists:** Set `WEB_BASE_URL` on Core API to the Vercel origin and redeploy (CORS / webhooks).
 

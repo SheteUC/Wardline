@@ -242,7 +242,7 @@ export class WorkflowsService {
     }
 
     /**
-     * Get the active workflow for a business (used by voice orchestrator)
+     * Get the active workflow for a business (used by voice-runtime-v2)
      */
     async getActiveWorkflow(businessId: string, phoneNumberId?: string): Promise<any> {
         if (!businessId) return null;

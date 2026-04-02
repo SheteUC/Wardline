@@ -85,7 +85,7 @@ export class WorkflowsController {
     }
 }
 
-// New controller for workflow-related endpoints used by voice orchestrator
+// Workflow endpoints used by voice-runtime-v2
 @ApiTags('workflows-api')
 @Controller('workflows')
 export class WorkflowsApiController {
@@ -95,7 +95,7 @@ export class WorkflowsApiController {
     @Public()
     @InternalApi()
     @Throttle({ global: { limit: 120, ttl: 60_000 } })
-    @ApiOperation({ summary: 'Get active workflow for business (used by voice orchestrator)' })
+    @ApiOperation({ summary: 'Get active workflow for business (used by voice-runtime-v2)' })
     @ApiResponse({ status: 200, description: 'Active workflow configuration with graph JSON' })
     getActiveWorkflow(
         @Query('businessId') businessId?: string,

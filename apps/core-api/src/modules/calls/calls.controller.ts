@@ -72,7 +72,7 @@ export class CallsController {
     }
 
     // -------------------------------------------------------------------------
-    // Voice orchestrator endpoints (public — called by Pipecat)
+    // Voice runtime endpoints (public — called by voice-runtime-v2)
     // -------------------------------------------------------------------------
 
     @Get('calls')

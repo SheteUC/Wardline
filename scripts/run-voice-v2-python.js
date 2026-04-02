@@ -4,7 +4,6 @@ const { spawnSync } = require('child_process');
 
 const repoRoot = process.cwd();
 const voiceV2Dir = path.join(repoRoot, 'apps', 'voice-runtime-v2');
-const archivedVoiceDir = path.join(repoRoot, 'apps', 'voice-orchestrator-pipecat');
 const requestedArgs = process.argv.slice(2);
 
 if (requestedArgs.length === 0) {
@@ -22,14 +21,10 @@ function resolvePythonBinary() {
     ? [
         path.join(voiceV2Dir, 'venv', 'Scripts', 'python.exe'),
         path.join(voiceV2Dir, '.venv', 'Scripts', 'python.exe'),
-        path.join(archivedVoiceDir, 'venv', 'Scripts', 'python.exe'),
-        path.join(archivedVoiceDir, '.venv', 'Scripts', 'python.exe'),
       ]
     : [
         path.join(voiceV2Dir, 'venv', 'bin', 'python'),
         path.join(voiceV2Dir, '.venv', 'bin', 'python'),
-        path.join(archivedVoiceDir, 'venv', 'bin', 'python'),
-        path.join(archivedVoiceDir, '.venv', 'bin', 'python'),
       ];
 
   for (const candidate of candidates) {

@@ -15,7 +15,7 @@ import { EscalationsService } from './escalations.service';
 export class EscalationsController {
     constructor(private readonly escalationsService: EscalationsService) {}
 
-    /** Called by voice orchestrator to escalate a call to human transfer */
+    /** Called by voice runtime to escalate a call to human transfer */
     @Post('human-transfer')
     @Public()
     @InternalApi()
@@ -24,7 +24,7 @@ export class EscalationsController {
         return this.escalationsService.escalateToHuman(context);
     }
 
-    /** Called by voice orchestrator to flag a call as emergency */
+    /** Called by voice runtime to flag a call as emergency */
     @Post('emergency')
     @Public()
     @InternalApi()

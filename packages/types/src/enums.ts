@@ -148,7 +148,7 @@ export enum AgentType {
 }
 
 /**
- * Voice call states for the orchestrator state machine
+ * Voice call states for the in-call session state machine
  */
 export enum VoiceState {
     INITIALIZING = 'INITIALIZING',

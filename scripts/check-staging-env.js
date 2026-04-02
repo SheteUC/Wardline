@@ -17,20 +17,22 @@ const required = [
   { label: 'REDIS_URL', keys: ['REDIS_URL'] },
   { label: 'NEXT_PUBLIC_API_BASE_URL', keys: ['NEXT_PUBLIC_API_BASE_URL'] },
   { label: 'NEXT_PUBLIC_CORE_API_URL', keys: ['NEXT_PUBLIC_CORE_API_URL', 'CORE_API_BASE_URL'] },
-  { label: 'NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL', keys: ['NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL'] },
+  {
+    label: 'NEXT_PUBLIC_VOICE_RUNTIME_URL (or legacy NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL)',
+    keys: ['NEXT_PUBLIC_VOICE_RUNTIME_URL', 'NEXT_PUBLIC_VOICE_ORCHESTRATOR_URL'],
+  },
   { label: 'NEXT_PUBLIC_WEB_BASE_URL or WEB_BASE_URL', keys: ['NEXT_PUBLIC_WEB_BASE_URL', 'WEB_BASE_URL'] },
   { label: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', keys: ['NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY'] },
   { label: 'CLERK_SECRET_KEY', keys: ['CLERK_SECRET_KEY'] },
   { label: 'TWILIO_ACCOUNT_SID', keys: ['TWILIO_ACCOUNT_SID'] },
   { label: 'TWILIO_AUTH_TOKEN', keys: ['TWILIO_AUTH_TOKEN'] },
   { label: 'TWILIO_PHONE_NUMBER', keys: ['TWILIO_PHONE_NUMBER'] },
-  { label: 'AZURE_SPEECH_KEY', keys: ['AZURE_SPEECH_KEY'] },
-  { label: 'AZURE_SPEECH_REGION', keys: ['AZURE_SPEECH_REGION'] },
-  { label: 'AZURE_OPENAI_KEY', keys: ['AZURE_OPENAI_KEY'] },
-  { label: 'AZURE_OPENAI_ENDPOINT', keys: ['AZURE_OPENAI_ENDPOINT'] },
 ];
 
 const recommended = [
+  { label: 'OPENAI_API_KEY', keys: ['OPENAI_API_KEY'] },
+  { label: 'AZURE_OPENAI_KEY', keys: ['AZURE_OPENAI_KEY'] },
+  { label: 'AZURE_OPENAI_ENDPOINT', keys: ['AZURE_OPENAI_ENDPOINT'] },
   { label: 'WEBHOOK_BASE_URL', keys: ['WEBHOOK_BASE_URL'] },
   { label: 'LIVEKIT_URL', keys: ['LIVEKIT_URL'] },
   { label: 'LIVEKIT_API_KEY', keys: ['LIVEKIT_API_KEY'] },

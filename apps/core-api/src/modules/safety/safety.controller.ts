@@ -11,7 +11,7 @@ import { SafetyGuardService } from './safety-guard.service';
 export class SafetyController {
     constructor(private readonly safetyGuard: SafetyGuardService) {}
 
-    /** Called by voice orchestrator to check an utterance in real-time */
+    /** Called by voice runtime to check an utterance in real-time */
     @Post('check')
     @Public()
     @InternalApi()

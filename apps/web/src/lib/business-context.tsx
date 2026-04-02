@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { selectPreferredBusinessId } from './business-selection';
+import { CORE_API_V1 } from './core-api-url';
 
 interface BusinessContextType {
     businessId: string | null;
