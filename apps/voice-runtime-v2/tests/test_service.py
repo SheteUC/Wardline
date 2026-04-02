@@ -358,6 +358,9 @@ class FakeCoreApiClient:
         self.bootstrapped_calls.append(payload)
         return payload
 
+    async def get_caller_context(self, _business_id: str, _caller_phone: str):
+        return {"caller": None, "recentCalls": [], "knownInsurance": None, "knownMedications": []}
+
     async def get_business_by_phone(self, _phone_number: str):
         return {"id": "business-1"}
 
@@ -432,6 +435,24 @@ class FakeCoreApiClient:
 
 
 class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        super().setUp()
+        self._p_llm_route = patch("service.route_turn_llm", new=AsyncMock(return_value=None))
+        self._p_llm_safe = patch("service.assess_safety_llm", new=AsyncMock(return_value=None))
+        self._p_llm_slots = patch("service.extract_slots_llm", new=AsyncMock(return_value={}))
+        self._p_llm_agents = patch("service.run_llm_agent", new=AsyncMock(return_value=None))
+        self._p_llm_route.start()
+        self._p_llm_safe.start()
+        self._p_llm_slots.start()
+        self._p_llm_agents.start()
+
+    def tearDown(self):
+        self._p_llm_route.stop()
+        self._p_llm_safe.stop()
+        self._p_llm_slots.stop()
+        self._p_llm_agents.stop()
+        super().tearDown()
+
     async def create_runtime(self, **client_kwargs):
         api_client = FakeCoreApiClient(**client_kwargs)
         runtime = VoiceRuntimeV2(api_client=api_client)

@@ -252,6 +252,7 @@ export class BusinessesService {
         refillPolicy: unknown;
         billingPolicy: unknown;
         insurancePolicy: unknown;
+        daytimeHandoffPolicy: unknown;
         knowledgeConfig: unknown;
         escalationConfig: unknown;
         outOfScopeKeywords: string[];
@@ -269,6 +270,10 @@ export class BusinessesService {
                 settings.billingPolicy !== undefined ? settings.billingPolicy : currentSettings.billingPolicy,
             insurancePolicy:
                 settings.insurancePolicy !== undefined ? settings.insurancePolicy : currentSettings.insurancePolicy,
+            daytimeHandoffPolicy:
+                settings.daytimeHandoffPolicy !== undefined
+                    ? settings.daytimeHandoffPolicy
+                    : currentSettings.daytimeHandoffPolicy,
             knowledgeConfig:
                 settings.knowledgeConfig !== undefined ? settings.knowledgeConfig : currentSettings.knowledgeConfig,
             escalationConfig:
@@ -286,6 +291,7 @@ export class BusinessesService {
             refillPolicy: nextPracticeSetup.refillPolicy as any,
             billingPolicy: nextPracticeSetup.billingPolicy as any,
             insurancePolicy: nextPracticeSetup.insurancePolicy as any,
+            daytimeHandoffPolicy: nextPracticeSetup.daytimeHandoffPolicy as any,
             knowledgeConfig: nextPracticeSetup.knowledgeConfig as any,
             escalationConfig: nextPracticeSetup.escalationConfig as any,
         };
@@ -394,6 +400,7 @@ export class BusinessesService {
             refillPolicy: practiceSetup.refillPolicy,
             billingPolicy: practiceSetup.billingPolicy,
             insurancePolicy: practiceSetup.insurancePolicy,
+            daytimeHandoffPolicy: practiceSetup.daytimeHandoffPolicy,
             knowledgeConfig: practiceSetup.knowledgeConfig,
             escalationConfig: practiceSetup.escalationConfig,
             outOfScopeKeywords: [] as string[],
@@ -412,6 +419,7 @@ export class BusinessesService {
             refillPolicy: practiceSetup.refillPolicy,
             billingPolicy: practiceSetup.billingPolicy,
             insurancePolicy: practiceSetup.insurancePolicy,
+            daytimeHandoffPolicy: practiceSetup.daytimeHandoffPolicy,
             knowledgeConfig: practiceSetup.knowledgeConfig,
             escalationConfig: practiceSetup.escalationConfig,
         };

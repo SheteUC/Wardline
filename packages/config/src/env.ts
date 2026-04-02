@@ -30,9 +30,12 @@ export const coreApiEnvSchema = commonEnvSchema.extend({
     STRIPE_WEBHOOK_SECRET: z.string().min(1),
     TIMETAP_API_KEY: z.string().optional(),
     TIMETAP_BASE_URL: z.string().url().optional(),
-    AZURE_OPENAI_KEY: z.string().min(1),
-    AZURE_OPENAI_ENDPOINT: z.string().url(),
-    AZURE_OPENAI_DEPLOYMENT: z.string().min(1),
+    OPENAI_API_KEY: z.string().optional(),
+    OPENAI_MODEL: z.string().optional(),
+    LLM_PROVIDER: z.enum(['auto', 'openai', 'azure']).optional(),
+    AZURE_OPENAI_KEY: z.string().optional(),
+    AZURE_OPENAI_ENDPOINT: z.string().url().optional(),
+    AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
 });
 
 /**
@@ -45,9 +48,12 @@ export const voiceOrchestratorEnvSchema = commonEnvSchema.extend({
     TWILIO_PHONE_NUMBER: z.string().min(1),
     AZURE_SPEECH_KEY: z.string().min(1),
     AZURE_SPEECH_REGION: z.string().min(1),
-    AZURE_OPENAI_KEY: z.string().min(1),
-    AZURE_OPENAI_ENDPOINT: z.string().url(),
-    AZURE_OPENAI_DEPLOYMENT: z.string().min(1),
+    OPENAI_API_KEY: z.string().optional(),
+    OPENAI_MODEL: z.string().optional(),
+    LLM_PROVIDER: z.enum(['auto', 'openai', 'azure']).optional(),
+    AZURE_OPENAI_KEY: z.string().optional(),
+    AZURE_OPENAI_ENDPOINT: z.string().url().optional(),
+    AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
     API_BASE_URL: z.string().url(),
 });
 

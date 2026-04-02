@@ -1,6 +1,6 @@
 CREATE TABLE "call_events" (
-    "id" UUID NOT NULL,
-    "call_id" UUID NOT NULL,
+    "id" TEXT NOT NULL,
+    "call_id" TEXT NOT NULL,
     "sequence" INTEGER NOT NULL,
     "type" TEXT NOT NULL,
     "domain" TEXT,
@@ -12,7 +12,7 @@ CREATE TABLE "call_events" (
 );
 
 CREATE TABLE "call_session_projections" (
-    "call_id" UUID NOT NULL,
+    "call_id" TEXT NOT NULL,
     "last_sequence_applied" INTEGER NOT NULL DEFAULT 0,
     "latest_domain" TEXT,
     "resolution" TEXT,

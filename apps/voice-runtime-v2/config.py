@@ -11,9 +11,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 APP_DIR = Path(__file__).resolve().parent
 REPO_ROOT = APP_DIR.parents[1]
 
-for env_path in (REPO_ROOT / ".env.local", REPO_ROOT / ".env"):
-    if env_path.exists():
-        load_dotenv(env_path, override=False)
+# Load base .env first, then .env.local with override so local wins (matches typical monorepo convention).
+# Previously .env.local was loaded first with override=False on .env, so an empty OPENAI_API_KEY in
+# .env.local blocked the real key defined only in .env.
+_env_file = REPO_ROOT / ".env"
+if _env_file.exists():
+    load_dotenv(_env_file, override=False)
+_env_local = REPO_ROOT / ".env.local"
+if _env_local.exists():
+    load_dotenv(_env_local, override=True)
 
 
 class Settings(BaseSettings):
@@ -26,11 +32,13 @@ class Settings(BaseSettings):
     )
     debug: bool = Field(default=False)
 
-    core_api_url: str = Field(default="http://localhost:3001", alias="CORE_API_BASE_URL")
+    core_api_url: str = Field(default="", alias="CORE_API_BASE_URL")
+    core_api_hostport: str = Field(default="", alias="CORE_API_HOSTPORT")
     webhook_base_url: str = Field(
         default="",
         validation_alias=AliasChoices("VOICE_RUNTIME_V2_PUBLIC_URL", "WEBHOOK_BASE_URL"),
     )
+    render_external_url: str = Field(default="", alias="RENDER_EXTERNAL_URL")
 
     livekit_url: str = Field(default="", alias="LIVEKIT_URL")
     livekit_api_key: str = Field(default="", alias="LIVEKIT_API_KEY")
@@ -39,11 +47,22 @@ class Settings(BaseSettings):
     deepgram_api_key: str = Field(default="", alias="DEEPGRAM_API_KEY")
     deepgram_stt_model: str = Field(default="nova-2-phonecall", alias="DEEPGRAM_STT_MODEL")
     deepgram_tts_model: str = Field(default="aura-2-thalia-en", alias="DEEPGRAM_TTS_MODEL")
+    deepgram_endpointing_ms: int = Field(default=1200, alias="DEEPGRAM_ENDPOINTING_MS")
+    deepgram_utterance_end_ms: int = Field(default=1500, alias="DEEPGRAM_UTTERANCE_END_MS")
 
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-4o", alias="OPENAI_MODEL")
+    llm_provider: str = Field(default="auto", alias="LLM_PROVIDER")
     azure_openai_key: str = Field(default="", alias="AZURE_OPENAI_KEY")
     azure_openai_endpoint: str = Field(default="", alias="AZURE_OPENAI_ENDPOINT")
     azure_openai_deployment: str = Field(default="gpt-4o-mini", alias="AZURE_OPENAI_DEPLOYMENT")
+    azure_openai_api_version: str = Field(default="2024-08-01-preview", alias="AZURE_OPENAI_API_VERSION")
+
+    voice_llm_supervisor: bool = Field(default=True, alias="VOICE_LLM_SUPERVISOR")
+    voice_llm_safety: bool = Field(default=True, alias="VOICE_LLM_SAFETY")
+    voice_llm_slots: bool = Field(default=True, alias="VOICE_LLM_SLOTS")
+    voice_llm_agents: bool = Field(default=True, alias="VOICE_LLM_AGENTS")
+    voice_llm_timeout_seconds: float = Field(default=12.0, alias="VOICE_LLM_TIMEOUT_SECONDS")
 
     twilio_account_sid: str = Field(default="", alias="TWILIO_ACCOUNT_SID")
     twilio_auth_token: str = Field(default="", alias="TWILIO_AUTH_TOKEN")
@@ -52,6 +71,46 @@ class Settings(BaseSettings):
     voice_runtime_legacy_call_sync: bool = Field(default=True, alias="VOICE_RUNTIME_LEGACY_CALL_SYNC")
 
     managed_tts_provider: str = Field(default="deepgram", alias="MANAGED_TTS_PROVIDER")
+
+    def resolved_core_api_url(self) -> str:
+        explicit_url = self.core_api_url.strip()
+        if explicit_url:
+            return explicit_url
+
+        internal_hostport = self.core_api_hostport.strip()
+        if internal_hostport:
+            return f"http://{internal_hostport}"
+
+        return "http://localhost:3001"
+
+    def public_base_url(self) -> str:
+        explicit_url = self.webhook_base_url.strip()
+        if explicit_url:
+            return explicit_url
+
+        return self.render_external_url.strip()
+
+    def active_llm_provider(self) -> str:
+        """Returns openai, azure, or none depending on keys and LLM_PROVIDER."""
+        mode = (self.llm_provider or "auto").strip().lower()
+        has_openai = bool(self.openai_api_key.strip())
+        has_azure = bool(self.azure_openai_key.strip())
+        if mode == "openai":
+            return "openai" if has_openai else "none"
+        if mode == "azure":
+            return "azure" if has_azure else "none"
+        if has_openai:
+            return "openai"
+        if has_azure:
+            return "azure"
+        return "none"
+
+    def active_llm_model(self) -> str:
+        if self.active_llm_provider() == "openai":
+            return (self.openai_model or "gpt-4o").strip() or "gpt-4o"
+        if self.active_llm_provider() == "azure":
+            return (self.azure_openai_deployment or "gpt-4o-mini").strip() or "gpt-4o-mini"
+        return ""
 
 
 settings = Settings()

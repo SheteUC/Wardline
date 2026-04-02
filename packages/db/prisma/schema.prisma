@@ -63,6 +63,7 @@ model BusinessSettings {
   refillPolicy            Json?            @map("refill_policy")
   billingPolicy           Json?            @map("billing_policy")
   insurancePolicy         Json?            @map("insurance_policy")
+  daytimeHandoffPolicy    Json?            @map("daytime_handoff_policy")
   knowledgeConfig         Json?            @map("knowledge_config")
   escalationConfig        Json?            @map("escalation_config")
   /** Override list of out-of-scope keywords that trigger deflection */

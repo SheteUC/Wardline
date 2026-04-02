@@ -219,6 +219,7 @@ class SupervisorDecision(BaseModel):
     detectedIntents: List["DetectedIntent"] = Field(default_factory=list)
     selectedIntentId: Optional[str] = None
     priorityRequired: bool = False
+    llmSlotEnrichment: Dict[str, Any] = Field(default_factory=dict)
 
 
 class OperatorSummary(BaseModel):
@@ -435,6 +436,33 @@ class SessionTransportMetadata(BaseModel):
     providerSessionId: Optional[str] = None
 
 
+class RecentCallSummary(BaseModel):
+    id: str
+    tag: Optional[str] = None
+    status: Optional[str] = None
+    startedAt: Optional[str] = None
+    endedAt: Optional[str] = None
+    domain: Optional[str] = None
+    resolution: Optional[str] = None
+    resolutionLabel: Optional[str] = None
+    operatorNextStep: Optional[str] = None
+
+
+class KnownInsurance(BaseModel):
+    carrierName: Optional[str] = None
+    planName: Optional[str] = None
+
+
+class CallerContext(BaseModel):
+    callerId: Optional[str] = None
+    callerName: Optional[str] = None
+    callerPhone: Optional[str] = None
+    callerDob: Optional[str] = None
+    recentCalls: List[RecentCallSummary] = Field(default_factory=list)
+    knownInsurance: Optional[KnownInsurance] = None
+    knownMedications: List[str] = Field(default_factory=list)
+
+
 class SessionState(BaseModel):
     sessionId: str
     callSid: str
@@ -446,6 +474,7 @@ class SessionState(BaseModel):
     businessName: str
     runtimeConfig: RuntimeConfigBootstrap
     transport: SessionTransportMetadata
+    callerContext: Optional[CallerContext] = None
     intent: Optional[DomainName] = None
     activeDomain: Optional[DomainName] = None
     lifecycleStatus: CallLifecycleStatus = "INITIATED"

@@ -75,6 +75,7 @@ export type BusinessSettingsCountAggregateOutputType = {
   refillPolicy: number
   billingPolicy: number
   insurancePolicy: number
+  daytimeHandoffPolicy: number
   knowledgeConfig: number
   escalationConfig: number
   outOfScopeKeywords: number
@@ -140,6 +141,7 @@ export type BusinessSettingsCountAggregateInputType = {
   refillPolicy?: true
   billingPolicy?: true
   insurancePolicy?: true
+  daytimeHandoffPolicy?: true
   knowledgeConfig?: true
   escalationConfig?: true
   outOfScopeKeywords?: true
@@ -252,6 +254,7 @@ export type BusinessSettingsGroupByOutputType = {
   refillPolicy: runtime.JsonValue | null
   billingPolicy: runtime.JsonValue | null
   insurancePolicy: runtime.JsonValue | null
+  daytimeHandoffPolicy: runtime.JsonValue | null
   knowledgeConfig: runtime.JsonValue | null
   escalationConfig: runtime.JsonValue | null
   outOfScopeKeywords: string[]
@@ -300,6 +303,7 @@ export type BusinessSettingsWhereInput = {
   refillPolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
   billingPolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
   insurancePolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
+  daytimeHandoffPolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
   knowledgeConfig?: Prisma.JsonNullableFilter<"BusinessSettings">
   escalationConfig?: Prisma.JsonNullableFilter<"BusinessSettings">
   outOfScopeKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
@@ -326,6 +330,7 @@ export type BusinessSettingsOrderByWithRelationInput = {
   refillPolicy?: Prisma.SortOrderInput | Prisma.SortOrder
   billingPolicy?: Prisma.SortOrderInput | Prisma.SortOrder
   insurancePolicy?: Prisma.SortOrderInput | Prisma.SortOrder
+  daytimeHandoffPolicy?: Prisma.SortOrderInput | Prisma.SortOrder
   knowledgeConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   escalationConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   outOfScopeKeywords?: Prisma.SortOrder
@@ -355,6 +360,7 @@ export type BusinessSettingsWhereUniqueInput = Prisma.AtLeast<{
   refillPolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
   billingPolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
   insurancePolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
+  daytimeHandoffPolicy?: Prisma.JsonNullableFilter<"BusinessSettings">
   knowledgeConfig?: Prisma.JsonNullableFilter<"BusinessSettings">
   escalationConfig?: Prisma.JsonNullableFilter<"BusinessSettings">
   outOfScopeKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
@@ -381,6 +387,7 @@ export type BusinessSettingsOrderByWithAggregationInput = {
   refillPolicy?: Prisma.SortOrderInput | Prisma.SortOrder
   billingPolicy?: Prisma.SortOrderInput | Prisma.SortOrder
   insurancePolicy?: Prisma.SortOrderInput | Prisma.SortOrder
+  daytimeHandoffPolicy?: Prisma.SortOrderInput | Prisma.SortOrder
   knowledgeConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   escalationConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   outOfScopeKeywords?: Prisma.SortOrder
@@ -414,6 +421,7 @@ export type BusinessSettingsScalarWhereWithAggregatesInput = {
   refillPolicy?: Prisma.JsonNullableWithAggregatesFilter<"BusinessSettings">
   billingPolicy?: Prisma.JsonNullableWithAggregatesFilter<"BusinessSettings">
   insurancePolicy?: Prisma.JsonNullableWithAggregatesFilter<"BusinessSettings">
+  daytimeHandoffPolicy?: Prisma.JsonNullableWithAggregatesFilter<"BusinessSettings">
   knowledgeConfig?: Prisma.JsonNullableWithAggregatesFilter<"BusinessSettings">
   escalationConfig?: Prisma.JsonNullableWithAggregatesFilter<"BusinessSettings">
   outOfScopeKeywords?: Prisma.StringNullableListFilter<"BusinessSettings">
@@ -438,6 +446,7 @@ export type BusinessSettingsCreateInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
@@ -464,6 +473,7 @@ export type BusinessSettingsUncheckedCreateInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
@@ -488,6 +498,7 @@ export type BusinessSettingsUpdateInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
@@ -514,6 +525,7 @@ export type BusinessSettingsUncheckedUpdateInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
@@ -539,6 +551,7 @@ export type BusinessSettingsCreateManyInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
@@ -563,6 +576,7 @@ export type BusinessSettingsUpdateManyMutationInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
@@ -588,6 +602,7 @@ export type BusinessSettingsUncheckedUpdateManyInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
@@ -626,6 +641,7 @@ export type BusinessSettingsCountOrderByAggregateInput = {
   refillPolicy?: Prisma.SortOrder
   billingPolicy?: Prisma.SortOrder
   insurancePolicy?: Prisma.SortOrder
+  daytimeHandoffPolicy?: Prisma.SortOrder
   knowledgeConfig?: Prisma.SortOrder
   escalationConfig?: Prisma.SortOrder
   outOfScopeKeywords?: Prisma.SortOrder
@@ -763,6 +779,7 @@ export type BusinessSettingsCreateWithoutBusinessInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
@@ -787,6 +804,7 @@ export type BusinessSettingsUncheckedCreateWithoutBusinessInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsCreateoutOfScopeKeywordsInput | string[]
@@ -827,6 +845,7 @@ export type BusinessSettingsUpdateWithoutBusinessInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
@@ -851,6 +870,7 @@ export type BusinessSettingsUncheckedUpdateWithoutBusinessInput = {
   refillPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   insurancePolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  daytimeHandoffPolicy?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   knowledgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   escalationConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   outOfScopeKeywords?: Prisma.BusinessSettingsUpdateoutOfScopeKeywordsInput | string[]
@@ -878,6 +898,7 @@ export type BusinessSettingsSelect<ExtArgs extends runtime.Types.Extensions.Inte
   refillPolicy?: boolean
   billingPolicy?: boolean
   insurancePolicy?: boolean
+  daytimeHandoffPolicy?: boolean
   knowledgeConfig?: boolean
   escalationConfig?: boolean
   outOfScopeKeywords?: boolean
@@ -904,6 +925,7 @@ export type BusinessSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   refillPolicy?: boolean
   billingPolicy?: boolean
   insurancePolicy?: boolean
+  daytimeHandoffPolicy?: boolean
   knowledgeConfig?: boolean
   escalationConfig?: boolean
   outOfScopeKeywords?: boolean
@@ -930,6 +952,7 @@ export type BusinessSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   refillPolicy?: boolean
   billingPolicy?: boolean
   insurancePolicy?: boolean
+  daytimeHandoffPolicy?: boolean
   knowledgeConfig?: boolean
   escalationConfig?: boolean
   outOfScopeKeywords?: boolean
@@ -956,6 +979,7 @@ export type BusinessSettingsSelectScalar = {
   refillPolicy?: boolean
   billingPolicy?: boolean
   insurancePolicy?: boolean
+  daytimeHandoffPolicy?: boolean
   knowledgeConfig?: boolean
   escalationConfig?: boolean
   outOfScopeKeywords?: boolean
@@ -970,7 +994,7 @@ export type BusinessSettingsSelectScalar = {
   updatedAt?: boolean
 }
 
-export type BusinessSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "recordingDefault" | "transcriptRetentionDays" | "operatingHours" | "enabledActions" | "afterHoursPolicy" | "refillPolicy" | "billingPolicy" | "insurancePolicy" | "knowledgeConfig" | "escalationConfig" | "outOfScopeKeywords" | "emergencyKeywords" | "timetapBaseUrl" | "timetapApiKey" | "nexhealthBaseUrl" | "nexhealthApiKey" | "stripeCustomerId" | "posthogProjectApiKey" | "createdAt" | "updatedAt", ExtArgs["result"]["businessSettings"]>
+export type BusinessSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "businessId" | "recordingDefault" | "transcriptRetentionDays" | "operatingHours" | "enabledActions" | "afterHoursPolicy" | "refillPolicy" | "billingPolicy" | "insurancePolicy" | "daytimeHandoffPolicy" | "knowledgeConfig" | "escalationConfig" | "outOfScopeKeywords" | "emergencyKeywords" | "timetapBaseUrl" | "timetapApiKey" | "nexhealthBaseUrl" | "nexhealthApiKey" | "stripeCustomerId" | "posthogProjectApiKey" | "createdAt" | "updatedAt", ExtArgs["result"]["businessSettings"]>
 export type BusinessSettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   business?: boolean | Prisma.BusinessDefaultArgs<ExtArgs>
 }
@@ -997,6 +1021,7 @@ export type $BusinessSettingsPayload<ExtArgs extends runtime.Types.Extensions.In
     refillPolicy: runtime.JsonValue | null
     billingPolicy: runtime.JsonValue | null
     insurancePolicy: runtime.JsonValue | null
+    daytimeHandoffPolicy: runtime.JsonValue | null
     knowledgeConfig: runtime.JsonValue | null
     escalationConfig: runtime.JsonValue | null
     /**
@@ -1449,6 +1474,7 @@ export interface BusinessSettingsFieldRefs {
   readonly refillPolicy: Prisma.FieldRef<"BusinessSettings", 'Json'>
   readonly billingPolicy: Prisma.FieldRef<"BusinessSettings", 'Json'>
   readonly insurancePolicy: Prisma.FieldRef<"BusinessSettings", 'Json'>
+  readonly daytimeHandoffPolicy: Prisma.FieldRef<"BusinessSettings", 'Json'>
   readonly knowledgeConfig: Prisma.FieldRef<"BusinessSettings", 'Json'>
   readonly escalationConfig: Prisma.FieldRef<"BusinessSettings", 'Json'>
   readonly outOfScopeKeywords: Prisma.FieldRef<"BusinessSettings", 'String[]'>

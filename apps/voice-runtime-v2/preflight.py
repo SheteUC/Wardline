@@ -20,10 +20,11 @@ from providers import (
 def build_real_call_preflight_report() -> dict[str, Any]:
     errors: list[str] = []
     notes: list[str] = []
-    callback_url = settings.webhook_base_url.strip()
+    callback_url = settings.public_base_url().strip()
     media_stream_url = build_public_websocket_url(settings.twilio_media_stream_path)
     voice_runtime_public_url = os.getenv("VOICE_RUNTIME_V2_PUBLIC_URL", "").strip()
     webhook_base_url = os.getenv("WEBHOOK_BASE_URL", "").strip()
+    render_external_url = os.getenv("RENDER_EXTERNAL_URL", "").strip()
 
     if not callback_url:
         errors.append("VOICE_RUNTIME_V2_PUBLIC_URL or WEBHOOK_BASE_URL must be set.")
@@ -38,7 +39,12 @@ def build_real_call_preflight_report() -> dict[str, Any]:
         errors.append("VOICE_RUNTIME_V2_PUBLIC_URL and WEBHOOK_BASE_URL must match for the first real-call proof.")
 
     if not voice_runtime_public_url or not webhook_base_url:
-        notes.append("Set both VOICE_RUNTIME_V2_PUBLIC_URL and WEBHOOK_BASE_URL to the same tunnel URL.")
+        if render_external_url:
+            notes.append(
+                "Using RENDER_EXTERNAL_URL as the runtime public URL. Set VOICE_RUNTIME_V2_PUBLIC_URL and WEBHOOK_BASE_URL only if you need to override it."
+            )
+        else:
+            notes.append("Set both VOICE_RUNTIME_V2_PUBLIC_URL and WEBHOOK_BASE_URL to the same tunnel URL.")
 
     parsed_media_stream_url = urlparse(media_stream_url)
     if not media_stream_url:

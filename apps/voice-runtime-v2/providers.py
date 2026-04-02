@@ -28,7 +28,7 @@ def _base64url_encode(data: bytes) -> str:
 
 
 def build_public_websocket_url(path: str) -> str:
-    base_url = settings.webhook_base_url.rstrip("/") or f"http://127.0.0.1:{settings.port}"
+    base_url = settings.public_base_url().rstrip("/") or f"http://127.0.0.1:{settings.port}"
     if not base_url:
         return ""
 
@@ -39,7 +39,7 @@ def build_public_websocket_url(path: str) -> str:
 
 
 def build_public_callback_url(path: str) -> str:
-    base_url = settings.webhook_base_url.rstrip("/") or f"http://127.0.0.1:{settings.port}"
+    base_url = settings.public_base_url().rstrip("/") or f"http://127.0.0.1:{settings.port}"
     if not base_url:
         return ""
     return urljoin(f"{base_url}/", path.lstrip("/"))
@@ -212,7 +212,8 @@ class DeepgramSttAdapter:
         return {
             "provider": "deepgram",
             "interimResults": True,
-            "endpointing": "auto",
+            "endpointing": str(settings.deepgram_endpointing_ms),
+            "utterance_end_ms": str(settings.deepgram_utterance_end_ms),
             "encoding": "mulaw",
             "sampleRate": 8000,
             "channels": 1,
@@ -227,7 +228,8 @@ class DeepgramSttAdapter:
                 "sample_rate": 8000,
                 "channels": 1,
                 "interim_results": "true",
-                "endpointing": "300",
+                "endpointing": str(settings.deepgram_endpointing_ms),
+                "utterance_end_ms": str(settings.deepgram_utterance_end_ms),
                 "smart_format": "true",
                 "model": settings.deepgram_stt_model,
             }
@@ -310,14 +312,17 @@ class ManagedTtsAdapter:
 
 class ReasoningAdapter:
     def validate(self) -> Dict[str, str | bool]:
+        provider = settings.active_llm_provider()
         return {
-            "configured": bool(settings.azure_openai_key or settings.openai_api_key),
-            "provider": "azure_openai" if settings.azure_openai_key else "openai" if settings.openai_api_key else "none",
-            "model": settings.azure_openai_deployment,
+            "configured": provider != "none",
+            "provider": "openai" if provider == "openai" else "azure_openai" if provider == "azure" else "none",
+            "model": settings.active_llm_model(),
         }
 
     def request_config(self) -> Dict[str, str]:
-        return {
-            "provider": "azure_openai" if settings.azure_openai_key else "openai",
-            "model": settings.azure_openai_deployment,
-        }
+        provider = settings.active_llm_provider()
+        if provider == "openai":
+            return {"provider": "openai", "model": settings.active_llm_model()}
+        if provider == "azure":
+            return {"provider": "azure_openai", "model": settings.active_llm_model()}
+        return {"provider": "none", "model": ""}

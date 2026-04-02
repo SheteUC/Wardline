@@ -14,6 +14,9 @@ from config import settings
 from service import VoiceRuntimeV2
 
 
+_UTTERANCE_SETTLE_SECONDS = 0.8
+
+
 class TwilioMediaSession:
     def __init__(self, websocket: WebSocket, runtime: VoiceRuntimeV2):
         self.websocket = websocket
@@ -30,6 +33,9 @@ class TwilioMediaSession:
         self._mark_counter = 0
         self._closed = False
         self._failure_reason: Optional[str] = None
+        self._utterance_buffer: list[str] = []
+        self._utterance_timer: Optional[asyncio.Task[None]] = None
+        self._latest_provider_session_id: Optional[str] = None
 
     async def run(self):
         await self.websocket.accept()
@@ -234,16 +240,29 @@ class TwilioMediaSession:
                     continue
 
                 payload = json.loads(raw_message)
+
+                if payload.get("type") == "UtteranceEnd":
+                    await self._flush_utterance_buffer()
+                    continue
+
                 transcript = self.runtime.deepgram.normalize_message(payload)
                 if not transcript or not transcript.text:
                     continue
 
-                response = await self.runtime.process_transcript_turn(
-                    self.session_id,
-                    transcript.text,
-                    final=transcript.final,
-                    provider_session_id=transcript.provider_session_id or self.stream_sid,
-                )
+                if transcript.provider_session_id:
+                    self._latest_provider_session_id = transcript.provider_session_id
+
+                if not transcript.final:
+                    await self.runtime.process_transcript_turn(
+                        self.session_id,
+                        transcript.text,
+                        final=False,
+                        provider_session_id=transcript.provider_session_id or self.stream_sid,
+                    )
+                    continue
+
+                self._utterance_buffer.append(transcript.text)
+
                 if transcript.provider_session_id:
                     await self.runtime.persist_transport_event(
                         self.session_id,
@@ -251,17 +270,15 @@ class TwilioMediaSession:
                         {
                             "deepgramRequestId": transcript.provider_session_id,
                             "providerSessionId": transcript.provider_session_id,
-                            "final": transcript.final,
+                            "final": True,
                             "confidence": transcript.confidence,
                         },
                     )
 
-                if transcript.final and response.get("reply"):
-                    await self._speak(
-                        str(response["reply"]),
-                        assistant_message_id=response.get("assistantMessageId"),
-                        mark_name_prefix="assistant-reply",
-                    )
+                if self._utterance_timer and not self._utterance_timer.done():
+                    self._utterance_timer.cancel()
+                self._utterance_timer = asyncio.create_task(self._utterance_settle_then_flush())
+
         except Exception:
             if self.session_id:
                 await self.runtime.persist_transport_event(
@@ -269,6 +286,36 @@ class TwilioMediaSession:
                     "deepgram_stream_closed",
                     {"twilioStreamSid": self.stream_sid},
                 )
+
+    async def _utterance_settle_then_flush(self):
+        """Wait for a brief settle period, then flush the accumulated buffer."""
+        await asyncio.sleep(_UTTERANCE_SETTLE_SECONDS)
+        await self._flush_utterance_buffer()
+
+    async def _flush_utterance_buffer(self):
+        if not self._utterance_buffer or not self.session_id:
+            return
+
+        if self._utterance_timer and not self._utterance_timer.done():
+            self._utterance_timer.cancel()
+            self._utterance_timer = None
+
+        merged_text = " ".join(self._utterance_buffer)
+        self._utterance_buffer.clear()
+
+        response = await self.runtime.process_transcript_turn(
+            self.session_id,
+            merged_text,
+            final=True,
+            provider_session_id=self._latest_provider_session_id or self.stream_sid,
+        )
+
+        if response.get("reply"):
+            await self._speak(
+                str(response["reply"]),
+                assistant_message_id=response.get("assistantMessageId"),
+                mark_name_prefix="assistant-reply",
+            )
 
     async def _speak(
         self,

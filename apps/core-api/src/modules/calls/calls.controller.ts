@@ -107,6 +107,18 @@ export class CallsController {
         }
     }
 
+    @Get('internal/voice/caller-context')
+    @Public()
+    async getCallerContext(
+        @Query('businessId') businessId: string,
+        @Query('callerPhone') callerPhone: string,
+    ) {
+        if (!businessId || !callerPhone) {
+            throw new BadRequestException('businessId and callerPhone are required');
+        }
+        return this.callsService.getCallerContext(businessId, callerPhone);
+    }
+
     @Get('internal/calls/cutover-health')
     async getCutoverHealthSummary() {
         return this.callsService.getCutoverHealthSummary();

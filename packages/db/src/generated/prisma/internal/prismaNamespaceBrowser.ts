@@ -119,6 +119,7 @@ export const BusinessSettingsScalarFieldEnum = {
   refillPolicy: 'refillPolicy',
   billingPolicy: 'billingPolicy',
   insurancePolicy: 'insurancePolicy',
+  daytimeHandoffPolicy: 'daytimeHandoffPolicy',
   knowledgeConfig: 'knowledgeConfig',
   escalationConfig: 'escalationConfig',
   outOfScopeKeywords: 'outOfScopeKeywords',

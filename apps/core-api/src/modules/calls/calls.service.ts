@@ -337,6 +337,74 @@ export class CallsService {
         });
     }
 
+    async getCallerContext(businessId: string, callerPhone: string) {
+        const candidates = this.buildPhoneCandidates(callerPhone);
+        if (candidates.length === 0) {
+            return { caller: null, recentCalls: [], knownInsurance: null, knownMedications: [] };
+        }
+        const caller = await this.prisma.caller.findFirst({
+            where: {
+                businessId,
+                phone: { in: candidates },
+            },
+            select: { id: true, name: true, phone: true, dob: true },
+        });
+        if (!caller) {
+            return { caller: null, recentCalls: [], knownInsurance: null, knownMedications: [] };
+        }
+        const recentCalls = await this.prisma.callSession.findMany({
+            where: { businessId, callerId: caller.id },
+            select: {
+                id: true,
+                tag: true,
+                status: true,
+                startedAt: true,
+                endedAt: true,
+                projection: {
+                    select: {
+                        latestDomain: true,
+                        resolution: true,
+                        resolutionLabel: true,
+                        operatorNextStep: true,
+                        operatorSummaryJson: true,
+                    },
+                },
+            },
+            orderBy: { startedAt: 'desc' },
+            take: 5,
+        });
+        const recentRefills = await this.prisma.prescriptionRefill.findMany({
+            where: { callerId: caller.id },
+            select: { medicationName: true, status: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+        });
+        const recentInsurance = await this.prisma.insuranceInquiry.findMany({
+            where: { businessId, callerPhone: { in: candidates } },
+            select: { carrierName: true, planName: true, inquiryType: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+        });
+        return {
+            caller: { id: caller.id, name: caller.name, phone: caller.phone, dob: caller.dob },
+            recentCalls: recentCalls.map((c) => ({
+                id: c.id,
+                tag: c.tag,
+                status: c.status,
+                startedAt: c.startedAt,
+                endedAt: c.endedAt,
+                domain: c.projection?.latestDomain ?? null,
+                resolution: c.projection?.resolution ?? null,
+                resolutionLabel: c.projection?.resolutionLabel ?? null,
+                operatorNextStep: c.projection?.operatorNextStep ?? null,
+            })),
+            knownInsurance: recentInsurance[0]
+                ? { carrierName: recentInsurance[0].carrierName, planName: recentInsurance[0].planName }
+                : null,
+            knownMedications: recentRefills.map((r) => r.medicationName),
+        };
+    }
+
     async findByTwilioSid(twilioCallSid: string): Promise<any[]> {
         return this.prisma.callSession.findMany({
             where: { twilioCallSid },

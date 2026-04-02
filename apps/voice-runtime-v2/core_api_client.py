@@ -13,7 +13,7 @@ from config import settings
 
 class CoreApiClient:
     def __init__(self):
-        self.base_url = settings.core_api_url.rstrip("/")
+        self.base_url = settings.resolved_core_api_url().rstrip("/")
         self.client = httpx.AsyncClient(timeout=10.0)
 
     async def close(self):
@@ -36,6 +36,13 @@ class CoreApiClient:
         if response.status_code == 200:
             return response.json()
         return None
+
+    async def get_caller_context(self, business_id: str, caller_phone: str) -> Optional[Dict[str, Any]]:
+        digits = "".join(filter(str.isdigit, caller_phone))
+        return await self._get_json(
+            "/api/internal/voice/caller-context",
+            params={"businessId": business_id, "callerPhone": digits},
+        )
 
     async def get_business_by_phone(self, phone_number: str) -> Optional[Dict[str, Any]]:
         digits = "".join(filter(str.isdigit, phone_number))

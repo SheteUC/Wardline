@@ -21,6 +21,7 @@ import { EscalationsModule } from './modules/escalations/escalations.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { FollowUpTasksModule } from './modules/follow-up-tasks/follow-up-tasks.module';
 import { RuntimeActionsModule } from './modules/runtime-actions/runtime-actions.module';
+import { HealthController } from './health.controller';
 
 const rootEnvFilePaths = [
     resolve(__dirname, '../../../.env.local'),
@@ -50,6 +51,7 @@ if (shouldWarnOnDeprecatedEnvFiles && deprecatedCoreApiEnvPaths.length > 0) {
 }
 
 @Module({
+    controllers: [HealthController],
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,

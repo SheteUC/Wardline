@@ -3,6 +3,7 @@ Voice Runtime V2 orchestration service.
 """
 from __future__ import annotations
 
+import asyncio
 import re
 import uuid
 import logging
@@ -23,16 +24,24 @@ from agents import (
     SchedulingAgent,
     SupervisorAgent,
     URGENT_AFTER_HOURS_KEYWORDS,
+    _enabled_service_labels,
 )
+from llm_agents import run_llm_agent
+from llm_safety import assess_safety_llm
+from llm_slots import extract_slots_llm, merge_slots_conservative
+from llm_supervisor import route_turn_llm
 from core_api_client import CoreApiClient
 from models import (
     CallBootstrapResponse,
     CallLifecycleStatus,
+    CallerContext,
     DetectedIntent,
     DomainName,
     HandoffSlotState,
+    KnownInsurance,
     OperatorSummary,
     PendingAction,
+    RecentCallSummary,
     RuntimeActionOutcome,
     RuntimeConfigBootstrap,
     SessionEvent,
@@ -102,7 +111,9 @@ class VoiceRuntimeV2:
     def build_twilio_bootstrap_response(self, session_id: str) -> str:
         session = self.get_session(session_id)
         if not session.transport.twilioMediaStreamUrl:
-            raise ValueError("WEBHOOK_BASE_URL or VOICE_RUNTIME_V2_PUBLIC_URL must be configured for Twilio cutover")
+            raise ValueError(
+                "WEBHOOK_BASE_URL, VOICE_RUNTIME_V2_PUBLIC_URL, or RENDER_EXTERNAL_URL must be configured for Twilio cutover"
+            )
 
         return self.twilio.build_stream_twiml(
             stream_url=session.transport.twilioMediaStreamUrl,
@@ -145,6 +156,8 @@ class VoiceRuntimeV2:
             ),
         )
 
+        caller_ctx = await self._fetch_caller_context(bootstrap.business.id, caller_phone)
+
         session = SessionState(
             sessionId=session_id,
             callSid=call_sid,
@@ -155,6 +168,8 @@ class VoiceRuntimeV2:
             businessName=bootstrap.business.name,
             runtimeConfig=runtime_config,
             transport=transport,
+            callerContext=caller_ctx,
+            callerName=caller_ctx.callerName if caller_ctx else None,
             isAfterHours=not self._is_business_open(runtime_config),
         )
         greeting = (
@@ -283,10 +298,18 @@ class VoiceRuntimeV2:
             return await self._handle_safety_result(session, cleaned_text, safety_result)
 
         if session.awaitingIntentPriority:
+            safety_result = await assess_safety_llm(session, cleaned_text)
+            if safety_result:
+                return await self._handle_safety_result(session, cleaned_text, safety_result)
             return await self._handle_intent_priority(session, cleaned_text)
 
         if session.pendingConfirmation:
-            pending_interrupt_decision = self.supervisor.choose_domain(session, cleaned_text, knowledge_agent=self.knowledge)
+            llm_safety_task = asyncio.create_task(assess_safety_llm(session, cleaned_text))
+            pending_interrupt_decision = await self._choose_domain(session, cleaned_text)
+            safety_result = await llm_safety_task
+            if safety_result:
+                return await self._handle_safety_result(session, cleaned_text, safety_result)
+            self._apply_llm_slot_enrichment(session, pending_interrupt_decision)
             if (
                 self._actionable_detected_intents(pending_interrupt_decision)
                 and any(intent.domain != session.pendingConfirmation.domain for intent in pending_interrupt_decision.detectedIntents)
@@ -302,7 +325,12 @@ class VoiceRuntimeV2:
                     return interrupt_response
             return await self._handle_pending_action(session, cleaned_text)
 
-        decision = self.supervisor.choose_domain(session, cleaned_text, knowledge_agent=self.knowledge)
+        llm_safety_task = asyncio.create_task(assess_safety_llm(session, cleaned_text))
+        decision = await self._choose_domain(session, cleaned_text)
+        safety_result = await llm_safety_task
+        if safety_result:
+            return await self._handle_safety_result(session, cleaned_text, safety_result)
+        self._apply_llm_slot_enrichment(session, decision)
         session.lastDecision = decision
         self._record_supervisor_decision(session, decision, cleaned_text)
 
@@ -327,10 +355,18 @@ class VoiceRuntimeV2:
             if knowledge_result:
                 session.activeDomain = None
                 return await self._finalize_specialist_result(session, knowledge_result)
+            services = _enabled_service_labels(session)
+            reply = (
+                f"I didn't quite catch that. I can help with {services}, "
+                "or I can take a message for the staff. What would you like?"
+            )
+            await self._append_and_persist_assistant_message(session, reply)
+            await self._sync_call_state(session)
+            return self._build_turn_response(session, reply, "knowledge", False)
 
         session.intent = decision.domain
         session.activeDomain = decision.domain
-        result = self._run_domain_specialist(session, decision.domain, cleaned_text)
+        result = await self._run_domain_specialist(session, decision.domain, cleaned_text)
         return await self._handle_specialist_result(session, result)
 
     async def capture_voicemail(
@@ -820,11 +856,10 @@ class VoiceRuntimeV2:
             return self._build_turn_response(session, reply, intent.domain, True)
 
         if resumed:
-            specialist = self._select_specialist(intent.domain)
-            result = specialist.handle(session, "")
+            result = await self._run_domain_specialist(session, intent.domain, "")
             return await self._handle_specialist_result(session, result, reply_prefix=reply_prefix)
 
-        result = self._run_domain_specialist(session, intent.domain, intent.sourceText or intent.summary)
+        result = await self._run_domain_specialist(session, intent.domain, intent.sourceText or intent.summary)
         return await self._handle_specialist_result(session, result, reply_prefix=reply_prefix)
 
     async def _handle_intent_priority(self, session: SessionState, text: str) -> Dict[str, Any]:
@@ -1126,7 +1161,13 @@ class VoiceRuntimeV2:
                     result.operatorSummary.headline if result.operatorSummary else caller_text,
                 )
             session.lastOperatorSummary = result.operatorSummary
-            return await self._finalize_specialist_result(session, result)
+            return await self._begin_final_close(
+                session,
+                result.nextPrompt,
+                domain="safety",
+                reason="emergency-detected",
+                tag="EMERGENCY",
+            )
 
         if result.safetyAssessment and result.safetyAssessment.severity == "urgent_handoff":
             if session.isAfterHours:
@@ -1196,8 +1237,7 @@ class VoiceRuntimeV2:
             session.stage = "intake"
             session.missingSlots = []
             self._clear_domain_slot_retries(session, pending.domain)
-            specialist = self._select_specialist(pending.domain)
-            result = specialist.handle(session, _strip_change_prefix(text))
+            result = await self._run_domain_specialist(session, pending.domain, _strip_change_prefix(text))
             return await self._handle_specialist_result(session, result)
 
         if any(keyword in lowered for keyword in ["yes", "yeah", "yep", "correct", "confirm"]):
@@ -1419,7 +1459,7 @@ class VoiceRuntimeV2:
         if selected_intent:
             self._activate_intent(session, selected_intent)
 
-        result = self._run_domain_specialist(session, follow_on.domain, follow_on.text)
+        result = await self._run_domain_specialist(session, follow_on.domain, follow_on.text)
         return await self._handle_specialist_result(
             session,
             result,
@@ -2346,16 +2386,61 @@ class VoiceRuntimeV2:
             "handoff": self.handoff,
         }.get(domain, self.knowledge)
 
-    def _run_domain_specialist(self, session: SessionState, domain: DomainName, text: str) -> SpecialistResult:
+    async def _choose_domain(self, session: SessionState, cleaned_text: str) -> SupervisorDecision:
+        llm_decision = await route_turn_llm(session, cleaned_text)
+        if llm_decision is not None:
+            return llm_decision
+        return self.supervisor.choose_domain(session, cleaned_text, knowledge_agent=self.knowledge)
+
+    def _apply_llm_slot_enrichment(self, session: SessionState, decision: SupervisorDecision) -> None:
+        enrichment = decision.llmSlotEnrichment
+        if not enrichment:
+            return
+        target: DomainName | None = decision.domain
+        if decision.followOnIntent:
+            target = decision.followOnIntent.domain
+        if target in {"knowledge", "safety"} or target is None:
+            return
+        base = dict(session.slotState.get(target, {}))
+        for key, value in enrichment.items():
+            if value is not None and value != "":
+                base[key] = value
+        session.slotState[target] = base
+
+    async def _run_domain_specialist(self, session: SessionState, domain: DomainName, text: str) -> SpecialistResult:
         if domain == "handoff":
             if session.isAfterHours:
                 if _contains(text, URGENT_AFTER_HOURS_KEYWORDS) and session.runtimeConfig.voicePolicyV2.afterHoursPolicy.sendUrgentToVoicemail:
                     return self.handoff.build_after_hours_urgent_reply(session, text)
                 return self.handoff.build_after_hours_standard_reply(session, text)
+
+        llm_result = await run_llm_agent(session, domain, text)
+        if llm_result is not None:
+            merge_slots_conservative(session, domain, llm_result.extractedFields)
+            session.slotState[domain] = {
+                **session.slotState.get(domain, {}),
+                **llm_result.extractedFields,
+            }
+            session.missingSlots = list(llm_result.missingFields)
+            return llm_result
+
+        phase2 = await extract_slots_llm(session, domain, text)
+        merge_slots_conservative(session, domain, phase2)
+
+        if domain == "handoff":
             return self.handoff.handle(session, text)
 
         specialist = self._select_specialist(domain)
-        return specialist.handle(session, text)
+        result = specialist.handle(session, text)
+        if result is None:
+            return SpecialistResult(
+                domain=domain,
+                status="clarify",
+                confidence=0.5,
+                nextPrompt="Could you say that again in a few words?",
+                callerRequestSummary="Assistant could not interpret the last utterance.",
+            )
+        return result
 
     def _domain_to_tag(self, domain: DomainName) -> Optional[str]:
         return {
@@ -2431,6 +2516,25 @@ class VoiceRuntimeV2:
             "billing-request": "BILLING",
             "manual-follow-up": "MANUAL",
         }.get(action_name or "", "MANUAL")
+
+    async def _fetch_caller_context(self, business_id: str, caller_phone: str) -> Optional[CallerContext]:
+        try:
+            raw = await self.api_client.get_caller_context(business_id, caller_phone)
+            if not raw or not raw.get("caller"):
+                return None
+            c = raw["caller"]
+            return CallerContext(
+                callerId=c.get("id"),
+                callerName=c.get("name"),
+                callerPhone=c.get("phone"),
+                callerDob=str(c["dob"]) if c.get("dob") else None,
+                recentCalls=[RecentCallSummary.model_validate(rc) for rc in (raw.get("recentCalls") or [])],
+                knownInsurance=KnownInsurance.model_validate(raw["knownInsurance"]) if raw.get("knownInsurance") else None,
+                knownMedications=raw.get("knownMedications") or [],
+            )
+        except Exception as exc:
+            logger.warning("Failed to fetch caller context: %s", exc)
+            return None
 
     def _is_business_open(self, runtime_config: RuntimeConfigBootstrap) -> bool:
         operating_hours = runtime_config.settings.get("operatingHours") or []

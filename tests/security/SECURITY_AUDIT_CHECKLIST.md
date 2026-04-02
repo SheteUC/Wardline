@@ -4,6 +4,8 @@
 **Version**: 1.0  
 **Scope**: Complete Wardline Platform (Voice Orchestrator, Core API, Web Dashboard)
 
+For technical architecture, deployment, and HIPAA-oriented implementation notes, see [docs/WARDLINE_PLATFORM.md](../../docs/WARDLINE_PLATFORM.md).
+
 ---
 
 ## 🎯 Audit Objectives
