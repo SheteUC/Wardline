@@ -11,7 +11,7 @@ services:
     region: oregon
     dockerContext: .
     dockerfilePath: apps/core-api/Dockerfile
-    healthCheckPath: /health
+    healthCheckPath: /ready
     envVars:
       - key: NODE_ENV
         value: production
@@ -48,7 +48,7 @@ services:
     region: oregon
     dockerContext: .
     dockerfilePath: apps/voice-runtime-v2/Dockerfile
-    healthCheckPath: /health
+    healthCheckPath: /ready
     envVars:
       - key: VOICE_RUNTIME_V2_PORT
         value: "3003"
@@ -98,6 +98,38 @@ services:
         value: gpt-4o
       - key: LLM_PROVIDER
         value: auto
+
+  - type: web
+    name: wardline-web
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: .
+    dockerfilePath: apps/web/Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_CORE_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_VOICE_RUNTIME_URL
+        sync: false
+      - key: NEXT_PUBLIC_WEB_BASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: NEXT_PUBLIC_POSTHOG_KEY
+        sync: false
+      - key: NEXT_PUBLIC_POSTHOG_HOST
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
 
 databases:
   - name: wardline-postgres

@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import Link from 'next/link';
 import {
     AlertTriangle,
@@ -52,8 +53,9 @@ function formatTime(milliseconds: number): string {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export default function CallDetailPage({ params }: { params: { id: string } }) {
-    const callQuery = useCall(params.id);
+export default function CallDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
+    const callQuery = useCall(id);
     const call = callQuery.data;
 
     if (callQuery.isLoading) {

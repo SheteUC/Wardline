@@ -43,9 +43,7 @@ export default function RootLayout({
         <body
           className={`${plusJakartaSans.variable} ${geistMono.variable} font-sans antialiased`}
         >
-          <Providers>
-            {children}
-          </Providers>
+          <Providers>{children}</Providers>
         </body>
       </html>
     </ClerkProvider>

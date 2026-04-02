@@ -24,8 +24,15 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
         self._twilio_sig_patcher.start()
         self._ready_patcher = unittest.mock.patch.multiple(
             server.runtime,
-            readiness=lambda: {"livekit": {"configured": False}},
+            readiness=lambda: {
+                "livekit": {"configured": True, "twilioConfigured": True},
+                "deepgram": {"configured": True},
+                "tts": {"configured": True},
+                "reasoning": {"configured": False},
+            },
             real_call_preflight=lambda: {"ok": True, "errors": []},
+            check_redis_readiness=AsyncMock(return_value={"ok": True, "detail": "not_configured"}),
+            check_core_api_readiness=AsyncMock(return_value={"ok": True, "status": 200}),
         )
         self._ready_patcher.start()
         self.client = TestClient(server.app)

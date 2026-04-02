@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Put, Patch, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
+import { UserRole } from '@wardline/types';
 import { Public } from '../../auth/public.decorator';
+import { Permissions } from '../../auth/permissions.decorator';
 import {
     BusinessFindOneQueryDto,
     BusinessListQueryDto,
@@ -64,5 +66,11 @@ export class BusinessesController {
     @Patch(':id/suspend')
     suspend(@Param('id') id: string) {
         return this.businessesService.suspend(id);
+    }
+
+    @Delete(':id')
+    @Permissions(UserRole.OWNER)
+    archive(@Param('id') id: string, @Req() request: Request) {
+        return this.businessesService.archive(id, request.user?.id);
     }
 }

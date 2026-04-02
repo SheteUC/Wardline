@@ -356,6 +356,27 @@ class VoiceRuntimeV2:
             "reasoning": self.reasoning.validate(),
         }
 
+    async def check_redis_readiness(self) -> Dict[str, Any]:
+        if not self._redis:
+            return {"ok": True, "detail": "not_configured"}
+        try:
+            pong = await self._redis.ping()
+            ok = pong is True or pong == "PONG"
+            return {"ok": ok, "detail": str(pong)}
+        except Exception as exc:
+            return {"ok": False, "detail": str(exc)}
+
+    async def check_core_api_readiness(self) -> Dict[str, Any]:
+        from observability.context import outbound_headers
+
+        try:
+            base = self.api_client.base_url.rstrip("/")
+            url = f"{base}/health"
+            response = await self.api_client.client.get(url, headers=outbound_headers(), timeout=3.0)
+            return {"ok": response.status_code == 200, "status": response.status_code}
+        except Exception as exc:
+            return {"ok": False, "detail": str(exc)}
+
     async def synthesize_reply(self, text: str) -> bytes:
         return await self.tts.synthesize(text)
 

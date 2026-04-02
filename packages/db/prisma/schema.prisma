@@ -22,6 +22,8 @@ model Business {
   status    BusinessStatus @default(ACTIVE)
   createdAt DateTime       @default(now()) @map("created_at")
   updatedAt DateTime       @updatedAt @map("updated_at")
+  /** Soft-delete: when set, tenant data is retained; API treats business as gone. Slug/name are rewritten on archive to keep unique constraints free for reuse. */
+  deletedAt DateTime?      @map("deleted_at")
 
   settings               BusinessSettings?
   integrations          BusinessIntegration[]
@@ -44,6 +46,7 @@ model Business {
   insuranceVerifications InsuranceVerification[]
 
   @@index([slug])
+  @@index([deletedAt])
   @@map("businesses")
 }
 
@@ -150,6 +153,7 @@ model BusinessUser {
   userId     String   @map("user_id")
   role       UserRole
   createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -188,6 +192,7 @@ model PhoneNumber {
 
   @@index([businessId])
   @@index([twilioSid])
+  @@index([workflowId])
   @@map("phone_numbers")
 }
 
@@ -236,6 +241,8 @@ model WorkflowVersion {
 
   @@unique([workflowId, versionNumber])
   @@index([workflowId])
+  @@index([createdByUserId])
+  @@index([approvedByUserId])
   @@map("workflow_versions")
 }
 
@@ -376,6 +383,7 @@ model CallSession {
   @@index([tag])
   @@index([callerId])
   @@index([twilioCallSid])
+  @@index([phoneNumberId])
   @@map("call_sessions")
 }
 

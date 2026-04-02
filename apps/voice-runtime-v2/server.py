@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
+from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 from twilio.request_validator import RequestValidator
@@ -121,11 +122,28 @@ async def health():
 
 @app.get("/ready")
 async def ready():
-    return {
-        "ready": True,
-        "providers": runtime.readiness(),
-        "preflight": runtime.real_call_preflight(),
+    providers = runtime.readiness()
+    preflight = runtime.real_call_preflight()
+    redis_check = await runtime.check_redis_readiness()
+    core_check = await runtime.check_core_api_readiness()
+    livekit = providers.get("livekit") or {}
+    critical_ok = (
+        bool(preflight.get("ok"))
+        and bool(livekit.get("configured"))
+        and bool(livekit.get("twilioConfigured"))
+        and bool((providers.get("deepgram") or {}).get("configured"))
+        and bool((providers.get("tts") or {}).get("configured"))
+        and bool(redis_check.get("ok"))
+        and bool(core_check.get("ok"))
+    )
+    body = {
+        "ready": critical_ok,
+        "providers": providers,
+        "preflight": preflight,
+        "redis": redis_check,
+        "coreApi": core_check,
     }
+    return JSONResponse(status_code=200 if critical_ok else 503, content=body)
 
 
 @app.post("/sessions")

@@ -493,10 +493,6 @@ export type EnumIntegrationStatusFieldUpdateOperationsInput = {
   set?: $Enums.IntegrationStatus
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type BusinessIntegrationCreateWithoutBusinessInput = {
   id?: string
   category: $Enums.IntegrationCategory

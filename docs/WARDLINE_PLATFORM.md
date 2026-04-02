@@ -124,14 +124,15 @@ Partial transcripts still call `process_transcript_turn` with `final=False` (no 
 
 **Render blueprint** (`render.yaml`)
 
-- Services: `wardline-postgres`, `wardline-redis`, `wardline-core-api`, `wardline-voice-runtime-v2`.
+- Services: `wardline-postgres`, `wardline-redis`, `wardline-core-api`, `wardline-voice-runtime-v2`, `wardline-web` (optional; same blueprint as APIs — set `NEXT_PUBLIC_*` and Clerk/PostHog/Stripe publishable keys).
 - Voice runtime can use `RENDER_EXTERNAL_URL` for public URL; `CORE_API_HOSTPORT` for private API reachability.
 - Prompted secrets: Clerk (core-api), Twilio / LiveKit / Deepgram (voice).
 
 **Health checks**
 
-- Core API: `GET /health`; cutover: `GET /api/internal/calls/cutover-health`.
-- Voice: `GET /health`, `GET /ready`.
+- Core API: `GET /health` (liveness, no I/O); `GET /ready` (Postgres `SELECT 1` + Redis when `REDIS_URL` is set — returns **503** if a required check fails). Cutover: `GET /api/internal/calls/cutover-health`.
+- Voice: `GET /health` (process up); `GET /ready` (preflight + LiveKit/Twilio/Deepgram/TTS + Redis if configured + core-api `GET /health` — **503** when not ready).
+- Web (Docker / Render): `GET /api/health`.
 
 **Vercel (web)**
 

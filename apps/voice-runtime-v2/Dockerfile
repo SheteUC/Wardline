@@ -24,7 +24,7 @@ USER wardline
 
 EXPOSE 3003
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3003/health', timeout=2)"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3003/ready', timeout=3)"
 
 CMD ["python", "server.py"]

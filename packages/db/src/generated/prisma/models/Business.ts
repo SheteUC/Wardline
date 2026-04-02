@@ -32,6 +32,7 @@ export type BusinessMinAggregateOutputType = {
   status: $Enums.BusinessStatus | null
   createdAt: Date | null
   updatedAt: Date | null
+  deletedAt: Date | null
 }
 
 export type BusinessMaxAggregateOutputType = {
@@ -42,6 +43,7 @@ export type BusinessMaxAggregateOutputType = {
   status: $Enums.BusinessStatus | null
   createdAt: Date | null
   updatedAt: Date | null
+  deletedAt: Date | null
 }
 
 export type BusinessCountAggregateOutputType = {
@@ -52,6 +54,7 @@ export type BusinessCountAggregateOutputType = {
   status: number
   createdAt: number
   updatedAt: number
+  deletedAt: number
   _all: number
 }
 
@@ -64,6 +67,7 @@ export type BusinessMinAggregateInputType = {
   status?: true
   createdAt?: true
   updatedAt?: true
+  deletedAt?: true
 }
 
 export type BusinessMaxAggregateInputType = {
@@ -74,6 +78,7 @@ export type BusinessMaxAggregateInputType = {
   status?: true
   createdAt?: true
   updatedAt?: true
+  deletedAt?: true
 }
 
 export type BusinessCountAggregateInputType = {
@@ -84,6 +89,7 @@ export type BusinessCountAggregateInputType = {
   status?: true
   createdAt?: true
   updatedAt?: true
+  deletedAt?: true
   _all?: true
 }
 
@@ -167,6 +173,7 @@ export type BusinessGroupByOutputType = {
   status: $Enums.BusinessStatus
   createdAt: Date
   updatedAt: Date
+  deletedAt: Date | null
   _count: BusinessCountAggregateOutputType | null
   _min: BusinessMinAggregateOutputType | null
   _max: BusinessMaxAggregateOutputType | null
@@ -198,6 +205,7 @@ export type BusinessWhereInput = {
   status?: Prisma.EnumBusinessStatusFilter<"Business"> | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFilter<"Business"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Business"> | Date | string
+  deletedAt?: Prisma.DateTimeNullableFilter<"Business"> | Date | string | null
   settings?: Prisma.XOR<Prisma.BusinessSettingsNullableScalarRelationFilter, Prisma.BusinessSettingsWhereInput> | null
   integrations?: Prisma.BusinessIntegrationListRelationFilter
   users?: Prisma.BusinessUserListRelationFilter
@@ -227,6 +235,7 @@ export type BusinessOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   settings?: Prisma.BusinessSettingsOrderByWithRelationInput
   integrations?: Prisma.BusinessIntegrationOrderByRelationAggregateInput
   users?: Prisma.BusinessUserOrderByRelationAggregateInput
@@ -259,6 +268,7 @@ export type BusinessWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumBusinessStatusFilter<"Business"> | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFilter<"Business"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Business"> | Date | string
+  deletedAt?: Prisma.DateTimeNullableFilter<"Business"> | Date | string | null
   settings?: Prisma.XOR<Prisma.BusinessSettingsNullableScalarRelationFilter, Prisma.BusinessSettingsWhereInput> | null
   integrations?: Prisma.BusinessIntegrationListRelationFilter
   users?: Prisma.BusinessUserListRelationFilter
@@ -288,6 +298,7 @@ export type BusinessOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.BusinessCountOrderByAggregateInput
   _max?: Prisma.BusinessMaxOrderByAggregateInput
   _min?: Prisma.BusinessMinOrderByAggregateInput
@@ -304,6 +315,7 @@ export type BusinessScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumBusinessStatusWithAggregatesFilter<"Business"> | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Business"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Business"> | Date | string
+  deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Business"> | Date | string | null
 }
 
 export type BusinessCreateInput = {
@@ -314,6 +326,7 @@ export type BusinessCreateInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -343,6 +356,7 @@ export type BusinessUncheckedCreateInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -372,6 +386,7 @@ export type BusinessUpdateInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -401,6 +416,7 @@ export type BusinessUncheckedUpdateInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -430,6 +446,7 @@ export type BusinessCreateManyInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
 }
 
 export type BusinessUpdateManyMutationInput = {
@@ -440,6 +457,7 @@ export type BusinessUpdateManyMutationInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type BusinessUncheckedUpdateManyInput = {
@@ -450,6 +468,7 @@ export type BusinessUncheckedUpdateManyInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type BusinessCountOrderByAggregateInput = {
@@ -460,6 +479,7 @@ export type BusinessCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
 }
 
 export type BusinessMaxOrderByAggregateInput = {
@@ -470,6 +490,7 @@ export type BusinessMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
 }
 
 export type BusinessMinOrderByAggregateInput = {
@@ -480,6 +501,7 @@ export type BusinessMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
 }
 
 export type BusinessScalarRelationFilter = {
@@ -497,6 +519,10 @@ export type EnumBusinessStatusFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
 }
 
 export type BusinessCreateNestedOneWithoutSettingsInput = {
@@ -773,6 +799,7 @@ export type BusinessCreateWithoutSettingsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutBusinessInput
@@ -801,6 +828,7 @@ export type BusinessUncheckedCreateWithoutSettingsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutBusinessInput
@@ -845,6 +873,7 @@ export type BusinessUpdateWithoutSettingsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutBusinessNestedInput
@@ -873,6 +902,7 @@ export type BusinessUncheckedUpdateWithoutSettingsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutBusinessNestedInput
@@ -901,6 +931,7 @@ export type BusinessCreateWithoutIntegrationsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutBusinessInput
@@ -929,6 +960,7 @@ export type BusinessUncheckedCreateWithoutIntegrationsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutBusinessInput
@@ -973,6 +1005,7 @@ export type BusinessUpdateWithoutIntegrationsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutBusinessNestedInput
@@ -1001,6 +1034,7 @@ export type BusinessUncheckedUpdateWithoutIntegrationsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1029,6 +1063,7 @@ export type BusinessCreateWithoutUsersInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutBusinessInput
@@ -1057,6 +1092,7 @@ export type BusinessUncheckedCreateWithoutUsersInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutBusinessInput
@@ -1101,6 +1137,7 @@ export type BusinessUpdateWithoutUsersInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutBusinessNestedInput
@@ -1129,6 +1166,7 @@ export type BusinessUncheckedUpdateWithoutUsersInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1157,6 +1195,7 @@ export type BusinessCreateWithoutPhoneNumbersInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -1185,6 +1224,7 @@ export type BusinessUncheckedCreateWithoutPhoneNumbersInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -1229,6 +1269,7 @@ export type BusinessUpdateWithoutPhoneNumbersInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -1257,6 +1298,7 @@ export type BusinessUncheckedUpdateWithoutPhoneNumbersInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1285,6 +1327,7 @@ export type BusinessCreateWithoutWorkflowsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -1313,6 +1356,7 @@ export type BusinessUncheckedCreateWithoutWorkflowsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -1357,6 +1401,7 @@ export type BusinessUpdateWithoutWorkflowsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -1385,6 +1430,7 @@ export type BusinessUncheckedUpdateWithoutWorkflowsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1413,6 +1459,7 @@ export type BusinessCreateWithoutCallersInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -1441,6 +1488,7 @@ export type BusinessUncheckedCreateWithoutCallersInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -1485,6 +1533,7 @@ export type BusinessUpdateWithoutCallersInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -1513,6 +1562,7 @@ export type BusinessUncheckedUpdateWithoutCallersInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1541,6 +1591,7 @@ export type BusinessCreateWithoutSchedulingIntegrationsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -1569,6 +1620,7 @@ export type BusinessUncheckedCreateWithoutSchedulingIntegrationsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -1613,6 +1665,7 @@ export type BusinessUpdateWithoutSchedulingIntegrationsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -1641,6 +1694,7 @@ export type BusinessUncheckedUpdateWithoutSchedulingIntegrationsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1669,6 +1723,7 @@ export type BusinessCreateWithoutAppointmentsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -1697,6 +1752,7 @@ export type BusinessUncheckedCreateWithoutAppointmentsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -1741,6 +1797,7 @@ export type BusinessUpdateWithoutAppointmentsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -1769,6 +1826,7 @@ export type BusinessUncheckedUpdateWithoutAppointmentsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1797,6 +1855,7 @@ export type BusinessCreateWithoutCallSessionsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -1825,6 +1884,7 @@ export type BusinessUncheckedCreateWithoutCallSessionsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -1869,6 +1929,7 @@ export type BusinessUpdateWithoutCallSessionsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -1897,6 +1958,7 @@ export type BusinessUncheckedUpdateWithoutCallSessionsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -1925,6 +1987,7 @@ export type BusinessCreateWithoutVoicemailsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -1953,6 +2016,7 @@ export type BusinessUncheckedCreateWithoutVoicemailsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -1997,6 +2061,7 @@ export type BusinessUpdateWithoutVoicemailsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2025,6 +2090,7 @@ export type BusinessUncheckedUpdateWithoutVoicemailsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2053,6 +2119,7 @@ export type BusinessCreateWithoutFollowUpTasksInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2081,6 +2148,7 @@ export type BusinessUncheckedCreateWithoutFollowUpTasksInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -2125,6 +2193,7 @@ export type BusinessUpdateWithoutFollowUpTasksInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2153,6 +2222,7 @@ export type BusinessUncheckedUpdateWithoutFollowUpTasksInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2181,6 +2251,7 @@ export type BusinessCreateWithoutAuditLogsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2209,6 +2280,7 @@ export type BusinessUncheckedCreateWithoutAuditLogsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -2253,6 +2325,7 @@ export type BusinessUpdateWithoutAuditLogsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2281,6 +2354,7 @@ export type BusinessUncheckedUpdateWithoutAuditLogsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2309,6 +2383,7 @@ export type BusinessCreateWithoutSubscriptionsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2337,6 +2412,7 @@ export type BusinessUncheckedCreateWithoutSubscriptionsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -2381,6 +2457,7 @@ export type BusinessUpdateWithoutSubscriptionsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2409,6 +2486,7 @@ export type BusinessUncheckedUpdateWithoutSubscriptionsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2437,6 +2515,7 @@ export type BusinessCreateWithoutUsageRecordsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2465,6 +2544,7 @@ export type BusinessUncheckedCreateWithoutUsageRecordsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -2509,6 +2589,7 @@ export type BusinessUpdateWithoutUsageRecordsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2537,6 +2618,7 @@ export type BusinessUncheckedUpdateWithoutUsageRecordsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2565,6 +2647,7 @@ export type BusinessCreateWithoutAgentsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2593,6 +2676,7 @@ export type BusinessUncheckedCreateWithoutAgentsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -2637,6 +2721,7 @@ export type BusinessUpdateWithoutAgentsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2665,6 +2750,7 @@ export type BusinessUncheckedUpdateWithoutAgentsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2693,6 +2779,7 @@ export type BusinessCreateWithoutPrescriptionRefillsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2721,6 +2808,7 @@ export type BusinessUncheckedCreateWithoutPrescriptionRefillsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -2765,6 +2853,7 @@ export type BusinessUpdateWithoutPrescriptionRefillsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2793,6 +2882,7 @@ export type BusinessUncheckedUpdateWithoutPrescriptionRefillsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2821,6 +2911,7 @@ export type BusinessCreateWithoutInsurancePlansInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2849,6 +2940,7 @@ export type BusinessUncheckedCreateWithoutInsurancePlansInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -2893,6 +2985,7 @@ export type BusinessUpdateWithoutInsurancePlansInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -2921,6 +3014,7 @@ export type BusinessUncheckedUpdateWithoutInsurancePlansInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -2949,6 +3043,7 @@ export type BusinessCreateWithoutInsuranceInquiriesInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -2977,6 +3072,7 @@ export type BusinessUncheckedCreateWithoutInsuranceInquiriesInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -3021,6 +3117,7 @@ export type BusinessUpdateWithoutInsuranceInquiriesInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -3049,6 +3146,7 @@ export type BusinessUncheckedUpdateWithoutInsuranceInquiriesInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -3077,6 +3175,7 @@ export type BusinessCreateWithoutInsuranceVerificationsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserCreateNestedManyWithoutBusinessInput
@@ -3105,6 +3204,7 @@ export type BusinessUncheckedCreateWithoutInsuranceVerificationsInput = {
   status?: $Enums.BusinessStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  deletedAt?: Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedCreateNestedOneWithoutBusinessInput
   integrations?: Prisma.BusinessIntegrationUncheckedCreateNestedManyWithoutBusinessInput
   users?: Prisma.BusinessUserUncheckedCreateNestedManyWithoutBusinessInput
@@ -3149,6 +3249,7 @@ export type BusinessUpdateWithoutInsuranceVerificationsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUpdateManyWithoutBusinessNestedInput
@@ -3177,6 +3278,7 @@ export type BusinessUncheckedUpdateWithoutInsuranceVerificationsInput = {
   status?: Prisma.EnumBusinessStatusFieldUpdateOperationsInput | $Enums.BusinessStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   settings?: Prisma.BusinessSettingsUncheckedUpdateOneWithoutBusinessNestedInput
   integrations?: Prisma.BusinessIntegrationUncheckedUpdateManyWithoutBusinessNestedInput
   users?: Prisma.BusinessUserUncheckedUpdateManyWithoutBusinessNestedInput
@@ -3389,6 +3491,7 @@ export type BusinessSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  deletedAt?: boolean
   settings?: boolean | Prisma.Business$settingsArgs<ExtArgs>
   integrations?: boolean | Prisma.Business$integrationsArgs<ExtArgs>
   users?: boolean | Prisma.Business$usersArgs<ExtArgs>
@@ -3419,6 +3522,7 @@ export type BusinessSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  deletedAt?: boolean
 }, ExtArgs["result"]["business"]>
 
 export type BusinessSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -3429,6 +3533,7 @@ export type BusinessSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  deletedAt?: boolean
 }, ExtArgs["result"]["business"]>
 
 export type BusinessSelectScalar = {
@@ -3439,9 +3544,10 @@ export type BusinessSelectScalar = {
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  deletedAt?: boolean
 }
 
-export type BusinessOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "timeZone" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["business"]>
+export type BusinessOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "timeZone" | "status" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["business"]>
 export type BusinessInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   settings?: boolean | Prisma.Business$settingsArgs<ExtArgs>
   integrations?: boolean | Prisma.Business$integrationsArgs<ExtArgs>
@@ -3498,6 +3604,10 @@ export type $BusinessPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     status: $Enums.BusinessStatus
     createdAt: Date
     updatedAt: Date
+    /**
+     * * Soft-delete: when set, tenant data is retained; API treats business as gone. Slug/name are rewritten on archive to keep unique constraints free for reuse.
+     */
+    deletedAt: Date | null
   }, ExtArgs["result"]["business"]>
   composites: {}
 }
@@ -3947,6 +4057,7 @@ export interface BusinessFieldRefs {
   readonly status: Prisma.FieldRef<"Business", 'BusinessStatus'>
   readonly createdAt: Prisma.FieldRef<"Business", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Business", 'DateTime'>
+  readonly deletedAt: Prisma.FieldRef<"Business", 'DateTime'>
 }
     
 

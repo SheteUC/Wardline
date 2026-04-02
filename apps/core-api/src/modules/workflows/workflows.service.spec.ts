@@ -9,6 +9,7 @@ describe('WorkflowsService', () => {
         prisma = {
             business: {
                 findUnique: jest.fn(),
+                findFirst: jest.fn(),
             },
             user: {
                 findUnique: jest.fn(),
@@ -77,7 +78,7 @@ describe('WorkflowsService', () => {
     });
 
     it('creates a generated practice workflow from business settings', async () => {
-        prisma.business.findUnique.mockResolvedValue({
+        prisma.business.findFirst.mockResolvedValue({
             id: 'business-1',
             name: 'Family Practice',
             slug: 'family-practice',
@@ -156,7 +157,7 @@ describe('WorkflowsService', () => {
             },
         };
 
-        prisma.business.findUnique.mockResolvedValue({
+        prisma.business.findFirst.mockResolvedValue({
             id: 'business-1',
             name: 'Family Practice',
             slug: 'family-practice',

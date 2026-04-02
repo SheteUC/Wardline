@@ -7,6 +7,7 @@ describe('BusinessesService', () => {
     let cache: any;
     let workflowsService: any;
     let credentialsCrypto: { decrypt: jest.Mock; encrypt: jest.Mock };
+    let auditService: { logAction: jest.Mock };
 
     beforeEach(() => {
         prisma = {
@@ -14,6 +15,7 @@ describe('BusinessesService', () => {
                 findFirst: jest.fn(),
                 findMany: jest.fn(),
                 findUnique: jest.fn(),
+                update: jest.fn(),
             },
             $transaction: jest.fn(),
         };
@@ -164,7 +166,7 @@ describe('BusinessesService', () => {
             ],
         };
 
-        prisma.business.findUnique.mockResolvedValue(business);
+        prisma.business.findFirst.mockResolvedValue(business);
         workflowsService.getActiveWorkflow.mockResolvedValue({
             id: 'workflow-1',
             name: 'Practice Setup Runtime',

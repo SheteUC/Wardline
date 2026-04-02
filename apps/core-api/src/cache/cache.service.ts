@@ -230,6 +230,22 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         };
     }
 
+    /** Live Redis probe; used by readiness when REDIS_URL is set. */
+    async pingRedis(): Promise<{ ok: boolean; detail: string }> {
+        if (!this.redis || !this.redisAvailable) {
+            return { ok: false, detail: 'not_connected' };
+        }
+        try {
+            const pong = await this.redis.ping();
+            return { ok: pong === 'PONG', detail: String(pong) };
+        } catch (err) {
+            return {
+                ok: false,
+                detail: err instanceof Error ? err.message : 'ping_failed',
+            };
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Redis connection management
     // -------------------------------------------------------------------------

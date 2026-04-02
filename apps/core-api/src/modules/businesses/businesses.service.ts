@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../../cache/cache.service';
 import { CredentialsCryptoService } from '../../crypto/credentials-crypto.service';
+import { AuditService } from '../../audit/audit.service';
 import { Logger } from '@wardline/utils';
 import { WorkflowsService } from '../workflows/workflows.service';
 import { DEFAULT_OPERATING_HOURS, normalizeOperatingHours } from './business-hours';
@@ -24,6 +25,7 @@ export class BusinessesService {
         private cache: CacheService,
         private workflowsService: WorkflowsService,
         private credentialsCrypto: CredentialsCryptoService,
+        private auditService: AuditService,
     ) {}
 
     async create(dto: { name: string; slug: string; timeZone?: string }, creatorUserId?: string): Promise<any> {
@@ -95,21 +97,14 @@ export class BusinessesService {
             cacheKey,
             async () =>
                 this.prisma.business.findMany({
-                    ...(businessIds
-                        ? {
-                            where: {
-                                id: { in: businessIds },
-                            },
-                        }
-                        : userId
-                        ? {
-                            where: {
-                                users: {
-                                    some: { userId },
-                                },
-                            },
-                        }
-                        : {}),
+                    where: {
+                        deletedAt: null,
+                        ...(businessIds
+                            ? { id: { in: businessIds } }
+                            : userId
+                              ? { users: { some: { userId } } }
+                              : {}),
+                    },
                     include: {
                         settings: includeSettings,
                         _count: {
@@ -129,8 +124,8 @@ export class BusinessesService {
         return this.cache.getOrSet(
             `${CacheKeys.business(id)}:${includeRelations}`,
             async () => {
-                const business = await this.prisma.business.findUnique({
-                    where: { id },
+                const business = await this.prisma.business.findFirst({
+                    where: { id, deletedAt: null },
                     include: {
                         settings: true,
                         ...(includeRelations && { phoneNumbers: true }),
@@ -147,8 +142,8 @@ export class BusinessesService {
     }
 
     async findBySlug(slug: string): Promise<any> {
-        const business = await this.prisma.business.findUnique({
-            where: { slug },
+        const business = await this.prisma.business.findFirst({
+            where: { slug, deletedAt: null },
             include: { settings: true },
         });
         if (!business) throw new NotFoundException(`Business with slug "${slug}" not found`);
@@ -184,6 +179,7 @@ export class BusinessesService {
 
                 const phoneNumbers = await this.prisma.phoneNumber.findMany({
                     where: {
+                        business: { deletedAt: null },
                         OR: candidates.flatMap((candidate) => [
                             { twilioPhoneNumber: candidate },
                             { twilioPhoneNumber: { endsWith: candidate } },
@@ -226,7 +222,7 @@ export class BusinessesService {
 
         if (dto.name) {
             const existing = await this.prisma.business.findFirst({
-                where: { name: dto.name, NOT: { id } },
+                where: { name: dto.name, deletedAt: null, NOT: { id } },
             });
             if (existing) throw new ConflictException('Business with this name already exists');
         }
@@ -315,8 +311,8 @@ export class BusinessesService {
         const runtimeConfig = await this.cache.getOrSet(
             CacheKeys.runtimeConfig(id),
             async () => {
-                const business = await this.prisma.business.findUnique({
-                    where: { id },
+                const business = await this.prisma.business.findFirst({
+                    where: { id, deletedAt: null },
                     include: {
                         settings: true,
                         phoneNumbers: {
@@ -389,6 +385,40 @@ export class BusinessesService {
         await this.cache.invalidateByTag('businesses');
         await this.cache.delete(CacheKeys.runtimeConfig(id));
         return business;
+    }
+
+    /**
+     * Soft-delete (archive): sets deletedAt, rewrites unique name/slug, suspends tenant.
+     * Related rows are retained for recovery and audit; CASCADE is not invoked.
+     */
+    async archive(id: string, actorUserId?: string): Promise<void> {
+        const business = await this.prisma.business.findFirst({ where: { id, deletedAt: null } });
+        if (!business) {
+            throw new NotFoundException(`Business "${id}" not found`);
+        }
+        const suffix = `--archived--${Date.now()}`;
+        await this.prisma.business.update({
+            where: { id },
+            data: {
+                deletedAt: new Date(),
+                slug: `${business.slug}${suffix}`,
+                name: `${business.name}${suffix}`,
+                status: 'SUSPENDED',
+            },
+        });
+        await this.auditService.logAction({
+            businessId: id,
+            userId: actorUserId,
+            action: 'BUSINESS_ARCHIVED',
+            entityType: 'Business',
+            entityId: id,
+            metadata: { previousName: business.name, previousSlug: business.slug },
+        });
+        await this.cache.invalidateByTag('businesses');
+        await this.cache.invalidateByTag(`business:${id}`);
+        await this.cache.delete(`${CacheKeys.business(id)}:true`);
+        await this.cache.delete(`${CacheKeys.business(id)}:false`);
+        await this.cache.delete(CacheKeys.runtimeConfig(id));
     }
 
     private getDefaultBusinessSettings() {

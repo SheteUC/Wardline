@@ -26,7 +26,7 @@ export class TranscriptRetentionTask {
 
         try {
             const businesses = await this.prisma.business.findMany({
-                where: { status: 'ACTIVE' },
+                where: { status: 'ACTIVE', deletedAt: null },
                 include: {
                     settings: {
                         select: { transcriptRetentionDays: true },
