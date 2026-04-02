@@ -1,13 +1,14 @@
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-httpx>=0.26.0
-redis>=5.0.0
-websockets>=12.0
-python-dotenv>=1.0.0
-pydantic>=2.5.0
-pydantic-settings>=2.1.0
-livekit>=0.12.0
-livekit-agents>=0.11.0
-deepgram-sdk>=3.7.0
-openai>=1.12.0
-twilio>=9.0.0
+# Pinned for reproducible installs (see pip freeze after `pip install -r requirements.txt`).
+fastapi==0.128.0
+uvicorn[standard]==0.40.0
+httpx==0.27.2
+redis==7.4.0
+websockets==13.1
+python-dotenv==1.2.1
+pydantic==2.10.6
+pydantic-settings==2.12.0
+livekit==1.1.3
+livekit-agents==1.5.1
+deepgram-sdk==6.1.0
+openai==2.16.0
+twilio==9.10.0

@@ -9,7 +9,9 @@ import { CallsService } from './calls.service';
 import {
     BootstrapVoiceSessionDto,
     CallIngestDto,
+    CallLogsQueryDto,
     CreateCallDto,
+    CreateVoicemailDto,
     UpdateCallDto,
     SaveTranscriptDto,
     CreateHandoffDto,
@@ -24,7 +26,7 @@ export class CallsController {
     // -------------------------------------------------------------------------
 
     @Get('businesses/:businessId/call-logs')
-    findAll(@Param('businessId') businessId: string, @Query() filters: any) {
+    findAll(@Param('businessId') businessId: string, @Query() filters: CallLogsQueryDto) {
         return this.callsService.findAllByBusiness(businessId, filters);
     }
 
@@ -199,20 +201,7 @@ export class CallsController {
     @InternalApi()
     @Throttle({ global: { limit: 60, ttl: 60_000 } })
     @HttpCode(HttpStatus.CREATED)
-    async createVoicemail(
-        @Param('id') callId: string,
-        @Body() body: {
-            businessId: string;
-            callerPhone: string;
-            callerName?: string;
-            recordingUrl: string;
-            transcription?: string;
-            context: string;
-            createFollowUp?: boolean;
-            isUrgent?: boolean;
-            urgencyKeywords?: string[];
-        },
-    ) {
+    async createVoicemail(@Param('id') callId: string, @Body() body: CreateVoicemailDto) {
         return this.callsService.createVoicemail({ callId, ...body });
     }
 

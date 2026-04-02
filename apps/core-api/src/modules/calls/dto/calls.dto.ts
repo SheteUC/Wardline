@@ -8,6 +8,7 @@ import {
     ValidateNested,
     IsDateString,
     IsBoolean,
+    IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -272,6 +273,83 @@ export class CallIngestDto {
     statePatch?: CallStatePatchDto;
 }
 
+/** Dashboard call log list query (all values arrive as strings from query params). */
+export class CallLogsQueryDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    page?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    pageSize?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    status?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    tag?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    isEmergency?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    search?: string;
+}
+
+export class CreateVoicemailDto {
+    @ApiProperty()
+    @IsString()
+    businessId: string;
+
+    @ApiProperty()
+    @IsString()
+    callerPhone: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    callerName?: string;
+
+    @ApiProperty()
+    @IsString()
+    recordingUrl: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    transcription?: string;
+
+    @ApiProperty()
+    @IsString()
+    context: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    createFollowUp?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    isUrgent?: boolean;
+
+    @ApiPropertyOptional({ type: [String] })
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    urgencyKeywords?: string[];
+}
+
 // DTO for creating a handoff
 export class CreateHandoffDto {
     @ApiProperty({ description: 'Call ID' })
@@ -295,5 +373,6 @@ export class CreateHandoffDto {
     summary: string;
 
     @ApiProperty({ description: 'Extracted fields from the call' })
-    fields: Record<string, any>;
+    @IsObject()
+    fields: Record<string, unknown>;
 }

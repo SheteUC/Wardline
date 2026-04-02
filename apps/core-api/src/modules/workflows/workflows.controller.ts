@@ -1,6 +1,19 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Get,
+    Param,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { WorkflowsService } from './workflows.service';
+import {
+    WorkflowCreateDto,
+    WorkflowPublishDto,
+    WorkflowVersionGraphDto,
+} from './dto/workflows.dto';
 import { Permissions } from '../../auth/permissions.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
@@ -17,12 +30,9 @@ export class WorkflowsController {
     @Post()
     @Permissions(UserRole.SUPERVISOR)
     @Auditable('workflow', 'CREATE')
-    create(
-        @Param('businessId') businessId: string,
-        @Body() data: any,
-        @Body('userId') userId?: string,
-    ) {
-        return this.workflowsService.create(businessId, userId, data);
+    create(@Param('businessId') businessId: string, @Body() data: WorkflowCreateDto) {
+        const { userId, ...rest } = data;
+        return this.workflowsService.create(businessId, userId, rest);
     }
 
     @Get()
@@ -40,12 +50,8 @@ export class WorkflowsController {
     @Post(':id/versions')
     @Permissions(UserRole.SUPERVISOR)
     @Auditable('workflow', 'CREATE_VERSION')
-    createVersion(
-        @Param('id') workflowId: string,
-        @Body('graphJson') graphJson: any,
-        @Body('userId') userId?: string,
-    ) {
-        return this.workflowsService.createVersion(workflowId, userId, graphJson);
+    createVersion(@Param('id') workflowId: string, @Body() body: WorkflowVersionGraphDto) {
+        return this.workflowsService.createVersion(workflowId, body.userId, body.graphJson);
     }
 
     @Post('versions/:versionId/publish')
@@ -53,9 +59,9 @@ export class WorkflowsController {
     @Auditable('workflow', 'PUBLISH_VERSION')
     publishVersion(
         @Param('versionId') versionId: string,
-        @Body('approverUserId') approverUserId?: string,
+        @Body() body: WorkflowPublishDto,
     ) {
-        return this.workflowsService.publishVersion(versionId, approverUserId);
+        return this.workflowsService.publishVersion(versionId, body.approverUserId);
     }
 
     @Post(':id/validate')
@@ -71,11 +77,11 @@ export class WorkflowsController {
     @ApiOperation({ summary: 'Simulate workflow execution with test inputs' })
     @ApiResponse({ status: 200, description: 'Simulation results with execution path' })
     @Auditable('workflow', 'SIMULATE')
-    simulateWorkflow(
-        @Param('id') workflowId: string,
-        @Body() testInputs: any,
-    ) {
-        return this.workflowsService.simulateWorkflow(workflowId, testInputs);
+    simulateWorkflow(@Param('id') workflowId: string, @Body() body: unknown) {
+        if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+            throw new BadRequestException('Simulation body must be a JSON object');
+        }
+        return this.workflowsService.simulateWorkflow(workflowId, body);
     }
 }
 

@@ -19,8 +19,14 @@ def _retryable_status(status_code: int) -> bool:
 class CoreApiClient:
     def __init__(self):
         self.base_url = settings.resolved_core_api_url().rstrip("/")
+        prefix = (settings.core_api_path_prefix or "/v1").strip() or "/v1"
+        self._path_prefix = prefix.rstrip("/") or "/v1"
         self.client = httpx.AsyncClient(timeout=10.0)
         self._http_attempts = max(1, int(settings.voice_http_max_retries or 3))
+
+    def _versioned_path(self, path: str) -> str:
+        p = path if path.startswith("/") else f"/{path}"
+        return f"{self._path_prefix}{p}"
 
     def _internal_headers(self) -> Dict[str, str]:
         secret = settings.wardline_internal_api_secret.strip()
@@ -51,7 +57,7 @@ class CoreApiClient:
         return None
 
     async def _post_json(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}{path}"
+        url = f"{self.base_url}{self._versioned_path(path)}"
         headers = self._internal_headers()
         for attempt in range(self._http_attempts):
             try:
@@ -70,7 +76,7 @@ class CoreApiClient:
         return None
 
     async def _patch_json(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}{path}"
+        url = f"{self.base_url}{self._versioned_path(path)}"
         headers = self._internal_headers()
         for attempt in range(self._http_attempts):
             try:

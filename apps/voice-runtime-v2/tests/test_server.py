@@ -22,10 +22,34 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
             True,
         )
         self._twilio_sig_patcher.start()
+        self._ready_patcher = unittest.mock.patch.multiple(
+            server.runtime,
+            readiness=lambda: {"livekit": {"configured": False}},
+            real_call_preflight=lambda: {"ok": True, "errors": []},
+        )
+        self._ready_patcher.start()
         self.client = TestClient(server.app)
 
     def tearDown(self):
+        self._ready_patcher.stop()
         self._twilio_sig_patcher.stop()
+
+    def test_health_returns_status(self):
+        response = self.client.get("/health")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["status"], "healthy")
+        self.assertEqual(body["service"], "voice-runtime-v2")
+        self.assertIn("timestamp", body)
+
+    def test_ready_includes_providers_and_preflight(self):
+        response = self.client.get("/ready")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertTrue(body["ready"])
+        self.assertIn("providers", body)
+        self.assertIn("preflight", body)
+        self.assertIn("livekit", body["providers"])
 
     def test_twilio_bootstrap_returns_twiml_stream_response(self):
         session = AsyncMock()

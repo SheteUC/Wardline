@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import compression from 'compression';
 import { AppModule } from './app.module';
 import { Logger } from '@wardline/utils';
+import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
 const logger = new Logger('Bootstrap');
 
@@ -32,6 +33,14 @@ async function bootstrap() {
             transform: true,
         }),
     );
+
+    app.useGlobalFilters(new AllExceptionsFilter());
+
+    app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+        prefix: 'v',
+    });
 
     app.enableCors({
         origin: (origin, callback) => {

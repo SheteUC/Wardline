@@ -34,6 +34,7 @@ class Settings(BaseSettings):
 
     core_api_url: str = Field(default="", alias="CORE_API_BASE_URL")
     core_api_hostport: str = Field(default="", alias="CORE_API_HOSTPORT")
+    core_api_path_prefix: str = Field(default="/v1", alias="CORE_API_PATH_PREFIX")
     webhook_base_url: str = Field(
         default="",
         validation_alias=AliasChoices("VOICE_RUNTIME_V2_PUBLIC_URL", "WEBHOOK_BASE_URL"),

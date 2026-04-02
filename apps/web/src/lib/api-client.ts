@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { CORE_API_V1 } from "./core-api-url";
 
 /**
  * API client for making authenticated requests to the backend.
@@ -10,7 +11,7 @@ import { useAuth } from "@clerk/nextjs";
 
 export function useApiClient() {
     const { getToken } = useAuth();
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+    const baseUrl = CORE_API_V1;
 
     const parseResponse = useCallback(async <T,>(res: Response): Promise<T> => {
         if (!res.ok) {

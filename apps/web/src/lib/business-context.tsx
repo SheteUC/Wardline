@@ -12,7 +12,6 @@ interface BusinessContextType {
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
 const STORAGE_KEY = 'selectedBusinessId';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 function clearStoredBusinessId() {
     localStorage.removeItem(STORAGE_KEY);
@@ -48,7 +47,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
 
             try {
                 const token = await getToken();
-                const response = await fetch(`${API_BASE_URL}/businesses?includeSettings=true`, {
+                const response = await fetch(`${CORE_API_V1}/businesses?includeSettings=true`, {
                     headers: {
                         'Content-Type': 'application/json',
                         ...(token ? { Authorization: `Bearer ${token}` } : {}),

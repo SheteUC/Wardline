@@ -12,8 +12,7 @@ import type {
     TeamMember,
     VoicemailRecord,
 } from './api-types';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+import { CORE_API_ORIGIN } from './core-api-url';
 
 interface ApiClientMethods {
     get: <T>(endpoint: string) => Promise<T>;
@@ -155,7 +154,7 @@ export const createBusinessService = (client: ApiClientMethods) => ({
 
 export const createSystemService = () => ({
     async getHealth(): Promise<SystemHealth> {
-        const response = await fetch(`${API_BASE_URL}/health`);
+        const response = await fetch(`${CORE_API_ORIGIN}/health`);
         if (!response.ok) throw new Error('Health check failed');
         return response.json();
     },
