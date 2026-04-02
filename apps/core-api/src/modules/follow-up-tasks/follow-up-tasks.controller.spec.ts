@@ -5,7 +5,12 @@ describe('FollowUpTasksController', () => {
     it('findAll builds filter object', async () => {
         const svc = { findAllByBusiness: jest.fn().mockResolvedValue([]) };
         const c = new FollowUpTasksController(svc as unknown as FollowUpTasksService);
-        await c.findAll('b1', 'URGENT', 'OPEN', 'HIGH', 'needle');
+        await c.findAll('b1', {
+            type: 'URGENT',
+            status: 'OPEN',
+            priority: 'HIGH',
+            search: 'needle',
+        });
         expect(svc.findAllByBusiness).toHaveBeenCalledWith('b1', {
             type: 'URGENT',
             status: 'OPEN',

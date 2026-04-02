@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Pinned transitive roots in requirements.txt for reproducible images.
 COPY apps/voice-runtime-v2/requirements.txt ./requirements.txt
 
 RUN pip install --no-cache-dir -r requirements.txt

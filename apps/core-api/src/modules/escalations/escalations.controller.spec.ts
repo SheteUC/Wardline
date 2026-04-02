@@ -13,7 +13,7 @@ describe('EscalationsController', () => {
     it('getRecentEscalations parses limit', async () => {
         const svc = { getRecentEscalations: jest.fn().mockResolvedValue([]) };
         const c = new EscalationsController(svc as unknown as EscalationsService);
-        await c.getRecentEscalations('b1', '5');
+        await c.getRecentEscalations('b1', { limit: 5 });
         expect(svc.getRecentEscalations).toHaveBeenCalledWith('b1', 5);
     });
 });

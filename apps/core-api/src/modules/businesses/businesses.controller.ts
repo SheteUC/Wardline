@@ -1,24 +1,29 @@
 import { Controller, Get, Post, Put, Patch, Body, Param, Query, Req } from '@nestjs/common';
-import { BusinessesService } from './businesses.service';
+import { Request } from 'express';
 import { Public } from '../../auth/public.decorator';
+import {
+    BusinessFindOneQueryDto,
+    BusinessListQueryDto,
+    BusinessSettingsPatchDto,
+    CreateBusinessDto,
+    UpdateBusinessDto,
+} from './dto/businesses.dto';
+import { BusinessesService } from './businesses.service';
 
 @Controller('businesses')
 export class BusinessesController {
     constructor(private readonly businessesService: BusinessesService) {}
 
     @Post()
-    create(@Req() request: any, @Body() body: { name: string; slug: string; timeZone?: string }) {
+    create(@Req() request: Request, @Body() body: CreateBusinessDto) {
         return this.businessesService.create(body, request.user?.id);
     }
 
     @Get()
-    findAll(
-        @Req() request: any,
-        @Query('includeSettings') includeSettings?: string,
-    ) {
-        const scopedBusinessIds = request.user?.businesses?.map((membership: any) => membership.businessId);
+    findAll(@Req() request: Request, @Query() query: BusinessListQueryDto) {
+        const scopedBusinessIds = request.user?.businesses?.map((m) => m.businessId);
         return this.businessesService.findAll(
-            includeSettings === 'true',
+            query.includeSettings === 'true',
             request.user?.id,
             scopedBusinessIds,
         );
@@ -42,36 +47,17 @@ export class BusinessesController {
     }
 
     @Get(':id')
-    findOne(
-        @Param('id') id: string,
-        @Query('includeRelations') includeRelations?: string,
-    ) {
-        return this.businessesService.findOne(id, includeRelations === 'true');
+    findOne(@Param('id') id: string, @Query() query: BusinessFindOneQueryDto) {
+        return this.businessesService.findOne(id, query.includeRelations === 'true');
     }
 
     @Put(':id')
-    update(@Param('id') id: string, @Body() body: Partial<{ name: string; slug: string; timeZone: string }>) {
+    update(@Param('id') id: string, @Body() body: UpdateBusinessDto) {
         return this.businessesService.update(id, body);
     }
 
     @Patch(':id/settings')
-    updateSettings(
-        @Param('id') id: string,
-        @Body() body: Partial<{
-            recordingDefault: string;
-            transcriptRetentionDays: number;
-            operatingHours: unknown;
-            enabledActions: unknown;
-            afterHoursPolicy: unknown;
-            refillPolicy: unknown;
-            billingPolicy: unknown;
-            insurancePolicy: unknown;
-            knowledgeConfig: unknown;
-            escalationConfig: unknown;
-            outOfScopeKeywords: string[];
-            emergencyKeywords: string[];
-        }>,
-    ) {
+    updateSettings(@Param('id') id: string, @Body() body: BusinessSettingsPatchDto) {
         return this.businessesService.updateSettings(id, body);
     }
 

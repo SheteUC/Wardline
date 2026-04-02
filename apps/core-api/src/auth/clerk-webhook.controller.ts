@@ -11,6 +11,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Public } from './public.decorator';
 import { UsersService } from '../modules/users/users.service';
+import type { ClerkWebhookPayload, ClerkWebhookUserData } from './clerk-webhook.types';
 import * as crypto from 'crypto';
 
 @ApiTags('webhooks')
@@ -28,7 +29,7 @@ export class ClerkWebhookController {
         @Headers('svix-id') svixId: string,
         @Headers('svix-timestamp') svixTimestamp: string,
         @Headers('svix-signature') svixSignature: string,
-        @Body() payload: any,
+        @Body() payload: ClerkWebhookPayload,
     ) {
         // Verify webhook signature
         if (!this.verifyWebhook(svixId, svixTimestamp, svixSignature, payload)) {
@@ -70,7 +71,7 @@ export class ClerkWebhookController {
         svixId: string,
         svixTimestamp: string,
         svixSignature: string,
-        payload: any,
+        payload: ClerkWebhookPayload,
     ): boolean {
         const secret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
         if (!secret) {
@@ -105,7 +106,7 @@ export class ClerkWebhookController {
         return false;
     }
 
-    private async handleUserCreated(data: any) {
+    private async handleUserCreated(data: ClerkWebhookUserData) {
         const clerkUserId = data.id;
         const email = data.email_addresses?.[0]?.email_address;
         const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || undefined;
@@ -115,7 +116,7 @@ export class ClerkWebhookController {
         await this.usersService.findOrCreateByClerkId(clerkUserId, email, fullName);
     }
 
-    private async handleUserUpdated(data: any) {
+    private async handleUserUpdated(data: ClerkWebhookUserData) {
         const clerkUserId = data.id;
         const email = data.email_addresses?.[0]?.email_address;
         const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || undefined;
@@ -126,7 +127,7 @@ export class ClerkWebhookController {
         await this.usersService.findOrCreateByClerkId(clerkUserId, email, fullName);
     }
 
-    private async handleUserDeleted(data: any) {
+    private async handleUserDeleted(data: ClerkWebhookUserData) {
         const clerkUserId = data.id;
 
         this.logger.warn(`User deleted in Clerk: ${clerkUserId}`);

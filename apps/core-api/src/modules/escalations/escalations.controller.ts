@@ -4,7 +4,12 @@ import { UserRole } from '@wardline/types';
 import { Public } from '../../auth/public.decorator';
 import { InternalApi } from '../../auth/internal-api.decorator';
 import { Permissions } from '../../auth/permissions.decorator';
-import { EscalationsService, EscalationContext } from './escalations.service';
+import {
+    EscalateEmergencyDto,
+    EscalateToHumanDto,
+    EscalationsListQueryDto,
+} from './dto/escalations.dto';
+import { EscalationsService } from './escalations.service';
 
 @Controller('api/escalations')
 export class EscalationsController {
@@ -15,7 +20,7 @@ export class EscalationsController {
     @Public()
     @InternalApi()
     @Throttle({ global: { limit: 60, ttl: 60_000 } })
-    escalateToHuman(@Body() context: EscalationContext) {
+    escalateToHuman(@Body() context: EscalateToHumanDto) {
         return this.escalationsService.escalateToHuman(context);
     }
 
@@ -24,12 +29,7 @@ export class EscalationsController {
     @Public()
     @InternalApi()
     @Throttle({ global: { limit: 60, ttl: 60_000 } })
-    escalateEmergency(@Body() body: {
-        callId: string;
-        businessId: string;
-        callerPhone: string;
-        transcript: string;
-    }) {
+    escalateEmergency(@Body() body: EscalateEmergencyDto) {
         return this.escalationsService.escalateEmergency(body);
     }
 
@@ -38,8 +38,8 @@ export class EscalationsController {
     @Permissions(UserRole.READONLY)
     getRecentEscalations(
         @Param('businessId') businessId: string,
-        @Query('limit') limit?: string,
+        @Query() query: EscalationsListQueryDto,
     ) {
-        return this.escalationsService.getRecentEscalations(businessId, limit ? parseInt(limit) : 20);
+        return this.escalationsService.getRecentEscalations(businessId, query.limit ?? 20);
     }
 }

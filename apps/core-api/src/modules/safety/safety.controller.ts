@@ -4,6 +4,7 @@ import { UserRole } from '@wardline/types';
 import { Public } from '../../auth/public.decorator';
 import { InternalApi } from '../../auth/internal-api.decorator';
 import { Permissions } from '../../auth/permissions.decorator';
+import { QuickEmergencyCheckDto, SafetyCheckDto } from './dto/safety.dto';
 import { SafetyGuardService } from './safety-guard.service';
 
 @Controller('api/safety')
@@ -15,7 +16,7 @@ export class SafetyController {
     @Public()
     @InternalApi()
     @Throttle({ global: { limit: 400, ttl: 60_000 } })
-    async checkSafety(@Body() body: { text: string; businessId: string }) {
+    async checkSafety(@Body() body: SafetyCheckDto) {
         return this.safetyGuard.checkSafety(body.text, body.businessId);
     }
 
@@ -23,7 +24,7 @@ export class SafetyController {
     @Post('quick-emergency-check')
     @Public()
     @Throttle({ global: { limit: 600, ttl: 60_000 } })
-    quickEmergencyCheck(@Body() body: { text: string }) {
+    quickEmergencyCheck(@Body() body: QuickEmergencyCheckDto) {
         return this.safetyGuard.quickEmergencyCheck(body.text);
     }
 

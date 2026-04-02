@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { UserRole } from '@wardline/types';
 import { Permissions } from '../../auth/permissions.decorator';
+import { IntegrationUpsertDto } from './dto/integrations.dto';
 import { IntegrationsService } from './integrations.service';
 
 @Controller('api/businesses/:businessId/integrations')
@@ -26,13 +27,7 @@ export class IntegrationsController {
     upsert(
         @Param('businessId') businessId: string,
         @Param('category') category: string,
-        @Body() body: {
-            vendor: string;
-            status?: string;
-            credentialsRef?: string;
-            settings?: Record<string, unknown>;
-            capabilities?: Record<string, unknown>;
-        },
+        @Body() body: IntegrationUpsertDto,
     ): Promise<any> {
         return this.integrationsService.upsert(businessId, category, body);
     }
