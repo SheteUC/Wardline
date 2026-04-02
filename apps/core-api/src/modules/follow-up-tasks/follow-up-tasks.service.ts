@@ -138,8 +138,8 @@ export class FollowUpTasksService {
         return task;
     }
 
-    async updateStatus(id: string, status: FollowUpTaskStatus): Promise<any> {
-        const existing = await this.prisma.followUpTask.findUnique({ where: { id } });
+    async updateStatus(id: string, businessId: string, status: FollowUpTaskStatus): Promise<any> {
+        const existing = await this.prisma.followUpTask.findFirst({ where: { id, businessId } });
         if (!existing) throw new NotFoundException(`Follow-up task "${id}" not found`);
 
         const task = await this.prisma.followUpTask.update({

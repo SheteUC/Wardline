@@ -21,6 +21,7 @@ from xml.sax.saxutils import escape
 import httpx
 
 from config import settings
+from retry_async import retry_async
 
 
 def _base64url_encode(data: bytes) -> str:
@@ -296,18 +297,24 @@ class ManagedTtsAdapter:
             )
         )
 
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(
-                url,
-                headers={
-                    "Authorization": f"Token {settings.deepgram_api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={"text": text},
-            )
-            if response.status_code != 200:
-                return b""
-            return response.content
+        async def _once() -> bytes:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                response = await client.post(
+                    url,
+                    headers={
+                        "Authorization": f"Token {settings.deepgram_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={"text": text},
+                )
+                if response.status_code != 200:
+                    raise RuntimeError(f"TTS HTTP {response.status_code}")
+                return response.content
+
+        try:
+            return await retry_async(_once, attempts=3, operation="tts_synthesize")
+        except Exception:
+            return b""
 
 
 class ReasoningAdapter:

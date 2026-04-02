@@ -1,6 +1,9 @@
 import { Controller, Patch, Body, Param } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Logger } from '@wardline/utils';
+import { Public } from '../../auth/public.decorator';
+import { InternalApi } from '../../auth/internal-api.decorator';
 
 export interface CallProgressUpdate {
     workflow_execution?: {
@@ -26,6 +29,9 @@ export class CallsProgressController {
     private readonly logger = new Logger(CallsProgressController.name);
 
     @Patch(':callId/progress')
+    @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 200, ttl: 60_000 } })
     @ApiOperation({ summary: 'Update call workflow execution progress' })
     @ApiResponse({ status: 200, description: 'Progress updated' })
     async updateProgress(

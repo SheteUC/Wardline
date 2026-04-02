@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../auth/public.decorator';
+import { InternalApi } from '../../auth/internal-api.decorator';
 import { FollowUpTasksService } from './follow-up-tasks.service';
 
 @Controller('api/businesses/:businessId/follow-up-tasks')
@@ -24,6 +26,8 @@ export class FollowUpTasksController {
 
     @Post()
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 120, ttl: 60_000 } })
     create(
         @Param('businessId') businessId: string,
         @Body() body: {
@@ -50,9 +54,10 @@ export class FollowUpTasksController {
 
     @Patch(':id/status')
     updateStatus(
+        @Param('businessId') businessId: string,
         @Param('id') id: string,
         @Body() body: { status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' },
     ) {
-        return this.followUpTasksService.updateStatus(id, body.status);
+        return this.followUpTasksService.updateStatus(id, businessId, body.status);
     }
 }

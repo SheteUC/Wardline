@@ -36,6 +36,10 @@ services:
         value: "true"
       - key: RUNTIME_ACTIONS_DUAL_WRITE_LEGACY_TURNS
         value: "true"
+      - key: WARDLINE_INTERNAL_API_SECRET
+        sync: false
+      - key: WARDLINE_APP_CREDENTIALS_KEY
+        sync: false
 
   - type: web
     name: wardline-voice-runtime-v2
@@ -53,6 +57,11 @@ services:
           type: web
           name: wardline-core-api
           property: hostport
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: wardline-redis
+          property: connectionString
       - key: VOICE_RUNTIME_LEGACY_CALL_SYNC
         value: "true"
       - key: MANAGED_TTS_PROVIDER
@@ -70,6 +79,10 @@ services:
       - key: TWILIO_AUTH_TOKEN
         sync: false
       - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: TWILIO_WEBHOOK_PUBLIC_URL
+        sync: false
+      - key: WARDLINE_INTERNAL_API_SECRET
         sync: false
       - key: LIVEKIT_URL
         sync: false

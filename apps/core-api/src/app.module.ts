@@ -2,13 +2,16 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
+import { CryptoModule } from './crypto/crypto.module';
 import { ClerkModule } from './auth/clerk.module';
 import { AuthGuard } from './auth/auth.guard';
 import { RbacGuard } from './auth/rbac.guard';
+import { InternalApiGuard } from './auth/internal-api.guard';
 import { AuditModule } from './audit/audit.module';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { BusinessesModule } from './modules/businesses/businesses.module';
@@ -58,8 +61,18 @@ if (shouldWarnOnDeprecatedEnvFiles && deprecatedCoreApiEnvPaths.length > 0) {
             envFilePath: rootEnvFilePaths,
         }),
         ScheduleModule.forRoot(),
+        ThrottlerModule.forRoot({
+            throttlers: [
+                {
+                    name: 'global',
+                    ttl: 60_000,
+                    limit: 120,
+                },
+            ],
+        }),
         PrismaModule,
         CacheModule, // Global in-memory cache for improved performance
+        CryptoModule,
         ClerkModule,
         AuditModule,
         BusinessesModule,
@@ -77,6 +90,14 @@ if (shouldWarnOnDeprecatedEnvFiles && deprecatedCoreApiEnvPaths.length > 0) {
         {
             provide: APP_GUARD,
             useClass: AuthGuard,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: InternalApiGuard,
         },
         // Global RBAC guard - checks permissions
         {

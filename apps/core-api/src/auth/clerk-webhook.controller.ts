@@ -1,10 +1,12 @@
 import { Controller, Post, Body, Headers, UnauthorizedException, Logger } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Public } from './public.decorator';
 import { UsersService } from '../modules/users/users.service';
 import * as crypto from 'crypto';
 
 @ApiTags('webhooks')
+@SkipThrottle()
 @Controller('webhooks/clerk')
 export class ClerkWebhookController {
     private readonly logger = new Logger(ClerkWebhookController.name);

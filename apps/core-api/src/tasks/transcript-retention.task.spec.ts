@@ -15,9 +15,13 @@ describe('TranscriptRetentionTask', () => {
             },
             callSession: {
                 findMany: jest.fn(),
+                updateMany: jest.fn().mockResolvedValue({ count: 0 }),
             },
             transcriptSegment: {
                 deleteMany: jest.fn(),
+            },
+            voicemailRecord: {
+                updateMany: jest.fn().mockResolvedValue({ count: 0 }),
             },
         };
         auditService = {
@@ -89,7 +93,7 @@ describe('TranscriptRetentionTask', () => {
                 action: 'TRANSCRIPT_RETENTION_CLEANUP',
                 entityType: 'TranscriptSegment',
                 metadata: expect.objectContaining({
-                    deletedCount: 3,
+                    deletedTranscriptSegments: 3,
                     retentionDays: 14,
                     affectedCallIds: ['call-1', 'call-2'],
                 }),

@@ -14,6 +14,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
 from pydantic import BaseModel, Field
+from twilio.request_validator import RequestValidator
 
 from config import settings
 from preflight import default_bootstrap_error_message
@@ -22,6 +23,43 @@ from telephony import TwilioMediaSession
 
 runtime = VoiceRuntimeV2()
 logger = logging.getLogger(__name__)
+
+
+def _rethrow_session_errors(error: BaseException) -> None:
+    if isinstance(error, KeyError):
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    if isinstance(error, RuntimeError) and "shutting down" in str(error).lower():
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    raise error
+
+
+def _twilio_request_url(request: Request) -> str:
+    base = settings.twilio_webhook_public_url.strip().rstrip("/")
+    if base:
+        path = request.url.path
+        query = request.url.query
+        return f"{base}{path}" + (f"?{query}" if query else "")
+    return str(request.url)
+
+
+def _twilio_form_params(form_data) -> dict[str, str]:
+    return {str(k): str(v) for k, v in form_data.items()}
+
+
+def _twilio_signature_ok(request: Request, params: dict[str, str]) -> bool:
+    if settings.twilio_skip_signature_validation:
+        return True
+    auth = settings.twilio_auth_token.strip()
+    if not auth:
+        logger.error("Twilio auth token is not configured; rejecting webhook")
+        return False
+    sig = (
+        request.headers.get("X-Twilio-Signature") or request.headers.get("x-twilio-signature") or ""
+    ).strip()
+    if not sig:
+        return False
+    url = _twilio_request_url(request)
+    return RequestValidator(auth).validate(url, params, sig)
 
 
 class StartSessionRequest(BaseModel):
@@ -53,6 +91,8 @@ class SessionEventRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
+    runtime.begin_shutdown()
+    await runtime.wait_for_inflight()
     await runtime.close()
 
 
@@ -106,6 +146,16 @@ async def start_session(request: StartSessionRequest):
 @app.post("/telephony/twilio/bootstrap")
 async def bootstrap_twilio_session(request: Request):
     form_data = await request.form()
+    params = _twilio_form_params(form_data)
+    if not _twilio_signature_ok(request, params):
+        logger.error("Rejected Twilio bootstrap: invalid or missing signature")
+        return Response(
+            content=runtime.twilio.build_error_twiml(
+                "We're sorry, but we could not verify this call request. Please try again shortly."
+            ),
+            media_type="text/xml",
+        )
+
     call_sid = str(form_data.get("CallSid") or "")
     caller_phone = str(form_data.get("From") or "")
     called_phone = str(form_data.get("To") or "")
@@ -139,7 +189,7 @@ async def bootstrap_twilio_session(request: Request):
             caller_phone=caller_phone,
             called_phone=called_phone,
         )
-        twiml = runtime.build_twilio_bootstrap_response(session.sessionId)
+        twiml = await runtime.build_twilio_bootstrap_response(session.sessionId)
     except ValueError as error:
         logger.error(
             "Voice Runtime V2 bootstrap rejected the inbound call",
@@ -174,6 +224,16 @@ async def bootstrap_twilio_session(request: Request):
 @app.post("/telephony/twilio/transfer-action")
 async def twilio_transfer_action(request: Request):
     form_data = await request.form()
+    params = _twilio_form_params(form_data)
+    if not _twilio_signature_ok(request, params):
+        logger.error("Rejected Twilio transfer-action: invalid or missing signature")
+        return Response(
+            content=runtime.twilio.build_error_twiml(
+                "We're sorry, but we could not verify that transfer callback."
+            ),
+            media_type="text/xml",
+        )
+
     session_id = str(request.query_params.get("sessionId") or form_data.get("sessionId") or "")
     if not session_id:
         return Response(
@@ -210,18 +270,17 @@ async def twilio_media_stream(websocket: WebSocket):
 @app.get("/sessions/{session_id}")
 async def get_session(session_id: str):
     try:
-        session = runtime.get_session(session_id)
-    except KeyError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
-    return session.model_dump()
+        return await runtime.get_session_dump(session_id)
+    except (KeyError, RuntimeError) as error:
+        _rethrow_session_errors(error)
 
 
 @app.post("/sessions/{session_id}/turn")
 async def process_turn(session_id: str, request: TextTurnRequest):
     try:
         return await runtime.process_text_turn(session_id, request.text)
-    except KeyError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (KeyError, RuntimeError) as error:
+        _rethrow_session_errors(error)
 
 
 @app.post("/sessions/{session_id}/transcript")
@@ -233,16 +292,16 @@ async def process_transcript_turn(session_id: str, request: TranscriptTurnReques
             final=request.final,
             provider_session_id=request.providerSessionId,
         )
-    except KeyError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (KeyError, RuntimeError) as error:
+        _rethrow_session_errors(error)
 
 
 @app.post("/sessions/{session_id}/events")
 async def record_session_event(session_id: str, request: SessionEventRequest):
     try:
         return await runtime.persist_transport_event(session_id, request.type, request.payload)
-    except KeyError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (KeyError, RuntimeError) as error:
+        _rethrow_session_errors(error)
 
 
 @app.post("/sessions/{session_id}/voicemail")
@@ -253,8 +312,10 @@ async def capture_voicemail(session_id: str, request: VoicemailRequest):
             recording_url=request.recordingUrl,
             transcription=request.transcription,
         )
-    except (KeyError, ValueError) as error:
+    except ValueError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+    except (KeyError, RuntimeError) as error:
+        _rethrow_session_errors(error)
 
 
 if __name__ == "__main__":

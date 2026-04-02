@@ -4,7 +4,9 @@ import { WorkflowsService } from './workflows.service';
 import { Permissions } from '../../auth/permissions.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../auth/public.decorator';
+import { InternalApi } from '../../auth/internal-api.decorator';
 
 @ApiTags('workflows')
 @ApiBearerAuth()
@@ -85,6 +87,8 @@ export class WorkflowsApiController {
 
     @Get('active')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 120, ttl: 60_000 } })
     @ApiOperation({ summary: 'Get active workflow for business (used by voice orchestrator)' })
     @ApiResponse({ status: 200, description: 'Active workflow configuration with graph JSON' })
     getActiveWorkflow(

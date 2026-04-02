@@ -506,6 +506,8 @@ class SessionState(BaseModel):
     persistedEventCount: int = 0
     pendingTranscriptSegments: List[Dict[str, Any]] = Field(default_factory=list)
     runtimeFailureReason: Optional[str] = None
+    # Secret echoed in Twilio Stream customParameters; must match before media/audio handling.
+    mediaStreamToken: str = ""
 
 
 SupervisorDecision.model_rebuild()

@@ -30,7 +30,38 @@ if (shouldWarnOnDeprecatedEnvFiles && existingDeprecatedWebEnvPaths.length > 0) 
   );
 }
 
+const isProd = process.env.NODE_ENV === "production";
+
+const cspDirectives = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://js.stripe.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "img-src 'self' data: blob: https://images.unsplash.com https://*.clerk.com",
+  "connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.clerk.accounts.dev https://*.clerk.com wss://*.clerk.accounts.dev https://us.i.posthog.com https://eu.i.posthog.com https://app.posthog.com https://api.stripe.com",
+  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev",
+  "worker-src 'self' blob:",
+  "form-action 'self'",
+  ...(isProd ? (["upgrade-insecure-requests"] as const) : []),
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: cspDirectives.join("; "),
+          },
+        ],
+      },
+    ];
+  },
   env: {
     NEXT_PUBLIC_API_BASE_URL:
       process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001",

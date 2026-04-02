@@ -222,7 +222,7 @@ describe('CallsService', () => {
                 ],
             });
 
-            const result = await service.findOne('call-1');
+            const result = await service.findOne('call-1', 'business-1');
 
             expect(result.id).toBe('call-1');
             expect(mockCache.getOrSet).not.toHaveBeenCalled();
@@ -307,7 +307,7 @@ describe('CallsService', () => {
                     ],
                 });
 
-            const result = await service.findOne('call-2');
+            const result = await service.findOne('call-2', 'business-1');
 
             expect(mockCache.getOrSet).not.toHaveBeenCalled();
             expect(result.operatorSummary).toEqual(
@@ -335,7 +335,7 @@ describe('CallsService', () => {
                 followUpTasks: [],
             });
 
-            const result = await service.findOne('call-2');
+            const result = await service.findOne('call-2', 'business-1');
 
             expect(result.operatorSummary).toEqual(
                 expect.objectContaining({
@@ -396,7 +396,7 @@ describe('CallsService', () => {
                 ],
             });
 
-            const result = await service.findOne('call-3');
+            const result = await service.findOne('call-3', 'business-1');
 
             expect(result.intentTimeline).toEqual([
                 expect.objectContaining({
@@ -416,7 +416,7 @@ describe('CallsService', () => {
         it('throws when the call is missing', async () => {
             mockPrisma.callSession.findUnique.mockResolvedValue(null);
 
-            await expect(service.findOne('missing-call')).rejects.toThrow(NotFoundException);
+            await expect(service.findOne('missing-call', 'business-1')).rejects.toThrow(NotFoundException);
         });
     });
 

@@ -75,6 +75,12 @@ def build_real_call_preflight_report() -> dict[str, Any]:
     if not provider_readiness["tts"].get("configured"):
         errors.append("Managed TTS is not configured for the first real-call proof.")
 
+    if not settings.twilio_skip_signature_validation and not settings.twilio_webhook_public_url.strip():
+        errors.append(
+            "TWILIO_WEBHOOK_PUBLIC_URL must match the public origin Twilio uses for webhooks "
+            "(or set TWILIO_SKIP_SIGNATURE_VALIDATION=true only for local testing)."
+        )
+
     return {
         "ok": len(errors) == 0,
         "errors": errors,

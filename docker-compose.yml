@@ -54,6 +54,18 @@ services:
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
     ports:
       - "3001:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3001/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,6 +84,7 @@ services:
     environment:
       VOICE_RUNTIME_V2_PORT: 3003
       CORE_API_BASE_URL: http://core-api:3001
+      REDIS_URL: redis://redis:6379
       WEBHOOK_BASE_URL: ${WEBHOOK_BASE_URL:-}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
@@ -90,8 +103,23 @@ services:
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
     ports:
       - "3003:3003"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3003/health', timeout=2)",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 50s
     depends_on:
-      - core-api
+      core-api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - wardline-network
     restart: unless-stopped

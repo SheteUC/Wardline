@@ -13,7 +13,9 @@ from preflight import build_real_call_preflight_report  # noqa: E402
 
 class VoiceRuntimeV2PreflightTests(unittest.TestCase):
     def test_preflight_requires_secure_callback_url(self):
-        with patch.object(settings, "webhook_base_url", "http://voice.example.com"), patch.object(
+        with patch.object(settings, "twilio_skip_signature_validation", True), patch.object(
+            settings, "webhook_base_url", "http://voice.example.com"
+        ), patch.object(
             settings, "twilio_account_sid", "AC123"
         ), patch.object(settings, "twilio_auth_token", "secret"), patch.object(
             settings, "twilio_phone_number", "+15551230001"
@@ -31,7 +33,9 @@ class VoiceRuntimeV2PreflightTests(unittest.TestCase):
         )
 
     def test_preflight_rejects_mismatched_public_urls(self):
-        with patch.object(settings, "webhook_base_url", "https://voice.example.com"), patch.object(
+        with patch.object(settings, "twilio_skip_signature_validation", True), patch.object(
+            settings, "webhook_base_url", "https://voice.example.com"
+        ), patch.object(
             settings, "twilio_account_sid", "AC123"
         ), patch.object(settings, "twilio_auth_token", "secret"), patch.object(
             settings, "twilio_phone_number", "+15551230001"
@@ -56,9 +60,11 @@ class VoiceRuntimeV2PreflightTests(unittest.TestCase):
         )
 
     def test_preflight_returns_wss_media_url_when_configured(self):
-        with patch.object(settings, "webhook_base_url", "https://voice.example.com"), patch.object(
-            settings, "twilio_account_sid", "AC123"
-        ), patch.object(settings, "twilio_auth_token", "secret"), patch.object(
+        with patch.object(settings, "twilio_webhook_public_url", "https://voice.example.com"), patch.object(
+            settings, "webhook_base_url", "https://voice.example.com"
+        ), patch.object(settings, "twilio_account_sid", "AC123"), patch.object(
+            settings, "twilio_auth_token", "secret"
+        ), patch.object(
             settings, "twilio_phone_number", "+15551230001"
         ), patch.object(settings, "livekit_url", "wss://livekit.example.com"), patch.object(
             settings, "livekit_api_key", "lk-key"
@@ -74,7 +80,11 @@ class VoiceRuntimeV2PreflightTests(unittest.TestCase):
         self.assertEqual(report["twilioMediaStreamUrl"], "wss://voice.example.com/telephony/twilio/media")
 
     def test_preflight_accepts_render_external_url_fallback(self):
-        with patch.object(settings, "webhook_base_url", ""), patch.object(
+        with patch.object(
+            settings,
+            "twilio_webhook_public_url",
+            "https://wardline-voice-runtime-v2.onrender.com",
+        ), patch.object(settings, "webhook_base_url", ""), patch.object(
             settings, "render_external_url", "https://wardline-voice-runtime-v2.onrender.com"
         ), patch.object(settings, "twilio_account_sid", "AC123"), patch.object(
             settings, "twilio_auth_token", "secret"

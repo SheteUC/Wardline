@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../../cache/cache.service';
+import { CredentialsCryptoService } from '../../crypto/credentials-crypto.service';
 import { Logger } from '@wardline/utils';
 import { WorkflowsService } from '../workflows/workflows.service';
 import { DEFAULT_OPERATING_HOURS, normalizeOperatingHours } from './business-hours';
@@ -22,6 +23,7 @@ export class BusinessesService {
         private prisma: PrismaService,
         private cache: CacheService,
         private workflowsService: WorkflowsService,
+        private credentialsCrypto: CredentialsCryptoService,
     ) {}
 
     async create(dto: { name: string; slug: string; timeZone?: string }, creatorUserId?: string): Promise<any> {
@@ -295,9 +297,10 @@ export class BusinessesService {
             knowledgeConfig: nextPracticeSetup.knowledgeConfig as any,
             escalationConfig: nextPracticeSetup.escalationConfig as any,
         };
+        const persisted = this.encryptSettingsSecrets(normalizedSettings as Record<string, unknown>);
         const result = await this.prisma.businessSettings.update({
             where: { businessId: id },
-            data: normalizedSettings as any,
+            data: persisted as any,
         });
         await this.workflowsService.syncPracticeSetupWorkflow(id);
         Object.assign(result, this.normalizeBusinessSettingsRecord(result));
@@ -408,11 +411,38 @@ export class BusinessesService {
         };
     }
 
-    private normalizeBusinessSettingsRecord(settings: any) {
-        const practiceSetup = normalizePracticeSetup(settings);
-
+    private decryptSettingsSecrets(settings: any) {
+        if (!settings || typeof settings !== 'object') {
+            return settings;
+        }
         return {
             ...settings,
+            timetapApiKey: this.credentialsCrypto.decrypt(settings.timetapApiKey) ?? settings.timetapApiKey,
+            nexhealthApiKey: this.credentialsCrypto.decrypt(settings.nexhealthApiKey) ?? settings.nexhealthApiKey,
+            posthogProjectApiKey:
+                this.credentialsCrypto.decrypt(settings.posthogProjectApiKey) ?? settings.posthogProjectApiKey,
+        };
+    }
+
+    private encryptSettingsSecrets(data: Record<string, unknown>) {
+        const out = { ...data };
+        for (const key of ['timetapApiKey', 'nexhealthApiKey', 'posthogProjectApiKey'] as const) {
+            if (key in out && out[key] !== undefined && out[key] !== null && out[key] !== '') {
+                const enc = this.credentialsCrypto.encrypt(String(out[key]));
+                if (enc !== undefined) {
+                    out[key] = enc;
+                }
+            }
+        }
+        return out;
+    }
+
+    private normalizeBusinessSettingsRecord(settings: any) {
+        const decrypted = this.decryptSettingsSecrets(settings);
+        const practiceSetup = normalizePracticeSetup(decrypted);
+
+        return {
+            ...decrypted,
             operatingHours: normalizeOperatingHours(settings.operatingHours) as any,
             enabledActions: practiceSetup.enabledActions,
             afterHoursPolicy: practiceSetup.afterHoursPolicy,

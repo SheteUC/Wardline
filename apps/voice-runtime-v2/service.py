@@ -4,11 +4,15 @@ Voice Runtime V2 orchestration service.
 from __future__ import annotations
 
 import asyncio
-import re
-import uuid
 import logging
+import re
+import secrets
+import time
+import uuid
+from collections import OrderedDict
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import ValidationError
@@ -53,6 +57,7 @@ from models import (
     TransferAttemptState,
 )
 from preflight import build_real_call_preflight_report
+from session_store import SessionStore
 from providers import (
     DeepgramSttAdapter,
     LiveKitTransportAdapter,
@@ -88,6 +93,21 @@ class VoiceRuntimeV2:
     def __init__(self, api_client: Optional[CoreApiClient] = None):
         self.api_client = api_client or CoreApiClient()
         self.sessions: Dict[str, SessionState] = {}
+        self._local_session_locks: dict[str, asyncio.Lock] = {}
+        self._session_lru: OrderedDict[str, None] = OrderedDict()
+        self._redis = None
+        redis_url = (settings.redis_url or "").strip()
+        if redis_url:
+            from redis.asyncio import Redis
+
+            self._redis = Redis.from_url(redis_url, decode_responses=True)
+        self._session_store = SessionStore(
+            redis_client=self._redis,
+            ttl_seconds=settings.voice_session_ttl_seconds,
+        )
+        self._shutting_down = False
+        self._drain_lock = asyncio.Lock()
+        self._inflight_turns = 0
         self.livekit = LiveKitTransportAdapter()
         self.twilio = TwilioTelephonyAdapter()
         self.deepgram = DeepgramSttAdapter()
@@ -102,14 +122,107 @@ class VoiceRuntimeV2:
         self.handoff = HandoffAgent()
         self.supervisor = SupervisorAgent()
 
+    def begin_shutdown(self) -> None:
+        self._shutting_down = True
+
+    async def wait_for_inflight(self, timeout_s: float | None = None) -> None:
+        limit = timeout_s if timeout_s is not None else settings.voice_shutdown_drain_seconds
+        deadline = time.monotonic() + max(0.1, float(limit))
+        while True:
+            async with self._drain_lock:
+                if self._inflight_turns <= 0:
+                    return
+            if time.monotonic() >= deadline:
+                logger.warning(
+                    "Shutdown: %s session operations still inflight after drain timeout",
+                    self._inflight_turns,
+                )
+                return
+            await asyncio.sleep(0.05)
+
+    def _touch_session_lru(self, session_id: str) -> None:
+        self._session_lru.pop(session_id, None)
+        self._session_lru[session_id] = None
+
+    def _evict_cached_sessions_if_needed(self) -> None:
+        max_n = settings.voice_session_max_cached
+        if len(self.sessions) <= max_n:
+            return
+        for sid in list(self._session_lru.keys()):
+            if len(self.sessions) <= max_n:
+                break
+            s = self.sessions.get(sid)
+            if s and s.stage == "completed":
+                self.sessions.pop(sid, None)
+                self._session_lru.pop(sid, None)
+
+    async def _resolve_session(self, session_id: str) -> SessionState:
+        if self._redis:
+            remote = await self._session_store.load(session_id)
+            if remote:
+                self.sessions[session_id] = remote
+                return remote
+        session = self.sessions.get(session_id)
+        if not session:
+            raise KeyError(f"Unknown session: {session_id}")
+        return session
+
+    @asynccontextmanager
+    async def _exclusive_session(
+        self,
+        session_id: str,
+        *,
+        persist: bool = True,
+    ) -> AsyncGenerator[SessionState, None]:
+        async with self._drain_lock:
+            if self._shutting_down:
+                raise RuntimeError("Voice runtime is shutting down")
+            self._inflight_turns += 1
+        try:
+            local_lock = self._local_session_locks.setdefault(session_id, asyncio.Lock())
+            async with local_lock:
+                if self._redis:
+                    dist = self._redis.lock(
+                        f"wardline:v2:mut:{session_id}",
+                        timeout=120,
+                        blocking_timeout=settings.voice_session_lock_blocking_seconds,
+                    )
+                    async with dist:
+                        session = await self._resolve_session(session_id)
+                        try:
+                            yield session
+                        finally:
+                            if persist:
+                                await self._session_store.save(session)
+                            self._touch_session_lru(session_id)
+                            self._evict_cached_sessions_if_needed()
+                else:
+                    session = await self._resolve_session(session_id)
+                    try:
+                        yield session
+                    finally:
+                        if persist:
+                            await self._session_store.save(session)
+                        self._touch_session_lru(session_id)
+                        self._evict_cached_sessions_if_needed()
+        finally:
+            async with self._drain_lock:
+                self._inflight_turns -= 1
+
     async def close(self):
         await self.api_client.close()
+        if self._redis is not None:
+            await self._redis.aclose()
+            self._redis = None
 
     def real_call_preflight(self) -> Dict[str, Any]:
         return build_real_call_preflight_report()
 
-    def build_twilio_bootstrap_response(self, session_id: str) -> str:
-        session = self.get_session(session_id)
+    async def build_twilio_bootstrap_response(self, session_id: str) -> str:
+        async with self._exclusive_session(session_id) as session:
+            return self._build_twilio_bootstrap_for_session(session)
+
+    def _build_twilio_bootstrap_for_session(self, session: SessionState) -> str:
         if not session.transport.twilioMediaStreamUrl:
             raise ValueError(
                 "WEBHOOK_BASE_URL, VOICE_RUNTIME_V2_PUBLIC_URL, or RENDER_EXTERNAL_URL must be configured for Twilio cutover"
@@ -119,6 +232,7 @@ class VoiceRuntimeV2:
             stream_url=session.transport.twilioMediaStreamUrl,
             parameters={
                 "sessionId": session.sessionId,
+                "streamToken": session.mediaStreamToken,
                 "callId": session.callId or "",
                 "businessId": session.businessId,
                 "roomName": session.transport.roomName,
@@ -171,6 +285,7 @@ class VoiceRuntimeV2:
             callerContext=caller_ctx,
             callerName=caller_ctx.callerName if caller_ctx else None,
             isAfterHours=not self._is_business_open(runtime_config),
+            mediaStreamToken=secrets.token_urlsafe(32),
         )
         greeting = (
             f"Thank you for calling {runtime_config.business.name}. "
@@ -192,20 +307,45 @@ class VoiceRuntimeV2:
         )
         self.sessions[session.sessionId] = session
         await self._sync_call_state(session, status="INITIATED")
+        await self._session_store.save(session)
+        self._touch_session_lru(session.sessionId)
+        self._evict_cached_sessions_if_needed()
         return session
 
-    def get_session(self, session_id: str) -> SessionState:
-        session = self.sessions.get(session_id)
-        if not session:
-            raise KeyError(f"Unknown session: {session_id}")
-        return session
+    async def get_session_dump(self, session_id: str) -> dict:
+        async with self._exclusive_session(session_id) as session:
+            return session.model_dump()
 
-    def update_transport_metadata(self, session_id: str, **updates: Any) -> SessionState:
-        session = self.get_session(session_id)
-        transport_update = {key: value for key, value in updates.items() if value is not None}
-        if transport_update:
-            session.transport = session.transport.model_copy(update=transport_update)
-        return session
+    async def update_transport_metadata(self, session_id: str, **updates: Any) -> SessionState:
+        async with self._exclusive_session(session_id) as session:
+            transport_update = {key: value for key, value in updates.items() if value is not None}
+            if transport_update:
+                session.transport = session.transport.model_copy(update=transport_update)
+            return session
+
+    async def authorize_twilio_media_and_sync_transport(
+        self,
+        session_id: str,
+        *,
+        stream_token: str,
+        provider_session_id: str | None,
+        twilio_stream_sid: str | None,
+    ) -> tuple[str, Optional[str]]:
+        async with self._exclusive_session(session_id) as session:
+            expected = getattr(session, "mediaStreamToken", "") or ""
+            if not expected or stream_token != expected:
+                raise PermissionError("invalid_stream_token")
+            transport_update: Dict[str, Any] = {}
+            if provider_session_id:
+                transport_update["providerSessionId"] = provider_session_id
+            if twilio_stream_sid:
+                transport_update["twilioStreamSid"] = twilio_stream_sid
+            if transport_update:
+                session.transport = session.transport.model_copy(update=transport_update)
+            if not session.messages:
+                return "", None
+            last = session.messages[-1]
+            return last.text, getattr(last, "messageId", None)
 
     def readiness(self) -> Dict[str, Dict[str, str | bool]]:
         return {
@@ -226,27 +366,34 @@ class VoiceRuntimeV2:
         text: str,
         confidence: float | None = None,
     ) -> None:
-        session = self.get_session(session_id)
-        await self._persist_transcript_segment(session, speaker=speaker, text=text, confidence=confidence)
+        async with self._exclusive_session(session_id) as session:
+            await self._persist_transcript_segment(session, speaker=speaker, text=text, confidence=confidence)
 
     async def finalize_session(self, session_id: str, failure_reason: str | None = None) -> None:
-        session = self.get_session(session_id)
-        session.awaitingAnythingElse = False
-        session.awaitingVoicemail = False
-        self._clear_priority_prompt(session)
-        session.pendingConfirmation = None
-        if session.stage != "completed":
-            session.stage = "completed"
-        if failure_reason:
-            session.runtimeFailureReason = failure_reason
-        await self._sync_call_state(
-            session,
-            tag=self._current_call_tag(session),
-            status=self._determine_terminal_status(session, failure_reason),
-        )
+        async with self._exclusive_session(session_id, persist=False) as session:
+            session.awaitingAnythingElse = False
+            session.awaitingVoicemail = False
+            self._clear_priority_prompt(session)
+            session.pendingConfirmation = None
+            if session.stage != "completed":
+                session.stage = "completed"
+            if failure_reason:
+                session.runtimeFailureReason = failure_reason
+            await self._sync_call_state(
+                session,
+                tag=self._current_call_tag(session),
+                status=self._determine_terminal_status(session, failure_reason),
+            )
+        await self._session_store.delete(session_id)
+        self.sessions.pop(session_id, None)
+        self._session_lru.pop(session_id, None)
+        self._local_session_locks.pop(session_id, None)
 
     async def process_text_turn(self, session_id: str, text: str) -> Dict[str, Any]:
-        session = self.get_session(session_id)
+        async with self._exclusive_session(session_id) as session:
+            return await self._process_text_turn_for_session(session, text)
+
+    async def _process_text_turn_for_session(self, session: SessionState, text: str) -> Dict[str, Any]:
         cleaned_text = text.strip()
         if session.stage in {"closing", "completed"} or session.finalCloseState.active:
             if cleaned_text:
@@ -375,7 +522,15 @@ class VoiceRuntimeV2:
         recording_url: str,
         transcription: str | None = None,
     ) -> Dict[str, Any]:
-        session = self.get_session(session_id)
+        async with self._exclusive_session(session_id) as session:
+            return await self._capture_voicemail_for_session(session, recording_url, transcription)
+
+    async def _capture_voicemail_for_session(
+        self,
+        session: SessionState,
+        recording_url: str,
+        transcription: str | None = None,
+    ) -> Dict[str, Any]:
         if not session.callId:
             raise ValueError("Call session is missing a Core API call ID")
 
@@ -426,21 +581,45 @@ class VoiceRuntimeV2:
         final: bool = True,
         provider_session_id: str | None = None,
     ) -> Dict[str, Any]:
-        session = self.get_session(session_id)
-        if provider_session_id and session.transport.providerSessionId != provider_session_id:
-            session.transport = session.transport.model_copy(
-                update={
-                    "providerSessionId": provider_session_id,
-                    "deepgramRequestId": provider_session_id,
-                }
-            )
+        async with self._exclusive_session(session_id) as session:
+            if provider_session_id and session.transport.providerSessionId != provider_session_id:
+                session.transport = session.transport.model_copy(
+                    update={
+                        "providerSessionId": provider_session_id,
+                        "deepgramRequestId": provider_session_id,
+                    }
+                )
 
-        if session.stage in {"closing", "completed"} or session.finalCloseState.active:
-            if final and text.strip():
+            if session.stage in {"closing", "completed"} or session.finalCloseState.active:
+                if final and text.strip():
+                    session.events.append(
+                        SessionEvent(
+                            type="late_transcript_ignored",
+                            actionName="ignored-after-close",
+                            domain=session.activeDomain,
+                            integrationCategory="TRANSPORT",
+                            data={"text": text, "providerSessionId": provider_session_id},
+                        )
+                    )
+                    await self._sync_call_state(
+                        session,
+                        tag=self._current_call_tag(session),
+                        status=session.lifecycleStatus,
+                    )
+                return {
+                    "sessionId": session.sessionId,
+                    "accepted": True,
+                    "final": final,
+                    "ignored": True,
+                    "reply": "",
+                    "transport": session.transport.model_dump(),
+                }
+
+            if not final:
                 session.events.append(
                     SessionEvent(
-                        type="late_transcript_ignored",
-                        actionName="ignored-after-close",
+                        type="transcript_partial",
+                        actionName="partial-transcript",
                         domain=session.activeDomain,
                         integrationCategory="TRANSPORT",
                         data={"text": text, "providerSessionId": provider_session_id},
@@ -451,38 +630,14 @@ class VoiceRuntimeV2:
                     tag=self._current_call_tag(session),
                     status=session.lifecycleStatus,
                 )
-            return {
-                "sessionId": session.sessionId,
-                "accepted": True,
-                "final": final,
-                "ignored": True,
-                "reply": "",
-                "transport": session.transport.model_dump(),
-            }
+                return {
+                    "sessionId": session.sessionId,
+                    "accepted": True,
+                    "final": False,
+                    "transport": session.transport.model_dump(),
+                }
 
-        if not final:
-            session.events.append(
-                SessionEvent(
-                    type="transcript_partial",
-                    actionName="partial-transcript",
-                    domain=session.activeDomain,
-                    integrationCategory="TRANSPORT",
-                    data={"text": text, "providerSessionId": provider_session_id},
-                )
-            )
-            await self._sync_call_state(
-                session,
-                tag=self._current_call_tag(session),
-                status=session.lifecycleStatus,
-            )
-            return {
-                "sessionId": session.sessionId,
-                "accepted": True,
-                "final": False,
-                "transport": session.transport.model_dump(),
-            }
-
-        return await self.process_text_turn(session_id, text)
+            return await self._process_text_turn_for_session(session, text)
 
     async def _capture_transcribed_voicemail(self, session: SessionState, text: str) -> Dict[str, Any]:
         transcription = text.strip()
@@ -493,8 +648,8 @@ class VoiceRuntimeV2:
             return self._build_turn_response(session, reply, "handoff", False, awaiting_voicemail=True)
 
         recording_url = f"voice-runtime-v2://transcript/{session.sessionId}"
-        await self.capture_voicemail(
-            session.sessionId,
+        await self._capture_voicemail_for_session(
+            session,
             recording_url=recording_url,
             transcription=transcription,
         )
@@ -506,13 +661,12 @@ class VoiceRuntimeV2:
             tag="VOICEMAIL",
         )
 
-    def record_transport_event(
+    def _apply_transport_event_to_session(
         self,
-        session_id: str,
+        session: SessionState,
         event_type: str,
         payload: Dict[str, Any] | None = None,
     ) -> Dict[str, Any]:
-        session = self.get_session(session_id)
         payload = payload or {}
         transport_updates: Dict[str, Any] = {}
         if isinstance(payload.get("providerSessionId"), str):
@@ -568,14 +722,14 @@ class VoiceRuntimeV2:
         *,
         status: CallLifecycleStatus | None = None,
     ) -> Dict[str, Any]:
-        snapshot = self.record_transport_event(session_id, event_type, payload)
-        session = self.get_session(session_id)
-        await self._sync_call_state(
-            session,
-            tag=self._current_call_tag(session),
-            status=status or self._transport_checkpoint_status(session, event_type),
-        )
-        return snapshot
+        async with self._exclusive_session(session_id) as session:
+            snapshot = self._apply_transport_event_to_session(session, event_type, payload)
+            await self._sync_call_state(
+                session,
+                tag=self._current_call_tag(session),
+                status=status or self._transport_checkpoint_status(session, event_type),
+            )
+            return snapshot
 
     def _get_intent(self, session: SessionState, intent_id: Optional[str]) -> Optional[DetectedIntent]:
         if not intent_id:
@@ -1768,37 +1922,106 @@ class VoiceRuntimeV2:
         return self._build_turn_response(session, reply, "handoff", False)
 
     async def handle_transfer_action_callback(self, session_id: str, payload: Dict[str, Any]) -> str:
-        session = self.get_session(session_id)
-        transfer_attempt = session.transferAttempt
-        if not transfer_attempt.active:
-            await self._sync_call_state(session, tag=self._current_call_tag(session), status=session.lifecycleStatus)
-            return self.twilio.build_error_twiml("That transfer request is no longer active.")
-
-        dial_status = _normalize(str(payload.get("DialCallStatus") or payload.get("DialStatus") or "failed"))
-        current_intent = self._get_intent(session, transfer_attempt.intentId) if transfer_attempt.intentId else None
-        if current_intent:
-            session.intentQueue.activeIntentId = current_intent.intentId
-            session.activeDomain = current_intent.domain
-
-        if dial_status in {"completed", "answered"}:
+        async with self._exclusive_session(session_id) as session:
+            transfer_attempt = session.transferAttempt
+            if not transfer_attempt.active:
+                await self._sync_call_state(session, tag=self._current_call_tag(session), status=session.lifecycleStatus)
+                return self.twilio.build_error_twiml("That transfer request is no longer active.")
+    
+            dial_status = _normalize(str(payload.get("DialCallStatus") or payload.get("DialStatus") or "failed"))
+            current_intent = self._get_intent(session, transfer_attempt.intentId) if transfer_attempt.intentId else None
+            if current_intent:
+                session.intentQueue.activeIntentId = current_intent.intentId
+                session.activeDomain = current_intent.domain
+    
+            if dial_status in {"completed", "answered"}:
+                session.completedDomains.append("handoff")
+                session.slotState.pop("handoff", None)
+                session.missingSlots = []
+                self._clear_domain_slot_retries(session, "handoff")
+                session.lastOperatorSummary = OperatorSummary(
+                    headline="Live transfer connected",
+                    nextStep="Review the human handoff record if additional context is needed.",
+                    specialist="handoff",
+                    callerRequest=transfer_attempt.reasonSummary or "Live transfer requested",
+                    handledLive=True,
+                )
+                self._mark_current_intent_status(session, "resolved", action_name="handoff-transfer")
+                session.events.append(
+                    SessionEvent(
+                        type="handoff_transfer_connected",
+                        actionName="handoff-transfer",
+                        domain="handoff",
+                        operatorSummary=session.lastOperatorSummary.headline,
+                        data={
+                            "intentId": transfer_attempt.intentId,
+                            "transferTargetLabel": transfer_attempt.transferTargetLabel,
+                            "transferPhone": transfer_attempt.transferPhone,
+                            "reasonSummary": transfer_attempt.reasonSummary,
+                            "reasonCategory": transfer_attempt.reasonCategory,
+                            "callbackPhone": transfer_attempt.callbackPhone,
+                            "pendingIssues": transfer_attempt.pendingIssues,
+                        },
+                    )
+                )
+                session.transferAttempt = TransferAttemptState()
+                session.stage = "completed"
+                await self._sync_call_state(session, tag="HUMAN_TRANSFER", status="COMPLETED")
+                return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup /></Response>'
+    
+            callback_result = self._build_daytime_callback_result(
+                session,
+                summary=transfer_attempt.reasonSummary or "Staff callback requested by caller.",
+                reason_category=transfer_attempt.reasonCategory,
+                callback_phone=transfer_attempt.callbackPhone,
+                preferred_callback_window=transfer_attempt.preferredCallbackWindow,
+                extra_metadata={
+                    "transferAttempted": True,
+                    "transferTargetLabel": transfer_attempt.transferTargetLabel,
+                    "transferPhone": transfer_attempt.transferPhone,
+                    "pendingIssues": transfer_attempt.pendingIssues,
+                    "queueSnapshot": transfer_attempt.queueSnapshot,
+                },
+            )
+            outcome = await self._create_daytime_callback_outcome(
+                session,
+                callback_result,
+                fallback_reason=dial_status,
+                intent_id=transfer_attempt.intentId,
+            )
             session.completedDomains.append("handoff")
             session.slotState.pop("handoff", None)
             session.missingSlots = []
             self._clear_domain_slot_retries(session, "handoff")
-            session.lastOperatorSummary = OperatorSummary(
-                headline="Live transfer connected",
-                nextStep="Review the human handoff record if additional context is needed.",
-                specialist="handoff",
-                callerRequest=transfer_attempt.reasonSummary or "Live transfer requested",
-                handledLive=True,
+            self._mark_current_intent_status(
+                session,
+                "resolved",
+                follow_up_task_id=outcome.followUpTaskId,
+                fallback_reason=outcome.fallbackReason,
+                action_name="manual-follow-up",
             )
-            self._mark_current_intent_status(session, "resolved", action_name="handoff-transfer")
+            callback_summary = self._combine_operator_summary(
+                base=callback_result.operatorSummary,
+                outcome=outcome,
+                domain="handoff",
+                caller_request=callback_result.callerRequestSummary or callback_result.nextPrompt,
+            )
+            self._record_runtime_action_outcome(
+                session,
+                "handoff",
+                "manual-follow-up",
+                outcome,
+                callback_summary,
+                intent_id=transfer_attempt.intentId,
+            )
             session.events.append(
                 SessionEvent(
-                    type="handoff_transfer_connected",
+                    type="handoff_transfer_failed",
                     actionName="handoff-transfer",
                     domain="handoff",
-                    operatorSummary=session.lastOperatorSummary.headline,
+                    operatorSummary="Live transfer failed",
+                    followUpTaskId=outcome.followUpTaskId,
+                    fallbackReason=dial_status,
                     data={
                         "intentId": transfer_attempt.intentId,
                         "transferTargetLabel": transfer_attempt.transferTargetLabel,
@@ -1807,110 +2030,41 @@ class VoiceRuntimeV2:
                         "reasonCategory": transfer_attempt.reasonCategory,
                         "callbackPhone": transfer_attempt.callbackPhone,
                         "pendingIssues": transfer_attempt.pendingIssues,
+                        "followUpTaskId": outcome.followUpTaskId,
+                        "fallbackReason": dial_status,
+                    },
+                )
+            )
+            session.events.append(
+                SessionEvent(
+                    type="handoff_callback_requested",
+                    actionName="manual-follow-up",
+                    domain="handoff",
+                    operatorSummary=callback_summary.headline,
+                    followUpTaskId=outcome.followUpTaskId,
+                    fallbackReason=dial_status,
+                    data={
+                        "intentId": transfer_attempt.intentId,
+                        "transferTargetLabel": transfer_attempt.transferTargetLabel,
+                        "transferPhone": transfer_attempt.transferPhone,
+                        "reasonSummary": transfer_attempt.reasonSummary,
+                        "reasonCategory": transfer_attempt.reasonCategory,
+                        "callbackPhone": transfer_attempt.callbackPhone,
+                        "pendingIssues": transfer_attempt.pendingIssues,
+                        "followUpTaskId": outcome.followUpTaskId,
+                        "fallbackReason": dial_status,
                     },
                 )
             )
             session.transferAttempt = TransferAttemptState()
             session.stage = "completed"
+            callback_reply = (
+                "No one was available to take the call live, so I created a callback request for the staff."
+            )
+            await self._append_and_persist_assistant_message(session, callback_reply)
             await self._sync_call_state(session, tag="HUMAN_TRANSFER", status="COMPLETED")
-            return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup /></Response>'
-
-        callback_result = self._build_daytime_callback_result(
-            session,
-            summary=transfer_attempt.reasonSummary or "Staff callback requested by caller.",
-            reason_category=transfer_attempt.reasonCategory,
-            callback_phone=transfer_attempt.callbackPhone,
-            preferred_callback_window=transfer_attempt.preferredCallbackWindow,
-            extra_metadata={
-                "transferAttempted": True,
-                "transferTargetLabel": transfer_attempt.transferTargetLabel,
-                "transferPhone": transfer_attempt.transferPhone,
-                "pendingIssues": transfer_attempt.pendingIssues,
-                "queueSnapshot": transfer_attempt.queueSnapshot,
-            },
-        )
-        outcome = await self._create_daytime_callback_outcome(
-            session,
-            callback_result,
-            fallback_reason=dial_status,
-            intent_id=transfer_attempt.intentId,
-        )
-        session.completedDomains.append("handoff")
-        session.slotState.pop("handoff", None)
-        session.missingSlots = []
-        self._clear_domain_slot_retries(session, "handoff")
-        self._mark_current_intent_status(
-            session,
-            "resolved",
-            follow_up_task_id=outcome.followUpTaskId,
-            fallback_reason=outcome.fallbackReason,
-            action_name="manual-follow-up",
-        )
-        callback_summary = self._combine_operator_summary(
-            base=callback_result.operatorSummary,
-            outcome=outcome,
-            domain="handoff",
-            caller_request=callback_result.callerRequestSummary or callback_result.nextPrompt,
-        )
-        self._record_runtime_action_outcome(
-            session,
-            "handoff",
-            "manual-follow-up",
-            outcome,
-            callback_summary,
-            intent_id=transfer_attempt.intentId,
-        )
-        session.events.append(
-            SessionEvent(
-                type="handoff_transfer_failed",
-                actionName="handoff-transfer",
-                domain="handoff",
-                operatorSummary="Live transfer failed",
-                followUpTaskId=outcome.followUpTaskId,
-                fallbackReason=dial_status,
-                data={
-                    "intentId": transfer_attempt.intentId,
-                    "transferTargetLabel": transfer_attempt.transferTargetLabel,
-                    "transferPhone": transfer_attempt.transferPhone,
-                    "reasonSummary": transfer_attempt.reasonSummary,
-                    "reasonCategory": transfer_attempt.reasonCategory,
-                    "callbackPhone": transfer_attempt.callbackPhone,
-                    "pendingIssues": transfer_attempt.pendingIssues,
-                    "followUpTaskId": outcome.followUpTaskId,
-                    "fallbackReason": dial_status,
-                },
-            )
-        )
-        session.events.append(
-            SessionEvent(
-                type="handoff_callback_requested",
-                actionName="manual-follow-up",
-                domain="handoff",
-                operatorSummary=callback_summary.headline,
-                followUpTaskId=outcome.followUpTaskId,
-                fallbackReason=dial_status,
-                data={
-                    "intentId": transfer_attempt.intentId,
-                    "transferTargetLabel": transfer_attempt.transferTargetLabel,
-                    "transferPhone": transfer_attempt.transferPhone,
-                    "reasonSummary": transfer_attempt.reasonSummary,
-                    "reasonCategory": transfer_attempt.reasonCategory,
-                    "callbackPhone": transfer_attempt.callbackPhone,
-                    "pendingIssues": transfer_attempt.pendingIssues,
-                    "followUpTaskId": outcome.followUpTaskId,
-                    "fallbackReason": dial_status,
-                },
-            )
-        )
-        session.transferAttempt = TransferAttemptState()
-        session.stage = "completed"
-        callback_reply = (
-            "No one was available to take the call live, so I created a callback request for the staff."
-        )
-        await self._append_and_persist_assistant_message(session, callback_reply)
-        await self._sync_call_state(session, tag="HUMAN_TRANSFER", status="COMPLETED")
-        return self.twilio.build_error_twiml(f"{callback_reply} Thank you for calling.")
-
+            return self.twilio.build_error_twiml(f"{callback_reply} Thank you for calling.")
+    
     async def _run_runtime_action(
         self,
         session: SessionState,

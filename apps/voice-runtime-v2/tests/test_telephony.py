@@ -39,15 +39,10 @@ class TwilioMediaSessionTests(unittest.IsolatedAsyncioTestCase):
     async def test_start_event_records_transport_and_plays_greeting(self):
         websocket = FakeWebSocket()
         runtime = Mock()
-        runtime.update_transport_metadata = Mock()
-        runtime.persist_transport_event = AsyncMock()
-        runtime.get_session = Mock(
-            return_value=type(
-                "Session",
-                (),
-                {"messages": [type("Message", (), {"text": "Hello there", "messageId": "msg-1"})()]},
-            )()
+        runtime.authorize_twilio_media_and_sync_transport = AsyncMock(
+            return_value=("Hello there", "msg-1")
         )
+        runtime.persist_transport_event = AsyncMock()
         runtime.deepgram = Mock()
         runtime.deepgram.validate = Mock(return_value={"configured": True})
 
@@ -64,15 +59,16 @@ class TwilioMediaSessionTests(unittest.IsolatedAsyncioTestCase):
                     "start": {
                         "callSid": "CA123",
                         "streamSid": "MZ123",
-                        "customParameters": {"sessionId": "session-1"},
+                        "customParameters": {"sessionId": "session-1", "streamToken": "stream-token-test"},
                     },
                 }
             )
 
-        runtime.update_transport_metadata.assert_called_once_with(
+        runtime.authorize_twilio_media_and_sync_transport.assert_awaited_once_with(
             "session-1",
-            providerSessionId="MZ123",
-            twilioStreamSid="MZ123",
+            stream_token="stream-token-test",
+            provider_session_id="MZ123",
+            twilio_stream_sid="MZ123",
         )
         runtime.persist_transport_event.assert_awaited()
         speak_mock.assert_awaited_once_with(

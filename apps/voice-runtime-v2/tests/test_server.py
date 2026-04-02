@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import unittest
+import unittest.mock
 from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
@@ -9,12 +10,22 @@ APP_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
+import config  # noqa: E402
 import server  # noqa: E402
 
 
 class VoiceRuntimeV2ServerTests(unittest.TestCase):
     def setUp(self):
+        self._twilio_sig_patcher = unittest.mock.patch.object(
+            config.settings,
+            "twilio_skip_signature_validation",
+            True,
+        )
+        self._twilio_sig_patcher.start()
         self.client = TestClient(server.app)
+
+    def tearDown(self):
+        self._twilio_sig_patcher.stop()
 
     def test_twilio_bootstrap_returns_twiml_stream_response(self):
         session = AsyncMock()
@@ -30,7 +41,9 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
         ), patch.object(server.runtime, "start_session", AsyncMock(return_value=session)), patch.object(
             server.runtime,
             "build_twilio_bootstrap_response",
-            return_value='<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://voice.example.com/telephony/twilio/media"><Parameter name="sessionId" value="session-1" /></Stream></Connect></Response>',
+            AsyncMock(
+                return_value='<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://voice.example.com/telephony/twilio/media"><Parameter name="sessionId" value="session-1" /></Stream></Connect></Response>',
+            ),
         ):
             response = self.client.post(
                 "/telephony/twilio/bootstrap",

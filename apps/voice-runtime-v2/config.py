@@ -67,10 +67,22 @@ class Settings(BaseSettings):
     twilio_account_sid: str = Field(default="", alias="TWILIO_ACCOUNT_SID")
     twilio_auth_token: str = Field(default="", alias="TWILIO_AUTH_TOKEN")
     twilio_phone_number: str = Field(default="", alias="TWILIO_PHONE_NUMBER")
+    # Public origin Twilio used to POST webhooks (e.g. https://voice.example.com). Required for signature validation in production.
+    twilio_webhook_public_url: str = Field(default="", alias="TWILIO_WEBHOOK_PUBLIC_URL")
+    twilio_skip_signature_validation: bool = Field(default=False, alias="TWILIO_SKIP_SIGNATURE_VALIDATION")
     twilio_media_stream_path: str = Field(default="/telephony/twilio/media", alias="TWILIO_MEDIA_STREAM_PATH")
+    wardline_internal_api_secret: str = Field(default="", alias="WARDLINE_INTERNAL_API_SECRET")
     voice_runtime_legacy_call_sync: bool = Field(default=True, alias="VOICE_RUNTIME_LEGACY_CALL_SYNC")
 
     managed_tts_provider: str = Field(default="deepgram", alias="MANAGED_TTS_PROVIDER")
+
+    redis_url: str = Field(default="", alias="REDIS_URL")
+    voice_session_ttl_seconds: int = Field(default=4 * 3600, alias="VOICE_SESSION_TTL_SECONDS")
+    voice_session_max_cached: int = Field(default=5000, alias="VOICE_SESSION_MAX_CACHED")
+    voice_session_lock_blocking_seconds: float = Field(default=15.0, alias="VOICE_SESSION_LOCK_BLOCKING_SECONDS")
+    voice_shutdown_drain_seconds: float = Field(default=30.0, alias="VOICE_SHUTDOWN_DRAIN_SECONDS")
+    voice_deepgram_reconnect_attempts: int = Field(default=8, alias="VOICE_DEEPGRAM_RECONNECT_ATTEMPTS")
+    voice_http_max_retries: int = Field(default=3, alias="VOICE_HTTP_MAX_RETRIES")
 
     def resolved_core_api_url(self) -> str:
         explicit_url = self.core_api_url.strip()

@@ -68,7 +68,10 @@ export const createCallsService = (client: ApiClientMethods, businessId: string)
     },
 
     async markVoicemailListened(id: string): Promise<VoicemailRecord> {
-        return client.patch<VoicemailRecord>(`/api/voicemails/${id}/mark-listened`, {});
+        return client.patch<VoicemailRecord>(
+            `/api/businesses/${businessId}/voicemails/${id}/mark-listened`,
+            {},
+        );
     },
 });
 

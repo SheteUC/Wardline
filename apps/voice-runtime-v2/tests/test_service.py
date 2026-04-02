@@ -9,6 +9,7 @@ APP_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
+import config  # noqa: E402
 from service import VoiceRuntimeV2  # noqa: E402
 
 
@@ -437,6 +438,10 @@ class FakeCoreApiClient:
 class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         super().setUp()
+        # Avoid Redis in unit tests: reloading from Redis replaces SessionState instances and
+        # breaks assertions that hold the object returned from start_session.
+        self._p_redis_url = patch.object(config.settings, "redis_url", "")
+        self._p_redis_url.start()
         self._p_llm_route = patch("service.route_turn_llm", new=AsyncMock(return_value=None))
         self._p_llm_safe = patch("service.assess_safety_llm", new=AsyncMock(return_value=None))
         self._p_llm_slots = patch("service.extract_slots_llm", new=AsyncMock(return_value={}))
@@ -451,6 +456,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self._p_llm_safe.stop()
         self._p_llm_slots.stop()
         self._p_llm_agents.stop()
+        self._p_redis_url.stop()
         super().tearDown()
 
     async def create_runtime(self, **client_kwargs):
@@ -474,9 +480,11 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(session.transport.twilioCallSid, "CA_test")
         self.assertTrue(session.transport.roomName.startswith("wardline-"))
         self.assertIn("/telephony/twilio/media", session.transport.twilioMediaStreamUrl)
-        twiml = runtime.build_twilio_bootstrap_response(session.sessionId)
+        twiml = await runtime.build_twilio_bootstrap_response(session.sessionId)
         self.assertIn("<Stream", twiml)
         self.assertIn(session.sessionId, twiml)
+        self.assertIn("streamToken", twiml)
+        self.assertTrue(session.mediaStreamToken)
 
     async def test_session_bootstrap_persists_initiated_status(self):
         _runtime, api_client, _session = await self.create_runtime()
@@ -784,7 +792,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         first_response = await runtime.process_text_turn(session.sessionId, "I need a staff callback after hours")
         second_response = await runtime.process_text_turn(session.sessionId, "Please ask the office to call me tomorrow morning.")
-        runtime.record_transport_event(
+        await runtime.persist_transport_event(
             session.sessionId,
             "twilio_mark",
             {"assistantMessageId": second_response["assistantMessageId"]},
@@ -1383,7 +1391,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(close_response["closeState"]["active"])
         self.assertFalse(close_response["closeState"]["playbackCompleted"])
 
-        runtime.record_transport_event(
+        await runtime.persist_transport_event(
             session.sessionId,
             "twilio_mark",
             {"assistantMessageId": close_response["assistantMessageId"]},

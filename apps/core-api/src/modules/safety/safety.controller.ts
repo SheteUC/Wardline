@@ -1,5 +1,9 @@
 import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { UserRole } from '@wardline/types';
 import { Public } from '../../auth/public.decorator';
+import { InternalApi } from '../../auth/internal-api.decorator';
+import { Permissions } from '../../auth/permissions.decorator';
 import { SafetyGuardService } from './safety-guard.service';
 
 @Controller('api/safety')
@@ -9,6 +13,8 @@ export class SafetyController {
     /** Called by voice orchestrator to check an utterance in real-time */
     @Post('check')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 400, ttl: 60_000 } })
     async checkSafety(@Body() body: { text: string; businessId: string }) {
         return this.safetyGuard.checkSafety(body.text, body.businessId);
     }
@@ -16,6 +22,7 @@ export class SafetyController {
     /** Quick emergency-only check (hot path, no DB hit) */
     @Post('quick-emergency-check')
     @Public()
+    @Throttle({ global: { limit: 600, ttl: 60_000 } })
     quickEmergencyCheck(@Body() body: { text: string }) {
         return this.safetyGuard.quickEmergencyCheck(body.text);
     }
@@ -34,6 +41,7 @@ export class SafetyController {
 
     /** Returns merged keyword config for a business */
     @Get('businesses/:businessId/keywords')
+    @Permissions(UserRole.READONLY)
     async getBusinessKeywords(@Param('businessId') businessId: string) {
         const systemEmergency = this.safetyGuard.getSystemEmergencyKeywords();
         const defaultOutOfScope = this.safetyGuard.getDefaultOutOfScopeKeywords();

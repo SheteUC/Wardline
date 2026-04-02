@@ -6,6 +6,7 @@ describe('BusinessesService', () => {
     let prisma: any;
     let cache: any;
     let workflowsService: any;
+    let credentialsCrypto: { decrypt: jest.Mock; encrypt: jest.Mock };
 
     beforeEach(() => {
         prisma = {
@@ -25,8 +26,12 @@ describe('BusinessesService', () => {
             getActiveWorkflow: jest.fn(),
             syncPracticeSetupWorkflow: jest.fn().mockResolvedValue(undefined),
         };
+        credentialsCrypto = {
+            decrypt: jest.fn((v: unknown) => v),
+            encrypt: jest.fn((v: unknown) => v),
+        };
 
-        service = new BusinessesService(prisma, cache, workflowsService);
+        service = new BusinessesService(prisma, cache, workflowsService, credentialsCrypto as any);
     });
 
     it('creates an owner membership when a creator user is provided', async () => {

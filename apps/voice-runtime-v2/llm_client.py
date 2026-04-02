@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from config import settings
+from retry_async import retry_async
 
 logger = logging.getLogger(__name__)
 
@@ -63,25 +64,28 @@ async def chat_json_completion(
     if not model:
         return None
 
-    try:
-        kwargs: Dict[str, Any] = {
-            "model": model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "temperature": temperature,
-            "response_format": {"type": "json_object"},
-        }
-        if max_tokens is not None:
-            kwargs["max_tokens"] = max_tokens
+    kwargs: Dict[str, Any] = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": temperature,
+        "response_format": {"type": "json_object"},
+    }
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
 
+    async def _once() -> Dict[str, Any]:
         response = await client.chat.completions.create(**kwargs)
         choice = response.choices[0] if response.choices else None
         raw = choice.message.content if choice and choice.message else None
         if not raw or not raw.strip():
-            return None
+            raise ValueError("empty LLM content")
         return json.loads(raw)
+
+    try:
+        return await retry_async(_once, attempts=3, operation="llm_chat_json")
     except Exception as exc:
         logger.warning("LLM chat_json_completion failed: %s", exc)
         return None

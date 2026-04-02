@@ -11,6 +11,7 @@ from typing import Any, Optional
 from fastapi import WebSocket, WebSocketDisconnect
 
 from config import settings
+from retry_async import retry_async
 from service import VoiceRuntimeV2
 
 
@@ -36,6 +37,7 @@ class TwilioMediaSession:
         self._utterance_buffer: list[str] = []
         self._utterance_timer: Optional[asyncio.Task[None]] = None
         self._latest_provider_session_id: Optional[str] = None
+        self._deepgram_ready = asyncio.Event()
 
     async def run(self):
         await self.websocket.accept()
@@ -145,11 +147,19 @@ class TwilioMediaSession:
             self._closed = True
             return
 
-        self.runtime.update_transport_metadata(
-            self.session_id,
-            providerSessionId=self.stream_sid or self.call_sid,
-            twilioStreamSid=self.stream_sid or None,
-        )
+        stream_token = str(custom_parameters.get("streamToken") or "")
+        try:
+            greeting_text, greeting_message_id = await self.runtime.authorize_twilio_media_and_sync_transport(
+                self.session_id,
+                stream_token=stream_token,
+                provider_session_id=self.stream_sid or self.call_sid,
+                twilio_stream_sid=self.stream_sid or None,
+            )
+        except (KeyError, PermissionError):
+            await self.websocket.close(code=4401, reason="Invalid media stream token")
+            self._closed = True
+            return
+
         await self.runtime.persist_transport_event(
             self.session_id,
             "twilio_stream_started",
@@ -164,11 +174,10 @@ class TwilioMediaSession:
         )
 
         await self._ensure_deepgram_socket()
-        if not self._greeting_sent:
-            greeting_message = self.runtime.get_session(self.session_id).messages[-1]
+        if not self._greeting_sent and greeting_text:
             await self._speak(
-                greeting_message.text,
-                assistant_message_id=getattr(greeting_message, "messageId", None),
+                greeting_text,
+                assistant_message_id=greeting_message_id,
                 mark_name_prefix="greeting",
             )
             self._greeting_sent = True
@@ -188,8 +197,22 @@ class TwilioMediaSession:
 
         await self._deepgram_socket.send(base64.b64decode(audio_payload))
 
+    async def _open_deepgram_websocket(self):
+        import websockets
+
+        headers = {"Authorization": f"Token {settings.deepgram_api_key}"}
+        url = self.runtime.deepgram.websocket_url()
+
+        async def _connect_once():
+            try:
+                return await websockets.connect(url, additional_headers=headers)
+            except TypeError:
+                return await websockets.connect(url, extra_headers=headers)
+
+        return await retry_async(_connect_once, attempts=3, operation="deepgram_connect")
+
     async def _ensure_deepgram_socket(self):
-        if self._deepgram_socket or not self.session_id:
+        if not self.session_id or self._closed:
             return
 
         if not self.runtime.deepgram.validate().get("configured"):
@@ -201,7 +224,7 @@ class TwilioMediaSession:
             return
 
         try:
-            import websockets
+            import websockets  # noqa: F401
         except ImportError:
             await self.runtime.persist_transport_event(
                 self.session_id,
@@ -210,82 +233,126 @@ class TwilioMediaSession:
             )
             return
 
-        headers = {"Authorization": f"Token {settings.deepgram_api_key}"}
+        if self._deepgram_task and not self._deepgram_task.done():
+            # Reconnect in progress; avoid blocking media frames on the ready event.
+            return
+
+        self._deepgram_ready.clear()
+        self._deepgram_task = asyncio.create_task(self._deepgram_receive_loop())
         try:
-            self._deepgram_socket = await websockets.connect(
-                self.runtime.deepgram.websocket_url(),
-                additional_headers=headers,
-            )
-        except TypeError:
-            self._deepgram_socket = await websockets.connect(
-                self.runtime.deepgram.websocket_url(),
-                extra_headers=headers,
+            await asyncio.wait_for(self._deepgram_ready.wait(), timeout=15.0)
+        except asyncio.TimeoutError:
+            pass
+
+    async def _deepgram_receive_loop(self):
+        attempt = 0
+        max_attempts = max(1, settings.voice_deepgram_reconnect_attempts)
+
+        while not self._closed and self.session_id and attempt < max_attempts:
+            try:
+                self._deepgram_socket = await self._open_deepgram_websocket()
+            except Exception as exc:
+                if self.session_id:
+                    await self.runtime.persist_transport_event(
+                        self.session_id,
+                        "deepgram_connect_failed",
+                        {"error": f"{type(exc).__name__}: {exc}", "attempt": attempt + 1},
+                    )
+                attempt += 1
+                if self._closed or attempt >= max_attempts:
+                    break
+                await asyncio.sleep(min(5.0, 0.25 * (2 ** min(attempt, 4))))
+                continue
+
+            self._deepgram_ready.set()
+            await self.runtime.persist_transport_event(
+                self.session_id,
+                "deepgram_connected",
+                {"provider": "deepgram", "attempt": attempt + 1},
             )
 
-        await self.runtime.persist_transport_event(
-            self.session_id,
-            "deepgram_connected",
-            {"provider": "deepgram"},
-        )
-        self._deepgram_task = asyncio.create_task(self._receive_deepgram_results())
+            try:
+                await self._receive_deepgram_results()
+            except asyncio.CancelledError:
+                break
+            except Exception as exc:
+                if self.session_id:
+                    await self.runtime.persist_transport_event(
+                        self.session_id,
+                        "deepgram_stream_closed",
+                        {"twilioStreamSid": self.stream_sid, "error": f"{type(exc).__name__}: {exc}"},
+                    )
+            finally:
+                self._deepgram_ready.clear()
+                if self._deepgram_socket:
+                    try:
+                        await self._deepgram_socket.close()
+                    except Exception:
+                        pass
+                    self._deepgram_socket = None
+
+            if self._closed:
+                break
+
+            attempt += 1
+            if attempt >= max_attempts:
+                break
+            if self.session_id:
+                await self.runtime.persist_transport_event(
+                    self.session_id,
+                    "deepgram_reconnecting",
+                    {"attempt": attempt, "maxAttempts": max_attempts},
+                )
+            await asyncio.sleep(min(5.0, 0.25 * (2 ** min(attempt, 4))))
 
     async def _receive_deepgram_results(self):
         if not self._deepgram_socket or not self.session_id:
             return
 
-        try:
-            while True:
-                raw_message = await self._deepgram_socket.recv()
-                if isinstance(raw_message, bytes):
-                    continue
+        while not self._closed:
+            raw_message = await self._deepgram_socket.recv()
+            if isinstance(raw_message, bytes):
+                continue
 
-                payload = json.loads(raw_message)
+            payload = json.loads(raw_message)
 
-                if payload.get("type") == "UtteranceEnd":
-                    await self._flush_utterance_buffer()
-                    continue
+            if payload.get("type") == "UtteranceEnd":
+                await self._flush_utterance_buffer()
+                continue
 
-                transcript = self.runtime.deepgram.normalize_message(payload)
-                if not transcript or not transcript.text:
-                    continue
+            transcript = self.runtime.deepgram.normalize_message(payload)
+            if not transcript or not transcript.text:
+                continue
 
-                if transcript.provider_session_id:
-                    self._latest_provider_session_id = transcript.provider_session_id
+            if transcript.provider_session_id:
+                self._latest_provider_session_id = transcript.provider_session_id
 
-                if not transcript.final:
-                    await self.runtime.process_transcript_turn(
-                        self.session_id,
-                        transcript.text,
-                        final=False,
-                        provider_session_id=transcript.provider_session_id or self.stream_sid,
-                    )
-                    continue
+            if not transcript.final:
+                await self.runtime.process_transcript_turn(
+                    self.session_id,
+                    transcript.text,
+                    final=False,
+                    provider_session_id=transcript.provider_session_id or self.stream_sid,
+                )
+                continue
 
-                self._utterance_buffer.append(transcript.text)
+            self._utterance_buffer.append(transcript.text)
 
-                if transcript.provider_session_id:
-                    await self.runtime.persist_transport_event(
-                        self.session_id,
-                        "deepgram_transcript",
-                        {
-                            "deepgramRequestId": transcript.provider_session_id,
-                            "providerSessionId": transcript.provider_session_id,
-                            "final": True,
-                            "confidence": transcript.confidence,
-                        },
-                    )
-
-                if self._utterance_timer and not self._utterance_timer.done():
-                    self._utterance_timer.cancel()
-                self._utterance_timer = asyncio.create_task(self._utterance_settle_then_flush())
-
-        except Exception:
-            if self.session_id:
+            if transcript.provider_session_id:
                 await self.runtime.persist_transport_event(
                     self.session_id,
-                    "deepgram_stream_closed",
-                    {"twilioStreamSid": self.stream_sid},
+                    "deepgram_transcript",
+                    {
+                        "deepgramRequestId": transcript.provider_session_id,
+                        "providerSessionId": transcript.provider_session_id,
+                        "final": True,
+                        "confidence": transcript.confidence,
+                    },
                 )
+
+            if self._utterance_timer and not self._utterance_timer.done():
+                self._utterance_timer.cancel()
+            self._utterance_timer = asyncio.create_task(self._utterance_settle_then_flush())
 
     async def _utterance_settle_then_flush(self):
         """Wait for a brief settle period, then flush the accumulated buffer."""

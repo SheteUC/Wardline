@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheService } from '../../cache/cache.service';
 import { AuditService } from '../../audit/audit.service';
+import { CredentialsCryptoService } from '../../crypto/credentials-crypto.service';
 import {
     IntegrationConnectorsService,
     ResolvedBusinessIntegration,
@@ -88,6 +89,7 @@ export class IntegrationsService {
         private readonly cache: CacheService,
         private readonly auditService: AuditService,
         private readonly integrationConnectors: IntegrationConnectorsService,
+        private readonly credentialsCrypto: CredentialsCryptoService,
     ) {}
 
     async findAll(businessId: string): Promise<any[]> {
@@ -104,14 +106,15 @@ export class IntegrationsService {
                 return this.integrationConnectors.buildDisconnectedIntegration(businessId, category);
             }
 
+            const decrypted = this.decryptIntegrationRow(existing);
             const normalizedSettings = this.integrationConnectors.normalizeSettings(
                 category,
-                existing.vendor,
-                existing.settings,
+                decrypted.vendor,
+                decrypted.settings,
             );
 
             return {
-                ...existing,
+                ...decrypted,
                 settings: normalizedSettings,
                 capabilities: this.integrationConnectors.buildCapabilities(
                     category,
@@ -138,14 +141,15 @@ export class IntegrationsService {
             throw new NotFoundException(`Integration not configured for ${normalizedCategory}`);
         }
 
+        const decrypted = this.decryptIntegrationRow(integration);
         const normalizedSettings = this.integrationConnectors.normalizeSettings(
             normalizedCategory,
-            integration.vendor,
-            integration.settings,
+            decrypted.vendor,
+            decrypted.settings,
         );
 
         return {
-            ...integration,
+            ...decrypted,
             settings: normalizedSettings,
             capabilities: this.integrationConnectors.buildCapabilities(
                 normalizedCategory,
@@ -170,7 +174,7 @@ export class IntegrationsService {
         const normalizedCategory = this.normalizeCategory(category);
         const vendor = body.vendor?.trim() || this.integrationConnectors.getDefaultVendor(normalizedCategory);
 
-        const existing = await this.prisma.businessIntegration.findUnique({
+        const existingRow = await this.prisma.businessIntegration.findUnique({
             where: {
                 businessId_category: {
                     businessId,
@@ -178,6 +182,7 @@ export class IntegrationsService {
                 },
             },
         });
+        const existing = existingRow ? this.decryptIntegrationRow(existingRow) : null;
 
         const rawSettings =
             vendor === 'wardline'
@@ -197,7 +202,13 @@ export class IntegrationsService {
             false,
         );
 
-        const integration = await this.prisma.businessIntegration.upsert({
+        const storedCredentialsRef =
+            resolvedCredentialsRef === null || resolvedCredentialsRef === undefined
+                ? resolvedCredentialsRef
+                : (this.credentialsCrypto.encrypt(resolvedCredentialsRef) ?? resolvedCredentialsRef);
+        const storedSettings = this.credentialsCrypto.encryptIntegrationSettingsJson(normalizedSettings);
+
+        const integrationRow = await this.prisma.businessIntegration.upsert({
             where: {
                 businessId_category: {
                     businessId,
@@ -207,8 +218,8 @@ export class IntegrationsService {
             update: {
                 vendor,
                 status: (body.status?.toUpperCase() ?? 'DISCONNECTED') as any,
-                credentialsRef: resolvedCredentialsRef,
-                settings: normalizedSettings as any,
+                credentialsRef: storedCredentialsRef,
+                settings: storedSettings as any,
                 capabilities: normalizedCapabilities as any,
             },
             create: {
@@ -216,11 +227,12 @@ export class IntegrationsService {
                 category: normalizedCategory as any,
                 vendor,
                 status: (body.status?.toUpperCase() ?? 'DISCONNECTED') as any,
-                credentialsRef: resolvedCredentialsRef,
-                settings: normalizedSettings as any,
+                credentialsRef: storedCredentialsRef,
+                settings: storedSettings as any,
                 capabilities: normalizedCapabilities as any,
             },
         });
+        const integration = this.decryptIntegrationRow(integrationRow);
 
         await this.auditService.logAction({
             businessId,
@@ -230,18 +242,39 @@ export class IntegrationsService {
             metadata: {
                 category: normalizedCategory,
                 vendor,
-                credentialsRef: resolvedCredentialsRef,
+                credentialsRefRedacted: true,
             },
         });
         await this.invalidate(businessId);
-        return integration;
+        const outSettings = this.integrationConnectors.normalizeSettings(
+            normalizedCategory,
+            integration.vendor,
+            integration.settings,
+        );
+        return {
+            ...integration,
+            settings: outSettings,
+            capabilities: this.integrationConnectors.buildCapabilities(
+                normalizedCategory,
+                integration.vendor,
+                outSettings,
+                integration.status === 'CONNECTED',
+            ),
+        };
     }
 
     async testConnection(businessId: string, category: string): Promise<any> {
         const resolvedIntegration = await this.findResolvedIntegration(businessId, category);
         const healthResult = await this.integrationConnectors.testIntegration(resolvedIntegration);
 
-        const updated = await this.prisma.businessIntegration.upsert({
+        const credRef =
+            resolvedIntegration.credentialsRef === null || resolvedIntegration.credentialsRef === undefined
+                ? resolvedIntegration.credentialsRef
+                : (this.credentialsCrypto.encrypt(resolvedIntegration.credentialsRef)
+                    ?? resolvedIntegration.credentialsRef);
+        const healthSettings = this.credentialsCrypto.encryptIntegrationSettingsJson(healthResult.settings);
+
+        const updatedRow = await this.prisma.businessIntegration.upsert({
             where: {
                 businessId_category: {
                     businessId,
@@ -250,8 +283,8 @@ export class IntegrationsService {
             },
             update: {
                 vendor: resolvedIntegration.vendor,
-                credentialsRef: resolvedIntegration.credentialsRef,
-                settings: healthResult.settings as any,
+                credentialsRef: credRef,
+                settings: healthSettings as any,
                 capabilities: healthResult.capabilities as any,
                 status: healthResult.status as any,
                 lastHealthCheckAt: new Date(),
@@ -260,13 +293,14 @@ export class IntegrationsService {
                 businessId,
                 category: resolvedIntegration.category as any,
                 vendor: resolvedIntegration.vendor,
-                credentialsRef: resolvedIntegration.credentialsRef,
-                settings: healthResult.settings as any,
+                credentialsRef: credRef,
+                settings: healthSettings as any,
                 capabilities: healthResult.capabilities as any,
                 status: healthResult.status as any,
                 lastHealthCheckAt: new Date(),
             },
         });
+        const updated = this.decryptIntegrationRow(updatedRow);
 
         await this.auditService.logAction({
             businessId,
@@ -311,19 +345,20 @@ export class IntegrationsService {
             return this.integrationConnectors.buildDisconnectedIntegration(businessId, normalizedCategory);
         }
 
+        const decrypted = this.decryptIntegrationRow(integration);
         const normalizedSettings = this.integrationConnectors.normalizeSettings(
             normalizedCategory,
-            integration.vendor,
-            integration.settings,
+            decrypted.vendor,
+            decrypted.settings,
         );
         return {
-            ...integration,
+            ...decrypted,
             settings: normalizedSettings,
             capabilities: this.integrationConnectors.buildCapabilities(
                 normalizedCategory,
-                integration.vendor,
+                decrypted.vendor,
                 normalizedSettings,
-                integration.status === 'CONNECTED',
+                decrypted.status === 'CONNECTED',
             ),
         };
     }
@@ -339,5 +374,15 @@ export class IntegrationsService {
     private async invalidate(businessId: string) {
         await this.cache.invalidateByTag(`business:${businessId}`);
         await this.cache.invalidateByPrefix(`follow-up-tasks:${businessId}:`);
+    }
+
+    private decryptIntegrationRow<T extends { credentialsRef?: string | null; settings?: unknown }>(
+        row: T,
+    ): T {
+        return {
+            ...row,
+            credentialsRef: (this.credentialsCrypto.decrypt(row.credentialsRef) ?? row.credentialsRef) as any,
+            settings: this.credentialsCrypto.decryptIntegrationSettingsJson(row.settings),
+        };
     }
 }

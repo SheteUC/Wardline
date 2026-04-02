@@ -1,9 +1,13 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../auth/public.decorator';
+import { InternalApi } from '../../auth/internal-api.decorator';
 import { RuntimeActionsService } from './runtime-actions.service';
 
 @Controller('api/businesses/:businessId/runtime-actions')
 @Public()
+@InternalApi()
+@Throttle({ global: { limit: 200, ttl: 60_000 } })
 export class RuntimeActionsController {
     constructor(private readonly runtimeActionsService: RuntimeActionsService) {}
 

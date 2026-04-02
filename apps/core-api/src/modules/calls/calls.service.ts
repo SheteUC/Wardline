@@ -186,11 +186,11 @@ export class CallsService {
         return response;
     }
 
-    async findOne(id: string): Promise<any> {
+    async findOne(id: string, businessId: string): Promise<any> {
         const startedAt = Date.now();
         // Call detail includes transcript text and caller fields, so it bypasses Redis.
         const call = await this.prisma.callSession.findUnique({
-            where: { id },
+            where: { id, businessId },
             select: {
                 id: true,
                 businessId: true,
@@ -242,7 +242,7 @@ export class CallsService {
         const fallbackTurns = !call.projection && projectionFallbackEnabled
             ? (
                   await this.prisma.callSession.findUnique({
-                      where: { id },
+                      where: { id, businessId },
                       select: { turnsJson: true },
                   })
               )?.turnsJson
@@ -503,9 +503,9 @@ export class CallsService {
         return voicemails;
     }
 
-    async markVoicemailListened(id: string): Promise<any> {
+    async markVoicemailListened(id: string, businessId: string): Promise<any> {
         const voicemail = await this.prisma.voicemailRecord.update({
-            where: { id },
+            where: { id, businessId },
             data: { isListened: true },
         });
         await this.invalidateOperationalCaches(voicemail.businessId, voicemail.callId);

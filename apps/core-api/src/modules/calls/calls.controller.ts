@@ -2,7 +2,9 @@ import {
     Controller, Get, Post, Patch, Param, Query, Body,
     HttpCode, HttpStatus, NotFoundException, BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../auth/public.decorator';
+import { InternalApi } from '../../auth/internal-api.decorator';
 import { CallsService } from './calls.service';
 import {
     BootstrapVoiceSessionDto,
@@ -40,8 +42,11 @@ export class CallsController {
     }
 
     @Get('businesses/:businessId/call-logs/:id')
-    findOne(@Param('id') id: string) {
-        return this.callsService.findOne(id);
+    findOne(
+        @Param('businessId') businessId: string,
+        @Param('id') id: string,
+    ) {
+        return this.callsService.findOne(id, businessId);
     }
 
     // -------------------------------------------------------------------------
@@ -56,9 +61,12 @@ export class CallsController {
         return this.callsService.getVoicemails(businessId, unlistenedOnly === 'true');
     }
 
-    @Patch('voicemails/:id/mark-listened')
-    markVoicemailListened(@Param('id') id: string) {
-        return this.callsService.markVoicemailListened(id);
+    @Patch('businesses/:businessId/voicemails/:id/mark-listened')
+    markVoicemailListened(
+        @Param('businessId') businessId: string,
+        @Param('id') id: string,
+    ) {
+        return this.callsService.markVoicemailListened(id, businessId);
     }
 
     // -------------------------------------------------------------------------
@@ -67,6 +75,7 @@ export class CallsController {
 
     @Get('calls')
     @Public()
+    @InternalApi()
     async getCalls(@Query('twilioCallSid') twilioCallSid?: string) {
         if (twilioCallSid) return this.callsService.findByTwilioSid(twilioCallSid);
         return { data: [], message: 'Provide twilioCallSid query parameter' };
@@ -74,6 +83,8 @@ export class CallsController {
 
     @Post('internal/voice/bootstrap')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 60, ttl: 60_000 } })
     @HttpCode(HttpStatus.CREATED)
     async bootstrapVoice(@Body() dto: BootstrapVoiceSessionDto) {
         try {
@@ -89,6 +100,8 @@ export class CallsController {
 
     @Post('internal/calls/:id/ingest')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 300, ttl: 60_000 } })
     @HttpCode(HttpStatus.CREATED)
     async ingestCall(@Param('id') id: string, @Body() dto: CallIngestDto) {
         try {
@@ -109,6 +122,8 @@ export class CallsController {
 
     @Get('internal/voice/caller-context')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 120, ttl: 60_000 } })
     async getCallerContext(
         @Query('businessId') businessId: string,
         @Query('callerPhone') callerPhone: string,
@@ -126,6 +141,8 @@ export class CallsController {
 
     @Post('calls')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 120, ttl: 60_000 } })
     @HttpCode(HttpStatus.CREATED)
     async createCall(@Body() dto: CreateCallDto) {
         try {
@@ -141,6 +158,8 @@ export class CallsController {
 
     @Patch('calls/:id')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 300, ttl: 60_000 } })
     async updateCall(@Param('id') id: string, @Body() dto: UpdateCallDto) {
         try {
             return await this.callsService.update(id, dto);
@@ -153,6 +172,8 @@ export class CallsController {
 
     @Post('calls/:id/transcript')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 400, ttl: 60_000 } })
     @HttpCode(HttpStatus.CREATED)
     async saveTranscript(@Param('id') id: string, @Body() dto: SaveTranscriptDto) {
         try {
@@ -175,6 +196,8 @@ export class CallsController {
     /** Create a voicemail record when no human is available */
     @Post('calls/:id/voicemail')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 60, ttl: 60_000 } })
     @HttpCode(HttpStatus.CREATED)
     async createVoicemail(
         @Param('id') callId: string,
@@ -195,6 +218,8 @@ export class CallsController {
 
     @Post('handoffs')
     @Public()
+    @InternalApi()
+    @Throttle({ global: { limit: 60, ttl: 60_000 } })
     @HttpCode(HttpStatus.CREATED)
     async createHandoff(@Body() dto: CreateHandoffDto) {
         try {

@@ -56,10 +56,26 @@ export class TranscriptRetentionTask {
                     where: { callId: { in: callIds } },
                 });
 
-                if (count > 0) {
+                const voicemailRedacted = await this.prisma.voicemailRecord.updateMany({
+                    where: { callId: { in: callIds } },
+                    data: {
+                        recordingUrl: '',
+                        transcription: null,
+                        context: '[Removed per transcript retention policy]',
+                        callerName: null,
+                    },
+                });
+
+                const recordingsCleared = await this.prisma.callSession.updateMany({
+                    where: { id: { in: callIds } },
+                    data: { recordingUrl: null },
+                });
+
+                if (count > 0 || voicemailRedacted.count > 0 || recordingsCleared.count > 0) {
                     totalDeleted += count;
                     this.logger.log(
-                        `Deleted ${count} transcript segments for business ${business.id} ` +
+                        `Retention pass for business ${business.id}: transcript segments deleted=${count}, ` +
+                        `voicemails redacted=${voicemailRedacted.count}, call recording URLs cleared=${recordingsCleared.count} ` +
                         `(retention: ${retentionDays} days, cutoff: ${cutoff.toISOString()})`,
                     );
 
@@ -68,7 +84,9 @@ export class TranscriptRetentionTask {
                         action: 'TRANSCRIPT_RETENTION_CLEANUP',
                         entityType: 'TranscriptSegment',
                         metadata: {
-                            deletedCount: count,
+                            deletedTranscriptSegments: count,
+                            voicemailsRedacted: voicemailRedacted.count,
+                            callRecordingUrlsCleared: recordingsCleared.count,
                             retentionDays,
                             cutoffDate: cutoff.toISOString(),
                             affectedCallIds: callIds,
