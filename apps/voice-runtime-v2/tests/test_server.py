@@ -11,6 +11,7 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 import config  # noqa: E402
+from observability import metrics  # noqa: E402
 import server  # noqa: E402
 
 
@@ -256,6 +257,32 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         mocked.assert_awaited_once_with("session-1", "hello", final=False, provider_session_id="dg-123")
+
+    def test_invalid_twilio_signature_increments_provider_error_metric(self):
+        errors_before = metrics.voice_provider_errors_total.labels(
+            provider="twilio",
+            error_type="signature_validation",
+        )._value.get()
+
+        with patch.object(config.settings, "twilio_skip_signature_validation", False), patch.object(
+            config.settings,
+            "twilio_auth_token",
+            "secret",
+        ):
+            response = self.client.post(
+                "/telephony/twilio/bootstrap",
+                data={"CallSid": "CA123", "From": "+15550000001", "To": "+15551230001"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("<Say>", response.text)
+        self.assertEqual(
+            metrics.voice_provider_errors_total.labels(
+                provider="twilio",
+                error_type="signature_validation",
+            )._value.get(),
+            errors_before + 1,
+        )
 
 
 if __name__ == "__main__":

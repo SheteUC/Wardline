@@ -20,6 +20,7 @@ from twilio.request_validator import RequestValidator
 from config import settings
 from observability.logging_setup import configure_logging, get_logger
 from observability.middleware import ObservabilityMiddleware
+from observability.metrics import record_provider_error
 from preflight import default_bootstrap_error_message
 from rate_limiter import RateLimitExceeded, rate_limiter, resolve_request_key
 from service import VoiceRuntimeV2
@@ -200,6 +201,7 @@ async def bootstrap_twilio_session(request: Request):
     form_data = await request.form()
     params = _twilio_form_params(form_data)
     if not _twilio_signature_ok(request, params):
+        record_provider_error("twilio", "signature_validation")
         logger.error("Rejected Twilio bootstrap: invalid or missing signature")
         return Response(
             content=runtime.twilio.build_error_twiml(
@@ -214,6 +216,7 @@ async def bootstrap_twilio_session(request: Request):
 
     preflight = runtime.real_call_preflight()
     if not preflight["ok"]:
+        record_provider_error("twilio", "bootstrap_preflight")
         logger.error(
             "Voice Runtime V2 bootstrap preflight failed",
             extra={"errors": preflight["errors"], "callbackUrl": preflight["callbackUrl"]},
@@ -224,6 +227,7 @@ async def bootstrap_twilio_session(request: Request):
         )
 
     if not call_sid or not caller_phone or not called_phone:
+        record_provider_error("twilio", "bootstrap_payload")
         logger.error(
             "Voice Runtime V2 bootstrap request was missing Twilio fields",
             extra={"callSid": call_sid, "fromNumber": caller_phone, "toNumber": called_phone},
@@ -243,6 +247,7 @@ async def bootstrap_twilio_session(request: Request):
         )
         twiml = await runtime.build_twilio_bootstrap_response(session.sessionId)
     except ValueError as error:
+        record_provider_error("core_api", "bootstrap_session")
         logger.error(
             "Voice Runtime V2 bootstrap rejected the inbound call",
             extra={
@@ -259,6 +264,7 @@ async def bootstrap_twilio_session(request: Request):
             media_type="text/xml",
         )
     except Exception:
+        record_provider_error("twilio", "bootstrap_exception")
         logger.exception(
             "Voice Runtime V2 bootstrap failed unexpectedly",
             extra={"callSid": call_sid, "fromNumber": caller_phone, "toNumber": called_phone},

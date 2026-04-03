@@ -10,6 +10,7 @@ import httpx
 
 from circuit_breaker import CircuitOpenError
 from config import settings
+from observability.metrics import record_provider_error
 from observability.context import outbound_headers
 from retry_async import retry_async
 
@@ -27,7 +28,7 @@ class CoreApiClient:
         self.base_url = settings.resolved_core_api_url().rstrip("/")
         prefix = (settings.core_api_path_prefix or "/v1").strip() or "/v1"
         self._path_prefix = prefix.rstrip("/") or "/v1"
-        self.client = httpx.AsyncClient(timeout=10.0)
+        self.client = httpx.AsyncClient(timeout=settings.voice_core_api_timeout_seconds)
         self._http_attempts = max(1, int(settings.voice_http_max_retries or 3))
 
     def _versioned_path(self, path: str) -> str:
@@ -83,7 +84,14 @@ class CoreApiClient:
                 operation=f"core_api_{method}",
                 circuit_name="core_api",
             )
-        except (httpx.RequestError, RetryableCoreApiError, CircuitOpenError):
+        except httpx.RequestError:
+            record_provider_error("core_api", "request_error")
+            return None
+        except RetryableCoreApiError:
+            record_provider_error("core_api", "retryable_http")
+            return None
+        except CircuitOpenError:
+            record_provider_error("core_api", "circuit_open")
             return None
 
     async def close(self):

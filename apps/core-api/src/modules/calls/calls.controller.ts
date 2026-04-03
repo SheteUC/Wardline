@@ -137,6 +137,8 @@ export class CallsController {
     }
 
     @Get('internal/calls/cutover-health')
+    @Public()
+    @InternalApi()
     async getCutoverHealthSummary() {
         return this.callsService.getCutoverHealthSummary();
     }

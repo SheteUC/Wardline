@@ -51,3 +51,11 @@ test('contact form submits and shows a success state', async ({ page }) => {
 
   await expect(page.getByRole('status')).toContainText("Thanks - we'll get back to you shortly.");
 });
+
+test('privacy and terms pages are reachable', async ({ page }) => {
+  await page.goto('/privacy');
+  await expect(page.getByRole('heading', { name: 'Privacy Policy' })).toBeVisible();
+
+  await page.goto('/terms');
+  await expect(page.getByRole('heading', { name: 'Terms of Service' })).toBeVisible();
+});

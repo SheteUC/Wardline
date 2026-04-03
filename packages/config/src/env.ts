@@ -8,6 +8,7 @@ export const webEnvSchema = z.object({
     CLERK_SECRET_KEY: z.string().min(1),
     NEXT_PUBLIC_WEB_BASE_URL: z.string().url().default('http://localhost:3000'),
     NEXT_PUBLIC_API_BASE_URL: z.string().url().default('http://localhost:3001'),
+    CORE_API_INTERNAL_BASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_POSTHOG_KEY: z.string().default(''),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().url().default('https://app.posthog.com'),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().default(''),
@@ -31,6 +32,9 @@ export const coreApiEnvSchema = z.object({
     AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
     CORE_API_BODY_LIMIT: z.string().optional(),
     CORE_API_ALLOWED_ORIGINS: z.string().optional(),
+    CORE_API_COMPRESSION_THRESHOLD_BYTES: z.string().regex(/^\d+$/).optional(),
+    CORE_API_CORS_MAX_AGE_SECONDS: z.string().regex(/^\d+$/).optional(),
+    WORKFLOW_SIMULATION_MAX_ITERATIONS: z.string().regex(/^\d+$/).optional(),
 });
 
 export type WebEnv = z.infer<typeof webEnvSchema>;

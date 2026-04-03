@@ -21,6 +21,7 @@ from xml.sax.saxutils import escape
 import httpx
 
 from config import settings
+from observability.metrics import record_provider_error
 from retry_async import retry_async
 
 
@@ -196,7 +197,10 @@ class TwilioTelephonyAdapter:
             raise ValueError("Call SID is required for live transfer.")
 
         url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.twilio_account_sid}/Calls/{call_sid}.json"
-        async with httpx.AsyncClient(timeout=20.0, auth=(settings.twilio_account_sid, settings.twilio_auth_token)) as client:
+        async with httpx.AsyncClient(
+            timeout=settings.voice_provider_http_timeout_seconds,
+            auth=(settings.twilio_account_sid, settings.twilio_auth_token),
+        ) as client:
             response = await client.post(url, data={"Twiml": transfer_twiml})
             response.raise_for_status()
             return response.json()
@@ -298,7 +302,7 @@ class ManagedTtsAdapter:
         )
 
         async def _once() -> bytes:
-            async with httpx.AsyncClient(timeout=20.0) as client:
+            async with httpx.AsyncClient(timeout=settings.voice_provider_http_timeout_seconds) as client:
                 response = await client.post(
                     url,
                     headers={
@@ -319,6 +323,7 @@ class ManagedTtsAdapter:
                 circuit_name="deepgram_tts",
             )
         except Exception:
+            record_provider_error("deepgram_tts", "synthesis_failed")
             return b""
 
 

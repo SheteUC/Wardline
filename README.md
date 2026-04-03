@@ -16,22 +16,36 @@ pnpm db:generate && pnpm db:migrate
 
 Configure **repo-root** `.env` or `.env.local` (see [.env.example](./.env.example)).
 
-**Run locally**
+## Run locally with Docker Compose
 
 ```bash
-pnpm --filter @wardline/web dev          # http://localhost:3000
+docker compose up --build
+```
+
+This starts:
+
+- web: `http://localhost:3000`
+- core-api: `http://localhost:3001`
+- voice-runtime-v2: `http://localhost:3003`
+- postgres: `localhost:5432`
+- redis: `localhost:6379`
+
+## Run locally without Compose
+
+```bash
+pnpm --filter @wardline/web dev        # http://localhost:3000
 pnpm --filter @wardline/core-api dev   # http://localhost:3001
 pnpm voice:v2:dev                      # http://localhost:3003
 ```
 
-**Mock integrations + smoke business**
+## Mock integrations + smoke business
 
 ```bash
 pnpm mock:integrations
 pnpm db:seed:smoke
 ```
 
-**Voice checks**
+## Voice checks
 
 ```bash
 pnpm voice:v2:preflight
@@ -39,7 +53,7 @@ pnpm voice:v2:proof
 pnpm test:voice:v2
 ```
 
-**Core verification**
+## Core verification
 
 ```bash
 pnpm test:smoke
@@ -63,7 +77,8 @@ packages/db              Prisma schema
 ## Deploy
 
 - **Web:** Vercel (`apps/web`)
-- **APIs:** Long-running host — see [render.yaml](./render.yaml) and [docs/WARDLINE_PLATFORM.md](./docs/WARDLINE_PLATFORM.md) §5
+- **APIs:** Long-running host - see [render.yaml](./render.yaml) and [docs/WARDLINE_PLATFORM.md](./docs/WARDLINE_PLATFORM.md)
+- `render.yaml` is a development/staging blueprint. Production requires paid plans, backup policy, and regional review.
 
 ## License
 

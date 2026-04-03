@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "pretype-check": "pnpm --filter @wardline/config build && pnpm --filter @wardline/types build",
+    "test": "jest --config jest.config.cjs",
     "test:e2e": "playwright test",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next"
@@ -55,13 +56,19 @@
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@tailwindcss/postcss": "^4",
+    "@playwright/test": "^1.55.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@playwright/test": "^1.55.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

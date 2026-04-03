@@ -53,7 +53,7 @@ For technical architecture, deployment, and HIPAA-oriented implementation notes,
   - [ ] Mitigation procedures
 
 - [ ] **Contingency Plan**
-  - [ ] Data backup plan
+  - [ ] Data backup plan documented in [Database Backup and Restore Runbook](../../docs/OPERATIONS_BACKUP_RESTORE.md)
   - [ ] Disaster recovery plan
   - [ ] Emergency mode operation plan
   - [ ] Testing and revision procedures
@@ -168,9 +168,9 @@ For technical architecture, deployment, and HIPAA-oriented implementation notes,
   - [ ] Tracking of media movements
 
 - [ ] **Data Backup and Storage**
-  - [ ] Encrypted backups
-  - [ ] Offsite or cloud backup
-  - [ ] Backup testing procedures
+  - [ ] Encrypted backups documented in [Database Backup and Restore Runbook](../../docs/OPERATIONS_BACKUP_RESTORE.md)
+  - [ ] Offsite or cloud backup documented in [Database Backup and Restore Runbook](../../docs/OPERATIONS_BACKUP_RESTORE.md)
+  - [ ] Backup testing procedures documented in [Database Backup and Restore Runbook](../../docs/OPERATIONS_BACKUP_RESTORE.md)
 
 ---
 
@@ -337,9 +337,10 @@ For technical architecture, deployment, and HIPAA-oriented implementation notes,
   - [ ] Whitelist IP addresses
 
 - [ ] **Backup & Recovery**
-  - [ ] Automated encrypted backups
-  - [ ] Backup testing (quarterly)
-  - [ ] Point-in-time recovery
+  - [ ] Automated encrypted backups documented in [Database Backup and Restore Runbook](../../docs/OPERATIONS_BACKUP_RESTORE.md)
+  - [ ] Backup testing (quarterly) documented in [Database Backup and Restore Runbook](../../docs/OPERATIONS_BACKUP_RESTORE.md)
+  - [ ] Point-in-time recovery documented in [Database Backup and Restore Runbook](../../docs/OPERATIONS_BACKUP_RESTORE.md)
+  - [ ] Migration rollback procedure documented in [Prisma Migration Rollback Procedure](../../docs/PRISMA_MIGRATION_ROLLBACK.md)
 
 ### Cloud Security (AWS/Azure)
 - [ ] **IAM Configuration**

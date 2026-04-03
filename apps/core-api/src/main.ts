@@ -10,6 +10,7 @@ import { Logger } from '@wardline/utils';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { requestContextExpressMiddleware } from './observability/request-context.express.middleware';
 import { buildCorsOriginAllowlist, isCorsOriginAllowed } from './bootstrap/cors';
+import { resolveCompressionThreshold, resolveCorsMaxAgeSeconds } from './config/runtime-settings';
 
 const logger = new Logger('Bootstrap');
 
@@ -17,6 +18,8 @@ async function bootstrap() {
     const env = validateEnv(coreApiEnvSchema);
     const defaultBodyLimit = env.CORE_API_BODY_LIMIT ?? '2mb';
     const allowedOrigins = buildCorsOriginAllowlist(env);
+    const compressionThreshold = resolveCompressionThreshold(env.CORE_API_COMPRESSION_THRESHOLD_BYTES);
+    const corsMaxAge = resolveCorsMaxAgeSeconds(env.CORE_API_CORS_MAX_AGE_SECONDS);
     const app = await NestFactory.create(AppModule, {
         logger: ['error', 'warn', 'log'],
         bodyParser: false,
@@ -48,7 +51,7 @@ async function bootstrap() {
 
     app.use(
         compression({
-            threshold: 1024,
+            threshold: compressionThreshold,
             level: 6,
             filter: (req, res) => {
                 if (req.headers['x-no-compression']) {
@@ -86,7 +89,7 @@ async function bootstrap() {
             }
         },
         credentials: true,
-        maxAge: 86400,
+        maxAge: corsMaxAge,
     });
 
     const config = new DocumentBuilder()

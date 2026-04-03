@@ -7,6 +7,7 @@ APP_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
+from observability import metrics  # noqa: E402
 from telephony import TwilioMediaSession  # noqa: E402
 
 
@@ -142,6 +143,39 @@ class TwilioMediaSessionTests(unittest.IsolatedAsyncioTestCase):
             "session-1",
             "twilio_stream_stopped",
             {"twilioStreamSid": "MZ123"},
+        )
+
+    async def test_deepgram_reconnect_metrics_increment_on_connect_failure(self):
+        websocket = FakeWebSocket()
+        runtime = Mock()
+        runtime.persist_transport_event = AsyncMock()
+        runtime.deepgram = Mock()
+        runtime.deepgram.validate = Mock(return_value={"configured": True})
+
+        media_session = TwilioMediaSession(websocket, runtime)
+        media_session.session_id = "session-1"
+
+        attempts_before = metrics.voice_deepgram_reconnect_attempts_total._value.get()
+        failures_before = metrics.voice_deepgram_reconnect_failures_total._value.get()
+        provider_errors_before = metrics.voice_provider_errors_total.labels(
+            provider="deepgram_stt",
+            error_type="connect_failed",
+        )._value.get()
+
+        with patch.object(media_session, "_open_deepgram_websocket", AsyncMock(side_effect=RuntimeError("boom"))), patch(
+            "telephony.settings.voice_deepgram_reconnect_attempts",
+            1,
+        ):
+            await media_session._deepgram_receive_loop()
+
+        self.assertEqual(metrics.voice_deepgram_reconnect_attempts_total._value.get(), attempts_before + 1)
+        self.assertEqual(metrics.voice_deepgram_reconnect_failures_total._value.get(), failures_before + 1)
+        self.assertEqual(
+            metrics.voice_provider_errors_total.labels(
+                provider="deepgram_stt",
+                error_type="connect_failed",
+            )._value.get(),
+            provider_errors_before + 1,
         )
 
 

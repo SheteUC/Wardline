@@ -11,11 +11,13 @@ from typing import Any, Optional
 from fastapi import WebSocket, WebSocketDisconnect
 
 from config import settings
+from observability.metrics import (
+    record_deepgram_reconnect_attempt,
+    record_deepgram_reconnect_failure,
+    record_provider_error,
+)
 from retry_async import retry_async
 from service import VoiceRuntimeV2
-
-
-_UTTERANCE_SETTLE_SECONDS = 0.8
 
 
 class TwilioMediaSession:
@@ -221,6 +223,7 @@ class TwilioMediaSession:
             return
 
         if not self.runtime.deepgram.validate().get("configured"):
+            record_provider_error("deepgram_stt", "not_configured")
             await self.runtime.persist_transport_event(
                 self.session_id,
                 "deepgram_unavailable",
@@ -231,6 +234,7 @@ class TwilioMediaSession:
         try:
             import websockets  # noqa: F401
         except ImportError:
+            record_provider_error("deepgram_stt", "missing_dependency")
             await self.runtime.persist_transport_event(
                 self.session_id,
                 "deepgram_unavailable",
@@ -257,6 +261,9 @@ class TwilioMediaSession:
             try:
                 self._deepgram_socket = await self._open_deepgram_websocket()
             except Exception as exc:
+                record_deepgram_reconnect_attempt()
+                record_deepgram_reconnect_failure()
+                record_provider_error("deepgram_stt", "connect_failed")
                 if self.session_id:
                     await self.runtime.persist_transport_event(
                         self.session_id,
@@ -302,6 +309,7 @@ class TwilioMediaSession:
             attempt += 1
             if attempt >= max_attempts:
                 break
+            record_deepgram_reconnect_attempt()
             if self.session_id:
                 await self.runtime.persist_transport_event(
                     self.session_id,
@@ -361,7 +369,7 @@ class TwilioMediaSession:
 
     async def _utterance_settle_then_flush(self):
         """Wait for a brief settle period, then flush the accumulated buffer."""
-        await asyncio.sleep(_UTTERANCE_SETTLE_SECONDS)
+        await asyncio.sleep(settings.voice_utterance_settle_seconds)
         await self._flush_utterance_buffer()
 
     async def _flush_utterance_buffer(self):
@@ -404,6 +412,7 @@ class TwilioMediaSession:
 
         audio = await self.runtime.synthesize_reply(text)
         if not audio:
+            record_provider_error("deepgram_tts", "unavailable")
             self._assistant_playback_ready.set()
             if self.session_id:
                 await self.runtime.persist_transport_event(
@@ -436,6 +445,7 @@ class TwilioMediaSession:
                 }
             )
         except Exception:
+            record_provider_error("twilio", "send_failed")
             self._mark_to_assistant_message.pop(mark_name, None)
             self._assistant_playback_ready.set()
             if self.session_id:

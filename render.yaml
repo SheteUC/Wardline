@@ -1,3 +1,6 @@
+# Development/staging blueprint only.
+# This file intentionally stays on free-tier plans so it remains safe for preview environments.
+# Production requires paid plan sizing, a backup/restore policy, and region/SLA review.
 services:
   - type: keyvalue
     name: wardline-redis

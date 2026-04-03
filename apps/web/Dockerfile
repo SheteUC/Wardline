@@ -13,6 +13,24 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/utils/package.json ./packages/utils/
 RUN pnpm install --frozen-lockfile
 
+FROM base AS dev
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY --from=dependencies /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=dependencies /app/packages ./packages
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages ./packages
+COPY apps/web ./apps/web
+WORKDIR /app/packages/db
+RUN pnpm exec prisma generate
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+EXPOSE 3000
+CMD ["pnpm", "--filter", "@wardline/web", "dev", "--hostname", "0.0.0.0", "--port", "3000"]
+
 FROM base AS build
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules

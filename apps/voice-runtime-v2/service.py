@@ -34,7 +34,12 @@ from llm_safety import assess_safety_llm
 from llm_slots import extract_slots_llm, merge_slots_conservative
 from llm_supervisor import route_turn_llm
 from core_api_client import CoreApiClient
-from observability.metrics import turn_processing_seconds
+from observability.metrics import (
+    record_provider_error,
+    record_session_ended,
+    record_session_started,
+    turn_processing_seconds,
+)
 from models import (
     CallBootstrapResponse,
     CallLifecycleStatus,
@@ -185,7 +190,7 @@ class VoiceRuntimeV2:
                 if self._redis:
                     dist = self._redis.lock(
                         f"wardline:v2:mut:{session_id}",
-                        timeout=120,
+                        timeout=settings.voice_session_lock_timeout_seconds,
                         blocking_timeout=settings.voice_session_lock_blocking_seconds,
                     )
                     async with dist:
@@ -311,6 +316,7 @@ class VoiceRuntimeV2:
         await self._session_store.save(session)
         self._touch_session_lru(session.sessionId)
         self._evict_cached_sessions_if_needed()
+        record_session_started()
         return session
 
     async def get_session_dump(self, session_id: str) -> dict:
@@ -372,9 +378,14 @@ class VoiceRuntimeV2:
         try:
             base = self.api_client.base_url.rstrip("/")
             url = f"{base}/health"
-            response = await self.api_client.client.get(url, headers=outbound_headers(), timeout=3.0)
+            response = await self.api_client.client.get(
+                url,
+                headers=outbound_headers(),
+                timeout=settings.voice_readiness_timeout_seconds,
+            )
             return {"ok": response.status_code == 200, "status": response.status_code}
         except Exception as exc:
+            record_provider_error("core_api", "readiness_check")
             return {"ok": False, "detail": str(exc)}
 
     async def synthesize_reply(self, text: str) -> bytes:
@@ -401,11 +412,13 @@ class VoiceRuntimeV2:
                 session.stage = "completed"
             if failure_reason:
                 session.runtimeFailureReason = failure_reason
+            terminal_status = self._determine_terminal_status(session, failure_reason)
             await self._sync_call_state(
                 session,
                 tag=self._current_call_tag(session),
-                status=self._determine_terminal_status(session, failure_reason),
+                status=terminal_status,
             )
+        record_session_ended(terminal_status)
         await self._session_store.delete(session_id)
         self.sessions.pop(session_id, None)
         self._session_lru.pop(session_id, None)
@@ -2711,6 +2724,7 @@ class VoiceRuntimeV2:
                 knownMedications=raw.get("knownMedications") or [],
             )
         except Exception as exc:
+            record_provider_error("core_api", "caller_context_fetch")
             logger.warning("caller_context_fetch_failed", error=str(exc))
             return None
 

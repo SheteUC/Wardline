@@ -9,10 +9,14 @@ import {
     GENERATED_PRACTICE_WORKFLOW_NAME,
 } from '@wardline/db';
 import { normalizePracticeSetup } from '../businesses/practice-config';
+import { resolveWorkflowSimulationMaxIterations } from '../../config/runtime-settings';
 
 @Injectable()
 export class WorkflowsService {
     private readonly logger = new Logger(WorkflowsService.name);
+    private readonly workflowSimulationMaxIterations = resolveWorkflowSimulationMaxIterations(
+        process.env.WORKFLOW_SIMULATION_MAX_ITERATIONS,
+    );
 
     constructor(
         private prisma: PrismaService,
@@ -358,7 +362,7 @@ export class WorkflowsService {
         
         let currentNodeId = graph.nodes.find((n: any) => n.type === 'start')?.id;
         let iterations = 0;
-        const maxIterations = 50; // Prevent infinite loops
+        const maxIterations = this.workflowSimulationMaxIterations;
 
         while (currentNodeId && iterations < maxIterations) {
             executionPath.push(currentNodeId);

@@ -10,7 +10,7 @@ export function SiteFooter() {
   return (
     <footer className="bg-[var(--background)] shadow-[0px_-4px_10px_0px_rgba(0,0,0,0.02)]">
       <div className="mx-auto max-w-[1280px] px-6 py-16 lg:px-12">
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[var(--background)] neo-raised">
@@ -59,6 +59,21 @@ export function SiteFooter() {
                 >
                   hello@wardline.health
                 </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="mb-4 text-base font-extrabold text-foreground">{t.footer.legal}</h4>
+            <ul className="space-y-3 text-sm font-medium text-muted-foreground">
+              <li>
+                <Link href="/privacy" className="hover:text-foreground transition-colors">
+                  {t.footer.privacy}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-foreground transition-colors">
+                  {t.footer.terms}
+                </Link>
               </li>
             </ul>
           </div>

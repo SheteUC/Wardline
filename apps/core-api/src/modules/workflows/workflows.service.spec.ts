@@ -4,8 +4,10 @@ describe('WorkflowsService', () => {
     let service: WorkflowsService;
     let prisma: any;
     let cache: any;
+    const originalSimulationMaxIterations = process.env.WORKFLOW_SIMULATION_MAX_ITERATIONS;
 
     beforeEach(() => {
+        delete process.env.WORKFLOW_SIMULATION_MAX_ITERATIONS;
         prisma = {
             business: {
                 findUnique: jest.fn(),
@@ -45,6 +47,14 @@ describe('WorkflowsService', () => {
         };
 
         service = new WorkflowsService(prisma, cache);
+    });
+
+    afterAll(() => {
+        if (originalSimulationMaxIterations === undefined) {
+            delete process.env.WORKFLOW_SIMULATION_MAX_ITERATIONS;
+        } else {
+            process.env.WORKFLOW_SIMULATION_MAX_ITERATIONS = originalSimulationMaxIterations;
+        }
     });
 
     it('returns the active published workflow for a business', async () => {
@@ -186,5 +196,35 @@ describe('WorkflowsService', () => {
                 where: { id: 'workflow-generated' },
             }),
         );
+    });
+
+    it('uses the configured simulation iteration cap', async () => {
+        process.env.WORKFLOW_SIMULATION_MAX_ITERATIONS = '2';
+        service = new WorkflowsService(prisma, cache);
+
+        prisma.workflow.findUnique.mockResolvedValue({
+            id: 'workflow-1',
+            versions: [
+                {
+                    versionNumber: 1,
+                    graphJson: {
+                        nodes: [
+                            { id: 'start', type: 'start' },
+                            { id: 'loop', type: 'conditional' },
+                        ],
+                        edges: [
+                            { fromNodeId: 'start', toNodeId: 'loop' },
+                            { fromNodeId: 'loop', toNodeId: 'loop', condition: 'always' },
+                        ],
+                    },
+                },
+            ],
+        });
+
+        const result = await service.simulateWorkflow('workflow-1', { callerName: 'Jordan' });
+
+        expect(result.iterations).toBe(2);
+        expect(result.executionPath).toEqual(['start', 'loop']);
+        expect(result.completed).toBe(false);
     });
 });

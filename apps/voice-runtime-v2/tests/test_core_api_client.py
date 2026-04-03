@@ -36,6 +36,13 @@ class CoreApiClientTests(unittest.TestCase):
                 client = core_api_client.CoreApiClient()
                 self.assertEqual(client._path_prefix, "/v1")
 
+    def test_client_uses_configured_timeout(self):
+        with patch("core_api_client.httpx.AsyncClient") as async_client:
+            with patch.object(config.settings, "voice_core_api_timeout_seconds", 12.5):
+                core_api_client.CoreApiClient()
+
+        async_client.assert_called_once_with(timeout=12.5)
+
 
 if __name__ == "__main__":
     unittest.main()
