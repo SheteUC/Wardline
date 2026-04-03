@@ -4,7 +4,6 @@ Voice Runtime V2 orchestration service.
 from __future__ import annotations
 
 import asyncio
-import logging
 import re
 import secrets
 import time
@@ -67,8 +66,9 @@ from providers import (
     TwilioTelephonyAdapter,
     build_public_callback_url,
 )
+from observability.logging_setup import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _normalize(text: str) -> str:
@@ -135,8 +135,8 @@ class VoiceRuntimeV2:
                     return
             if time.monotonic() >= deadline:
                 logger.warning(
-                    "Shutdown: %s session operations still inflight after drain timeout",
-                    self._inflight_turns,
+                    "shutdown_drain_timeout",
+                    inflight_operations=self._inflight_turns,
                 )
                 return
             await asyncio.sleep(0.05)
@@ -2181,13 +2181,11 @@ class VoiceRuntimeV2:
 
         if settings.voice_runtime_legacy_call_sync:
             logger.info(
-                "Legacy call sync still active",
-                extra={
-                    "callId": session.callId,
-                    "sessionId": session.sessionId,
-                    "pendingEventCount": len(pending_events),
-                    "transcriptSegmentCount": len(transcript_segments),
-                },
+                "legacy_call_sync_active",
+                call_id=session.callId,
+                session_id=session.sessionId,
+                pending_event_count=len(pending_events),
+                transcript_segment_count=len(transcript_segments),
             )
             await self._legacy_sync_call_state(session, state_patch)
 
@@ -2713,7 +2711,7 @@ class VoiceRuntimeV2:
                 knownMedications=raw.get("knownMedications") or [],
             )
         except Exception as exc:
-            logger.warning("Failed to fetch caller context: %s", exc)
+            logger.warning("caller_context_fetch_failed", error=str(exc))
             return None
 
     def _is_business_open(self, runtime_config: RuntimeConfigBootstrap) -> bool:

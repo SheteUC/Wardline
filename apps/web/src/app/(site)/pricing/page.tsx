@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { JsonLd } from "@/components/json-ld";
+import { createMarketingMetadata } from "@/lib/metadata";
 
 const TIERS = [
   {
@@ -45,12 +48,29 @@ const TIERS = [
   },
 ] as const;
 
+export const metadata: Metadata = createMarketingMetadata({
+  title: "Wardline Pricing",
+  description:
+    "Review Wardline pricing tiers for practices that need AI receptionist coverage, operations queues, and integrations.",
+  path: "/pricing",
+});
+
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <SiteHeader />
 
       <main>
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: "Wardline Pricing",
+            url: "https://wardline.health/pricing",
+            description:
+              "Pricing overview for Wardline medical practice call operations.",
+          }}
+        />
         <section className="mx-auto max-w-3xl px-6 pb-12 pt-20 text-center lg:px-12">
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
             Simple, transparent pricing

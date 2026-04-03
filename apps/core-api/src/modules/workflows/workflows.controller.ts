@@ -1,12 +1,4 @@
-import {
-    BadRequestException,
-    Body,
-    Controller,
-    Get,
-    Param,
-    Post,
-    Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { WorkflowsService } from './workflows.service';
 import {
@@ -14,12 +6,14 @@ import {
     WorkflowPublishDto,
     WorkflowVersionGraphDto,
 } from './dto/workflows.dto';
+import { WorkflowSimulationInputsDto } from './dto/workflow-simulation.dto';
 import { Permissions } from '../../auth/permissions.decorator';
 import { Auditable } from '../../audit/auditable.decorator';
 import { UserRole } from '@wardline/types';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../auth/public.decorator';
 import { InternalApi } from '../../auth/internal-api.decorator';
+import { WorkflowSimulationBodyPipe } from './workflow-simulation-body.pipe';
 
 @ApiTags('workflows')
 @ApiBearerAuth()
@@ -77,11 +71,11 @@ export class WorkflowsController {
     @ApiOperation({ summary: 'Simulate workflow execution with test inputs' })
     @ApiResponse({ status: 200, description: 'Simulation results with execution path' })
     @Auditable('workflow', 'SIMULATE')
-    simulateWorkflow(@Param('id') workflowId: string, @Body() body: unknown) {
-        if (body === null || typeof body !== 'object' || Array.isArray(body)) {
-            throw new BadRequestException('Simulation body must be a JSON object');
-        }
-        return this.workflowsService.simulateWorkflow(workflowId, body);
+    simulateWorkflow(
+        @Param('id') workflowId: string,
+        @Body(new WorkflowSimulationBodyPipe()) body: WorkflowSimulationInputsDto,
+    ) {
+        return this.workflowsService.simulateWorkflow(workflowId, body.inputs);
     }
 }
 

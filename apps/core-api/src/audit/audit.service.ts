@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Logger } from '@wardline/utils';
+import { createPaginatedResponse, normalizePagination } from '../common/pagination';
 
 export interface AuditLogParams {
     businessId: string;
@@ -80,6 +81,8 @@ export class AuditService {
     async getAuditLogs(
         businessId: string,
         options?: {
+            page?: number;
+            pageSize?: number;
             limit?: number;
             offset?: number;
             userId?: string;
@@ -87,8 +90,9 @@ export class AuditService {
             startDate?: Date;
             endDate?: Date;
         },
-    ): Promise<any[]> {
+    ): Promise<{ data: any[]; total: number; page: number; pageSize: number }> {
         const where: any = { businessId };
+        const pagination = normalizePagination(options, { pageSize: 100 });
 
         if (options?.userId) {
             where.userId = options.userId;
@@ -108,11 +112,16 @@ export class AuditService {
             }
         }
 
-        return this.prisma.auditLog.findMany({
-            where,
-            orderBy: { createdAt: 'desc' },
-            take: options?.limit || 100,
-            skip: options?.offset || 0,
-        });
+        const [data, total] = await Promise.all([
+            this.prisma.auditLog.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                take: pagination.take,
+                skip: pagination.skip,
+            }),
+            this.prisma.auditLog.count({ where }),
+        ]);
+
+        return createPaginatedResponse(data, total, pagination);
     }
 }

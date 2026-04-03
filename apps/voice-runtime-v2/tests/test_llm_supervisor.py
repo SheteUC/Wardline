@@ -42,12 +42,28 @@ _BASE_LLM = {
 
 
 class LlmSupervisorTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        super().setUp()
+        self._p_redis_url = patch("service.settings.redis_url", "")
+        self._p_legacy_sync = patch("service.settings.voice_runtime_legacy_call_sync", False)
+        self._p_service_info = patch("service.logger.info")
+        self._p_redis_url.start()
+        self._p_legacy_sync.start()
+        self._p_service_info.start()
+
+    def tearDown(self):
+        self._p_service_info.stop()
+        self._p_legacy_sync.stop()
+        self._p_redis_url.stop()
+        super().tearDown()
+
     async def test_route_turn_returns_decision_and_slot_hints(self):
         with _patch_llm_settings(), patch(
             "llm_supervisor.chat_json_completion",
             new=AsyncMock(return_value=dict(_BASE_LLM)),
         ):
             runtime = VoiceRuntimeV2(api_client=FakeCoreApiClient())
+            self.addAsyncCleanup(runtime.close)
             session = await runtime.start_session("CA_llm", "+15550001111", "+15551230001")
             decision = await route_turn_llm(session, "I need my blood pressure medication refilled")
 
@@ -64,6 +80,7 @@ class LlmSupervisorTests(unittest.IsolatedAsyncioTestCase):
             new=AsyncMock(return_value=payload),
         ):
             runtime = VoiceRuntimeV2(api_client=FakeCoreApiClient())
+            self.addAsyncCleanup(runtime.close)
             session = await runtime.start_session("CA_llm2", "+15550001111", "+15551230001")
             decision = await route_turn_llm(session, "unclear mumble")
 

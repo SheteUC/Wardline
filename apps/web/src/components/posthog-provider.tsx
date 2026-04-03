@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import posthog from "posthog-js";
 import { PostHogProvider as PostHogReactProvider } from "posthog-js/react";
 
@@ -21,28 +20,6 @@ function PostHogPageView() {
       search: searchParams.toString(),
     });
   }, [pathname, searchParams]);
-
-  return null;
-}
-
-function PostHogIdentitySync() {
-  const { isLoaded, user } = useUser();
-
-  useEffect(() => {
-    if (!posthog.__loaded || !isLoaded) {
-      return;
-    }
-
-    if (!user) {
-      posthog.reset();
-      return;
-    }
-
-    posthog.identify(user.id, {
-      email: user.primaryEmailAddress?.emailAddress,
-      full_name: user.fullName,
-    });
-  }, [isLoaded, user]);
 
   return null;
 }
@@ -73,8 +50,9 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
 
   return (
     <PostHogReactProvider client={posthog}>
-      <PostHogIdentitySync />
-      <PostHogPageView />
+      <Suspense fallback={null}>
+        <PostHogPageView />
+      </Suspense>
       {children}
     </PostHogReactProvider>
   );

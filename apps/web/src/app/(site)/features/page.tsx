@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   Activity,
   ArrowRight,
@@ -14,6 +15,8 @@ import {
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { JsonLd } from "@/components/json-ld";
+import { createMarketingMetadata } from "@/lib/metadata";
 
 const PRACTICE_CAPABILITIES = [
   "Appointment request intake and follow-up",
@@ -23,12 +26,29 @@ const PRACTICE_CAPABILITIES = [
   "Office information and FAQ answers",
 ] as const;
 
+export const metadata: Metadata = createMarketingMetadata({
+  title: "Wardline Features",
+  description:
+    "See how Wardline handles medical practice calls, safety flows, human handoff, and practice-driven runtime policy.",
+  path: "/features",
+});
+
 export default function FeaturesPage() {
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <SiteHeader />
 
       <main>
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: "Wardline Features",
+            url: "https://wardline.health/features",
+            description:
+              "Feature overview for Wardline medical practice call operations.",
+          }}
+        />
         <section className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center lg:px-12">
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
             Built around one front-desk job

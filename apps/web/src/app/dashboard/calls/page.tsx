@@ -158,6 +158,7 @@ export default function CallLogsPage() {
                         <button
                             key={tag}
                             type="button"
+                            aria-pressed={tagFilter === tag}
                             onClick={() => {
                                 setTagFilter(tag);
                                 setPage(1);

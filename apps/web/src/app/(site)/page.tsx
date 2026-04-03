@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,6 +13,15 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { JsonLd } from "@/components/json-ld";
+import { createMarketingMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = createMarketingMetadata({
+  title: "Wardline for Family Medicine Practices",
+  description:
+    "Configure practice policy once and let Wardline run AI voice call handling, follow-up queues, and safe escalation.",
+  path: "/",
+});
 
 function PracticeSetupPreview() {
   return (
@@ -143,6 +153,27 @@ export default function Home() {
       <SiteHeader />
 
       <main>
+        <JsonLd
+          data={[
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Wardline",
+              url: "https://wardline.health",
+              description:
+                "AI voice receptionist for independent medical practices.",
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "Wardline",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              description:
+                "Medical practice call operations software with AI receptionist, call logs, follow-up queues, and integrations.",
+            },
+          ]}
+        />
         <section className="mx-auto max-w-[1280px] px-6 pb-16 pt-24 lg:px-12">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <div>

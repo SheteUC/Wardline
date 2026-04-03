@@ -98,9 +98,9 @@ Partial transcripts still call `process_transcript_turn` with `final=False` (no 
 
 ### 3.8 Session storage limitations (known)
 
-- Sessions live in an **in-process dict** (`VoiceRuntimeV2.sessions`). Not shared across workers; lost on restart.
-- `finalize_session` does not remove entries from the dict (memory growth until process restart).
-- No per-session `asyncio.Lock` today; concurrent transcript + HTTP on same session can race.
+- Sessions live in an **in-process store**. They are not shared across workers and are lost on restart.
+- `finalize_session` now removes completed sessions from the active store, so the remaining limitation is distribution across workers rather than completed-session growth.
+- Per-session locking is implemented to serialize transcript and HTTP work for the same active session.
 
 ---
 
@@ -238,16 +238,8 @@ Prioritized engineering debt (from platform review):
 | **Critical** | Rate limiting | None on Core API public/internal routes; add throttling for bootstrap/ingest/runtime-actions. |
 | **Critical** | Twilio WS / webhook auth | Media WebSocket and some webhooks lack signature validation; session IDs guessable. |
 | **High** | Shared session store | Redis or similar for voice sessions; sticky routing alone is insufficient at scale. |
-| **High** | Session memory | Remove or TTL completed sessions from in-memory dict. |
-| **High** | Per-session concurrency lock | Prevent races between transcript loop and HTTP turns. |
-| **High** | Retries | Transient failures on LLM, httpx, TTS — add bounded retries. |
-| **High** | Deepgram reconnect | Currently stops receiving on disconnect; should reconnect or fail loudly. |
-| **Medium** | Web CSP | Next.js app has no Content-Security-Policy headers. |
-| **Medium** | Controller / service tests | Many Nest controllers and services lack dedicated specs. |
-| **Medium** | Global exception filter | Normalize API errors; avoid raw stack traces in production. |
-| **Medium** | Observability | Structured logs, metrics, tracing (request/correlation IDs across Twilio → voice → core-api). |
-| **Medium** | API versioning | No `/v1` prefix yet. |
-| **Medium** | Health depth | `/health` does not always check DB/Redis/LLM reachability. |
+| **Medium** | Controller / service tests | Many Nest controllers and services still need dedicated specs. |
+| **Medium** | Observability | Structured logs, metrics, tracing, and correlation IDs across Twilio -> voice -> core-api are still only partially implemented. |
 | **Low** | Docker Compose | Add healthchecks for core-api and voice-runtime; fix voice-runtime Dockerfile HEALTHCHECK if `requests` missing from requirements. |
 | **Low** | Python pins | `requirements.txt` uses `>=`; prefer lockfile or exact pins for reproducible deploys. |
 

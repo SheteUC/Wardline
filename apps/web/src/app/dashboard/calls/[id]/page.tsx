@@ -7,11 +7,11 @@ import {
     ChevronRight,
     Clock,
     Download,
-    Loader2,
     Phone,
     User,
 } from 'lucide-react';
 import { Button, Card, Badge } from "@/components/dashboard/shared";
+import { CallDetailSkeleton } from "@/components/dashboard/skeletons";
 import { useCall } from '@/lib/hooks/query-hooks';
 import { CallStatus } from '@wardline/types';
 import { getIntentTimelineCardState } from '@/lib/call-intent-timeline';
@@ -59,11 +59,7 @@ export default function CallDetailPage({ params }: { params: Promise<{ id: strin
     const call = callQuery.data;
 
     if (callQuery.isLoading) {
-        return (
-            <div className="flex h-96 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
+        return <CallDetailSkeleton />;
     }
 
     if (callQuery.isError || !call) {

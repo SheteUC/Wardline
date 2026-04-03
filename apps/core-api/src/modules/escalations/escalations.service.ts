@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Logger } from '@wardline/utils';
+import { createPaginatedResponse, type NormalizedPagination } from '../../common/pagination';
 
 export interface EscalationContext {
     callId: string;
@@ -108,16 +109,26 @@ export class EscalationsService {
     /**
      * Get recent escalations for a business (human transfers + emergencies)
      */
-    async getRecentEscalations(businessId: string, limit = 20): Promise<any[]> {
-        return this.prisma.handoff.findMany({
-            where: {
-                call: { businessId },
-            },
-            include: {
-                call: { select: { tag: true, startedAt: true, isEmergency: true, status: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-            take: limit,
-        });
+    async getRecentEscalations(
+        businessId: string,
+        pagination: NormalizedPagination,
+    ): Promise<{ data: any[]; total: number; page: number; pageSize: number }> {
+        const where = {
+            call: { businessId },
+        };
+        const [data, total] = await Promise.all([
+            this.prisma.handoff.findMany({
+                where,
+                include: {
+                    call: { select: { tag: true, startedAt: true, isEmergency: true, status: true } },
+                },
+                orderBy: { createdAt: 'desc' },
+                take: pagination.take,
+                skip: pagination.skip,
+            }),
+            this.prisma.handoff.count({ where }),
+        ]);
+
+        return createPaginatedResponse(data, total, pagination);
     }
 }

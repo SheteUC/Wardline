@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { WorkflowsController, WorkflowsApiController } from './workflows.controller';
 import { WorkflowsService } from './workflows.service';
 
@@ -19,13 +18,19 @@ describe('WorkflowsController', () => {
         });
     });
 
-    it('simulateWorkflow throws BadRequestException for non-object body', () => {
-        const workflowsService = { simulateWorkflow: jest.fn() };
+    it('simulateWorkflow delegates validated inputs to the service', async () => {
+        const workflowsService = {
+            simulateWorkflow: jest.fn().mockResolvedValue({ ok: true }),
+        };
         const controller = new WorkflowsController(workflowsService as unknown as WorkflowsService);
-        expect(() => controller.simulateWorkflow('wf1', [] as unknown as object)).toThrow(
-            BadRequestException,
-        );
-        expect(workflowsService.simulateWorkflow).not.toHaveBeenCalled();
+
+        await controller.simulateWorkflow('wf1', {
+            inputs: { callerName: 'Jordan Rivera' },
+        });
+
+        expect(workflowsService.simulateWorkflow).toHaveBeenCalledWith('wf1', {
+            callerName: 'Jordan Rivera',
+        });
     });
 });
 

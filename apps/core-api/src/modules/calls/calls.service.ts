@@ -10,6 +10,7 @@ import { CallProjectionService } from './call-projection.service';
 import { CallIngestService } from './call-ingest.service';
 import { callsEnableProjectionFallback, getCallCutoverFlagSnapshot } from './call-cutover-flags';
 import { CallCutoverMetricsService } from './call-cutover-metrics.service';
+import { createPaginatedResponse, normalizePagination } from '../../common/pagination';
 
 @Injectable()
 export class CallsService {
@@ -30,9 +31,7 @@ export class CallsService {
 
     async findAllByBusiness(businessId: string, filters?: any): Promise<any> {
         const startedAt = Date.now();
-        const page = parseInt(filters?.page) || 1;
-        const pageSize = parseInt(filters?.pageSize) || 20;
-        const skip = (page - 1) * pageSize;
+        const pagination = normalizePagination(filters, { pageSize: 20 });
 
         // Dashboard call rows include caller-identifying fields, so they bypass Redis.
         const where: any = { businessId };
@@ -83,8 +82,8 @@ export class CallsService {
                     },
                 },
                 orderBy: { startedAt: 'desc' },
-                skip,
-                take: pageSize,
+                skip: pagination.skip,
+                take: pagination.take,
             }),
             this.prisma.callSession.count({ where }),
         ]);
@@ -172,13 +171,13 @@ export class CallsService {
             };
         });
 
-        const response = { data, total, page, pageSize };
+        const response = createPaginatedResponse(data, total, pagination);
 
         this.logger.info('Dashboard calls query completed', {
             businessId,
             durationMs: Date.now() - startedAt,
-            page,
-            pageSize,
+            page: pagination.page,
+            pageSize: pagination.pageSize,
             total: response.total,
             filters: filters ?? {},
         });

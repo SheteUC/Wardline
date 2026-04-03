@@ -94,21 +94,18 @@ export const Badge = ({ type, text }: { type: string; text: string }) => {
   );
 };
 
+type DashboardButtonProps = Omit<React.ComponentProps<typeof BaseButton>, "variant"> & {
+  variant?: string;
+  icon?: React.ElementType;
+};
+
 export const Button = ({
   children,
   variant = "primary",
   icon: Icon,
   className = "",
-  onClick,
-  disabled,
-}: {
-  children: React.ReactNode;
-  variant?: string;
-  icon?: React.ElementType;
-  className?: string;
-  onClick?: () => void;
-  disabled?: boolean;
-}) => {
+  ...props
+}: DashboardButtonProps) => {
   const variants: Record<string, "default" | "secondary" | "destructive" | "ghost" | "filled"> = {
     primary: "default",
     secondary: "secondary",
@@ -122,8 +119,7 @@ export const Button = ({
       type="button"
       variant={variants[variant] ?? "default"}
       className={className}
-      onClick={onClick}
-      disabled={disabled}
+      {...props}
     >
       {Icon && <Icon className="mr-2 h-4 w-4" />}
       {children}
@@ -131,10 +127,25 @@ export const Button = ({
   );
 };
 
-export const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) => (
-  <div
+export const Toggle = ({
+  checked,
+  onChange,
+  disabled,
+  "aria-label": ariaLabel,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  "aria-label"?: string;
+}) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={ariaLabel}
+    disabled={disabled}
     onClick={() => onChange(!checked)}
-    className="flex h-6 w-12 cursor-pointer items-center rounded-full bg-[var(--background)] p-0.5 transition-all duration-200 neo-inset"
+    className="flex h-6 w-12 items-center rounded-full bg-[var(--background)] p-0.5 transition-all duration-200 neo-inset disabled:cursor-not-allowed disabled:opacity-60"
   >
     <div
       className={[
@@ -142,5 +153,5 @@ export const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (che
         checked ? "translate-x-6 bg-primary" : "translate-x-0 bg-[var(--background)]",
       ].join(" ")}
     />
-  </div>
+  </button>
 );

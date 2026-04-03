@@ -1,0 +1,26 @@
+{
+  "shell": {
+    "brand": "Wardline",
+    "tagline": "AI Receptionist",
+    "navigation": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "contact": "Contact",
+      "login": "Log in",
+      "getStarted": "Get started"
+    },
+    "footer": {
+      "description": "AI voice receptionist for family medicine practices with scheduling, FAQs, billing, insurance, refills, and safe human handoff.",
+      "product": "Product",
+      "startTrial": "Start free trial",
+      "contact": "Contact",
+      "getInTouch": "Get in touch",
+      "copyright": "Wardline Health, Inc. All rights reserved."
+    },
+    "theme": {
+      "toggle": "Toggle theme",
+      "toggleToDark": "Switch to dark theme",
+      "toggleToLight": "Switch to light theme"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { UserRole } from '@wardline/types';
+import { normalizeUserRole, UserRole } from '@wardline/types';
 import { UserRole as PrismaUserRole } from '@wardline/db';
 
 /**
@@ -22,12 +22,15 @@ const ROLE_HIERARCHY: Record<string, number> = {
  * @returns True if the user has sufficient permissions
  */
 export function hasPermission(userRole: string, requiredRole: UserRole): boolean {
-    // Convert both to uppercase for comparison (DB uses uppercase, decorators use lowercase)
-    const userRoleUpper = userRole.toUpperCase();
-    const requiredRoleUpper = requiredRole.toUpperCase();
-    
-    const userLevel = ROLE_HIERARCHY[userRoleUpper];
-    const requiredLevel = ROLE_HIERARCHY[requiredRoleUpper];
+    const normalizedUserRole = normalizeUserRole(userRole);
+    const normalizedRequiredRole = normalizeUserRole(requiredRole);
+
+    if (!normalizedUserRole || !normalizedRequiredRole) {
+        return false;
+    }
+
+    const userLevel = ROLE_HIERARCHY[normalizedUserRole];
+    const requiredLevel = ROLE_HIERARCHY[normalizedRequiredRole];
     return userLevel !== undefined && requiredLevel !== undefined && userLevel >= requiredLevel;
 }
 
@@ -47,7 +50,12 @@ export function hasAnyPermission(userRole: string, requiredRoles: UserRole[]): b
  * @returns Array of roles that meet or exceed the minimum
  */
 export function getRolesWithPermission(minRole: UserRole): UserRole[] {
-    const minLevel = ROLE_HIERARCHY[minRole];
+    const normalizedRole = normalizeUserRole(minRole);
+    if (!normalizedRole) {
+        return [];
+    }
+
+    const minLevel = ROLE_HIERARCHY[normalizedRole];
     return Object.entries(ROLE_HIERARCHY)
         .filter(([, level]) => level >= minLevel)
         .map(([role]) => role as UserRole);

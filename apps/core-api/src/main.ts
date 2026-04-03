@@ -9,12 +9,14 @@ import { AppModule } from './app.module';
 import { Logger } from '@wardline/utils';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { requestContextExpressMiddleware } from './observability/request-context.express.middleware';
+import { buildCorsOriginAllowlist, isCorsOriginAllowed } from './bootstrap/cors';
 
 const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
     const env = validateEnv(coreApiEnvSchema);
     const defaultBodyLimit = env.CORE_API_BODY_LIMIT ?? '2mb';
+    const allowedOrigins = buildCorsOriginAllowlist(env);
     const app = await NestFactory.create(AppModule, {
         logger: ['error', 'warn', 'log'],
         bodyParser: false,
@@ -77,14 +79,7 @@ async function bootstrap() {
         origin: (origin, callback) => {
             if (!origin) return callback(null, true);
 
-            const allowedOrigins = [
-                env.WEB_BASE_URL,
-                'http://localhost:3000',
-                'http://localhost:3001',
-                'http://localhost:3003',
-            ];
-
-            if (allowedOrigins.includes(origin)) {
+            if (isCorsOriginAllowed(origin, allowedOrigins)) {
                 callback(null, true);
             } else {
                 callback(new Error('Not allowed by CORS'));

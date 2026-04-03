@@ -9,9 +9,11 @@ import {
     LayoutDashboard, Phone, Settings, Search, Menu, X,
     AlertTriangle, Bell, ListTodo, PhoneCall, PlugZap, Voicemail,
 } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useBusiness } from '@/lib/business-context';
 import { useFollowUpTasks, useIntegrations, useVoicemails } from '@/lib/hooks/query-hooks';
 import { shouldRedirectToBusinessSettings } from '@/lib/business-selection';
+import { formatUserRoleLabel } from '@wardline/types';
 
 type DashboardNavItemProps = {
     href: string;
@@ -40,34 +42,25 @@ function DashboardNavItem({
     exact,
     requiresBusiness,
 }: DashboardNavItemProps) {
+    const router = useRouter();
     const normalizedPath = pathname.replace(/\/$/, '') || '/';
     const normalizedHref = href.replace(/\/$/, '') || '/';
     const isDisabled = !!requiresBusiness && !businessLoading && !businessId;
-    const targetHref = isDisabled ? '/dashboard/settings' : href;
     const isActive = exact
         ? normalizedPath === normalizedHref
         : normalizedPath === normalizedHref ||
           (normalizedHref !== '/' && normalizedPath.startsWith(normalizedHref + '/'));
-
-    return (
-        <Link
-            href={targetHref}
-            onClick={() => {
-                if (isMobile) {
-                    onNavigate();
-                }
-            }}
-            className={[
-                "w-full flex items-center justify-between px-4 py-2.5",
-                "text-sm font-semibold rounded-2xl mb-1",
-                "transition-all duration-150",
-                isDisabled ? "cursor-pointer text-muted-foreground/60" : "",
-                isActive
-                    ? "neo-raised bg-[var(--background)] text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:neo-raised-sm hover:bg-[var(--background)]",
-            ].join(" ")}
-            aria-disabled={isDisabled}
-        >
+    const className = [
+        "w-full flex items-center justify-between px-4 py-2.5",
+        "text-sm font-semibold rounded-2xl mb-1",
+        "transition-all duration-150",
+        isDisabled ? "cursor-pointer text-muted-foreground/60" : "",
+        isActive
+            ? "neo-raised bg-[var(--background)] text-primary"
+            : "text-muted-foreground hover:text-foreground hover:neo-raised-sm hover:bg-[var(--background)]",
+    ].join(" ");
+    const content = (
+        <>
             <div className="flex items-center gap-3">
                 <Icon
                     className={`w-4 h-4 shrink-0 ${
@@ -81,6 +74,38 @@ function DashboardNavItem({
                     {badge}
                 </span>
             )}
+        </>
+    );
+
+    if (isDisabled) {
+        return (
+            <button
+                type="button"
+                onClick={() => {
+                    router.push('/dashboard/settings');
+                    if (isMobile) {
+                        onNavigate();
+                    }
+                }}
+                className={className}
+                aria-label={`Open Practice Setup to unlock ${label}`}
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <Link
+            href={href}
+            onClick={() => {
+                if (isMobile) {
+                    onNavigate();
+                }
+            }}
+            className={className}
+        >
+            {content}
         </Link>
     );
 }
@@ -164,7 +189,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     </div>
                     <span className="text-xl font-semibold tracking-tight text-sidebar-foreground">Wardline</span>
                     {isMobile && (
-                        <button onClick={() => setSidebarOpen(false)} className="ml-auto text-muted-foreground hover:text-foreground">
+                        <button
+                            type="button"
+                            onClick={() => setSidebarOpen(false)}
+                            aria-label="Close navigation"
+                            className="ml-auto text-muted-foreground hover:text-foreground"
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     )}
@@ -205,13 +235,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     {/* User Card */}
                     <div className="neo-raised rounded-[14px] p-4 mt-4 bg-[var(--background)]">
                         <div className="flex items-center gap-3">
-                            <UserButton afterSignOutUrl="/" />
+                            <UserButton />
                             <div>
                                 <div className="text-sm font-medium text-sidebar-foreground">
                                     {user?.firstName || 'User'}
                                 </div>
                                 <div className="text-xs text-muted-foreground capitalize">
-                                    {userRole.replace('_', ' ')}
+                                    {formatUserRoleLabel(userRole)}
                                 </div>
                             </div>
                         </div>
@@ -233,7 +263,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 <header className="h-16 bg-background flex items-center justify-between px-4 lg:px-8 z-30">
                     <div className="flex items-center">
                         <button
+                            type="button"
                             onClick={() => setSidebarOpen(true)}
+                            aria-label="Open navigation"
                             className="lg:hidden mr-4 text-muted-foreground hover:text-foreground"
                         >
                             <Menu className="w-6 h-6" />
@@ -243,14 +275,24 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
                     <div className="flex items-center gap-3">
                         <div className="hidden md:flex items-center neo-inset rounded-3xl px-3 py-2 bg-[var(--background)]">
+                            <label htmlFor="dashboard-global-search" className="sr-only">
+                                Search calls and callers
+                            </label>
                             <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
                             <input
+                                id="dashboard-global-search"
                                 type="text"
                                 placeholder="Search calls, callers..."
+                                aria-label="Search calls and callers"
                                 className="bg-transparent border-none text-sm focus:outline-none text-foreground w-44 placeholder:text-muted-foreground"
                             />
                         </div>
-                        <button className="relative h-10 w-10 neo-raised rounded-2xl bg-[var(--background)] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:neo-pressed">
+                        <ThemeToggle />
+                        <button
+                            type="button"
+                            aria-label="Notifications"
+                            className="relative h-10 w-10 neo-raised rounded-2xl bg-[var(--background)] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:neo-pressed"
+                        >
                             <Bell className="w-5 h-5" />
                             {notificationCount > 0 && (
                                 <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">

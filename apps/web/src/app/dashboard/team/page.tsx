@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { MoreHorizontal, Plus, Search, X } from 'lucide-react';
@@ -7,7 +8,7 @@ import { RoleGuard } from '@/components/role-guard';
 import { Button, Card, neoFieldClass } from "@/components/dashboard/shared";
 import { useBusiness } from '@/lib/business-context';
 import { useInviteUser, useTeamMembers } from '@/lib/hooks/query-hooks';
-import { UserRole } from '@wardline/types';
+import { formatUserRoleLabel, UserRole } from '@wardline/types';
 
 function getRoleBadgeStyles(role: UserRole): string {
     const styles: Record<UserRole, string> = {
@@ -64,7 +65,7 @@ export default function TeamPage() {
 
     const RoleBadge = ({ role }: { role: UserRole }) => (
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getRoleBadgeStyles(role)}`}>
-            {role}
+            {formatUserRoleLabel(role)}
         </span>
     );
 
@@ -138,9 +139,14 @@ export default function TeamPage() {
                                                             <div className="flex items-center gap-3">
                                                                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--background)] text-xs font-bold text-foreground neo-inset">
                                                                     {member.avatarUrl ? (
-                                                                        <img
+                                                                        <Image
                                                                             src={member.avatarUrl}
                                                                             alt={member.name || 'User'}
+                                                                            loader={({ src }) => src}
+                                                                            unoptimized
+                                                                            width={36}
+                                                                            height={36}
+                                                                            sizes="36px"
                                                                             className="h-full w-full rounded-full object-cover"
                                                                         />
                                                                     ) : (
@@ -167,6 +173,7 @@ export default function TeamPage() {
                                                         <td className="px-6 py-4 text-right">
                                                             <button
                                                                 type="button"
+                                                                aria-label={`Open actions for ${member.name || member.email}`}
                                                                 className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-[var(--background)] hover:text-foreground neo-inset"
                                                             >
                                                                 <MoreHorizontal className="h-4 w-4" />
@@ -194,6 +201,7 @@ export default function TeamPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsInviteOpen(false)}
+                                    aria-label="Close invite dialog"
                                     className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-[var(--background)] hover:text-foreground neo-inset"
                                 >
                                     <X className="h-5 w-5" />
@@ -231,7 +239,7 @@ export default function TeamPage() {
                                                     onChange={() => setInviteRole(role)}
                                                     className="text-primary focus:ring-primary"
                                                 />
-                                                <span className="ml-3 text-sm font-medium capitalize text-foreground">{role}</span>
+                                                <span className="ml-3 text-sm font-medium text-foreground">{formatUserRoleLabel(role)}</span>
                                             </label>
                                         ))}
                                     </div>

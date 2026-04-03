@@ -41,58 +41,33 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ─── Silk — Light Neomorphic ────────────────────────────────────────────────
-   Exact values extracted from Figma design (file: 2OLw2tVaJh5Zn9y0dkBb2N)
-   ─────────────────────────────────────────────────────────────────────────── */
-
 :root {
-  /* ── Surface — every neomorphic element MUST share this color ────────────── */
   --neo-bg: #e8eaf0;
-
-  /* ── Neomorphic shadow pair (extracted directly from Figma) ─────────────── */
-  /* Raised:  6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.6) */
-  /* Inset:   inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.5) */
-
-  /* ── Color tokens ─────────────────────────────────────────────────────────── */
   --background: #e8eaf0;
   --foreground: #2e3040;
-
-  /* card MUST equal background for the neomorphic illusion */
   --card: #e8eaf0;
   --card-foreground: #2e3040;
-
   --popover: #e8eaf0;
   --popover-foreground: #2e3040;
-
   --primary: #6366f1;
   --primary-foreground: #ffffff;
-
   --secondary: #e2e4ea;
   --secondary-foreground: #2e3040;
-
   --muted: #e2e4ea;
   --muted-foreground: #6c6e7e;
-
   --accent: #7c3aed;
   --accent-foreground: #ffffff;
-
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-
   --border: #d8dae4;
   --input: #e8eaf0;
   --ring: #6366f1;
-
-  /* 16px radius as base; cards use 24px via utility override */
   --radius: 1rem;
-
   --chart-1: #6366f1;
   --chart-2: #7c3aed;
   --chart-3: #10b981;
   --chart-4: #f59e0b;
   --chart-5: #ef4444;
-
-  /* Sidebar — same surface as background */
   --sidebar: #e8eaf0;
   --sidebar-foreground: #2e3040;
   --sidebar-primary: #6366f1;
@@ -101,9 +76,69 @@
   --sidebar-accent-foreground: #2e3040;
   --sidebar-border: #d8dae4;
   --sidebar-ring: #6366f1;
+  --neo-shadow-raised:
+    6px 6px 12px rgba(0, 0, 0, 0.08),
+    -6px -6px 12px rgba(255, 255, 255, 0.6);
+  --neo-shadow-raised-sm:
+    3px 3px 7px rgba(0, 0, 0, 0.07),
+    -3px -3px 7px rgba(255, 255, 255, 0.55);
+  --neo-shadow-inset:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.06),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.5);
+  --neo-shadow-pressed:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.06),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.5);
+  color-scheme: light;
 }
 
-/* ─── Base ────────────────────────────────────────────────────────────────── */
+.dark {
+  --neo-bg: #111827;
+  --background: #111827;
+  --foreground: #e5e7eb;
+  --card: #111827;
+  --card-foreground: #e5e7eb;
+  --popover: #111827;
+  --popover-foreground: #e5e7eb;
+  --primary: #818cf8;
+  --primary-foreground: #0f172a;
+  --secondary: #192132;
+  --secondary-foreground: #dbe4f0;
+  --muted: #192132;
+  --muted-foreground: #94a3b8;
+  --accent: #38bdf8;
+  --accent-foreground: #0f172a;
+  --destructive: #f87171;
+  --destructive-foreground: #0f172a;
+  --border: #22304a;
+  --input: #111827;
+  --ring: #818cf8;
+  --chart-1: #818cf8;
+  --chart-2: #38bdf8;
+  --chart-3: #34d399;
+  --chart-4: #fbbf24;
+  --chart-5: #fb7185;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #e5e7eb;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #192132;
+  --sidebar-accent-foreground: #dbe4f0;
+  --sidebar-border: #22304a;
+  --sidebar-ring: #818cf8;
+  --neo-shadow-raised:
+    10px 10px 22px rgba(0, 0, 0, 0.34),
+    -10px -10px 22px rgba(255, 255, 255, 0.03);
+  --neo-shadow-raised-sm:
+    5px 5px 12px rgba(0, 0, 0, 0.28),
+    -5px -5px 12px rgba(255, 255, 255, 0.02);
+  --neo-shadow-inset:
+    inset 6px 6px 14px rgba(0, 0, 0, 0.3),
+    inset -6px -6px 14px rgba(255, 255, 255, 0.02);
+  --neo-shadow-pressed:
+    inset 4px 4px 10px rgba(0, 0, 0, 0.3),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.02);
+  color-scheme: dark;
+}
 
 @layer base {
   * {
@@ -116,52 +151,52 @@
     font-family: var(--font-plus-jakarta-sans), system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold text-foreground;
   }
 }
 
-/* ─── Neomorphic utilities ────────────────────────────────────────────────── */
-
-/* Raised — element extrudes from surface (Figma exact values) */
 .neo-raised {
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.08),
-    -6px -6px 12px rgba(255, 255, 255, 0.6);
+  box-shadow: var(--neo-shadow-raised);
 }
 
-/* Raised small — for icon containers and small elements */
 .neo-raised-sm {
-  box-shadow:
-    3px 3px 7px rgba(0, 0, 0, 0.07),
-    -3px -3px 7px rgba(255, 255, 255, 0.55);
+  box-shadow: var(--neo-shadow-raised-sm);
 }
 
-/* Inset — carved into surface (Figma exact values) */
 .neo-inset {
-  box-shadow:
-    inset 4px 4px 8px rgba(0, 0, 0, 0.06),
-    inset -4px -4px 8px rgba(255, 255, 255, 0.5);
+  box-shadow: var(--neo-shadow-inset);
 }
 
-/* Pressed — active/clicked state */
 .neo-pressed {
-  box-shadow:
-    inset 3px 3px 7px rgba(0, 0, 0, 0.06),
-    inset -3px -3px 7px rgba(255, 255, 255, 0.5);
+  box-shadow: var(--neo-shadow-pressed);
 }
 
-/* Flat — no depth */
 .neo-flat {
   box-shadow: none;
 }
 
-/* React Flow — Silk controls (Workflow Builder) */
-/* ─── Skeleton shimmer ────────────────────────────────────────────────────── */
-
 @keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .animate-shimmer {
@@ -173,4 +208,13 @@
     var(--muted) 100%
   );
   background-size: 200% 100%;
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    var(--muted) 100%
+  );
 }

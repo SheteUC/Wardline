@@ -169,6 +169,46 @@ export function CallsTableSkeleton() {
     );
 }
 
+export function CallDetailSkeleton() {
+    return (
+        <>
+            <style>{shimmerStyles}</style>
+            <div className="flex h-[calc(100vh-100px)] flex-col gap-6 lg:flex-row">
+                <div className="w-full flex-shrink-0 space-y-6 lg:w-96">
+                    <Skeleton className="h-10 w-40 rounded-2xl" />
+                    <CardSkeleton lines={6} />
+                    <CardSkeleton lines={5} />
+                    <CardSkeleton lines={4} />
+                    <Skeleton className="h-10 w-full rounded-2xl" />
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-card p-6 shadow-sm">
+                    <div className="mb-6 flex items-center justify-between">
+                        <Skeleton className="h-6 w-40" />
+                        <div className="flex gap-2">
+                            <Skeleton className="h-6 w-20 rounded-full" />
+                            <Skeleton className="h-6 w-28 rounded-full" />
+                        </div>
+                    </div>
+                    <div className="flex-1 space-y-4">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                            <div
+                                key={index}
+                                className={`flex gap-4 ${index % 2 === 0 ? '' : 'flex-row-reverse'}`}
+                            >
+                                <Skeleton className="h-8 w-8 rounded-full" />
+                                <div className={`flex max-w-[70%] flex-col gap-2 ${index % 2 === 0 ? 'items-start' : 'items-end'}`}>
+                                    <Skeleton className="h-14 w-full rounded-2xl" />
+                                    <Skeleton className="h-3 w-24" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
+
 // Recent calls table skeleton (smaller, for dashboard)
 export function RecentCallsSkeleton() {
     return (

@@ -30,6 +30,7 @@ export const coreApiEnvSchema = z.object({
     AZURE_OPENAI_ENDPOINT: z.string().url().optional(),
     AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
     CORE_API_BODY_LIMIT: z.string().optional(),
+    CORE_API_ALLOWED_ORIGINS: z.string().optional(),
 });
 
 export type WebEnv = z.infer<typeof webEnvSchema>;

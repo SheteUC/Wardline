@@ -3,14 +3,11 @@ import {
     IsArray,
     IsBoolean,
     IsIn,
-    IsInt,
     IsObject,
     IsOptional,
     IsString,
-    Max,
-    Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { PaginationQueryDto } from '../../../common/pagination';
 
 const ATTEMPT_MODES = ['hybrid_transfer', 'callback_only', 'transfer_first'] as const;
 
@@ -117,12 +114,4 @@ export class EscalateEmergencyDto {
     transcript!: string;
 }
 
-export class EscalationsListQueryDto {
-    @ApiPropertyOptional()
-    @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    @Max(200)
-    limit?: number;
-}
+export class EscalationsListQueryDto extends PaginationQueryDto {}

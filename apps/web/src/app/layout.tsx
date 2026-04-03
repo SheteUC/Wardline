@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import { Providers } from "@/components/providers";
-import { webEnv } from "@/lib/runtime-env";
+import { defaultLocale } from "@/i18n/locale";
+import { defaultSiteMetadata } from "@/lib/metadata";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -19,11 +18,7 @@ const geistMono = Geist_Mono({
   preload: false,
 });
 
-export const metadata: Metadata = {
-  title: "Wardline - HIPAA-Compliant Medical Practice Call Operations",
-  description: "AI-powered call handling for independent medical practices",
-  metadataBase: new URL(webEnv.NEXT_PUBLIC_WEB_BASE_URL),
-};
+export const metadata: Metadata = defaultSiteMetadata;
 
 export default function RootLayout({
   children,
@@ -31,14 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${plusJakartaSans.variable} ${geistMono.variable} font-sans antialiased`}
-        >
-          <Providers>{children}</Providers>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html
+      lang={defaultLocale}
+      className={`${plusJakartaSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="font-sans antialiased">{children}</body>
+    </html>
   );
 }

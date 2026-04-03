@@ -17,6 +17,7 @@ describe('AuditService', () => {
                             create: jest.fn(),
                             createMany: jest.fn(),
                             findMany: jest.fn(),
+                            count: jest.fn(),
                         },
                     },
                 },
@@ -92,11 +93,12 @@ describe('AuditService', () => {
         it('should query audit logs with filters', async () => {
             const mockLogs = [{ id: '1', action: 'CREATE' }];
             (prisma.auditLog.findMany as jest.Mock).mockResolvedValue(mockLogs);
+            (prisma.auditLog.count as jest.Mock).mockResolvedValue(1);
 
             const result = await service.getAuditLogs('business-123', {
                 userId: 'user-123',
                 entityType: 'workflow',
-                limit: 50,
+                pageSize: 50,
             });
 
             expect(prisma.auditLog.findMany).toHaveBeenCalledWith({
@@ -109,7 +111,19 @@ describe('AuditService', () => {
                 take: 50,
                 skip: 0,
             });
-            expect(result).toEqual(mockLogs);
+            expect(prisma.auditLog.count).toHaveBeenCalledWith({
+                where: {
+                    businessId: 'business-123',
+                    userId: 'user-123',
+                    entityType: 'workflow',
+                },
+            });
+            expect(result).toEqual({
+                data: mockLogs,
+                total: 1,
+                page: 1,
+                pageSize: 50,
+            });
         });
 
         it('should handle date range filters', async () => {
@@ -117,8 +131,9 @@ describe('AuditService', () => {
             const endDate = new Date('2024-12-31');
 
             (prisma.auditLog.findMany as jest.Mock).mockResolvedValue([]);
+            (prisma.auditLog.count as jest.Mock).mockResolvedValue(0);
 
-            await service.getAuditLogs('business-123', { startDate, endDate });
+            const result = await service.getAuditLogs('business-123', { startDate, endDate });
 
             expect(prisma.auditLog.findMany).toHaveBeenCalledWith({
                 where: {
@@ -131,6 +146,12 @@ describe('AuditService', () => {
                 orderBy: { createdAt: 'desc' },
                 take: 100,
                 skip: 0,
+            });
+            expect(result).toEqual({
+                data: [],
+                total: 0,
+                page: 1,
+                pageSize: 100,
             });
         });
     });

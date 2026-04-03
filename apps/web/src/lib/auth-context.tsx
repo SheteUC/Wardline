@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useBusiness } from './business-context';
-import { UserRole } from '@wardline/types';
+import { normalizeUserRole, UserRole } from '@wardline/types';
 
 /**
  * Extended Auth Context with Role-Based Access Control
@@ -12,6 +12,18 @@ import { UserRole } from '@wardline/types';
 
 // Extended role types to include patient and system_admin
 export type ExtendedUserRole = UserRole | 'patient' | 'system_admin';
+
+function normalizeExtendedUserRole(role: string | undefined): ExtendedUserRole | null {
+    if (!role) {
+        return null;
+    }
+
+    if (role === 'system_admin' || role === 'patient') {
+        return role;
+    }
+
+    return normalizeUserRole(role);
+}
 
 interface AuthContextType {
     userId: string | null;
@@ -43,21 +55,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             businessRoles?: Record<string, ExtendedUserRole>;
         } | undefined;
 
-        if (metadata?.role === 'system_admin') {
-            return 'system_admin';
-        }
-        if (metadata?.role === 'patient') {
-            return 'patient';
-        }
-        if (businessId && metadata?.businessRoles?.[businessId]) {
-            return metadata.businessRoles[businessId];
-        }
-        if (metadata?.role) {
-            return metadata.role as ExtendedUserRole;
+        if (metadata?.role === 'system_admin' || metadata?.role === 'patient') {
+            return metadata.role;
         }
 
-        // Default to 'readonly' for authenticated users without explicit role
-        // In production, you'd want to handle this differently
+        const normalizedBusinessRole = businessId
+            ? normalizeExtendedUserRole(metadata?.businessRoles?.[businessId])
+            : null;
+        if (normalizedBusinessRole) {
+            return normalizedBusinessRole;
+        }
+
+        const normalizedMetadataRole = normalizeExtendedUserRole(metadata?.role);
+        if (normalizedMetadataRole) {
+            return normalizedMetadataRole;
+        }
+
         return UserRole.READONLY;
     }, [businessId, isLoading, user]);
 

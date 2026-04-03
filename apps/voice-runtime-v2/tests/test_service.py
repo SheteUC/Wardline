@@ -5,11 +5,14 @@ import sys
 import unittest
 from unittest.mock import AsyncMock, patch
 
+import structlog
+
 APP_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 import config  # noqa: E402
+import service as service_module  # noqa: E402
 from service import VoiceRuntimeV2  # noqa: E402
 
 
@@ -303,6 +306,12 @@ def build_voice_policy(overrides=None):
     return merged
 
 
+class ServiceLoggingTests(unittest.TestCase):
+    def test_service_module_uses_structlog_logger(self):
+        self.assertIn("structlog", type(service_module.logger).__module__)
+        self.assertTrue(hasattr(service_module.logger, "bind"))
+
+
 class FakeCoreApiClient:
     def __init__(
         self,
@@ -446,28 +455,33 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self._p_llm_safe = patch("service.assess_safety_llm", new=AsyncMock(return_value=None))
         self._p_llm_slots = patch("service.extract_slots_llm", new=AsyncMock(return_value={}))
         self._p_llm_agents = patch("service.run_llm_agent", new=AsyncMock(return_value=None))
+        self._p_service_info = patch("service.logger.info")
         self._p_llm_route.start()
         self._p_llm_safe.start()
         self._p_llm_slots.start()
         self._p_llm_agents.start()
+        self._p_service_info.start()
 
     def tearDown(self):
         self._p_llm_route.stop()
         self._p_llm_safe.stop()
         self._p_llm_slots.stop()
         self._p_llm_agents.stop()
+        self._p_service_info.stop()
         self._p_redis_url.stop()
         super().tearDown()
 
     async def create_runtime(self, **client_kwargs):
         api_client = FakeCoreApiClient(**client_kwargs)
         runtime = VoiceRuntimeV2(api_client=api_client)
+        self.addAsyncCleanup(runtime.close)
         session = await runtime.start_session("CA_test", "+15550000001", "+15551230001")
         return runtime, api_client, session
 
     async def test_missing_voice_policy_required(self):
         api_client = FakeCoreApiClient(omit_voice_policy=True)
         runtime = VoiceRuntimeV2(api_client=api_client)
+        self.addAsyncCleanup(runtime.close)
 
         with self.assertRaisesRegex(ValueError, "voicePolicyV2"):
             await runtime.start_session("CA_test", "+15550000001", "+15551230001")

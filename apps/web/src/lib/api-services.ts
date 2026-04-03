@@ -108,7 +108,8 @@ export const createTeamService = (client: ApiClientMethods, businessId: string) 
         return teamMembers;
     },
 
-    async inviteUser(_data?: { email: string; role: string }): Promise<never> {
+    async inviteUser(data?: { email: string; role: string }): Promise<never> {
+        void data;
         throw new Error('Team invitations are not implemented yet on the Business API.');
     },
 

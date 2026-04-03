@@ -4,12 +4,15 @@ import { z } from 'zod';
  * User role in a business organization
  */
 export enum UserRole {
-    OWNER = 'owner',
-    ADMIN = 'admin',
-    SUPERVISOR = 'supervisor',
-    AGENT = 'agent',
-    READONLY = 'readonly',
+    OWNER = 'OWNER',
+    ADMIN = 'ADMIN',
+    SUPERVISOR = 'SUPERVISOR',
+    AGENT = 'AGENT',
+    READONLY = 'READONLY',
 }
+
+export type LegacyUserRole = Lowercase<UserRole>;
+export type UserRoleLike = UserRole | LegacyUserRole;
 
 /**
  * Call direction
@@ -268,11 +271,48 @@ export enum IntegrationStatus {
     ERROR = 'ERROR',
 }
 
+const USER_ROLE_VALUES = new Set<string>(Object.values(UserRole));
+
+export function normalizeUserRole(role: string | null | undefined): UserRole | null {
+    if (!role) {
+        return null;
+    }
+
+    const normalized = role.trim().toUpperCase();
+    return USER_ROLE_VALUES.has(normalized) ? (normalized as UserRole) : null;
+}
+
+export function isUserRole(role: unknown): role is UserRole {
+    return typeof role === 'string' && normalizeUserRole(role) !== null;
+}
+
+export function formatUserRoleLabel(role: string | UserRole): string {
+    const normalized = normalizeUserRole(role) ?? String(role).trim().toUpperCase();
+    return normalized
+        .split('_')
+        .map(part => part.charAt(0) + part.slice(1).toLowerCase())
+        .join(' ');
+}
+
 // ============================================================================
 // Zod Schema Exports
 // ============================================================================
 
 export const userRoleSchema = z.nativeEnum(UserRole);
+export const userRoleInputSchema = z
+    .string()
+    .trim()
+    .transform((value, ctx) => {
+        const role = normalizeUserRole(value);
+        if (!role) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Invalid user role: ${value}`,
+            });
+            return z.NEVER;
+        }
+        return role;
+    });
 export const callDirectionSchema = z.nativeEnum(CallDirection);
 export const callStatusSchema = z.nativeEnum(CallStatus);
 export const recordingConsentSchema = z.nativeEnum(RecordingConsent);

@@ -10,6 +10,7 @@ import {
     EscalationsListQueryDto,
 } from './dto/escalations.dto';
 import { EscalationsService } from './escalations.service';
+import { normalizePagination } from '../../common/pagination';
 
 @Controller('api/escalations')
 export class EscalationsController {
@@ -40,6 +41,9 @@ export class EscalationsController {
         @Param('businessId') businessId: string,
         @Query() query: EscalationsListQueryDto,
     ) {
-        return this.escalationsService.getRecentEscalations(businessId, query.limit ?? 20);
+        return this.escalationsService.getRecentEscalations(
+            businessId,
+            normalizePagination(query, { pageSize: 20 }),
+        );
     }
 }

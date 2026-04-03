@@ -204,7 +204,7 @@ export default function PracticeSetupPage() {
         ],
     );
 
-    const integrations = integrationsQuery.data ?? [];
+    const integrations = useMemo(() => integrationsQuery.data ?? [], [integrationsQuery.data]);
     const readiness = useMemo(() => buildPracticeReadiness({
         businessId,
         integrations,
@@ -235,35 +235,27 @@ export default function PracticeSetupPage() {
             outOfScopeKeywords: parseTextList(outOfScopeKeywords),
         },
     }), [
-        appointmentSummary,
         afterHoursGreeting,
         afterHoursMode,
-        billingSummary,
         billingPolicyNotes,
         businessId,
-        commonQuestions,
-        customFaqs,
         daytimeHandoffFallbackSummary,
         daytimeHandoffMode,
         emergencyKeywords,
         enabledActions,
         escalationMessage,
-        faqSummary,
         integrations,
-        insuranceSummary,
         insurancePolicyNotes,
+        knowledgeConfig,
         operatingHours,
         outOfScopeKeywords,
         recordingDefault,
-        refillSummary,
         refillPolicyNotes,
         ringTimeoutSeconds,
-        servicesSummary,
         transferPhone,
         transferTargetLabel,
         transcriptRetentionDays,
         urgentCallbackWindowMinutes,
-        knowledgeConfig,
     ]);
 
     const handleCreateBusiness = async () => {

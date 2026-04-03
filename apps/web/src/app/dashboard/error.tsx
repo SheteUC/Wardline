@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function DashboardError({
   error,
   reset,
@@ -23,9 +21,9 @@ export default function DashboardError({
         >
           Retry
         </button>
-        <Link href="/dashboard" className="border-input rounded-md border px-3 py-2 text-sm font-medium">
+        <a href="/dashboard" className="border-input rounded-md border px-3 py-2 text-sm font-medium">
           Overview
-        </Link>
+        </a>
       </div>
     </div>
   );

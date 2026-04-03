@@ -161,6 +161,12 @@ jobs:
       - name: Run smoke validation
         run: pnpm test:smoke
 
+      - name: Install Playwright browser
+        run: pnpm --filter @wardline/web exec playwright install --with-deps chromium
+
+      - name: Run web browser smoke test
+        run: pnpm test:e2e:web
+
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest

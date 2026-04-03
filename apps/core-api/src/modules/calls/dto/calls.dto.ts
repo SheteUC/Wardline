@@ -11,6 +11,7 @@ import {
     IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PaginationQueryDto } from '../../../common/pagination';
 
 // Enums matching Prisma schema
 export enum CallDirection {
@@ -274,17 +275,7 @@ export class CallIngestDto {
 }
 
 /** Dashboard call log list query (all values arrive as strings from query params). */
-export class CallLogsQueryDto {
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsString()
-    page?: string;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsString()
-    pageSize?: string;
-
+export class CallLogsQueryDto extends PaginationQueryDto {
     @ApiPropertyOptional()
     @IsOptional()
     @IsString()
