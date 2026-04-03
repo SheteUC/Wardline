@@ -1,21 +1,22 @@
-import * as path from 'node:path';
 import {
     IntegrationConnectorsService,
     type ResolvedBusinessIntegration,
 } from './integration-connectors.service';
 
-const { createMockIntegrationServer } = require(path.resolve(
-    __dirname,
-    '../../../../../scripts/mock-integration-server.js',
-));
-
 describe('IntegrationConnectorsService', () => {
     const service = new IntegrationConnectorsService();
     const credentialsRef = 'MOCK_TEST_ATHENA_TOKEN';
+    let createMockIntegrationServer: (options?: { authToken?: string; timeoutMs?: number }) => {
+        start: (port?: number) => Promise<{ baseUrl: string; authToken: string }>;
+        stop: () => Promise<void>;
+    };
     let mockServer: { start: (port?: number) => Promise<{ baseUrl: string; authToken: string }>; stop: () => Promise<void> };
     let baseUrl: string;
 
     beforeAll(async () => {
+        ({ createMockIntegrationServer } = (await import('../../../../../scripts/mock-integration-server.js')) as {
+            createMockIntegrationServer: typeof createMockIntegrationServer;
+        });
         mockServer = createMockIntegrationServer({ timeoutMs: 150 });
         const started = await mockServer.start(0);
         baseUrl = started.baseUrl;

@@ -14,6 +14,8 @@ import {
     Voicemail,
 } from 'lucide-react';
 import { Card } from '@/components/dashboard/shared';
+import { AnalyticsCharts } from '@/components/analytics-charts';
+import { DashboardSkeleton } from '@/components/dashboard/skeletons';
 import { useBusiness } from '@/lib/business-context';
 import {
     useCallAnalytics,
@@ -76,6 +78,18 @@ export default function DashboardPage() {
     const integrationFailures = integrations.filter((integration) => integration.status !== 'CONNECTED');
     const escalatedCalls = (analytics?.callsByTag?.HUMAN_TRANSFER ?? 0) + (analytics?.callsByTag?.EMERGENCY ?? 0);
     const aiResolved = Math.max((analytics?.completedCalls ?? 0) - escalatedCalls - (analytics?.voicemailCount ?? 0), 0);
+    const isLoading =
+        businessLoading ||
+        ((callsQuery.isLoading ||
+            analyticsQuery.isLoading ||
+            voicemailsQuery.isLoading ||
+            followUpTasksQuery.isLoading ||
+            integrationsQuery.isLoading) &&
+            recentCalls.length === 0 &&
+            !analytics &&
+            voicemails.length === 0 &&
+            openTasks.length === 0 &&
+            integrations.length === 0);
     const topReasons = Object.entries(analytics?.callsByTag ?? {})
         .sort(([, left], [, right]) => right - left)
         .slice(0, 4);
@@ -84,6 +98,10 @@ export default function DashboardPage() {
         integrationFailures.length > 0 ? `${integrationFailures.length} integrations need attention` : null,
         urgentTasks.length > 0 ? `${urgentTasks.length} urgent follow-ups need review` : null,
     ].filter(Boolean);
+
+    if (isLoading) {
+        return <DashboardSkeleton />;
+    }
 
     if (!businessLoading && !businessId) {
         return (
@@ -174,6 +192,22 @@ export default function DashboardPage() {
                     );
                 })}
             </div>
+
+            {analytics && (
+                <div className="space-y-3">
+                    <div>
+                        <h2 className="text-lg font-semibold text-foreground">Operations Analytics</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Live routing, outcomes, and operating signals for today&apos;s call volume.
+                        </p>
+                    </div>
+                    <AnalyticsCharts
+                        analytics={analytics}
+                        aiResolved={aiResolved}
+                        escalatedCalls={escalatedCalls}
+                    />
+                </div>
+            )}
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <div className="xl:col-span-2">

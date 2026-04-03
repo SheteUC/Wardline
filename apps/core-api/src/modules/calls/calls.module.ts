@@ -3,12 +3,13 @@ import { CallIngestService } from './call-ingest.service';
 import { CallProjectionService } from './call-projection.service';
 import { CallsService } from './calls.service';
 import { CallsController } from './calls.controller';
+import { CallsProgressController } from './calls-progress.controller';
 import { FollowUpTasksModule } from '../follow-up-tasks/follow-up-tasks.module';
 import { CallCutoverMetricsService } from './call-cutover-metrics.service';
 
 @Module({
     imports: [FollowUpTasksModule],
-    controllers: [CallsController],
+    controllers: [CallsController, CallsProgressController],
     providers: [CallProjectionService, CallCutoverMetricsService, CallIngestService, CallsService],
     exports: [CallProjectionService, CallCutoverMetricsService, CallIngestService, CallsService],
 })

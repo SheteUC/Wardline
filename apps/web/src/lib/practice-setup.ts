@@ -286,7 +286,7 @@ export function normalizePracticeSetup(settings?: BusinessSettings['settings']) 
         refillPolicy: normalizeServicePolicy(settings?.refillPolicy, DEFAULT_REFILL_POLICY),
         billingPolicy: normalizeServicePolicy(settings?.billingPolicy, DEFAULT_BILLING_POLICY),
         insurancePolicy: normalizeServicePolicy(settings?.insurancePolicy, DEFAULT_INSURANCE_POLICY),
-        daytimeHandoffPolicy: normalizeDaytimeHandoffPolicy((settings as any)?.daytimeHandoffPolicy),
+        daytimeHandoffPolicy: normalizeDaytimeHandoffPolicy(settings?.daytimeHandoffPolicy),
         knowledgeConfig,
         escalationConfig,
     };

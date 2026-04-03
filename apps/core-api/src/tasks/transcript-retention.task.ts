@@ -34,23 +34,64 @@ export class TranscriptRetentionTask {
                 },
             });
 
+            if (businesses.length === 0) {
+                this.logger.log('Retention cleanup skipped because there are no active businesses');
+                return;
+            }
+
+            const retentionWindows = new Map(
+                businesses.map((business) => {
+                    const retentionDays = business.settings?.transcriptRetentionDays ?? 30;
+                    const cutoff = new Date();
+                    cutoff.setDate(cutoff.getDate() - retentionDays);
+                    return [
+                        business.id,
+                        {
+                            retentionDays,
+                            cutoff,
+                        },
+                    ];
+                }),
+            );
+
+            const latestCutoff = new Date(
+                Math.max(
+                    ...Array.from(retentionWindows.values()).map((window) => window.cutoff.getTime()),
+                ),
+            );
+
+            const expiredCallCandidates = await this.prisma.callSession.findMany({
+                where: {
+                    businessId: { in: businesses.map((business) => business.id) },
+                    startedAt: { lt: latestCutoff },
+                },
+                select: {
+                    id: true,
+                    businessId: true,
+                    startedAt: true,
+                },
+            });
+
+            const expiredCallIdsByBusiness = new Map<string, string[]>();
+            for (const call of expiredCallCandidates) {
+                const retentionWindow = retentionWindows.get(call.businessId);
+                if (!retentionWindow || call.startedAt >= retentionWindow.cutoff) {
+                    continue;
+                }
+
+                const existingCallIds = expiredCallIdsByBusiness.get(call.businessId) ?? [];
+                existingCallIds.push(call.id);
+                expiredCallIdsByBusiness.set(call.businessId, existingCallIds);
+            }
+
             for (const business of businesses) {
-                const retentionDays = business.settings?.transcriptRetentionDays ?? 30;
-                const cutoff = new Date();
-                cutoff.setDate(cutoff.getDate() - retentionDays);
+                const retentionWindow = retentionWindows.get(business.id);
+                const callIds = expiredCallIdsByBusiness.get(business.id) ?? [];
+                if (!retentionWindow || callIds.length === 0) {
+                    continue;
+                }
 
-                // Find calls for this business older than the retention cutoff
-                const oldCalls = await this.prisma.callSession.findMany({
-                    where: {
-                        businessId: business.id,
-                        startedAt: { lt: cutoff },
-                    },
-                    select: { id: true },
-                });
-
-                if (oldCalls.length === 0) continue;
-
-                const callIds = oldCalls.map((c) => c.id);
+                const { retentionDays, cutoff } = retentionWindow;
 
                 const { count } = await this.prisma.transcriptSegment.deleteMany({
                     where: { callId: { in: callIds } },

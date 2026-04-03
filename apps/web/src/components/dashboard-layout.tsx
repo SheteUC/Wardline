@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import type { ElementType, ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -12,7 +13,79 @@ import { useBusiness } from '@/lib/business-context';
 import { useFollowUpTasks, useIntegrations, useVoicemails } from '@/lib/hooks/query-hooks';
 import { shouldRedirectToBusinessSettings } from '@/lib/business-selection';
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+type DashboardNavItemProps = {
+    href: string;
+    icon: ElementType;
+    label: string;
+    pathname: string;
+    businessId: string | null;
+    businessLoading: boolean;
+    isMobile: boolean;
+    onNavigate: () => void;
+    badge?: number;
+    exact?: boolean;
+    requiresBusiness?: boolean;
+};
+
+function DashboardNavItem({
+    href,
+    icon: Icon,
+    label,
+    pathname,
+    businessId,
+    businessLoading,
+    isMobile,
+    onNavigate,
+    badge,
+    exact,
+    requiresBusiness,
+}: DashboardNavItemProps) {
+    const normalizedPath = pathname.replace(/\/$/, '') || '/';
+    const normalizedHref = href.replace(/\/$/, '') || '/';
+    const isDisabled = !!requiresBusiness && !businessLoading && !businessId;
+    const targetHref = isDisabled ? '/dashboard/settings' : href;
+    const isActive = exact
+        ? normalizedPath === normalizedHref
+        : normalizedPath === normalizedHref ||
+          (normalizedHref !== '/' && normalizedPath.startsWith(normalizedHref + '/'));
+
+    return (
+        <Link
+            href={targetHref}
+            onClick={() => {
+                if (isMobile) {
+                    onNavigate();
+                }
+            }}
+            className={[
+                "w-full flex items-center justify-between px-4 py-2.5",
+                "text-sm font-semibold rounded-2xl mb-1",
+                "transition-all duration-150",
+                isDisabled ? "cursor-pointer text-muted-foreground/60" : "",
+                isActive
+                    ? "neo-raised bg-[var(--background)] text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:neo-raised-sm hover:bg-[var(--background)]",
+            ].join(" ")}
+            aria-disabled={isDisabled}
+        >
+            <div className="flex items-center gap-3">
+                <Icon
+                    className={`w-4 h-4 shrink-0 ${
+                        isActive ? 'text-primary' : 'text-muted-foreground'
+                    } ${isDisabled ? 'opacity-60' : ''}`}
+                />
+                {label}
+            </div>
+            {badge !== undefined && badge > 0 && (
+                <span className="px-2 py-0.5 text-xs font-semibold bg-destructive/15 text-destructive rounded-full">
+                    {badge}
+                </span>
+            )}
+        </Link>
+    );
+}
+
+export function DashboardLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { user } = useUser();
@@ -62,64 +135,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         }
     }, [businessId, businessLoading, pathname, router]);
 
-    const NavItem = ({
-        href,
-        icon: Icon,
-        label,
-        badge,
-        exact,
-        requiresBusiness,
-    }: {
-        href: string;
-        icon: React.ElementType;
-        label: string;
-        badge?: number;
-        exact?: boolean;
-        requiresBusiness?: boolean;
-    }) => {
-        const normalizedPath = pathname.replace(/\/$/, '') || '/';
-        const normalizedHref = href.replace(/\/$/, '') || '/';
-        const isDisabled = !!requiresBusiness && !businessLoading && !businessId;
-        const targetHref = isDisabled ? '/dashboard/settings' : href;
-        const isActive = exact
-            ? normalizedPath === normalizedHref
-            : normalizedPath === normalizedHref ||
-              (normalizedHref !== '/' && normalizedPath.startsWith(normalizedHref + '/'));
-
-        return (
-            <Link
-                href={targetHref}
-                onClick={() => { if (isMobile) setSidebarOpen(false); }}
-                className={[
-                    "w-full flex items-center justify-between px-4 py-2.5",
-                    "text-sm font-semibold rounded-2xl mb-1",
-                    "transition-all duration-150",
-                    isDisabled
-                        ? "cursor-pointer text-muted-foreground/60"
-                        : "",
-                    isActive
-                        ? "neo-raised bg-[var(--background)] text-primary"
-                        : "text-muted-foreground hover:text-foreground hover:neo-raised-sm hover:bg-[var(--background)]",
-                ].join(" ")}
-                aria-disabled={isDisabled}
-            >
-                <div className="flex items-center gap-3">
-                    <Icon
-                        className={`w-4 h-4 shrink-0 ${
-                            isActive ? 'text-primary' : 'text-muted-foreground'
-                        } ${isDisabled ? 'opacity-60' : ''}`}
-                    />
-                    {label}
-                </div>
-                {badge !== undefined && badge > 0 && (
-                    <span className="px-2 py-0.5 text-xs font-semibold bg-destructive/15 text-destructive rounded-full">
-                        {badge}
-                    </span>
-                )}
-            </Link>
-        );
-    };
-
     const pageTitle = (() => {
         if (pathname === '/dashboard') return 'Dashboard';
         if (pathname.startsWith('/dashboard/call-logs')) return 'Call Logs';
@@ -132,6 +147,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     })();
 
     const showOnboardingBanner = !businessLoading && !businessId;
+    const closeSidebar = () => setSidebarOpen(false);
 
     return (
         <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden">
@@ -160,15 +176,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-2 tracking-wider">
                             Overview
                         </div>
-                        <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" exact />
-                        <NavItem href="/dashboard/calls" icon={Phone} label="Call Logs" requiresBusiness />
-                        <NavItem href="/dashboard/urgent-calls" icon={AlertTriangle} label="Urgent Calls" badge={urgentCount} requiresBusiness />
-                        <NavItem href="/dashboard/voicemails" icon={Voicemail} label="Voicemails" badge={voicemailCount} requiresBusiness />
-                        <NavItem href="/dashboard/follow-ups" icon={ListTodo} label="Follow-ups" badge={followUpCount} requiresBusiness />
-                        <NavItem
+                        <DashboardNavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" pathname={pathname} businessId={businessId} businessLoading={businessLoading} isMobile={isMobile} onNavigate={closeSidebar} exact />
+                        <DashboardNavItem href="/dashboard/calls" icon={Phone} label="Call Logs" pathname={pathname} businessId={businessId} businessLoading={businessLoading} isMobile={isMobile} onNavigate={closeSidebar} requiresBusiness />
+                        <DashboardNavItem href="/dashboard/urgent-calls" icon={AlertTriangle} label="Urgent Calls" pathname={pathname} businessId={businessId} businessLoading={businessLoading} isMobile={isMobile} onNavigate={closeSidebar} badge={urgentCount} requiresBusiness />
+                        <DashboardNavItem href="/dashboard/voicemails" icon={Voicemail} label="Voicemails" pathname={pathname} businessId={businessId} businessLoading={businessLoading} isMobile={isMobile} onNavigate={closeSidebar} badge={voicemailCount} requiresBusiness />
+                        <DashboardNavItem href="/dashboard/follow-ups" icon={ListTodo} label="Follow-ups" pathname={pathname} businessId={businessId} businessLoading={businessLoading} isMobile={isMobile} onNavigate={closeSidebar} badge={followUpCount} requiresBusiness />
+                        <DashboardNavItem
                             href="/dashboard/integration-failures"
                             icon={PlugZap}
                             label="Integrations"
+                            pathname={pathname}
+                            businessId={businessId}
+                            businessLoading={businessLoading}
+                            isMobile={isMobile}
+                            onNavigate={closeSidebar}
                             badge={integrationFailureCount}
                             requiresBusiness
                         />
@@ -177,7 +198,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <div className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2 mt-6 tracking-wider">
                             Practice Setup
                         </div>
-                        <NavItem href="/dashboard/settings" icon={Settings} label="Practice Setup" />
+                        <DashboardNavItem href="/dashboard/settings" icon={Settings} label="Practice Setup" pathname={pathname} businessId={businessId} businessLoading={businessLoading} isMobile={isMobile} onNavigate={closeSidebar} />
 
                     </nav>
 

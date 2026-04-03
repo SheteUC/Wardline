@@ -1,5 +1,6 @@
 import { buildPracticeReadiness, normalizeKnowledgeConfig, normalizePracticeSetup } from './practice-setup';
 import { IntegrationCategory, IntegrationStatus } from '@wardline/types';
+import type { BusinessSettings } from './api-types';
 
 describe('practice setup helpers', () => {
     it('fills in opinionated defaults when structured policy fields are missing', () => {
@@ -19,7 +20,7 @@ describe('practice setup helpers', () => {
                 faqSummary: 'Family medicine',
                 commonQuestions: ['Office hours'],
             },
-        } as any);
+        } as BusinessSettings['settings']);
 
         expect(result.knowledgeConfig.faqSummary).toBe('Family medicine');
         expect(result.knowledgeConfig.commonQuestions[0]).toBe('Office hours');
@@ -147,7 +148,7 @@ describe('practice setup helpers', () => {
                 collectReasonFirst: true,
                 fallbackSummary: '',
             },
-        } as any);
+        } as BusinessSettings['settings']);
 
         expect(result.daytimeHandoffPolicy.mode).toBe('transfer_first');
         expect(result.daytimeHandoffPolicy.transferPhone).toBe('');

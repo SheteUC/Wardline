@@ -7,7 +7,6 @@ describe('BusinessesService', () => {
     let cache: any;
     let workflowsService: any;
     let credentialsCrypto: { decrypt: jest.Mock; encrypt: jest.Mock };
-    let auditService: { logAction: jest.Mock };
 
     beforeEach(() => {
         prisma = {

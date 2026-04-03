@@ -23,6 +23,7 @@ export class SafetyController {
     /** Quick emergency-only check (hot path, no DB hit) */
     @Post('quick-emergency-check')
     @Public()
+    @InternalApi()
     @Throttle({ global: { limit: 600, ttl: 60_000 } })
     quickEmergencyCheck(@Body() body: QuickEmergencyCheckDto) {
         return this.safetyGuard.quickEmergencyCheck(body.text);

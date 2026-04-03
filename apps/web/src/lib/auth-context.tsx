@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useBusiness } from './business-context';
 import { UserRole } from '@wardline/types';
@@ -30,11 +30,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user, isLoaded: userLoaded } = useUser();
     const { isLoaded: authLoaded } = useAuth();
     const { businessId } = useBusiness();
-    const [userRole, setUserRole] = useState<ExtendedUserRole | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!userLoaded || !authLoaded) return;
+    const isLoading = !userLoaded || !authLoaded;
+    const userRole = useMemo<ExtendedUserRole | null>(() => {
+        if (isLoading) {
+            return null;
+        }
 
         // Get role from user metadata
         // In production, this would come from the database via API
@@ -43,26 +43,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             businessRoles?: Record<string, ExtendedUserRole>;
         } | undefined;
 
-        let role: ExtendedUserRole | null = null;
-
-        // Check for system-level role first
         if (metadata?.role === 'system_admin') {
-            role = 'system_admin';
-        } else if (metadata?.role === 'patient') {
-            role = 'patient';
-        } else if (businessId && metadata?.businessRoles?.[businessId]) {
-            role = metadata.businessRoles[businessId];
-        } else if (metadata?.role) {
-            role = metadata.role as ExtendedUserRole;
-        } else {
-            // Default to 'readonly' for authenticated users without explicit role
-            // In production, you'd want to handle this differently
-            role = UserRole.READONLY;
+            return 'system_admin';
+        }
+        if (metadata?.role === 'patient') {
+            return 'patient';
+        }
+        if (businessId && metadata?.businessRoles?.[businessId]) {
+            return metadata.businessRoles[businessId];
+        }
+        if (metadata?.role) {
+            return metadata.role as ExtendedUserRole;
         }
 
-        setUserRole(role);
-        setIsLoading(false);
-    }, [userLoaded, authLoaded, user, businessId]);
+        // Default to 'readonly' for authenticated users without explicit role
+        // In production, you'd want to handle this differently
+        return UserRole.READONLY;
+    }, [businessId, isLoading, user]);
 
     const value = useMemo(() => {
         const isPatient = userRole === 'patient';

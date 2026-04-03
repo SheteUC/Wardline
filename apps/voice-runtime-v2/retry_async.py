@@ -7,6 +7,8 @@ import asyncio
 import logging
 from typing import Awaitable, Callable, TypeVar
 
+from circuit_breaker import AsyncCircuitBreaker, get_circuit_breaker
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -19,14 +21,24 @@ async def retry_async(
     base_delay_s: float = 0.25,
     max_delay_s: float = 4.0,
     operation: str = "request",
+    circuit_name: str | None = None,
+    circuit_breaker: AsyncCircuitBreaker | None = None,
 ) -> T:
     """Run async factory with exponential backoff; last exception propagates."""
     if attempts < 1:
         attempts = 1
+
+    breaker = circuit_breaker or (get_circuit_breaker(circuit_name) if circuit_name else None)
+    if breaker is not None:
+        await breaker.before_call()
+
     last_exc: BaseException | None = None
     for attempt in range(attempts):
         try:
-            return await factory()
+            result = await factory()
+            if breaker is not None:
+                await breaker.record_success()
+            return result
         except BaseException as exc:
             last_exc = exc
             if attempt + 1 >= attempts:
@@ -42,4 +54,6 @@ async def retry_async(
             )
             await asyncio.sleep(delay)
     assert last_exc is not None
+    if breaker is not None:
+        await breaker.record_failure(last_exc)
     raise last_exc

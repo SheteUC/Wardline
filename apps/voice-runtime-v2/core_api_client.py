@@ -3,18 +3,23 @@ Core API client for Voice Runtime V2.
 """
 from __future__ import annotations
 
-import asyncio
 import time
 from typing import Any, Dict, Optional
 
 import httpx
 
+from circuit_breaker import CircuitOpenError
 from config import settings
 from observability.context import outbound_headers
+from retry_async import retry_async
 
 
 def _retryable_status(status_code: int) -> bool:
     return status_code in (408, 429, 502, 503, 504)
+
+
+class RetryableCoreApiError(RuntimeError):
+    """Raised when the core API fails with a retryable status."""
 
 
 class CoreApiClient:
@@ -36,65 +41,71 @@ class CoreApiClient:
             base["X-Wardline-Internal-Secret"] = secret
         return base
 
+    async def _request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        payload: Optional[Dict[str, Any]] = None,
+        success_codes: tuple[int, ...] = (200,),
+    ) -> Optional[Dict[str, Any]]:
+        url = f"{self.base_url}{path}"
+        headers = self._internal_headers()
+        request_method = getattr(self.client, method)
+
+        async def _once() -> Optional[Dict[str, Any]]:
+            request_kwargs: Dict[str, Any] = {
+                "headers": headers,
+            }
+            if params is not None:
+                request_kwargs["params"] = params
+            if payload is not None:
+                request_kwargs["json"] = payload
+
+            response = await request_method(url, **request_kwargs)
+            if response.status_code in success_codes:
+                if not response.content:
+                    return {}
+                return response.json()
+            if _retryable_status(response.status_code):
+                raise RetryableCoreApiError(
+                    f"Core API {method.upper()} {path} returned HTTP {response.status_code}",
+                )
+            return None
+
+        try:
+            return await retry_async(
+                _once,
+                attempts=self._http_attempts,
+                base_delay_s=0.2,
+                max_delay_s=2.0,
+                operation=f"core_api_{method}",
+                circuit_name="core_api",
+            )
+        except (httpx.RequestError, RetryableCoreApiError, CircuitOpenError):
+            return None
+
     async def close(self):
         await self.client.aclose()
 
     async def _get_json(self, path: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}{path}"
-        headers = self._internal_headers()
-        for attempt in range(self._http_attempts):
-            try:
-                response = await self.client.get(url, params=params, headers=headers)
-                if response.status_code == 200:
-                    return response.json()
-                if _retryable_status(response.status_code) and attempt + 1 < self._http_attempts:
-                    await asyncio.sleep(min(2.0, 0.2 * (2**attempt)))
-                    continue
-                return None
-            except httpx.RequestError:
-                if attempt + 1 < self._http_attempts:
-                    await asyncio.sleep(min(2.0, 0.2 * (2**attempt)))
-                    continue
-                return None
-        return None
+        return await self._request_json("get", path, params=params)
 
     async def _post_json(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}{self._versioned_path(path)}"
-        headers = self._internal_headers()
-        for attempt in range(self._http_attempts):
-            try:
-                response = await self.client.post(url, json=payload, headers=headers)
-                if response.status_code in (200, 201):
-                    return response.json()
-                if _retryable_status(response.status_code) and attempt + 1 < self._http_attempts:
-                    await asyncio.sleep(min(2.0, 0.2 * (2**attempt)))
-                    continue
-                return None
-            except httpx.RequestError:
-                if attempt + 1 < self._http_attempts:
-                    await asyncio.sleep(min(2.0, 0.2 * (2**attempt)))
-                    continue
-                return None
-        return None
+        return await self._request_json(
+            "post",
+            self._versioned_path(path),
+            payload=payload,
+            success_codes=(200, 201),
+        )
 
     async def _patch_json(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}{self._versioned_path(path)}"
-        headers = self._internal_headers()
-        for attempt in range(self._http_attempts):
-            try:
-                response = await self.client.patch(url, json=payload, headers=headers)
-                if response.status_code == 200:
-                    return response.json()
-                if _retryable_status(response.status_code) and attempt + 1 < self._http_attempts:
-                    await asyncio.sleep(min(2.0, 0.2 * (2**attempt)))
-                    continue
-                return None
-            except httpx.RequestError:
-                if attempt + 1 < self._http_attempts:
-                    await asyncio.sleep(min(2.0, 0.2 * (2**attempt)))
-                    continue
-                return None
-        return None
+        return await self._request_json(
+            "patch",
+            self._versioned_path(path),
+            payload=payload,
+        )
 
     async def get_caller_context(self, business_id: str, caller_phone: str) -> Optional[Dict[str, Any]]:
         digits = "".join(filter(str.isdigit, caller_phone))

@@ -1,5 +1,7 @@
 import { IntegrationsController } from './integrations.controller';
 import { IntegrationsService } from './integrations.service';
+import { UserRole } from '@wardline/types';
+import { PERMISSIONS_KEY } from '../../auth/permissions.constants';
 
 describe('IntegrationsController', () => {
     it('findAll delegates', async () => {
@@ -15,5 +17,11 @@ describe('IntegrationsController', () => {
         const body = { vendor: 'athenahealth' };
         await c.upsert('b1', 'SCHEDULING', body);
         expect(svc.upsert).toHaveBeenCalledWith('b1', 'SCHEDULING', body);
+    });
+
+    it('protects integration writes behind supervisor permissions', () => {
+        expect(
+            Reflect.getMetadata(PERMISSIONS_KEY, IntegrationsController.prototype.upsert),
+        ).toEqual([UserRole.SUPERVISOR]);
     });
 });

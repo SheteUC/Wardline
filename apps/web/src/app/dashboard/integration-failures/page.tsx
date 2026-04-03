@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { PlugZap, RefreshCcw, Save } from 'lucide-react';
+import { RoleGuard } from '@/components/role-guard';
 import { Button, Card, neoFieldClass, neoSelectClass } from '@/components/dashboard/shared';
 import type { BusinessIntegration, IntegrationHealthCheckResult } from '@/lib/api-types';
 import { useIntegrations, useTestIntegration, useUpsertIntegration } from '@/lib/hooks/query-hooks';
+import { UserRole } from '@wardline/types';
 
 type IntegrationFormState = {
     vendor: string;
@@ -113,10 +115,6 @@ function IntegrationCard({
     const [draft, setDraft] = useState<IntegrationFormState>(() => buildFormState(integration));
     const [flash, setFlash] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
-    useEffect(() => {
-        setDraft(buildFormState(integration));
-    }, [integration.id, integration.updatedAt, integration.status, integration.lastHealthCheckAt]);
-
     const categoryActionField = CATEGORY_ACTION_FIELDS[integration.category];
     const disabled = savePending || testPending;
     const capabilities = useMemo(
@@ -150,9 +148,7 @@ function IntegrationCard({
             const result = await onTested(integration.category, draft);
             setFlash({
                 tone: result.ok ? 'success' : 'error',
-                message: result.latencyMs
-                    ? `${result.message} (${result.latencyMs}ms)`
-                    : result.message,
+                message: result.latencyMs ? `${result.message} (${result.latencyMs}ms)` : result.message,
             });
         } catch (error) {
             setFlash({
@@ -335,21 +331,11 @@ function IntegrationCard({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-                <Button
-                    variant="ghost"
-                    className="h-10 text-xs"
-                    onClick={save}
-                    disabled={disabled}
-                >
+                <Button variant="ghost" className="h-10 text-xs" onClick={save} disabled={disabled}>
                     <Save className="mr-1 h-3 w-3" />
                     Save settings
                 </Button>
-                <Button
-                    variant="ghost"
-                    className="h-10 text-xs"
-                    onClick={test}
-                    disabled={disabled}
-                >
+                <Button variant="ghost" className="h-10 text-xs" onClick={test} disabled={disabled}>
                     <RefreshCcw className="mr-1 h-3 w-3" />
                     Run health check
                 </Button>
@@ -364,8 +350,7 @@ export default function IntegrationFailuresPage() {
     const testIntegration = useTestIntegration();
 
     const integrations = useMemo(
-        () =>
-            [...(integrationsQuery.data ?? [])].sort((left, right) => left.category.localeCompare(right.category)),
+        () => [...(integrationsQuery.data ?? [])].sort((left, right) => left.category.localeCompare(right.category)),
         [integrationsQuery.data],
     );
 
@@ -405,43 +390,45 @@ export default function IntegrationFailuresPage() {
     };
 
     return (
-        <div className="space-y-5">
-            <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--background)] text-primary neo-inset">
-                    <PlugZap className="h-5 w-5" />
-                </div>
-                <div>
-                    <h2 className="text-xl font-semibold text-foreground">Integrations</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Configure the single live connector per category, test its health, and inspect which runtime capabilities are available to the live call runtime.
-                    </p>
-                </div>
-            </div>
-
-            {integrationsQuery.isLoading ? (
-                <Card>
-                    <div className="py-16 text-center text-sm text-muted-foreground">Loading integrations...</div>
-                </Card>
-            ) : integrationsQuery.isError ? (
-                <Card>
-                    <div className="py-16 text-center text-sm text-destructive">
-                        Failed to load integration settings.
+        <RoleGuard allowedRoles={[UserRole.OWNER, UserRole.ADMIN, UserRole.SUPERVISOR]}>
+            <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--background)] text-primary neo-inset">
+                        <PlugZap className="h-5 w-5" />
                     </div>
-                </Card>
-            ) : (
-                <div className="space-y-4">
-                    {integrations.map((integration) => (
-                        <IntegrationCard
-                            key={`${integration.category}:${integration.updatedAt}:${integration.status}`}
-                            integration={integration}
-                            onSaved={persistDraft}
-                            onTested={persistAndTest}
-                            savePending={upsertIntegration.isPending}
-                            testPending={testIntegration.isPending}
-                        />
-                    ))}
+                    <div>
+                        <h2 className="text-xl font-semibold text-foreground">Integrations</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Configure the single live connector per category, test its health, and inspect which runtime capabilities are available to the live call runtime.
+                        </p>
+                    </div>
                 </div>
-            )}
-        </div>
+
+                {integrationsQuery.isLoading ? (
+                    <Card>
+                        <div className="py-16 text-center text-sm text-muted-foreground">Loading integrations...</div>
+                    </Card>
+                ) : integrationsQuery.isError ? (
+                    <Card>
+                        <div className="py-16 text-center text-sm text-destructive">
+                            Failed to load integration settings.
+                        </div>
+                    </Card>
+                ) : (
+                    <div className="space-y-4">
+                        {integrations.map((integration) => (
+                            <IntegrationCard
+                                key={`${integration.category}:${integration.updatedAt}:${integration.status}`}
+                                integration={integration}
+                                onSaved={persistDraft}
+                                onTested={persistAndTest}
+                                savePending={upsertIntegration.isPending}
+                                testPending={testIntegration.isPending}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </RoleGuard>
     );
 }

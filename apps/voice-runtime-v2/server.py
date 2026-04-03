@@ -21,6 +21,7 @@ from config import settings
 from observability.logging_setup import configure_logging, get_logger
 from observability.middleware import ObservabilityMiddleware
 from preflight import default_bootstrap_error_message
+from rate_limiter import RateLimitExceeded, rate_limiter, resolve_request_key
 from service import VoiceRuntimeV2
 from telephony import TwilioMediaSession
 
@@ -65,6 +66,21 @@ def _twilio_signature_ok(request: Request, params: dict[str, str]) -> bool:
         return False
     url = _twilio_request_url(request)
     return RequestValidator(auth).validate(url, params, sig)
+
+
+async def _enforce_rate_limit(request: Request, *, bucket: str, limit: int) -> None:
+    try:
+        await rate_limiter.enforce(
+            bucket=bucket,
+            key=resolve_request_key(request),
+            limit=limit,
+        )
+    except RateLimitExceeded as exc:
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded",
+            headers={"Retry-After": str(exc.retry_after_s)},
+        ) from exc
 
 
 class StartSessionRequest(BaseModel):
@@ -147,7 +163,13 @@ async def ready():
 
 
 @app.post("/sessions")
-async def start_session(request: StartSessionRequest):
+async def start_session(http_request: Request, request: StartSessionRequest):
+    await _enforce_rate_limit(
+        http_request,
+        bucket="sessions.start",
+        limit=settings.voice_rate_limit_sessions_per_minute,
+    )
+
     try:
         session = await runtime.start_session(
             call_sid=request.callSid,
@@ -169,6 +191,12 @@ async def start_session(request: StartSessionRequest):
 
 @app.post("/telephony/twilio/bootstrap")
 async def bootstrap_twilio_session(request: Request):
+    await _enforce_rate_limit(
+        request,
+        bucket="telephony.twilio.bootstrap",
+        limit=settings.voice_rate_limit_twilio_bootstrap_per_minute,
+    )
+
     form_data = await request.form()
     params = _twilio_form_params(form_data)
     if not _twilio_signature_ok(request, params):
@@ -300,7 +328,13 @@ async def get_session(session_id: str):
 
 
 @app.post("/sessions/{session_id}/turn")
-async def process_turn(session_id: str, request: TextTurnRequest):
+async def process_turn(session_id: str, http_request: Request, request: TextTurnRequest):
+    await _enforce_rate_limit(
+        http_request,
+        bucket="sessions.mutations",
+        limit=settings.voice_rate_limit_session_mutations_per_minute,
+    )
+
     try:
         return await runtime.process_text_turn(session_id, request.text)
     except (KeyError, RuntimeError) as error:
@@ -308,7 +342,13 @@ async def process_turn(session_id: str, request: TextTurnRequest):
 
 
 @app.post("/sessions/{session_id}/transcript")
-async def process_transcript_turn(session_id: str, request: TranscriptTurnRequest):
+async def process_transcript_turn(session_id: str, http_request: Request, request: TranscriptTurnRequest):
+    await _enforce_rate_limit(
+        http_request,
+        bucket="sessions.mutations",
+        limit=settings.voice_rate_limit_session_mutations_per_minute,
+    )
+
     try:
         return await runtime.process_transcript_turn(
             session_id,
@@ -321,7 +361,13 @@ async def process_transcript_turn(session_id: str, request: TranscriptTurnReques
 
 
 @app.post("/sessions/{session_id}/events")
-async def record_session_event(session_id: str, request: SessionEventRequest):
+async def record_session_event(session_id: str, http_request: Request, request: SessionEventRequest):
+    await _enforce_rate_limit(
+        http_request,
+        bucket="sessions.mutations",
+        limit=settings.voice_rate_limit_session_mutations_per_minute,
+    )
+
     try:
         return await runtime.persist_transport_event(session_id, request.type, request.payload)
     except (KeyError, RuntimeError) as error:
@@ -329,7 +375,13 @@ async def record_session_event(session_id: str, request: SessionEventRequest):
 
 
 @app.post("/sessions/{session_id}/voicemail")
-async def capture_voicemail(session_id: str, request: VoicemailRequest):
+async def capture_voicemail(session_id: str, http_request: Request, request: VoicemailRequest):
+    await _enforce_rate_limit(
+        http_request,
+        bucket="sessions.mutations",
+        limit=settings.voice_rate_limit_session_mutations_per_minute,
+    )
+
     try:
         return await runtime.capture_voicemail(
             session_id,

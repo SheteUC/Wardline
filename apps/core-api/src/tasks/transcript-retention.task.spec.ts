@@ -37,11 +37,8 @@ describe('TranscriptRetentionTask', () => {
     });
 
     it('deletes expired transcript segments using business-specific retention windows', async () => {
-        const shortRetentionCutoff = new Date('2026-03-30T12:00:00Z');
-        shortRetentionCutoff.setDate(shortRetentionCutoff.getDate() - 14);
-
-        const defaultRetentionCutoff = new Date('2026-03-30T12:00:00Z');
-        defaultRetentionCutoff.setDate(defaultRetentionCutoff.getDate() - 30);
+        const sharedCandidateCutoff = new Date('2026-03-30T12:00:00Z');
+        sharedCandidateCutoff.setDate(sharedCandidateCutoff.getDate() - 14);
 
         prisma.business.findMany.mockResolvedValue([
             {
@@ -55,31 +52,36 @@ describe('TranscriptRetentionTask', () => {
                 settings: null,
             },
         ]);
-        prisma.callSession.findMany
-            .mockResolvedValueOnce([{ id: 'call-1' }, { id: 'call-2' }])
-            .mockResolvedValueOnce([]);
+        prisma.callSession.findMany.mockResolvedValue([
+            {
+                id: 'call-1',
+                businessId: 'business-1',
+                startedAt: new Date('2026-03-10T09:00:00Z'),
+            },
+            {
+                id: 'call-2',
+                businessId: 'business-1',
+                startedAt: new Date('2026-03-01T18:00:00Z'),
+            },
+            {
+                id: 'call-3',
+                businessId: 'business-2',
+                startedAt: new Date('2026-03-15T18:00:00Z'),
+            },
+        ]);
         prisma.transcriptSegment.deleteMany.mockResolvedValue({ count: 3 });
 
         await task.runRetentionCleanup();
 
-        expect(prisma.callSession.findMany).toHaveBeenNthCalledWith(
-            1,
+        expect(prisma.callSession.findMany).toHaveBeenCalledTimes(1);
+        expect(prisma.callSession.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: expect.objectContaining({
-                    businessId: 'business-1',
-                    startedAt: {
-                        lt: shortRetentionCutoff,
+                    businessId: {
+                        in: ['business-1', 'business-2'],
                     },
-                }),
-            }),
-        );
-        expect(prisma.callSession.findMany).toHaveBeenNthCalledWith(
-            2,
-            expect.objectContaining({
-                where: expect.objectContaining({
-                    businessId: 'business-2',
                     startedAt: {
-                        lt: defaultRetentionCutoff,
+                        lt: sharedCandidateCutoff,
                     },
                 }),
             }),
@@ -99,6 +101,7 @@ describe('TranscriptRetentionTask', () => {
                 }),
             }),
         );
+        expect(auditService.logAction).toHaveBeenCalledTimes(1);
     });
 
     it('swallows cleanup failures so the scheduler does not crash the process', async () => {

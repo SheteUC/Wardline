@@ -1,7 +1,5 @@
 "use client";
 
-import React from 'react';
-
 /**
  * Skeleton loading components for better perceived performance.
  * These match the exact layout of actual components to prevent layout shift.

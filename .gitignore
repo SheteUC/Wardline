@@ -10,6 +10,8 @@ coverage/
 .coverage
 .coverage.*
 *.log
+playwright-report/
+test-results/
 
 # Next.js
 .next/

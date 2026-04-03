@@ -16,6 +16,7 @@ import server  # noqa: E402
 
 class VoiceRuntimeV2ServerTests(unittest.TestCase):
     def setUp(self):
+        server.rate_limiter._events.clear()
         self._twilio_sig_patcher = unittest.mock.patch.object(
             config.settings,
             "twilio_skip_signature_validation",
@@ -38,6 +39,7 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
         self.client = TestClient(server.app)
 
     def tearDown(self):
+        server.rate_limiter._events.clear()
         self._ready_patcher.stop()
         self._twilio_sig_patcher.stop()
 
@@ -163,6 +165,72 @@ class VoiceRuntimeV2ServerTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["operatorSummary"]["headline"], "Answered practice services question")
+
+    def test_start_session_endpoint_returns_runtime_bootstrap(self):
+        session = AsyncMock()
+        session.sessionId = "session-1"
+        session.callId = "call-1"
+        session.businessId = "business-1"
+        session.messages = [type("Message", (), {"text": "Hello there"})()]
+        session.transport = type(
+            "Transport",
+            (),
+            {"model_dump": lambda self: {"runtime": "voice-runtime-v2", "transport": "livekit"}},
+        )()
+
+        with patch.object(server.runtime, "start_session", AsyncMock(return_value=session)):
+            response = self.client.post(
+                "/sessions",
+                json={
+                    "callSid": "CA123",
+                    "callerPhone": "+15550000001",
+                    "calledPhone": "+15551230001",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["sessionId"], "session-1")
+        self.assertEqual(response.json()["transport"]["transport"], "livekit")
+
+    def test_start_session_endpoint_rate_limits_repeated_requests(self):
+        session = AsyncMock()
+        session.sessionId = "session-1"
+        session.callId = "call-1"
+        session.businessId = "business-1"
+        session.messages = [type("Message", (), {"text": "Hello there"})()]
+        session.transport = type(
+            "Transport",
+            (),
+            {"model_dump": lambda self: {"runtime": "voice-runtime-v2", "transport": "livekit"}},
+        )()
+
+        with patch.object(
+            config.settings,
+            "voice_rate_limit_sessions_per_minute",
+            1,
+        ), patch.object(server.runtime, "start_session", AsyncMock(return_value=session)):
+            first = self.client.post(
+                "/sessions",
+                json={
+                    "callSid": "CA123",
+                    "callerPhone": "+15550000001",
+                    "calledPhone": "+15551230001",
+                },
+                headers={"X-Forwarded-For": "203.0.113.10"},
+            )
+            second = self.client.post(
+                "/sessions",
+                json={
+                    "callSid": "CA124",
+                    "callerPhone": "+15550000002",
+                    "calledPhone": "+15551230001",
+                },
+                headers={"X-Forwarded-For": "203.0.113.10"},
+            )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)
+        self.assertEqual(second.json()["detail"], "Rate limit exceeded")
 
     def test_transcript_endpoint_passes_provider_session_id(self):
         with patch.object(

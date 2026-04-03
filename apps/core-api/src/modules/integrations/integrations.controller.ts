@@ -24,6 +24,7 @@ export class IntegrationsController {
     }
 
     @Put(':category')
+    @Permissions(UserRole.SUPERVISOR)
     upsert(
         @Param('businessId') businessId: string,
         @Param('category') category: string,

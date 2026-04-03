@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
-import { AlertTriangle, Phone, FileText, BellRing } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, BellRing, FileText, Phone } from 'lucide-react';
+import { RoleGuard } from '@/components/role-guard';
 import { Card, Toggle } from "@/components/dashboard/shared";
 import { cn } from '@/lib/utils';
+import { UserRole } from '@wardline/types';
 
 export default function NotificationSettingsPage() {
     const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -14,7 +16,7 @@ export default function NotificationSettingsPage() {
     });
 
     const handleToggle = (key: string) => {
-        setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+        setToggles((previous) => ({ ...previous, [key]: !previous[key] }));
     };
 
     const items = [
@@ -25,41 +27,43 @@ export default function NotificationSettingsPage() {
     ] as const;
 
     return (
-        <div className="mx-auto max-w-4xl animate-fade-in pb-10">
-            <div className="mb-8">
-                <h1 className="text-2xl font-semibold text-foreground">Notifications</h1>
-                <p className="text-muted-foreground">Customize how and when you receive alerts.</p>
-            </div>
+        <RoleGuard allowedRoles={[UserRole.OWNER, UserRole.ADMIN, UserRole.SUPERVISOR]}>
+            <div className="mx-auto max-w-4xl animate-fade-in pb-10">
+                <div className="mb-8">
+                    <h1 className="text-2xl font-semibold text-foreground">Notifications</h1>
+                    <p className="text-muted-foreground">Customize how and when you receive alerts.</p>
+                </div>
 
-            <Card className="overflow-hidden p-0">
-                <div className="border-b border-border/40 px-6 py-4">
-                    <h3 className="font-semibold text-foreground">Preferences</h3>
-                </div>
-                <div className="divide-y divide-border/40">
-                    {items.map((item) => (
-                        <div
-                            key={item.id}
-                            className="flex items-center justify-between gap-4 p-6 transition-colors hover:bg-[var(--background)]/40"
-                        >
-                            <div className="flex min-w-0 gap-4">
-                                <div
-                                    className={cn(
-                                        'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset',
-                                        item.iconClass,
-                                    )}
-                                >
-                                    <item.icon className="h-5 w-5" />
+                <Card className="overflow-hidden p-0">
+                    <div className="border-b border-border/40 px-6 py-4">
+                        <h3 className="font-semibold text-foreground">Preferences</h3>
+                    </div>
+                    <div className="divide-y divide-border/40">
+                        {items.map((item) => (
+                            <div
+                                key={item.id}
+                                className="flex items-center justify-between gap-4 p-6 transition-colors hover:bg-[var(--background)]/40"
+                            >
+                                <div className="flex min-w-0 gap-4">
+                                    <div
+                                        className={cn(
+                                            'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--background)] neo-inset',
+                                            item.iconClass,
+                                        )}
+                                    >
+                                        <item.icon className="h-5 w-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="font-medium text-foreground">{item.label}</div>
+                                        <div className="text-sm text-muted-foreground">{item.desc}</div>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <div className="font-medium text-foreground">{item.label}</div>
-                                    <div className="text-sm text-muted-foreground">{item.desc}</div>
-                                </div>
+                                <Toggle checked={toggles[item.id]} onChange={() => handleToggle(item.id)} />
                             </div>
-                            <Toggle checked={toggles[item.id]} onChange={() => handleToggle(item.id)} />
-                        </div>
-                    ))}
-                </div>
-            </Card>
-        </div>
+                        ))}
+                    </div>
+                </Card>
+            </div>
+        </RoleGuard>
     );
 }

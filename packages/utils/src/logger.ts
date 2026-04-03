@@ -45,19 +45,28 @@ export function redactPHI(text: string): string {
 /**
  * Recursively redacts PHI from objects
  */
-export function redactPHIFromObject(obj: any): any {
+type RedactedValue =
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | RedactedValue[]
+    | { [key: string]: RedactedValue };
+
+export function redactPHIFromObject(obj: unknown): RedactedValue {
     if (typeof obj !== 'object' || obj === null) {
         if (typeof obj === 'string') {
             return redactPHI(obj);
         }
-        return obj;
+        return obj as RedactedValue;
     }
 
     if (Array.isArray(obj)) {
         return obj.map(redactPHIFromObject);
     }
 
-    const redacted: any = {};
+    const redacted: Record<string, RedactedValue> = {};
 
     for (const [key, value] of Object.entries(obj)) {
         const lowerKey = key.toLowerCase();

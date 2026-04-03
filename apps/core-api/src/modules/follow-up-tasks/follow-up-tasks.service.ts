@@ -134,7 +134,7 @@ export class FollowUpTasksService {
             })
             : await this.prisma.followUpTask.create({ data });
 
-        await this.invalidate(input.businessId);
+        await this.invalidate();
         return task;
     }
 
@@ -150,11 +150,11 @@ export class FollowUpTasksService {
             },
         });
 
-        await this.invalidate(existing.businessId);
+        await this.invalidate();
         return task;
     }
 
-    private async invalidate(_businessId: string) {
+    private async invalidate() {
         await this.cache.invalidateByTag('follow-up-tasks');
     }
 }

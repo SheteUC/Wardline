@@ -49,8 +49,8 @@ export function hasAnyPermission(userRole: string, requiredRoles: UserRole[]): b
 export function getRolesWithPermission(minRole: UserRole): UserRole[] {
     const minLevel = ROLE_HIERARCHY[minRole];
     return Object.entries(ROLE_HIERARCHY)
-        .filter(([_, level]) => level >= minLevel)
-        .map(([role, _]) => role as UserRole);
+        .filter(([, level]) => level >= minLevel)
+        .map(([role]) => role as UserRole);
 }
 
 export const PERMISSIONS_KEY = 'permissions';

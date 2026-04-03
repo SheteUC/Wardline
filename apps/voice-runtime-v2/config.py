@@ -84,6 +84,12 @@ class Settings(BaseSettings):
     voice_shutdown_drain_seconds: float = Field(default=30.0, alias="VOICE_SHUTDOWN_DRAIN_SECONDS")
     voice_deepgram_reconnect_attempts: int = Field(default=8, alias="VOICE_DEEPGRAM_RECONNECT_ATTEMPTS")
     voice_http_max_retries: int = Field(default=3, alias="VOICE_HTTP_MAX_RETRIES")
+    voice_circuit_failure_threshold: int = Field(default=5, alias="VOICE_CIRCUIT_FAILURE_THRESHOLD")
+    voice_circuit_recovery_seconds: float = Field(default=30.0, alias="VOICE_CIRCUIT_RECOVERY_SECONDS")
+    voice_circuit_half_open_successes: int = Field(default=2, alias="VOICE_CIRCUIT_HALF_OPEN_SUCCESSES")
+    voice_rate_limit_sessions_per_minute: int = Field(default=30, alias="VOICE_RATE_LIMIT_SESSIONS_PER_MINUTE")
+    voice_rate_limit_session_mutations_per_minute: int = Field(default=300, alias="VOICE_RATE_LIMIT_SESSION_MUTATIONS_PER_MINUTE")
+    voice_rate_limit_twilio_bootstrap_per_minute: int = Field(default=120, alias="VOICE_RATE_LIMIT_TWILIO_BOOTSTRAP_PER_MINUTE")
 
     def resolved_core_api_url(self) -> str:
         explicit_url = self.core_api_url.strip()

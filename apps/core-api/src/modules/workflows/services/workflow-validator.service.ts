@@ -287,7 +287,7 @@ export class WorkflowValidatorService {
 
         for (const node of workflow.nodes) {
             switch (node.type) {
-                case 'ai-agent':
+                case 'ai-agent': {
                     const aiConfig = node.config as any;
                     if (!aiConfig?.persona) {
                         errors.push({
@@ -304,8 +304,9 @@ export class WorkflowValidatorService {
                         });
                     }
                     break;
+                }
 
-                case 'human-agent-queue':
+                case 'human-agent-queue': {
                     const queueConfig = node.config as any;
                     if (!queueConfig?.specialization) {
                         errors.push({
@@ -315,8 +316,9 @@ export class WorkflowValidatorService {
                         });
                     }
                     break;
+                }
 
-                case 'conditional':
+                case 'conditional': {
                     const condConfig = node.config as any;
                     if (!condConfig?.condition) {
                         errors.push({
@@ -326,8 +328,9 @@ export class WorkflowValidatorService {
                         });
                     }
                     break;
+                }
 
-                case 'integration':
+                case 'integration': {
                     const integrationConfig = node.config as any;
                     if (integrationConfig?.mode !== 'runtime_action') {
                         errors.push({
@@ -351,6 +354,7 @@ export class WorkflowValidatorService {
                         });
                     }
                     break;
+                }
             }
         }
 

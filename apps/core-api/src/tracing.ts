@@ -35,7 +35,6 @@ if (tracesOtlp && process.env.NODE_ENV !== 'test' && !g.__wardlineOtelStarted) {
         process.on('SIGTERM', shutdown);
         process.on('SIGINT', shutdown);
     } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn('[wardline] OpenTelemetry SDK failed to start:', e);
     }
 }

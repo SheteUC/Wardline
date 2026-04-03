@@ -209,7 +209,12 @@ class TwilioMediaSession:
             except TypeError:
                 return await websockets.connect(url, extra_headers=headers)
 
-        return await retry_async(_connect_once, attempts=3, operation="deepgram_connect")
+        return await retry_async(
+            _connect_once,
+            attempts=3,
+            operation="deepgram_connect",
+            circuit_name="deepgram_stt",
+        )
 
     async def _ensure_deepgram_socket(self):
         if not self.session_id or self._closed:

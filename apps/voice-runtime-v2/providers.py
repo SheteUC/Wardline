@@ -312,7 +312,12 @@ class ManagedTtsAdapter:
                 return response.content
 
         try:
-            return await retry_async(_once, attempts=3, operation="tts_synthesize")
+            return await retry_async(
+                _once,
+                attempts=3,
+                operation="tts_synthesize",
+                circuit_name="deepgram_tts",
+            )
         except Exception:
             return b""
 

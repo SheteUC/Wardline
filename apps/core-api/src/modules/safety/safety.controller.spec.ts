@@ -1,5 +1,6 @@
 import { SafetyController } from './safety.controller';
 import { SafetyGuardService } from './safety-guard.service';
+import { INTERNAL_API_KEY } from '../../auth/internal-api.decorator';
 
 describe('SafetyController', () => {
     it('checkSafety delegates', async () => {
@@ -18,5 +19,11 @@ describe('SafetyController', () => {
         const res = await c.getBusinessKeywords('b1');
         expect(res.businessId).toBe('b1');
         expect(res.systemEmergency).toEqual(['stroke']);
+    });
+
+    it('protects quick emergency checks with the internal API secret', () => {
+        expect(
+            Reflect.getMetadata(INTERNAL_API_KEY, SafetyController.prototype.quickEmergencyCheck),
+        ).toBe(true);
     });
 });

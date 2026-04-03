@@ -284,8 +284,8 @@ export default function PracticeSetupPage() {
             setNewBusinessName('');
             setNewBusinessSlug('');
             await businessesQuery.refetch();
-        } catch (error: any) {
-            setCreateError(error?.message || 'Failed to create practice');
+        } catch (error: unknown) {
+            setCreateError(error instanceof Error ? error.message : 'Failed to create practice');
         } finally {
             setIsCreating(false);
         }

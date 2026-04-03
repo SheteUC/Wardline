@@ -163,7 +163,9 @@ export default function VoicemailsPage() {
 
                                     {voicemail.transcription && (
                                         <div className="mb-3 rounded-2xl bg-[var(--background)] p-3 neo-inset">
-                                            <p className="text-xs italic text-foreground">"{voicemail.transcription}"</p>
+                                            <p className="text-xs italic text-foreground">
+                                                &ldquo;{voicemail.transcription}&rdquo;
+                                            </p>
                                         </div>
                                     )}
 

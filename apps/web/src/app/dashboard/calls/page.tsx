@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     AlertTriangle,
     Bot,
@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Button, Card } from '@/components/dashboard/shared';
+import { CallsTableSkeleton } from '@/components/dashboard/skeletons';
 import { labelRuntimeAction } from '@/lib/operator-insights';
 import { cn } from '@/lib/utils';
 import { useCalls, usePrefetchCallsPage } from '@/lib/hooks/query-hooks';
@@ -194,7 +195,9 @@ export default function CallLogsPage() {
 
             <Card className="overflow-hidden p-0">
                 {callsQuery.isLoading ? (
-                    <div className="py-16 text-center text-sm text-muted-foreground">Loading call logs...</div>
+                    <div className="p-4 sm:p-6">
+                        <CallsTableSkeleton />
+                    </div>
                 ) : callsQuery.isError ? (
                     <div className="py-16 text-center text-sm text-destructive">Failed to load call logs.</div>
                 ) : calls.length === 0 ? (
