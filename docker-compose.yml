@@ -40,6 +40,7 @@ services:
     build:
       context: .
       dockerfile: apps/core-api/Dockerfile
+      provenance: false
     container_name: wardline-core-api
     environment:
       NODE_ENV: ${NODE_ENV:-development}
@@ -78,6 +79,7 @@ services:
     build:
       context: .
       dockerfile: apps/voice-runtime-v2/Dockerfile
+      provenance: false
     container_name: wardline-voice-runtime-v2
     environment:
       VOICE_RUNTIME_V2_PORT: 3003
@@ -94,9 +96,6 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
       LLM_PROVIDER: ${LLM_PROVIDER:-auto}
-      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
-      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT}
-      AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4o-mini}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
     ports:
@@ -128,6 +127,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: dev
+      provenance: false
     container_name: wardline-web
     environment:
       NODE_ENV: ${NODE_ENV:-development}

@@ -161,7 +161,7 @@ export class Logger {
         this.logger.error(
             {
                 error: errorObj,
-                ...(meta ? redactPHIFromObject(meta) : {}),
+                ...(meta ? redactPHIFromObject(meta) as Record<string, unknown> : {}),
             },
             message
         );

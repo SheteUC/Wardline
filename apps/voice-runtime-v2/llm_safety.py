@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Optional, cast
 
 from config import settings
@@ -14,6 +15,40 @@ from models import OperatorSummary, SafetyAssessment, SessionState, SpecialistRe
 
 logger = logging.getLogger(__name__)
 
+_ADVICE_SEEKING_HINTS = (
+    "what should i do",
+    "what should i take",
+    "should i be worried",
+    "is this symptom serious",
+    "is this serious",
+    "is this normal",
+    "what do these results mean",
+    "what do my results mean",
+    "what do i have",
+    "can i take",
+    "is it safe to take",
+    "how much should i take",
+    "dosage",
+    "dose",
+    "side effects",
+    "drug interaction",
+    "treatment plan",
+)
+_ADMIN_INTENT_HINTS = (
+    "schedule",
+    "appointment",
+    "follow-up",
+    "follow up",
+    "physical",
+    "consultation",
+    "reschedule",
+    "cancel",
+    "book",
+    "refill",
+    "billing",
+    "insurance",
+)
+
 SYSTEM = """You classify caller utterances for a medical practice phone assistant. Output JSON only.
 
 Levels:
@@ -22,8 +57,34 @@ Levels:
 - urgent_handoff: caller seeks clinical advice, diagnosis, medication dosing decisions, or interpreting test results — assistant must not advise; staff must follow up.
 
 Do NOT classify as emergency for past-tense medical history without current crisis.
+Do NOT classify a plain symptom statement as urgent_handoff unless the caller is explicitly asking for interpretation or advice.
+If the caller is describing symptoms as context for scheduling an appointment or another administrative task, classify it as none.
 JSON: {"level":"none|emergency|urgent_handoff","category":"medical_emergency|mental_health_emergency|violence_abuse_emergency|clinical_results_or_diagnosis|medication_safety|symptom_interpretation|none","confidence":0.0-1.0}
 """
+
+
+def _normalize_text(text: str) -> str:
+    return re.sub(r"\s+", " ", text.lower()).strip()
+
+
+def _is_advice_seeking_symptom_question(text: str) -> bool:
+    normalized = _normalize_text(text)
+    return any(hint in normalized for hint in _ADVICE_SEEKING_HINTS)
+
+
+def _is_admin_intent_with_symptom_context(text: str) -> bool:
+    normalized = _normalize_text(text)
+    return any(hint in normalized for hint in _ADMIN_INTENT_HINTS)
+
+
+def _should_ignore_llm_symptom_handoff(level: str, category: str, text: str) -> bool:
+    if level != "urgent_handoff" or category != "symptom_interpretation":
+        return False
+    if _is_advice_seeking_symptom_question(text):
+        return False
+    if _is_admin_intent_with_symptom_context(text):
+        return True
+    return True
 
 
 def _category_alias(category: str) -> str:
@@ -198,6 +259,8 @@ async def assess_safety_llm(session: SessionState, text: str) -> Optional[Specia
         return None
 
     if conf < 0.75:
+        return None
+    if _should_ignore_llm_symptom_handoff(level, category, clean):
         return None
 
     return _result_for_level(level, category, clean)

@@ -4,6 +4,7 @@ RUN npm install -g pnpm
 
 FROM base AS dependencies
 WORKDIR /app
+ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/config/package.json ./packages/config/
@@ -11,18 +12,19 @@ COPY packages/db/package.json ./packages/db/
 COPY packages/types/package.json ./packages/types/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/utils/package.json ./packages/utils/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prod=false
 
 FROM base AS dev
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=dependencies /app/packages ./packages
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json turbo.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
+RUN pnpm install --frozen-lockfile --prod=false --offline
 WORKDIR /app/packages/db
-RUN pnpm exec prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm exec prisma generate
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=development
@@ -36,11 +38,12 @@ WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=dependencies /app/packages ./packages
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json turbo.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
+RUN pnpm install --frozen-lockfile --prod=false --offline
 WORKDIR /app/packages/db
-RUN pnpm exec prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm exec prisma generate
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @wardline/web build
@@ -56,10 +59,8 @@ COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /app/apps/web/public ./apps/web/public
 
-RUN addgroup -g 1000 wardline && \
-    adduser -D -u 1000 -G wardline wardline && \
-    chown -R wardline:wardline /app
-USER wardline
+RUN chown -R node:node /app
+USER node
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \

@@ -5,6 +5,7 @@ import sys
 import unittest
 from unittest.mock import AsyncMock, patch
 
+from redis.exceptions import LockError
 import structlog
 
 APP_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -12,6 +13,7 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 import config  # noqa: E402
+from models import DetectedIntent, OperatorSummary, SafetyAssessment, SpecialistResult, SupervisorDecision  # noqa: E402
 import service as service_module  # noqa: E402
 from service import VoiceRuntimeV2  # noqa: E402
 
@@ -444,6 +446,22 @@ class FakeCoreApiClient:
         return configured, 42.0
 
 
+class FailingRedisLock:
+    async def __aenter__(self):
+        raise LockError("Unable to acquire lock within the time specified")
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
+class FailingRedisClient:
+    def lock(self, *_args, **_kwargs):
+        return FailingRedisLock()
+
+    async def aclose(self):
+        return None
+
+
 class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         super().setUp()
@@ -511,6 +529,23 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(api_client.updated_calls), 0)
         self.assertEqual(api_client.ingested_calls[0][1]["statePatch"]["status"], "INITIATED")
+
+    async def test_exclusive_session_falls_back_to_local_lock_when_redis_lock_times_out(self):
+        runtime, _api_client, session = await self.create_runtime()
+        runtime._redis = FailingRedisClient()
+        runtime._session_store.load = AsyncMock(return_value=None)
+        runtime._session_store.save = AsyncMock()
+
+        with patch.object(service_module.logger, "debug") as debug_mock:
+            dump = await runtime.get_session_dump(session.sessionId)
+
+        self.assertEqual(dump["sessionId"], session.sessionId)
+        runtime._session_store.save.assert_awaited()
+        debug_mock.assert_called_with(
+            "session_distributed_lock_fallback",
+            session_id=session.sessionId,
+            error="Unable to acquire lock within the time specified",
+        )
 
     async def test_transport_start_persists_ongoing_status(self):
         runtime, api_client, session = await self.create_runtime()
@@ -777,6 +812,61 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
             response["reply"],
             "I have a request for a physical on Tuesday at 10:00 AM. Should I send that to the practice?",
         )
+
+    async def test_llm_symptom_triage_does_not_override_clear_scheduling_intent(self):
+        runtime, _api_client, session = await self.create_runtime(after_hours=True)
+        caller_text = "My back hurts and I need to schedule an appointment for next week."
+        decision = SupervisorDecision(
+            mode="delegate",
+            domain="scheduling",
+            confidence=0.93,
+            reason="schedule_visit",
+            detectedIntents=[
+                DetectedIntent(
+                    domain="scheduling",
+                    kind="action",
+                    sourceText=caller_text,
+                    summary="schedule an appointment",
+                )
+            ],
+        )
+        safety_result = SpecialistResult(
+            domain="safety",
+            status="handoff",
+            confidence=0.88,
+            nextPrompt="I can't interpret symptoms, test results, or medication questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+            operatorSummary=OperatorSummary(
+                headline="LLM: clinical question redirected",
+                nextStep="Route to clinical staff for appropriate follow-up.",
+                specialist="safety",
+                callerRequest=caller_text,
+                followUpRequired=True,
+            ),
+            callerRequestSummary="Caller asked clinically sensitive question; redirected (LLM triage).",
+            requestHumanFollowUp=True,
+            resolved=True,
+            fallbackRecommendation="manual-follow-up",
+            safetyAssessment=SafetyAssessment(
+                category="symptom_interpretation",
+                severity="urgent_handoff",
+                matchedPatterns=["llm-triage"],
+                headline="LLM: clinical question redirected",
+                callerReply="I can't interpret symptoms, test results, or medication questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+                operatorNextStep="Route to clinical staff for appropriate follow-up.",
+            ),
+        )
+
+        with patch("service.route_turn_llm", new=AsyncMock(return_value=decision)), patch(
+            "service.assess_safety_llm",
+            new=AsyncMock(return_value=safety_result),
+        ):
+            response = await runtime.process_text_turn(session.sessionId, caller_text)
+
+        self.assertEqual(response["domain"], "scheduling")
+        self.assertFalse(response["awaitingVoicemail"])
+        self.assertFalse(session.awaitingVoicemail)
+        self.assertEqual(response["reply"], "What kind of appointment do you need, like a physical, follow-up, or consultation?")
+        self.assertFalse(any(event.type == "safety_triggered" for event in session.events))
 
     async def test_after_hours_voicemail_is_captured_from_next_turn(self):
         runtime, api_client, session = await self.create_runtime(after_hours=True)

@@ -1,68 +1,71 @@
 # Dockerfile for Core API (NestJS)
 
 FROM node:20-alpine AS base
-
-# Install pnpm
 RUN npm install -g pnpm
 
-FROM base AS dependencies
+# ── Build stage ───────────────────────────────────────────────────────────────
+FROM base AS build
 
 WORKDIR /app
+ENV NODE_ENV=development
 
-# Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy all manifest files first (layer-cache friendly)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json turbo.json ./
 COPY packages/db/package.json ./packages/db/
 COPY packages/types/package.json ./packages/types/
 COPY packages/config/package.json ./packages/config/
 COPY packages/utils/package.json ./packages/utils/
 COPY apps/core-api/package.json ./apps/core-api/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install all workspace deps; --shamefully-hoist ensures every binary
+# (prisma CLI, nestjs/cli, tsc, turbo, etc.) is in node_modules/.bin
+RUN pnpm install --frozen-lockfile --shamefully-hoist --prod=false
 
-FROM base AS build
-
-WORKDIR /app
-
-# Copy dependencies
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=dependencies /app/packages ./packages
-COPY --from=dependencies /app/apps/core-api/node_modules ./apps/core-api/node_modules
-
-# Copy source code
-COPY packages ./packages
+# Copy full source for the packages core-api actually depends on
+COPY packages/db ./packages/db
+COPY packages/types ./packages/types
+COPY packages/config ./packages/config
+COPY packages/utils ./packages/utils
 COPY apps/core-api ./apps/core-api
 
-# Generate Prisma Client
+# Re-link workspace dependencies after copying full source; the source copy can
+# replace per-package symlinks that pnpm created when only manifests were present.
+RUN pnpm install --frozen-lockfile --shamefully-hoist --prod=false --offline
+
+# Generate Prisma Client first
+# prisma.config.ts reads DATABASE_URL — dummy value is fine for generate (no DB connection needed)
 WORKDIR /app/packages/db
-RUN pnpm prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
-# Build application
-WORKDIR /app/apps/core-api
-RUN pnpm build
+# Build all packages and core-api in dependency order via turbo
+# turbo respects the build graph: utils/types/config/db → core-api
+WORKDIR /app
+RUN /app/node_modules/.bin/turbo run build --filter=@wardline/core-api... --no-daemon
 
+# ── Production stage ──────────────────────────────────────────────────────────
 FROM base AS production
 
 WORKDIR /app
 
-# Copy built application
-COPY --from=build /app/apps/core-api/dist ./dist
-COPY --from=build /app/apps/core-api/node_modules ./node_modules
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages ./packages
+COPY --from=build /app/apps/core-api/dist ./apps/core-api/dist
+COPY --from=build /app/apps/core-api/package.json ./apps/core-api/
 
-# Create non-root user
-RUN addgroup -g 1000 wardline && \
-    adduser -D -u 1000 -G wardline wardline && \
-    chown -R wardline:wardline /app
+# Restore workspace package resolution explicitly for runtime. Relying on copied
+# pnpm workspace links is brittle across Docker stages.
+RUN mkdir -p /app/node_modules/@wardline && \
+    ln -s /app/packages/config /app/node_modules/@wardline/config && \
+    ln -s /app/packages/db /app/node_modules/@wardline/db && \
+    ln -s /app/packages/types /app/node_modules/@wardline/types && \
+    ln -s /app/packages/utils /app/node_modules/@wardline/utils && \
+    chown -R node:node /app
 
-USER wardline
+USER node
 
-# Expose port
 EXPOSE 3001
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
 
-# Run the application
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/core-api/dist/main.js"]

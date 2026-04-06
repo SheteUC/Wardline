@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import ValidationError
 from config import settings
+from redis.exceptions import LockError
 
 from agents import (
     BillingAgent,
@@ -180,6 +181,16 @@ class VoiceRuntimeV2:
         *,
         persist: bool = True,
     ) -> AsyncGenerator[SessionState, None]:
+        async def _yield_under_local_lock() -> AsyncGenerator[SessionState, None]:
+            session = await self._resolve_session(session_id)
+            try:
+                yield session
+            finally:
+                if persist:
+                    await self._session_store.save(session)
+                self._touch_session_lru(session_id)
+                self._evict_cached_sessions_if_needed()
+
         async with self._drain_lock:
             if self._shutting_down:
                 raise RuntimeError("Voice runtime is shutting down")
@@ -193,24 +204,21 @@ class VoiceRuntimeV2:
                         timeout=settings.voice_session_lock_timeout_seconds,
                         blocking_timeout=settings.voice_session_lock_blocking_seconds,
                     )
-                    async with dist:
-                        session = await self._resolve_session(session_id)
-                        try:
-                            yield session
-                        finally:
-                            if persist:
-                                await self._session_store.save(session)
-                            self._touch_session_lru(session_id)
-                            self._evict_cached_sessions_if_needed()
-                else:
-                    session = await self._resolve_session(session_id)
                     try:
+                        async with dist:
+                            async for session in _yield_under_local_lock():
+                                yield session
+                    except LockError as exc:
+                        logger.debug(
+                            "session_distributed_lock_fallback",
+                            session_id=session_id,
+                            error=str(exc),
+                        )
+                        async for session in _yield_under_local_lock():
+                            yield session
+                else:
+                    async for session in _yield_under_local_lock():
                         yield session
-                    finally:
-                        if persist:
-                            await self._session_store.save(session)
-                        self._touch_session_lru(session_id)
-                        self._evict_cached_sessions_if_needed()
         finally:
             async with self._drain_lock:
                 self._inflight_turns -= 1
@@ -493,6 +501,8 @@ class VoiceRuntimeV2:
             llm_safety_task = asyncio.create_task(assess_safety_llm(session, cleaned_text))
             pending_interrupt_decision = await self._choose_domain(session, cleaned_text)
             safety_result = await llm_safety_task
+            if safety_result and self._should_ignore_llm_symptom_handoff(pending_interrupt_decision, safety_result):
+                safety_result = None
             if safety_result:
                 return await self._handle_safety_result(session, cleaned_text, safety_result)
             self._apply_llm_slot_enrichment(session, pending_interrupt_decision)
@@ -514,6 +524,8 @@ class VoiceRuntimeV2:
         llm_safety_task = asyncio.create_task(assess_safety_llm(session, cleaned_text))
         decision = await self._choose_domain(session, cleaned_text)
         safety_result = await llm_safety_task
+        if safety_result and self._should_ignore_llm_symptom_handoff(decision, safety_result):
+            safety_result = None
         if safety_result:
             return await self._handle_safety_result(session, cleaned_text, safety_result)
         self._apply_llm_slot_enrichment(session, decision)
@@ -663,11 +675,6 @@ class VoiceRuntimeV2:
                         integrationCategory="TRANSPORT",
                         data={"text": text, "providerSessionId": provider_session_id},
                     )
-                )
-                await self._sync_call_state(
-                    session,
-                    tag=self._current_call_tag(session),
-                    status=session.lifecycleStatus,
                 )
                 return {
                     "sessionId": session.sessionId,
@@ -2566,6 +2573,20 @@ class VoiceRuntimeV2:
         session.activeDomain = None
         session.intent = None
         return f"{reply} What else can I help you with today?"
+
+    def _should_ignore_llm_symptom_handoff(
+        self,
+        decision: SupervisorDecision,
+        safety_result: SpecialistResult,
+    ) -> bool:
+        assessment = safety_result.safetyAssessment
+        if not assessment:
+            return False
+        if assessment.severity != "urgent_handoff" or assessment.category != "symptom_interpretation":
+            return False
+        if "llm-triage" not in assessment.matchedPatterns:
+            return False
+        return decision.domain in {"scheduling", "refill", "insurance", "billing"}
 
     def _select_specialist(self, domain: DomainName):
         return {

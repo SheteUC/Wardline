@@ -41,7 +41,7 @@ def _rethrow_session_errors(error: BaseException) -> None:
 
 
 def _twilio_request_url(request: Request) -> str:
-    base = settings.twilio_webhook_public_url.strip().rstrip("/")
+    base = settings.twilio_webhook_base_url().rstrip("/")
     if base:
         path = request.url.path
         query = request.url.query

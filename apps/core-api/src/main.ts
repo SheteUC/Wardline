@@ -92,21 +92,33 @@ async function bootstrap() {
         maxAge: corsMaxAge,
     });
 
-    const config = new DocumentBuilder()
-        .setTitle('Wardline Core API')
-        .setDescription('HIPAA-compliant business call automation platform API')
-        .setVersion('1.0')
-        .addBearerAuth()
-        .build();
+    let swaggerEnabled = false;
+    try {
+        const config = new DocumentBuilder()
+            .setTitle('Wardline Core API')
+            .setDescription('HIPAA-compliant business call automation platform API')
+            .setVersion('1.0')
+            .addBearerAuth()
+            .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+        const document = SwaggerModule.createDocument(app, config);
+        SwaggerModule.setup('api/docs', app, document);
+        swaggerEnabled = true;
+    } catch (error) {
+        logger.warn(
+            `Swagger bootstrap skipped due to startup error: ${
+                error instanceof Error ? error.message : String(error)
+            }`,
+        );
+    }
 
     const port = Number(env.PORT) || 3001;
     await app.listen(port);
 
     logger.info(`Core API is running on: http://localhost:${port}`);
-    logger.info(`Swagger docs available at: http://localhost:${port}/api/docs`);
+    if (swaggerEnabled) {
+        logger.info(`Swagger docs available at: http://localhost:${port}/api/docs`);
+    }
 }
 
 bootstrap();

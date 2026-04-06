@@ -256,9 +256,7 @@ export class CallIngestDto {
     @ApiPropertyOptional({ type: [CallIngestEventDto], description: 'Append-only call events' })
     @IsOptional()
     @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => CallIngestEventDto)
-    events?: CallIngestEventDto[];
+    events?: Array<Record<string, unknown>>;
 
     @ApiPropertyOptional({ type: [TranscriptSegmentDto], description: 'Transcript segment batch' })
     @IsOptional()

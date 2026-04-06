@@ -1,3 +1,4 @@
+import asyncio
 import pathlib
 import sys
 import unittest
@@ -34,6 +35,10 @@ class FakeWebSocket:
 
     async def close(self, *args, **kwargs):
         self.closed = True
+
+
+class ConnectionClosedError(Exception):
+    pass
 
 
 class TwilioMediaSessionTests(unittest.IsolatedAsyncioTestCase):
@@ -177,6 +182,98 @@ class TwilioMediaSessionTests(unittest.IsolatedAsyncioTestCase):
             )._value.get(),
             provider_errors_before + 1,
         )
+
+    async def test_handle_media_reconnects_after_closed_deepgram_socket(self):
+        websocket = FakeWebSocket()
+        runtime = Mock()
+        runtime.persist_transport_event = AsyncMock()
+        runtime.deepgram = Mock()
+        runtime.deepgram.validate = Mock(return_value={"configured": True})
+
+        first_socket = Mock()
+        first_socket.send = AsyncMock(side_effect=ConnectionClosedError("closed"))
+        first_socket.close = AsyncMock()
+
+        second_socket = Mock()
+        second_socket.send = AsyncMock()
+        second_socket.close = AsyncMock()
+
+        media_session = TwilioMediaSession(websocket, runtime)
+        media_session.session_id = "session-1"
+        media_session.stream_sid = "MZ123"
+        media_session._deepgram_socket = first_socket
+        media_session._deepgram_task = asyncio.create_task(asyncio.sleep(60))
+
+        async def restore_socket():
+            media_session._deepgram_socket = second_socket
+
+        with patch.object(media_session, "_ensure_deepgram_socket", AsyncMock(side_effect=restore_socket)):
+            await media_session._handle_media({"payload": "aGVsbG8="})
+
+        runtime.persist_transport_event.assert_any_await(
+            "session-1",
+            "deepgram_stream_closed",
+            {
+                "twilioStreamSid": "MZ123",
+                "error": "send_failed_on_closed_socket",
+            },
+        )
+        second_socket.send.assert_awaited_once_with(b"hello")
+
+    async def test_shutdown_ignores_deepgram_task_failure_and_finalizes_session(self):
+        websocket = FakeWebSocket()
+        runtime = Mock()
+        runtime.finalize_session = AsyncMock()
+
+        media_session = TwilioMediaSession(websocket, runtime)
+        media_session.session_id = "session-1"
+
+        async def fail_on_cancel():
+            try:
+                await asyncio.sleep(60)
+            except asyncio.CancelledError as exc:
+                raise RuntimeError("lock timeout") from exc
+
+        media_session._deepgram_task = asyncio.create_task(fail_on_cancel())
+
+        await media_session._shutdown()
+
+        runtime.finalize_session.assert_awaited_once_with("session-1", failure_reason=None)
+
+    async def test_utterance_timer_flush_does_not_cancel_its_own_reply_path(self):
+        websocket = FakeWebSocket()
+        runtime = Mock()
+        runtime.process_transcript_turn = AsyncMock(
+            return_value={"reply": "How can I help?", "assistantMessageId": "msg-1"}
+        )
+
+        media_session = TwilioMediaSession(websocket, runtime)
+        media_session.session_id = "session-1"
+        media_session.stream_sid = "MZ123"
+        media_session._latest_provider_session_id = "dg-1"
+        media_session._utterance_buffer = ["Need an appointment"]
+
+        with patch("telephony.settings.voice_utterance_settle_seconds", 0), patch.object(
+            media_session,
+            "_speak",
+            AsyncMock(),
+        ) as speak_mock:
+            timer_task = asyncio.create_task(media_session._utterance_settle_then_flush())
+            media_session._utterance_timer = timer_task
+            await timer_task
+
+        runtime.process_transcript_turn.assert_awaited_once_with(
+            "session-1",
+            "Need an appointment",
+            final=True,
+            provider_session_id="dg-1",
+        )
+        speak_mock.assert_awaited_once_with(
+            "How can I help?",
+            assistant_message_id="msg-1",
+            mark_name_prefix="assistant-reply",
+        )
+        self.assertIsNone(media_session._utterance_timer)
 
 
 if __name__ == "__main__":

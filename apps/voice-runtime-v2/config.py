@@ -9,7 +9,18 @@ from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 APP_DIR = Path(__file__).resolve().parent
-REPO_ROOT = APP_DIR.parents[1]
+
+
+def _resolve_repo_root(app_dir: Path) -> Path:
+    for candidate in (app_dir, *app_dir.parents):
+        if (candidate / "pnpm-workspace.yaml").exists() or (candidate / ".git").exists():
+            return candidate
+    # In container images the app is copied directly to /app, so treat that as
+    # the effective root for optional env-file loading.
+    return app_dir
+
+
+REPO_ROOT = _resolve_repo_root(APP_DIR)
 
 # Load base .env first, then .env.local with override so local wins (matches typical monorepo convention).
 # Previously .env.local was loaded first with override=False on .env, so an empty OPENAI_API_KEY in
@@ -81,7 +92,7 @@ class Settings(BaseSettings):
     voice_session_ttl_seconds: int = Field(default=4 * 3600, alias="VOICE_SESSION_TTL_SECONDS")
     voice_session_max_cached: int = Field(default=5000, alias="VOICE_SESSION_MAX_CACHED")
     voice_session_lock_timeout_seconds: float = Field(default=120.0, alias="VOICE_SESSION_LOCK_TIMEOUT_SECONDS")
-    voice_session_lock_blocking_seconds: float = Field(default=15.0, alias="VOICE_SESSION_LOCK_BLOCKING_SECONDS")
+    voice_session_lock_blocking_seconds: float = Field(default=0.25, alias="VOICE_SESSION_LOCK_BLOCKING_SECONDS")
     voice_shutdown_drain_seconds: float = Field(default=30.0, alias="VOICE_SHUTDOWN_DRAIN_SECONDS")
     voice_deepgram_reconnect_attempts: int = Field(default=8, alias="VOICE_DEEPGRAM_RECONNECT_ATTEMPTS")
     voice_http_max_retries: int = Field(default=3, alias="VOICE_HTTP_MAX_RETRIES")
@@ -113,6 +124,13 @@ class Settings(BaseSettings):
             return explicit_url
 
         return self.render_external_url.strip()
+
+    def twilio_webhook_base_url(self) -> str:
+        explicit_url = self.twilio_webhook_public_url.strip()
+        if explicit_url:
+            return explicit_url
+
+        return self.public_base_url().strip()
 
     def active_llm_provider(self) -> str:
         """Returns openai, azure, or none depending on keys and LLM_PROVIDER."""

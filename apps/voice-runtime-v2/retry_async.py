@@ -23,6 +23,7 @@ async def retry_async(
     operation: str = "request",
     circuit_name: str | None = None,
     circuit_breaker: AsyncCircuitBreaker | None = None,
+    should_retry: Callable[[BaseException], bool] | None = None,
 ) -> T:
     """Run async factory with exponential backoff; last exception propagates."""
     if attempts < 1:
@@ -41,7 +42,8 @@ async def retry_async(
             return result
         except BaseException as exc:
             last_exc = exc
-            if attempt + 1 >= attempts:
+            retryable = should_retry(exc) if should_retry is not None else True
+            if not retryable or attempt + 1 >= attempts:
                 break
             delay = min(max_delay_s, base_delay_s * (2**attempt))
             logger.warning(

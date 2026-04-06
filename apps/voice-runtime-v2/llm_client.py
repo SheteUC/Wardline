@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from config import settings
+from observability.metrics import llm_chat_json_seconds
 from retry_async import retry_async
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,13 @@ def active_llm_model_name() -> str:
     return settings.active_llm_model()
 
 
+def _should_retry_llm_error(exc: BaseException) -> bool:
+    status_code = getattr(exc, "status_code", None)
+    if isinstance(status_code, int):
+        return status_code == 429 or status_code >= 500
+    return True
+
+
 async def chat_json_completion(
     *,
     system_prompt: str,
@@ -87,7 +95,12 @@ async def chat_json_completion(
 
     started = time.perf_counter()
     try:
-        result = await retry_async(_once, attempts=3, operation="llm_chat_json")
+        result = await retry_async(
+            _once,
+            attempts=3,
+            operation="llm_chat_json",
+            should_retry=_should_retry_llm_error,
+        )
         llm_chat_json_seconds.observe(time.perf_counter() - started)
         return result
     except Exception as exc:
