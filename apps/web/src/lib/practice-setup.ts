@@ -22,7 +22,7 @@ export const DEFAULT_ENABLED_ACTIONS: PracticeAction[] = [
 export const DEFAULT_AFTER_HOURS_POLICY: AfterHoursPolicy = {
     mode: 'urgent_voicemail',
     greeting:
-        'After hours, capture the request, acknowledge urgent needs, and promise staff follow-up on the next business day.',
+        'Please leave a message with your name, phone number, and the reason for your call. We will get back to you as soon as possible during our regular hours.',
     sendUrgentToVoicemail: true,
 };
 

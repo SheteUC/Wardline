@@ -50,6 +50,45 @@ class TwilioMediaSession:
         task = asyncio.create_task(coro)
         task.add_done_callback(lambda t: None if t.cancelled() else t.exception())
 
+    def _restart_utterance_timer(self) -> None:
+        if self._utterance_timer and not self._utterance_timer.done():
+            self._utterance_timer.cancel()
+        self._utterance_timer = asyncio.create_task(self._utterance_settle_then_flush())
+
+    async def _handle_deepgram_transcript(self, transcript: Any) -> None:
+        if transcript.provider_session_id:
+            self._latest_provider_session_id = transcript.provider_session_id
+
+        if not transcript.final:
+            # If Deepgram finalized an earlier fragment but the caller keeps
+            # talking, extend the settle window so we do not answer mid-sentence.
+            if self._utterance_buffer or (self._utterance_timer and not self._utterance_timer.done()):
+                self._restart_utterance_timer()
+            await self.runtime.process_transcript_turn(
+                self.session_id,
+                transcript.text,
+                final=False,
+                provider_session_id=transcript.provider_session_id or self.stream_sid,
+            )
+            return
+
+        self._utterance_buffer.append(transcript.text)
+
+        if transcript.provider_session_id:
+            self._schedule_background(
+                self._persist_transport_event(
+                    "deepgram_transcript",
+                    {
+                        "deepgramRequestId": transcript.provider_session_id,
+                        "providerSessionId": transcript.provider_session_id,
+                        "final": True,
+                        "confidence": transcript.confidence,
+                    },
+                )
+            )
+
+        self._restart_utterance_timer()
+
     async def run(self):
         await self.websocket.accept()
         try:
@@ -457,7 +496,8 @@ class TwilioMediaSession:
                     session_id=self.session_id,
                     buffer_size=len(self._utterance_buffer),
                 )
-                await self._flush_utterance_buffer()
+                if self._utterance_buffer:
+                    self._restart_utterance_timer()
                 continue
 
             transcript = self.runtime.deepgram.normalize_message(payload)
@@ -478,36 +518,7 @@ class TwilioMediaSession:
                 confidence=transcript.confidence,
             )
 
-            if transcript.provider_session_id:
-                self._latest_provider_session_id = transcript.provider_session_id
-
-            if not transcript.final:
-                await self.runtime.process_transcript_turn(
-                    self.session_id,
-                    transcript.text,
-                    final=False,
-                    provider_session_id=transcript.provider_session_id or self.stream_sid,
-                )
-                continue
-
-            self._utterance_buffer.append(transcript.text)
-
-            if transcript.provider_session_id:
-                self._schedule_background(
-                    self._persist_transport_event(
-                        "deepgram_transcript",
-                        {
-                            "deepgramRequestId": transcript.provider_session_id,
-                            "providerSessionId": transcript.provider_session_id,
-                            "final": True,
-                            "confidence": transcript.confidence,
-                        },
-                    )
-                )
-
-            if self._utterance_timer and not self._utterance_timer.done():
-                self._utterance_timer.cancel()
-            self._utterance_timer = asyncio.create_task(self._utterance_settle_then_flush())
+            await self._handle_deepgram_transcript(transcript)
 
     async def _utterance_settle_then_flush(self):
         """Wait for a brief settle period, then flush the accumulated buffer."""
@@ -515,10 +526,11 @@ class TwilioMediaSession:
         await self._flush_utterance_buffer()
 
     async def _flush_utterance_buffer(self):
-        if not self._utterance_buffer or not self.session_id:
-            return
-
         current_task = asyncio.current_task()
+        if not self._utterance_buffer or not self.session_id or self._closed:
+            if self._utterance_timer is current_task:
+                self._utterance_timer = None
+            return
         if self._utterance_timer is current_task:
             # The settle timer is executing this flush, so clearing the reference
             # must not cancel the active task before reply generation completes.
@@ -571,7 +583,7 @@ class TwilioMediaSession:
         assistant_message_id: Optional[str],
         mark_name_prefix: str,
     ):
-        if not self.stream_sid or not text.strip():
+        if self._closed or not self.stream_sid or not text.strip():
             return
 
         await self._assistant_playback_ready.wait()

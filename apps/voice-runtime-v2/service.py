@@ -20,6 +20,7 @@ from redis.exceptions import LockError
 
 from agents import (
     BillingAgent,
+    DAY_OF_WEEK_LABELS,
     HandoffAgent,
     InsuranceAgent,
     KnowledgeAgent,
@@ -29,6 +30,10 @@ from agents import (
     SupervisorAgent,
     URGENT_AFTER_HOURS_KEYWORDS,
     _enabled_service_labels,
+    _find_hours_entry,
+    _parse_time_24h,
+    _resolve_day_of_week,
+    _validate_time_within_hours,
 )
 from llm_agents import run_llm_agent
 from llm_safety import assess_safety_llm
@@ -96,6 +101,114 @@ def _strip_change_prefix(text: str) -> str:
     return updated.strip() or text.strip()
 
 
+_AFFIRMATIVE_RESPONSES = frozenset({"yes", "yeah", "yep", "sure", "okay", "ok"})
+_COMPLETION_RESPONSES = frozenset(
+    {
+        "no",
+        "nope",
+        "nothing else",
+        "that's all",
+        "that is all",
+        "thanks",
+        "thank you",
+        "goodbye",
+        "bye",
+        "end the call",
+        "end call",
+        "cut the call",
+        "hang up",
+        "i don't need anything",
+        "i don't need anything else",
+        "i dont need anything",
+        "i dont need anything else",
+        "nothing else needed",
+        "that's all for now",
+        "that is all for now",
+        "done",
+        "finished",
+        "all done",
+    }
+)
+_COMPLETION_PHRASES = (
+    "nothing else",
+    "that's all",
+    "that is all",
+    "thank you",
+    "thanks",
+    "goodbye",
+    "bye",
+    "end the call",
+    "hang up",
+    "i don't need anything",
+    "i dont need anything",
+    "done",
+    "finished",
+)
+_AFFIRMATIVE_CONFIRMATIONS = (
+    "yes",
+    "yeah",
+    "yep",
+    "correct",
+    "confirm",
+    "sure",
+    "okay",
+    "ok",
+    "go ahead",
+    "thank you",
+    "thanks",
+    "please",
+    "sounds good",
+    "that works",
+    "perfect",
+)
+_NEGATIVE_CONFIRMATIONS = ("no", "cancel", "stop", "not now")
+
+_VOICEMAIL_INTERRUPT_PHRASES = (
+    "schedule",
+    "appointment",
+    "refill",
+    "prescription",
+    "insurance",
+    "billing",
+    "speak to",
+    "transfer me",
+    "call back",
+    "callback",
+    "hours",
+    "what time",
+    "when are you",
+    "services",
+    "what do you",
+    "i need",
+    "i want",
+    "can i",
+    "could i",
+    "how do i",
+    "where",
+    "phone number",
+    "address",
+    "location",
+)
+
+
+def _normalize_response_text(text: str) -> str:
+    normalized = _normalize(text)
+    return re.sub(r"^[\"'`]+|[\"'`.,!?;:]+$", "", normalized).strip()
+
+
+def _is_exact_response(text: str, candidates: frozenset[str]) -> bool:
+    return _normalize_response_text(text) in candidates
+
+
+def _contains_standalone_phrase(text: str, phrases: tuple[str, ...]) -> bool:
+    lowered = _normalize(text)
+    for phrase in phrases:
+        pattern = r"\b" + re.escape(phrase).replace(r"\ ", r"\s+") + r"\b"
+        if re.search(pattern, lowered):
+            return True
+    return False
+
+
 class VoiceRuntimeV2:
     def __init__(self, api_client: Optional[CoreApiClient] = None):
         self.api_client = api_client or CoreApiClient()
@@ -131,6 +244,12 @@ class VoiceRuntimeV2:
 
     def begin_shutdown(self) -> None:
         self._shutting_down = True
+
+    def _get_local_time(self, session: SessionState) -> datetime:
+        try:
+            return datetime.now(ZoneInfo(session.runtimeConfig.business.timeZone))
+        except ZoneInfoNotFoundError:
+            return datetime.now(timezone.utc)
 
     async def wait_for_inflight(self, timeout_s: float | None = None) -> None:
         limit = timeout_s if timeout_s is not None else settings.voice_shutdown_drain_seconds
@@ -693,19 +812,39 @@ class VoiceRuntimeV2:
             await self._sync_call_state(session, tag="VOICEMAIL")
             return self._build_turn_response(session, reply, "handoff", False, awaiting_voicemail=True)
 
+        lowered = _normalize(transcription)
+        if any(phrase in lowered for phrase in _VOICEMAIL_INTERRUPT_PHRASES):
+            try:
+                decision = await self._choose_domain(session, transcription)
+                if decision and decision.mode in {"delegate", "handoff"} and decision.domain in {"scheduling", "refill", "insurance", "billing", "handoff", "knowledge"}:
+                    session.awaitingVoicemail = False
+                    session.voicemailCaptureState.active = False
+                    session.stage = "intake"
+                    session.activeDomain = None
+                    session.intent = None
+                    session.awaitingAnythingElse = False
+                    self._record_supervisor_decision(session, decision, transcription)
+                    multi_intent_response = await self._handle_multi_intent_decision(session, transcription, decision)
+                    if multi_intent_response is not None:
+                        return multi_intent_response
+                    return await self._handle_domain_decision(session, transcription, decision)
+            except Exception:
+                pass
+
         recording_url = f"voice-runtime-v2://transcript/{session.sessionId}"
         await self._capture_voicemail_for_session(
             session,
             recording_url=recording_url,
             transcription=transcription,
         )
-        return await self._begin_final_close(
-            session,
-            "Thanks, I've captured your message for the practice. The staff will review it and follow up during business hours.",
-            domain="handoff",
-            reason="voicemail-complete",
-            tag="VOICEMAIL",
-        )
+        reply = "Thanks, I've captured your message for the practice. The staff will review it and follow up during business hours. What else can I help you with today?"
+        session.stage = "intake"
+        session.activeDomain = None
+        session.intent = None
+        session.awaitingAnythingElse = True
+        await self._append_and_persist_assistant_message(session, reply)
+        await self._sync_call_state(session)
+        return self._build_turn_response(session, reply, "handoff", False)
 
     def _apply_transport_event_to_session(
         self,
@@ -1032,7 +1171,7 @@ class VoiceRuntimeV2:
             if re.search(rf"\b{re.escape(token)}\b", lowered) and index < len(candidates):
                 return candidates[index], False
 
-        if len(candidates) == 1 and lowered in {"yes", "yeah", "yep", "sure", "okay"}:
+        if len(candidates) == 1 and _is_exact_response(text, _AFFIRMATIVE_RESPONSES):
             return candidates[0], False
 
         return None, False
@@ -1238,8 +1377,7 @@ class VoiceRuntimeV2:
             current.status = "active"
 
     async def _handle_anything_else(self, session: SessionState, text: str) -> Optional[Dict[str, Any]]:
-        lowered = _normalize(text)
-        if lowered in {"no", "nope", "nothing else", "that's all", "that is all", "thanks", "thank you"}:
+        if _is_exact_response(text, _COMPLETION_RESPONSES):
             return await self._begin_final_close(
                 session,
                 f"Thanks for calling {session.businessName}. Take care.",
@@ -1247,7 +1385,15 @@ class VoiceRuntimeV2:
                 reason="caller-finished",
             )
 
-        if lowered in {"yes", "yeah", "yep", "sure", "okay"}:
+        if _contains_standalone_phrase(text, _COMPLETION_PHRASES):
+            return await self._begin_final_close(
+                session,
+                f"Thanks for calling {session.businessName}. Take care.",
+                domain=session.activeDomain or "knowledge",
+                reason="caller-finished",
+            )
+
+        if _is_exact_response(text, _AFFIRMATIVE_RESPONSES):
             session.awaitingAnythingElse = False
             session.stage = "intake"
             session.activeDomain = None
@@ -1282,6 +1428,31 @@ class VoiceRuntimeV2:
             return await self._finalize_specialist_result(session, result, reply_prefix=reply_prefix)
 
         if result.status == "ready_for_confirmation":
+            if result.domain == "scheduling" and result.extractedFields:
+                preferred_date = result.extractedFields.get("preferredDate")
+                preferred_time = result.extractedFields.get("preferredTime")
+                if preferred_date and preferred_time:
+                    parsed_time = _parse_time_24h(preferred_time)
+                    if parsed_time:
+                        local_now = self._get_local_time(session)
+                        day_of_week = _resolve_day_of_week(preferred_date, local_now)
+                        if day_of_week is not None:
+                            is_valid, error_message = _validate_time_within_hours(
+                                session, day_of_week, parsed_time[0], parsed_time[1]
+                            )
+                            if not is_valid and error_message:
+                                validation_result = SpecialistResult(
+                                    domain="scheduling",
+                                    status="needs_information",
+                                    nextPrompt=error_message,
+                                    missingFields=["preferredTime"],
+                                    extractedFields=result.extractedFields,
+                                    operatorSummary=result.operatorSummary,
+                                    callerRequestSummary=result.callerRequestSummary,
+                                )
+                                return await self._handle_specialist_result(
+                                    session, validation_result, reply_prefix=reply_prefix
+                                )
             session.pendingConfirmation = PendingAction(
                 actionName=result.runtimeAction or "",
                 summary=result.confirmationSummary or result.nextPrompt,
@@ -1440,10 +1611,10 @@ class VoiceRuntimeV2:
             result = await self._run_domain_specialist(session, pending.domain, _strip_change_prefix(text))
             return await self._handle_specialist_result(session, result)
 
-        if any(keyword in lowered for keyword in ["yes", "yeah", "yep", "correct", "confirm"]):
+        if _contains_standalone_phrase(text, _AFFIRMATIVE_CONFIRMATIONS):
             return await self._execute_pending_action(session)
 
-        if any(keyword in lowered for keyword in ["no", "cancel", "stop", "not now"]):
+        if _contains_standalone_phrase(text, _NEGATIVE_CONFIRMATIONS):
             if pending.actionName == "handoff-transfer":
                 callback_result = self._build_daytime_callback_result(
                     session,

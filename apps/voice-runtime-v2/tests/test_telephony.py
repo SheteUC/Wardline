@@ -2,6 +2,7 @@ import asyncio
 import pathlib
 import sys
 import unittest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 APP_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -39,6 +40,23 @@ class FakeWebSocket:
 
 class ConnectionClosedError(Exception):
     pass
+
+
+class FakeDeepgramSocket:
+    def __init__(self, messages=None, *, tail_delay=0.0):
+        self._messages = list(messages or [])
+        self._tail_delay = tail_delay
+
+    async def recv(self):
+        if not self._messages:
+            if self._tail_delay:
+                await asyncio.sleep(self._tail_delay)
+            raise asyncio.CancelledError()
+
+        delay, payload = self._messages.pop(0)
+        if delay:
+            await asyncio.sleep(delay)
+        return payload
 
 
 class TwilioMediaSessionTests(unittest.IsolatedAsyncioTestCase):
@@ -274,6 +292,61 @@ class TwilioMediaSessionTests(unittest.IsolatedAsyncioTestCase):
             mark_name_prefix="assistant-reply",
         )
         self.assertIsNone(media_session._utterance_timer)
+
+    async def test_partial_after_final_extends_settle_window_until_caller_finishes(self):
+        websocket = FakeWebSocket()
+        runtime = Mock()
+        runtime.persist_transport_event = AsyncMock()
+        runtime.deepgram = Mock()
+        runtime.deepgram.normalize_message = Mock(
+            side_effect=lambda payload: SimpleNamespace(
+                text=payload["text"],
+                final=payload["final"],
+                provider_session_id=payload.get("provider_session_id"),
+                confidence=payload.get("confidence", 1.0),
+            )
+        )
+
+        async def process_turn(session_id, text, *, final, provider_session_id):
+            if not final:
+                return {"reply": "", "assistantMessageId": None}
+            return {"reply": "How can I help?", "assistantMessageId": "msg-1"}
+
+        runtime.process_transcript_turn = AsyncMock(side_effect=process_turn)
+
+        media_session = TwilioMediaSession(websocket, runtime)
+        media_session.session_id = "session-1"
+        media_session.stream_sid = "MZ123"
+        media_session._deepgram_socket = FakeDeepgramSocket(
+            messages=[
+                (0.0, '{"text":"Could you help me with","final":true,"provider_session_id":"dg-1"}'),
+                (0.02, '{"text":"my insurance","final":false,"provider_session_id":"dg-1"}'),
+                (0.02, '{"text":"my insurance?","final":true,"provider_session_id":"dg-1"}'),
+                (0.0, '{"type":"UtteranceEnd"}'),
+            ],
+            tail_delay=0.08,
+        )
+
+        with patch("telephony.settings.voice_utterance_settle_seconds", 0.05), patch.object(
+            media_session,
+            "_speak",
+            AsyncMock(),
+        ) as speak_mock:
+            with self.assertRaises(asyncio.CancelledError):
+                await media_session._receive_deepgram_results()
+
+        self.assertEqual(runtime.process_transcript_turn.await_count, 2)
+        partial_call = runtime.process_transcript_turn.await_args_list[0]
+        final_call = runtime.process_transcript_turn.await_args_list[1]
+        self.assertEqual(partial_call.args, ("session-1", "my insurance"))
+        self.assertEqual(partial_call.kwargs, {"final": False, "provider_session_id": "dg-1"})
+        self.assertEqual(final_call.args, ("session-1", "Could you help me with my insurance?"))
+        self.assertEqual(final_call.kwargs, {"final": True, "provider_session_id": "dg-1"})
+        speak_mock.assert_awaited_once_with(
+            "How can I help?",
+            assistant_message_id="msg-1",
+            mark_name_prefix="assistant-reply",
+        )
 
 
 if __name__ == "__main__":

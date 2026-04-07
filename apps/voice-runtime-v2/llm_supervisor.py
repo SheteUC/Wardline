@@ -83,9 +83,12 @@ Goals:
 - Choose the best domain and mode using conversation context (resolve pronouns using history).
 - Support paraphrases (e.g. "checkup" = scheduling, "money I owe" = billing).
 - If the caller is answering a question in an ongoing task, use mode "continue" with the same active domain.
-- If multiple distinct actionable requests appear, set priority_required true and list intents (max 3 actionable).
+- CRITICAL: Detect ALL distinct requests in the utterance. If the caller mentions MULTIPLE separate requests (e.g. "I need to schedule an appointment, and I also have a question about my medication"), set priority_required true and list EACH request as a separate intent in the intents array.
+- Each distinct request should be its own intent: scheduling requests, refill requests, clinical/medication questions, billing questions, insurance questions, handoff requests.
+- If a clinical question or medication concern is mentioned alongside other requests, treat it as a separate "handoff" intent with kind "handoff" and summary describing the clinical concern.
 - If the caller asks a practice FAQ AND also requests an action (e.g. hours + book appointment), use compound path (see below).
 - Never diagnose or give medical advice. Do not invent facts; use routing only.
+- For scheduling: accept ANY visit type the caller mentions (dental, eye exam, physical, follow-up, checkup, cleaning, etc.). Do NOT reject or question the type - just route to scheduling domain.
 
 Modes:
 - delegate: start or switch to a domain specialist.

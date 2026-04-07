@@ -240,6 +240,10 @@ def _extract_visit_type(text: str) -> Optional[str]:
         ("sick visit", [r"\bsick visit\b"]),
         ("annual visit", [r"\bannual visit\b"]),
         ("checkup", [r"\bcheck(?: |-)?up\b"]),
+        ("dental", [r"\bdental\b", r"\bdental appointment\b", r"\bteeth\b", r"\bcleaning\b", r"\bfilling\b"]),
+        ("eye exam", [r"\beye\b", r"\beye exam\b", r"\bvision\b"]),
+        ("wellness visit", [r"\bwellness\b", r"\bwellness visit\b"]),
+        ("urgent care", [r"\burgent\b", r"\burgent care\b"]),
     ]
     for label, patterns in visit_patterns:
         if any(re.search(pattern, lowered) for pattern in patterns):
@@ -957,6 +961,112 @@ def _enabled_service_labels(session: SessionState) -> str:
     return ", ".join(labels) or "general staff messages"
 
 
+def _parse_time_24h(time_str: str) -> Optional[tuple[int, int]]:
+    """Parse a time string like '10:00 AM' or '14:30' into (hour, minute) 24-hour format."""
+    time_str = time_str.strip().upper()
+    
+    match = re.match(r"(\d{1,2}):(\d{2})\s*(AM|PM)?", time_str)
+    if not match:
+        match = re.match(r"(\d{1,2})\s*(AM|PM)", time_str)
+        if not match:
+            return None
+        hour = int(match.group(1))
+        minute = 0
+        meridiem = match.group(2)
+    else:
+        hour = int(match.group(1))
+        minute = int(match.group(2))
+        meridiem = match.group(3) if match.group(3) else None
+    
+    if meridiem == "PM" and hour < 12:
+        hour += 12
+    elif meridiem == "AM" and hour == 12:
+        hour = 0
+    
+    if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+        return None
+    
+    return (hour, minute)
+
+
+def _resolve_day_of_week(date_str: str, current_time: datetime) -> Optional[int]:
+    """Resolve a date string to day of week (0=Sunday, 6=Saturday). Return None if cannot resolve."""
+    lowered = date_str.strip().lower()
+    
+    if lowered == "today":
+        return int(current_time.strftime("%w"))
+    if lowered == "tomorrow":
+        return (int(current_time.strftime("%w")) + 1) % 7
+    
+    day_map = {
+        "sunday": 0, "monday": 1, "tuesday": 2, "wednesday": 3,
+        "thursday": 4, "friday": 5, "saturday": 6,
+    }
+    for day_name, day_num in day_map.items():
+        if day_name in lowered:
+            if "next" in lowered:
+                return day_num
+            return day_num
+    
+    return None
+
+
+def _validate_time_within_hours(session: SessionState, day_of_week: int, hour: int, minute: int) -> tuple[bool, Optional[str]]:
+    """
+    Check if the requested time is within operating hours for the given day.
+    Returns (is_valid, error_message).
+    If no valid operating hours are configured for that day, allows the appointment.
+    """
+    entry = _find_hours_entry(session, day_of_week)
+    
+    if not entry:
+        return (True, None)
+    
+    if entry.get("isClosed"):
+        start_time = entry.get("startTime")
+        end_time = entry.get("endTime")
+        if start_time and end_time:
+            day_names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+            return (False, f"The office is closed on {day_names[day_of_week]}s. Would you like to choose a different day?")
+        return (True, None)
+    
+    start_time = entry.get("startTime")
+    end_time = entry.get("endTime")
+    
+    if not start_time or not end_time:
+        return (True, None)
+    
+    try:
+        start_parts = start_time.split(":")
+        end_parts = end_time.split(":")
+        start_hour, start_minute = int(start_parts[0]), int(start_parts[1])
+        end_hour, end_minute = int(end_parts[0]), int(end_parts[1])
+    except (ValueError, IndexError):
+        return (True, None)
+    
+    requested_minutes = hour * 60 + minute
+    start_minutes = start_hour * 60 + start_minute
+    end_minutes = end_hour * 60 + end_minute
+    
+    if start_minutes <= requested_minutes <= end_minutes:
+        return (True, None)
+    
+    day_names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    
+    if requested_minutes < start_minutes:
+        return (
+            False,
+            f"The office opens at {start_time} on {day_names[day_of_week]}s. "
+            f"Would {start_time} work for you, or would you prefer a different time?"
+        )
+    
+    return (
+        False,
+        f"The office closes at {end_time} on {day_names[day_of_week]}s. "
+        f"The latest available time is {end_time}. Would you like an earlier time?"
+    )
+
+
 class SafetyAgent:
     def __init__(self):
         self._compiled_policy_cache: Dict[str, Dict[str, Any]] = {}
@@ -1020,18 +1130,18 @@ class SafetyAgent:
         if category == "medication_safety":
             return (
                 "Medication safety question redirected",
-                "I can't interpret symptoms, test results, or medication safety questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+                "I can't interpret symptoms, test results, or medication questions. Would you like me to take a message for the clinical staff to follow up with you?",
                 "Route this caller to urgent clinical staff follow-up for medication safety guidance.",
             )
         if category == "clinical_results_or_diagnosis":
             return (
                 "Results or diagnosis question redirected",
-                "I can't interpret symptoms, test results, or medication safety questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+                "I can't interpret symptoms, test results, or medication questions. Would you like me to take a message for the clinical staff to follow up with you?",
                 "Route this caller to urgent clinical staff follow-up for results or diagnosis questions.",
             )
         return (
             "Clinical advice request redirected",
-            "I can't interpret symptoms, test results, or medication safety questions, but I can connect you with the practice or take an urgent message for clinical follow-up.",
+            "I can't interpret symptoms, test results, or medication questions. Would you like me to take a message for the clinical staff to follow up with you?",
             "Route this caller to urgent clinical staff follow-up for symptom questions.",
         )
 
@@ -1138,13 +1248,21 @@ class KnowledgeAgent:
         "open now",
         "close",
         "closing",
+        "when are you",
+        "what time",
+        "what hour",
     ]
     SERVICES_KEYWORDS = [
         "services",
         "what do you do",
+        "what can you do",
         "what can you help with",
         "what do you handle",
         "what do you help with",
+        "what are your services",
+        "do you offer",
+        "do you provide",
+        "can you help",
     ]
     AFTER_HOURS_KEYWORDS = [
         "after hours",
@@ -1152,6 +1270,8 @@ class KnowledgeAgent:
         "voicemail",
         "callback",
         "call back",
+        "can i leave a message",
+        "leave a message",
     ]
     APPOINTMENT_POLICY_KEYWORDS = [
         "appointment",
@@ -1162,6 +1282,12 @@ class KnowledgeAgent:
         "follow up",
         "walk-ins",
         "walk ins",
+        "how do i schedule",
+        "how to schedule",
+        "booking policy",
+        "cancellation",
+        "cancel appointment",
+        "reschedule",
     ]
     REFILL_POLICY_KEYWORDS = [
         "refill",
@@ -1170,6 +1296,9 @@ class KnowledgeAgent:
         "prescriptions",
         "pharmacy info",
         "pharmacy information",
+        "how do i refill",
+        "how to refill",
+        "can i refill",
     ]
     INSURANCE_POLICY_KEYWORDS = [
         "insurance accepted",
@@ -1177,24 +1306,51 @@ class KnowledgeAgent:
         "coverage",
         "carrier",
         "copay",
+        "do you take",
+        "do you accept",
+        "what insurance",
+        "which insurance",
     ]
     BILLING_POLICY_KEYWORDS = [
         "billing",
         "statement",
         "balance",
         "payment",
+        "bill",
+        "pay my bill",
+        "how much do i owe",
+        "payment plan",
     ]
     RECORDING_POLICY_KEYWORDS = [
         "record calls",
         "recorded",
         "recording",
         "record",
+        "are calls recorded",
+        "is this recorded",
     ]
     RETENTION_POLICY_KEYWORDS = [
         "transcript",
         "retention",
         "how long do you keep",
         "keep transcripts",
+        "store transcripts",
+        "data retention",
+    ]
+    PRACTICE_INFO_KEYWORDS = [
+        "where are you",
+        "where is the office",
+        "location",
+        "address",
+        "phone number",
+        "your number",
+        "call you",
+        "contact you",
+        "your practice",
+        "this practice",
+        "the practice",
+        "your office",
+        "the office",
     ]
     QUESTION_PREFIXES = [
         "what",
@@ -1208,6 +1364,10 @@ class KnowledgeAgent:
         "does the",
         "is the",
         "tell me",
+        "i want to know",
+        "i need to know",
+        "could you",
+        "would you",
     ]
 
     def match(self, session: SessionState, text: str) -> Optional[KnowledgeMatch]:
@@ -1321,6 +1481,15 @@ class KnowledgeAgent:
                 answer=self._answer_services_question(session),
                 matchedKeywords=services_keywords + common_question_matches,
                 source="knowledge_config.servicesSummary" if session.runtimeConfig.voicePolicyV2.knowledgeConfig.servicesSummary else "knowledge_config.faqSummary",
+            )
+
+        practice_info_keywords = self._match_keywords(lowered, self.PRACTICE_INFO_KEYWORDS)
+        if practice_info_keywords and question_like:
+            return KnowledgeMatch(
+                topic="services",
+                answer=self._answer_services_question(session),
+                matchedKeywords=practice_info_keywords,
+                source="practice_info",
             )
 
         appointment_keywords = self._match_keywords(lowered, self.APPOINTMENT_POLICY_KEYWORDS)
@@ -1583,12 +1752,34 @@ class SchedulingAgent:
                 callerRequestSummary=_build_scheduling_summary(slots),
             )
 
+        time_validation_error = self._validate_appointment_time(session, slots)
+        if time_validation_error:
+            return SpecialistResult(
+                domain="scheduling",
+                status="needs_information",
+                confidence=0.90,
+                nextPrompt=time_validation_error,
+                missingFields=["preferredTime"],
+                extractedFields=payload,
+                operatorSummary=OperatorSummary(
+                    headline="Appointment time outside operating hours",
+                    nextStep="Ask caller for a time within operating hours.",
+                    specialist="scheduling",
+                    callerRequest=text.strip() or "Appointment request",
+                ),
+                callerRequestSummary=_build_scheduling_summary(slots),
+            )
+
         summary = _build_scheduling_summary(slots)
         confirmation = (
             f"I have a request for {summary}. Should I send that to the practice?"
             if slots.requestType == "schedule"
             else f"I have a request {summary}. Should I send that to the practice?"
         )
+        appointment_notes = " ".join(slots.notes[-3:]).strip()
+        if slots.requestType != "schedule":
+            request_note = f"Request type: {slots.requestType}."
+            appointment_notes = f"{request_note} {appointment_notes}".strip() if appointment_notes else request_note
 
         return SpecialistResult(
             domain="scheduling",
@@ -1601,11 +1792,10 @@ class SchedulingAgent:
             runtimePayload={
                 "callerName": session.callerName or "Caller",
                 "callerPhone": session.callerPhone,
-                "serviceType": slots.visitType,
+                "serviceType": slots.visitType or "appointment",
                 "preferredDate": slots.preferredDate,
                 "preferredTime": slots.preferredTime,
-                "requestType": slots.requestType,
-                "notes": " ".join(slots.notes[-3:]),
+                "notes": appointment_notes,
                 "confirmed": True,
             },
             fallbackRecommendation=session.runtimeConfig.voicePolicyV2.servicePolicies["scheduling"].fallbackSummary,
@@ -1617,6 +1807,28 @@ class SchedulingAgent:
             ),
             callerRequestSummary=summary,
         )
+
+    def _validate_appointment_time(self, session: SessionState, slots: SchedulingSlotState) -> Optional[str]:
+        """Validate appointment time is within operating hours. Returns error message if invalid."""
+        if not slots.preferredDate or not slots.preferredTime:
+            return None
+        
+        parsed_time = _parse_time_24h(slots.preferredTime)
+        if not parsed_time:
+            return None
+        
+        hour, minute = parsed_time
+        current_time = _current_local_time(session)
+        
+        day_of_week = _resolve_day_of_week(slots.preferredDate, current_time)
+        if day_of_week is None:
+            return None
+        
+        is_valid, error_message = _validate_time_within_hours(session, day_of_week, hour, minute)
+        if is_valid:
+            return None
+        
+        return error_message
 
 
 class RefillAgent:

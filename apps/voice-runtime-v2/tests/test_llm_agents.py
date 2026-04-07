@@ -169,6 +169,18 @@ class ParseResponseTests(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result.runtimeAction, "appointment-request")
         self.assertEqual(result.confirmationSummary, "Physical on Monday at 3pm")
+        self.assertEqual(
+            result.runtimePayload,
+            {
+                "callerName": "Caller",
+                "callerPhone": "+15550001111",
+                "serviceType": "physical",
+                "preferredDate": "Monday",
+                "preferredTime": "3pm",
+                "notes": "",
+                "confirmed": True,
+            },
+        )
 
 
 class RunLlmAgentTests(unittest.IsolatedAsyncioTestCase):

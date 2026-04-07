@@ -146,9 +146,27 @@ You help callers schedule, reschedule, or cancel appointments.
 SLOTS: requestType (schedule|reschedule|cancel), visitType, preferredDate, preferredTime
 REQUIRED: visitType, preferredDate, preferredTime
 
+IMPORTANT ABOUT VISIT TYPES:
+- Accept ANY visit type the caller mentions: dental, eye exam, physical, follow-up, checkup, cleaning, consultation, wellness visit, urgent care, new patient, or any other type.
+- DO NOT say "we don't handle that type" or reject the visit type.
+- DO NOT ask for more specificity about the visit type unless the caller hasn't mentioned ANY type at all.
+- Examples of acceptable visit types: "dental appointment", "teeth cleaning", "eye exam", "physical", "follow-up", "checkup", "wellness visit", "new patient visit", etc.
+
+IMPORTANT ABOUT CONFIRMATION LANGUAGE:
+- Use CONDITIONAL language: "I can schedule you for..." NOT "I have scheduled you for..."
+- Say "I can set that up for you" NOT "I've set that up for you"
+- The appointment is NOT confirmed until the caller says yes, so use tentative language.
+
 Flow:
 - If requestType is unclear from context, assume "schedule".
+- For dates, ask for CLARIFICATION if the caller gives a vague timeframe:
+  - "next week" or "this week" → ask "Which day works best for you?"
+  - "sometime next month" → ask "What date would you prefer?"
+  - "in a few days" → ask "What specific date works for you?"
+  - "soon" → ask "What day and time would work for you?"
+- ONLY ask "What kind of appointment?" if the caller truly hasn't mentioned ANY visit type at all.
 - Normalize dates: "next Tuesday" → the actual date if you can infer it, otherwise keep the phrase.
+- If the caller gives an explicit date (e.g. "January 15th"), use it directly.
 - Once all required slots are filled, set status "ready_for_confirmation" and compose a summary.
 - If the caller gives multiple pieces of info at once (e.g. "annual physical next Monday at 3"), fill all slots.
 """
@@ -161,8 +179,10 @@ SLOTS: medicationName, callerDob, pharmacyName, pharmacyPhone, prescriberName
 REQUIRED: medicationName, callerDob, pharmacyName, pharmacyPhone
 
 Flow:
-- If the caller's medications are listed in their history, confirm which one.
-- If DOB is on file, say "I have your date of birth on file as X — is that still correct?" rather than asking again.
+- If the caller's medications are listed in their history, confirm which one: "I see you have [medications] on file. Which medication needs a refill?"- If DOB is on file, say "I have your date of birth on file as X — is that still correct?" rather than asking again.
+- IMPORTANT: Ask clarifying questions when information is vague:
+  - If medication name is unclear (e.g. "my heart meds"), ask "Which specific medication do you need refilled?"
+  - If pharmacy name is generic (e.g. "the pharmacy"), ask "Which pharmacy would you like me to send the refill to?"
 - Ask for pharmacy details if not provided. If caller says "same pharmacy", use any pharmacy from prior context.
 - Once all required slots are filled, set status "ready_for_confirmation".
 """
@@ -179,6 +199,10 @@ REQUIRED (varies by inquiryType):
 
 Flow:
 - If insurance is on file, confirm it: "I see [carrier] [plan] on file — is that the plan you're asking about?"
+- IMPORTANT: Ask clarifying questions when information is vague:
+  - If inquiry type is unclear, ask: "Are you asking about insurance acceptance, eligibility, coverage, a claim, or a prior authorization?"
+  - If carrier name is generic (e.g. "my insurance"), ask: "Which insurance carrier is it, such as Blue Cross, Aetna, or Cigna?"
+  - If the caller mentions a family member without clarifying, ask: "Is this for you, a spouse, or a child?"
 - For acceptance checks ("do you take X?"), you can go straight to execute_now once carrier is known.
 - For eligibility/coverage, collect member details patiently.
 - If the inquiry type is complex (claim_status, prior_auth_status), set status "ready_for_confirmation" to hand off.
@@ -193,6 +217,9 @@ REQUIRED: billingTopic
 
 Flow:
 - Common topics: outstanding_balance, payment_plan, statement_question, payment_method, charge_dispute
+- IMPORTANT: Ask clarifying questions when information is vague:
+  - If billing topic is unclear, ask: "Are you asking about your balance, a payment plan, a statement, or something else?"
+  - If the caller mentions a vague amount without context, ask: "Is this about your current balance, a past statement, or a payment you made?"
 - If the topic is something that needs staff review (charge dispute, complex payment plan), set status "ready_for_confirmation" and summarize.
 - For simple balance inquiries, set status "execute_now".
 """
@@ -246,6 +273,61 @@ def _build_agent_payload(session: SessionState, domain: str, caller_text: str) -
 _VALID_STATUSES = frozenset({"needs_information", "ready_for_confirmation", "execute_now", "clarify"})
 
 
+def _runtime_action_requires_confirmation(action_name: Optional[str]) -> bool:
+    return action_name in {"appointment-request", "refill-request", "billing-request"}
+
+
+def _stringify_notes(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        return " ".join(str(item).strip() for item in value if str(item).strip()).strip()
+    return ""
+
+
+def _build_runtime_payload(
+    domain: DomainName,
+    session: SessionState,
+    slots: Dict[str, Any],
+    *,
+    action_name: Optional[str],
+    status: str,
+) -> Dict[str, Any]:
+    caller_name = session.callerName or (session.callerContext.callerName if session.callerContext else None) or "Caller"
+    confirmed = status == "execute_now" or _runtime_action_requires_confirmation(action_name)
+
+    if domain == "scheduling":
+        request_type = str(slots.get("requestType") or "schedule").strip().lower()
+        notes = _stringify_notes(slots.get("notes"))
+        if request_type and request_type != "schedule":
+            request_note = f"Request type: {request_type}."
+            notes = f"{request_note} {notes}".strip() if notes else request_note
+        return {
+            "callerName": caller_name,
+            "callerPhone": session.callerPhone,
+            "serviceType": slots.get("visitType") or slots.get("serviceType") or "appointment",
+            "preferredDate": slots.get("preferredDate"),
+            "preferredTime": slots.get("preferredTime"),
+            "notes": notes,
+            "confirmed": confirmed,
+        }
+
+    payload = {
+        "callerName": caller_name,
+        "callerPhone": session.callerPhone,
+        **slots,
+        "confirmed": confirmed,
+    }
+    return payload
+
+
+_REQUIRED_FIELDS_BY_DOMAIN: Dict[str, frozenset[str]] = {
+    "scheduling": frozenset({"visitType", "preferredDate", "preferredTime"}),
+    "refill": frozenset({"medicationName", "callerDob", "pharmacyName", "pharmacyPhone"}),
+    "billing": frozenset({"billingTopic"}),
+}
+
+
 def _parse_agent_response(
     data: Dict[str, Any],
     domain: DomainName,
@@ -273,6 +355,14 @@ def _parse_agent_response(
         missing = []
     missing = [f for f in missing if isinstance(f, str) and f in SLOT_KEYS_BY_DOMAIN.get(domain, frozenset())]
 
+    # Validate missing_fields against actual required slots for domains with intake flows
+    # This ensures the LLM doesn't skip required intake questions
+    required = _REQUIRED_FIELDS_BY_DOMAIN.get(domain)
+    if required and status == "needs_information":
+        actually_missing = [f for f in required if f not in slots or not slots[f]]
+        if set(missing) != set(actually_missing) and actually_missing:
+            missing = actually_missing
+
     confirmation = data.get("confirmation_summary")
     if isinstance(confirmation, str):
         confirmation = confirmation.strip() or None
@@ -289,12 +379,13 @@ def _parse_agent_response(
     policy = session.runtimeConfig.voicePolicyV2.servicePolicies.get(domain)
     if status in ("ready_for_confirmation", "execute_now") and policy:
         runtime_action = policy.runtimeAction
-        runtime_payload = {
-            "callerName": session.callerName or session.callerContext.callerName if session.callerContext else "Caller",
-            "callerPhone": session.callerPhone,
-            **slots,
-            "confirmed": status == "execute_now",
-        }
+        runtime_payload = _build_runtime_payload(
+            domain,
+            session,
+            slots,
+            action_name=runtime_action,
+            status=status,
+        )
         fallback = policy.fallbackSummary or None
 
     return SpecialistResult(

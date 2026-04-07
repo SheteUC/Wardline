@@ -713,7 +713,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response["domain"], "handoff")
         self.assertTrue(response["requiresConfirmation"])
-        self.assertIn("i can't interpret symptoms, test results, or medication safety questions", response["reply"].lower())
+        self.assertIn("i can't interpret symptoms, test results, or medication questions", response["reply"].lower())
         self.assertIn("try to connect you to the front desk", response["reply"].lower())
         self.assertEqual(len(api_client.runtime_action_calls), 0)
         safety_event = [event for event in session.events if event.type == "safety_triggered"][-1]
@@ -728,7 +728,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response["domain"], "handoff")
         self.assertTrue(response["awaitingVoicemail"])
         self.assertIn("urgent callbacks within about 30 minutes", response["reply"].lower())
-        self.assertIn("i can't interpret symptoms, test results, or medication safety questions", response["reply"].lower())
+        self.assertIn("i can't interpret symptoms, test results, or medication questions", response["reply"].lower())
 
     async def test_historical_stroke_reference_does_not_trigger_emergency(self):
         runtime, _api_client, session = await self.create_runtime()
@@ -881,7 +881,8 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(second_response["awaitingVoicemail"])
         self.assertEqual(second_response["domain"], "handoff")
-        self.assertEqual(session.stage, "closing")
+        self.assertEqual(session.stage, "intake")
+        self.assertTrue(session.awaitingAnythingElse)
         self.assertEqual(len(api_client.created_voicemails), 1)
         self.assertEqual(api_client.created_voicemails[0][0], "call-1")
         self.assertEqual(
@@ -890,6 +891,7 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(second_response["operatorSummary"]["headline"], "Voicemail captured")
         self.assertIn("captured your message", second_response["reply"].lower())
+        self.assertIn("what else can i help", second_response["reply"].lower())
 
     async def test_completed_session_ignores_late_transcripts_after_voicemail_capture(self):
         runtime, api_client, session = await self.create_runtime(after_hours=True)
@@ -901,11 +903,14 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
             "twilio_mark",
             {"assistantMessageId": second_response["assistantMessageId"]},
         )
-        ignored = await runtime.process_text_turn(session.sessionId, "Bye.")
+        third_response = await runtime.process_text_turn(session.sessionId, "I have another question.")
 
         self.assertEqual(len(api_client.created_voicemails), 1)
-        self.assertEqual(ignored["reply"], "")
-        self.assertEqual(ignored["stage"], "completed")
+        self.assertTrue(
+            "what would you like help" in third_response["reply"].lower()
+            or "what else can i help" in third_response["reply"].lower()
+        )
+        self.assertEqual(session.stage, "intake")
 
     async def test_finalize_without_meaningful_interaction_marks_call_abandoned(self):
         runtime, api_client, session = await self.create_runtime()
@@ -933,6 +938,40 @@ class VoiceRuntimeV2Tests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(confirmed["awaitingAnythingElse"])
         self.assertTrue(confirmed["assistantMessageId"])
         self.assertGreaterEqual(len(api_client.saved_transcripts), 3)
+
+    async def test_scheduling_confirmation_uses_core_api_payload_shape(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
+        await runtime.process_text_turn(session.sessionId, "yes")
+
+        self.assertEqual(
+            api_client.runtime_action_calls[-1][2],
+            {
+                "callerName": "Caller",
+                "callerPhone": "+15550000001",
+                "serviceType": "physical",
+                "preferredDate": "Tuesday",
+                "preferredTime": "10:00 AM",
+                "notes": "I need to schedule a physical on Tuesday at 10am",
+                "confirmed": True,
+                "callId": "call-1",
+            },
+        )
+
+    async def test_anything_else_affirmative_with_punctuation_reprompts_without_replaying_last_action(self):
+        runtime, api_client, session = await self.create_runtime()
+
+        await runtime.process_text_turn(session.sessionId, "I need to schedule a physical on Tuesday at 10am")
+        await runtime.process_text_turn(session.sessionId, "yes")
+        before_actions = len(api_client.runtime_action_calls)
+
+        follow_on = await runtime.process_text_turn(session.sessionId, "Yes.")
+
+        self.assertEqual(follow_on["reply"], "Of course. What else can I help you with today?")
+        self.assertEqual(follow_on["domain"], "knowledge")
+        self.assertEqual(len(api_client.runtime_action_calls), before_actions)
+        self.assertFalse(follow_on["awaitingAnythingElse"])
 
     async def test_confirmation_change_flow_returns_to_the_same_domain(self):
         runtime, _api_client, session = await self.create_runtime()
